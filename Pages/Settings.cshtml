@@ -1,0 +1,113 @@
+﻿@page
+@model FTdx101MP_WebApp.Pages.SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="container mt-4">
+    <h1 class="display-4">Application Settings</h1>
+    <p class="lead">Configure your FT-dx101MP connection and web server settings.</p>
+
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="alert @(Model.StatusMessage.Contains("success") ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+            @Model.StatusMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Configuration</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Radio Connection</h5>
+
+                        <div class="mb-3">
+                            <label asp-for="Settings.SerialPort" class="form-label">Serial Port</label>
+                            <input asp-for="Settings.SerialPort" class="form-control" placeholder="COM3" required />
+                            <div class="form-text">Enter the COM port where your FT-dx101MP is connected (e.g., COM3, COM4)</div>
+                            <span asp-validation-for="Settings.SerialPort" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Settings.BaudRate" class="form-label">Baud Rate</label>
+                            <select asp-for="Settings.BaudRate" class="form-select">
+                                <option value="4800">4800</option>
+                                <option value="9600">9600</option>
+                                <option value="19200">19200</option>
+                                <option value="38400">38400</option>
+                                <option value="57600">57600</option>
+                                <option value="115200">115200</option>
+                            </select>
+                            <div class="form-text">Select the baud rate configured in your radio (default: 38400)</div>
+                            <span asp-validation-for="Settings.BaudRate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Web Server</h5>
+
+                        <div class="mb-3">
+                            <label asp-for="Settings.WebAddress" class="form-label">Web Address</label>
+                            <input asp-for="Settings.WebAddress" class="form-control" placeholder="localhost" required />
+                            <div class="form-text">Enter the address for the web server (e.g., localhost, 0.0.0.0, or your IP)</div>
+                            <span asp-validation-for="Settings.WebAddress" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Settings.WebPort" class="form-label">Web Port</label>
+                            <input asp-for="Settings.WebPort" type="number" class="form-control" placeholder="5000" min="1" max="65535" required />
+                            <div class="form-text">Enter the port number for the web server (1-65535)</div>
+                            <span asp-validation-for="Settings.WebPort" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <strong>Note:</strong> After changing web server settings, you'll need to restart the application for them to take effect.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save"></i> Save Settings
+                        </button>
+                        <a asp-page="/Index" class="btn btn-secondary btn-lg ms-2">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Current Configuration</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Serial Port:</dt>
+                <dd class="col-sm-9"><code>@Model.Settings.SerialPort</code></dd>
+
+                <dt class="col-sm-3">Baud Rate:</dt>
+                <dd class="col-sm-9"><code>@Model.Settings.BaudRate</code></dd>
+
+                <dt class="col-sm-3">Web Address:</dt>
+                <dd class="col-sm-9"><code>@Model.Settings.WebAddress</code></dd>
+
+                <dt class="col-sm-3">Web Port:</dt>
+                <dd class="col-sm-9"><code>@Model.Settings.WebPort</code></dd>
+
+                <dt class="col-sm-3">Full Web URL:</dt>
+                <dd class="col-sm-9"><code>http://@Model.Settings.WebAddress:@Model.Settings.WebPort</code></dd>
+            </dl>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
