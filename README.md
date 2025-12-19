@@ -1,4 +1,4 @@
-﻿# FTdx101MP Web Application
+﻿# Work in progress - Just started   FTdx101MP Web Application
 
 A modern web-based interface for controlling and monitoring the **Yaesu FT-dx101MP** amateur radio transceiver using CAT (Computer Aided Transceiver) commands.
 
