@@ -5,6 +5,6 @@
         public string SerialPort { get; set; } = "COM3";
         public int BaudRate { get; set; } = 38400;
         public string WebAddress { get; set; } = "localhost";
-        public int WebPort { get; set; } = 5000;
+        public int WebPort { get; set; } = 8080; // Changed from 5000 to 8080
     }
 }
