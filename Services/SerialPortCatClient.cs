@@ -84,7 +84,9 @@ namespace FTdx101MP_WebApp.Services
                 _serialPort.DiscardInBuffer();
                 _serialPort.DiscardOutBuffer();
 
-                var commandBytes = Encoding.ASCII.GetBytes(command + ";");
+                // Add semicolon if not present
+                var fullCommand = command.EndsWith(";") ? command : command + ";";
+                var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
                 await _serialPort.BaseStream.WriteAsync(commandBytes);
 
                 await Task.Delay(50);
@@ -111,79 +113,141 @@ namespace FTdx101MP_WebApp.Services
             }
         }
 
-        public async Task<int> ReadSMeterAsync()
-        {
-            try
-            {
-                var response = await SendCommandAsync("SM0");
-                if (response.StartsWith("SM0"))
-                {
-                    var value = response.Substring(3);
-                    if (int.TryParse(value, out var sMeter))
-                    {
-                        return sMeter;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reading S-meter");
-            }
-            return 0;
-        }
-
+        // VFO-A Frequency (Main)
         public async Task<long> ReadFrequencyAsync()
         {
+            return await ReadFrequencyAAsync();
+        }
+
+        public async Task<long> ReadFrequencyAAsync()
+        {
             try
             {
-                var response = await SendCommandAsync("FA");
-                if (response.StartsWith("FA"))
-                {
-                    var value = response.Substring(2);
-                    if (long.TryParse(value, out var frequency))
-                    {
-                        return frequency;
-                    }
-                }
+                var response = await SendCommandAsync(CatCommands.FrequencyVfoA);
+                return CatCommands.ParseFrequency(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error reading frequency");
+                _logger.LogError(ex, "Error reading VFO-A frequency");
             }
             return 0;
         }
 
-        public async Task<string> ReadModeAsync()
+        // VFO-B Frequency (Sub)
+        public async Task<long> ReadFrequencyBAsync()
         {
             try
             {
-                var response = await SendCommandAsync("MD0");
-                if (response.StartsWith("MD0"))
-                {
-                    var modeCode = response.Substring(3);
-                    return modeCode switch
-                    {
-                        "1" => "LSB",
-                        "2" => "USB",
-                        "3" => "CW",
-                        "4" => "FM",
-                        "5" => "AM",
-                        "6" => "RTTY-LSB",
-                        "7" => "CW-R",
-                        "8" => "DATA-LSB",
-                        "9" => "RTTY-USB",
-                        "A" => "DATA-FM",
-                        "B" => "FM-N",
-                        "C" => "DATA-USB",
-                        "D" => "AM-N",
-                        "E" => "C4FM",
-                        _ => "UNKNOWN"
-                    };
-                }
+                var response = await SendCommandAsync(CatCommands.FrequencyVfoB);
+                return CatCommands.ParseFrequency(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error reading mode");
+                _logger.LogError(ex, "Error reading VFO-B frequency");
+            }
+            return 0;
+        }
+
+        // Set VFO-A Frequency
+        public async Task<bool> SetFrequencyAAsync(long frequencyHz)
+        {
+            try
+            {
+                var command = CatCommands.FormatFrequencyA(frequencyHz);
+                await SendCommandAsync(command);
+                _logger.LogInformation("Set VFO-A frequency to {Frequency} Hz", frequencyHz);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting VFO-A frequency");
+                return false;
+            }
+        }
+
+        // Set VFO-B Frequency
+        public async Task<bool> SetFrequencyBAsync(long frequencyHz)
+        {
+            try
+            {
+                var command = CatCommands.FormatFrequencyB(frequencyHz);
+                await SendCommandAsync(command);
+                _logger.LogInformation("Set VFO-B frequency to {Frequency} Hz", frequencyHz);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting VFO-B frequency");
+                return false;
+            }
+        }
+
+        // S-Meter Main (VFO-A)
+        public async Task<int> ReadSMeterAsync()
+        {
+            return await ReadSMeterMainAsync();
+        }
+
+        public async Task<int> ReadSMeterMainAsync()
+        {
+            try
+            {
+                var response = await SendCommandAsync(CatCommands.SMeterMain);
+                return CatCommands.ParseSMeter(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading Main S-meter");
+            }
+            return 0;
+        }
+
+        // S-Meter Sub (VFO-B)
+        public async Task<int> ReadSMeterSubAsync()
+        {
+            try
+            {
+                var response = await SendCommandAsync(CatCommands.SMeterSub);
+                return CatCommands.ParseSMeter(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading Sub S-meter");
+            }
+            return 0;
+        }
+
+        // Mode Main (VFO-A)
+        public async Task<string> ReadModeAsync()
+        {
+            return await ReadModeMainAsync();
+        }
+
+        public async Task<string> ReadModeMainAsync()
+        {
+            try
+            {
+                var response = await SendCommandAsync(CatCommands.ModeMain);
+                return CatCommands.ParseMode(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading Main mode");
+            }
+            return "UNKNOWN";
+        }
+
+        // Mode Sub (VFO-B)
+        public async Task<string> ReadModeSubAsync()
+        {
+            try
+            {
+                var response = await SendCommandAsync(CatCommands.ModeSub);
+                return CatCommands.ParseMode(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading Sub mode");
             }
             return "UNKNOWN";
         }
@@ -192,7 +256,7 @@ namespace FTdx101MP_WebApp.Services
         {
             try
             {
-                var response = await SendCommandAsync("TX");
+                var response = await SendCommandAsync(CatCommands.TransmitStatus);
                 return response.Contains("TX1");
             }
             catch (Exception ex)
