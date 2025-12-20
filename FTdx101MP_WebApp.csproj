@@ -7,8 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Pages\Api\**" />
+    <Content Remove="Pages\Api\**" />
+    <EmbeddedResource Remove="Pages\Api\**" />
+    <None Remove="Pages\Api\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include=".github\workflows\" />
-    <Folder Include="Pages\Api\" />
   </ItemGroup>
 
   <ItemGroup>
