@@ -14,34 +14,31 @@ namespace FTdx101MP_WebApp.Services
         {
             _settingsFilePath = Path.Combine(environment.ContentRootPath, "appsettings.user.json");
             _logger = logger;
+            _logger.LogInformation("SettingsService initialized. File path: {Path}", _settingsFilePath);
         }
 
         public async Task<ApplicationSettings> GetSettingsAsync()
         {
-            if (_cachedSettings != null)
-            {
-                return _cachedSettings;
-            }
-
             await _semaphore.WaitAsync();
             try
             {
-                if (_cachedSettings != null)
-                {
-                    return _cachedSettings;
-                }
+                _logger.LogInformation("GetSettingsAsync called. File exists: {Exists}", File.Exists(_settingsFilePath));
 
                 if (File.Exists(_settingsFilePath))
                 {
                     var json = await File.ReadAllTextAsync(_settingsFilePath);
+                    _logger.LogInformation("Raw JSON read: {Json}", json);
+
                     _cachedSettings = JsonSerializer.Deserialize<ApplicationSettings>(json) ?? new ApplicationSettings();
-                    _logger.LogInformation("Settings loaded from {Path}", _settingsFilePath);
+
+                    _logger.LogInformation("Settings deserialized: SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort={WebPort}",
+                        _cachedSettings.SerialPort, _cachedSettings.BaudRate, _cachedSettings.WebAddress, _cachedSettings.WebPort);
                 }
                 else
                 {
                     _cachedSettings = new ApplicationSettings();
-                    await SaveSettingsAsync(_cachedSettings);
-                    _logger.LogInformation("Created new settings file at {Path}", _settingsFilePath);
+                    _logger.LogWarning("Settings file does not exist at {Path}. Using defaults: SerialPort={SerialPort}, WebAddress={WebAddress}",
+                        _settingsFilePath, _cachedSettings.SerialPort, _cachedSettings.WebAddress);
                 }
 
                 return _cachedSettings;
@@ -62,15 +59,28 @@ namespace FTdx101MP_WebApp.Services
             await _semaphore.WaitAsync();
             try
             {
+                _logger.LogInformation("SaveSettingsAsync called with: SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort={WebPort}",
+                    settings.SerialPort, settings.BaudRate, settings.WebAddress, settings.WebPort);
+
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true
                 };
 
                 var json = JsonSerializer.Serialize(settings, options);
+                _logger.LogInformation("Serialized to JSON: {Json}", json);
+
                 await File.WriteAllTextAsync(_settingsFilePath, json);
                 _cachedSettings = settings;
-                _logger.LogInformation("Settings saved to {Path}", _settingsFilePath);
+
+                _logger.LogInformation("Settings saved successfully to {Path}", _settingsFilePath);
+
+                // Verify
+                if (File.Exists(_settingsFilePath))
+                {
+                    var verify = await File.ReadAllTextAsync(_settingsFilePath);
+                    _logger.LogInformation("Verification: File content after save: {Content}", verify);
+                }
             }
             catch (Exception ex)
             {
