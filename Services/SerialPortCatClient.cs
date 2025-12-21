@@ -33,14 +33,20 @@ namespace FTdx101MP_WebApp.Services
                     BaudRate = baudRate,
                     DataBits = 8,
                     Parity = Parity.None,
-                    StopBits = StopBits.One,
+                    StopBits = StopBits.Two,  // 8N2
                     Handshake = Handshake.None,
-                    ReadTimeout = 1000,
-                    WriteTimeout = 1000
+                    ReadTimeout = 500,
+                    WriteTimeout = 500,
+                    DtrEnable = true,   // CHANGED: Try enabling DTR (RealTerm might do this)
+                    RtsEnable = true    // CHANGED: Try enabling RTS (RealTerm might do this)
                 };
 
                 _serialPort.Open();
-                _logger.LogInformation("Connected to {PortName} at {BaudRate} baud", portName, baudRate);
+
+                // Wait for port to stabilize
+                await Task.Delay(200);
+
+                _logger.LogInformation("Connected to {PortName} at {BaudRate} baud, 8-N-2 (DTR/RTS enabled)", portName, baudRate);
                 return true;
             }
             catch (Exception ex)
@@ -78,33 +84,80 @@ namespace FTdx101MP_WebApp.Services
             {
                 if (_serialPort?.IsOpen != true)
                 {
+                    _logger.LogWarning("Attempted to send command but serial port is not open");
                     throw new InvalidOperationException("Serial port is not open");
                 }
 
-                _serialPort.DiscardInBuffer();
-                _serialPort.DiscardOutBuffer();
+                // Only clear old data if present
+                if (_serialPort.BytesToRead > 0)
+                {
+                    var oldBytes = _serialPort.BytesToRead;
+                    _serialPort.DiscardInBuffer();
+                    _logger.LogDebug("Cleared {Bytes} stale bytes from input buffer", oldBytes);
+                }
 
                 // Add semicolon if not present
                 var fullCommand = command.EndsWith(";") ? command : command + ";";
-                var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
-                await _serialPort.BaseStream.WriteAsync(commandBytes);
 
+                _logger.LogInformation(">>> Sending CAT command: {Command}", fullCommand.TrimEnd(';'));
+
+                // Write as bytes explicitly
+                var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
+                _serialPort.Write(commandBytes, 0, commandBytes.Length);
+
+                // Small delay for radio processing
                 await Task.Delay(50);
 
-                var buffer = new byte[256];
-                var bytesRead = await _serialPort.BaseStream.ReadAsync(buffer);
-                var response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim(';', '\r', '\n');
+                // Read response
+                var response = await Task.Run(() =>
+                {
+                    try
+                    {
+                        var startTime = DateTime.Now;
+                        var timeout = TimeSpan.FromMilliseconds(1000);  // Back to 1 second
+
+                        // Wait for response
+                        int iterations = 0;
+                        while (_serialPort.BytesToRead == 0 && (DateTime.Now - startTime) < timeout)
+                        {
+                            Thread.Sleep(20);
+                            iterations++;
+                        }
+
+                        var elapsedMs = (DateTime.Now - startTime).TotalMilliseconds;
+                        var bytesAvailable = _serialPort.BytesToRead;
+
+                        if (bytesAvailable > 0)
+                        {
+                            // Read all data
+                            var buffer = new byte[bytesAvailable];
+                            _serialPort.Read(buffer, 0, bytesAvailable);
+                            var data = Encoding.ASCII.GetString(buffer);
+
+                            _logger.LogInformation("<<< Received ({ElapsedMs}ms, {Iterations} iterations): '{RawResponse}' ({Bytes} bytes)",
+                                elapsedMs, iterations, data, bytesAvailable);
+
+                            // Clean response
+                            var cleaned = data.Trim(';', '\r', '\n', '?', ' ');
+                            return cleaned;
+                        }
+
+                        _logger.LogWarning("⚠️ TIMEOUT: No response for {Command} after {ElapsedMs}ms ({Iterations} iterations)",
+                            fullCommand.TrimEnd(';'), elapsedMs, iterations);
+                        return string.Empty;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Exception reading response");
+                        return string.Empty;
+                    }
+                });
 
                 return response;
             }
-            catch (TimeoutException)
-            {
-                _logger.LogWarning("Timeout reading response for command: {Command}", command);
-                return string.Empty;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending command: {Command}", command);
+                _logger.LogError(ex, "Error in SendCommandAsync");
                 return string.Empty;
             }
             finally
@@ -113,7 +166,8 @@ namespace FTdx101MP_WebApp.Services
             }
         }
 
-        // VFO-A Frequency (Main)
+        // [All other methods remain the same...]
+
         public async Task<long> ReadFrequencyAsync()
         {
             return await ReadFrequencyAAsync();
@@ -124,7 +178,9 @@ namespace FTdx101MP_WebApp.Services
             try
             {
                 var response = await SendCommandAsync(CatCommands.FrequencyVfoA);
-                return CatCommands.ParseFrequency(response);
+                var freq = CatCommands.ParseFrequency(response);
+                _logger.LogDebug("VFO-A Frequency: {Frequency} Hz", freq);
+                return freq;
             }
             catch (Exception ex)
             {
@@ -133,13 +189,14 @@ namespace FTdx101MP_WebApp.Services
             return 0;
         }
 
-        // VFO-B Frequency (Sub)
         public async Task<long> ReadFrequencyBAsync()
         {
             try
             {
                 var response = await SendCommandAsync(CatCommands.FrequencyVfoB);
-                return CatCommands.ParseFrequency(response);
+                var freq = CatCommands.ParseFrequency(response);
+                _logger.LogDebug("VFO-B Frequency: {Frequency} Hz", freq);
+                return freq;
             }
             catch (Exception ex)
             {
@@ -148,7 +205,6 @@ namespace FTdx101MP_WebApp.Services
             return 0;
         }
 
-        // Set VFO-A Frequency
         public async Task<bool> SetFrequencyAAsync(long frequencyHz)
         {
             try
@@ -165,7 +221,6 @@ namespace FTdx101MP_WebApp.Services
             }
         }
 
-        // Set VFO-B Frequency
         public async Task<bool> SetFrequencyBAsync(long frequencyHz)
         {
             try
@@ -182,7 +237,6 @@ namespace FTdx101MP_WebApp.Services
             }
         }
 
-        // S-Meter Main (VFO-A)
         public async Task<int> ReadSMeterAsync()
         {
             return await ReadSMeterMainAsync();
@@ -193,7 +247,9 @@ namespace FTdx101MP_WebApp.Services
             try
             {
                 var response = await SendCommandAsync(CatCommands.SMeterMain);
-                return CatCommands.ParseSMeter(response);
+                var sMeter = CatCommands.ParseSMeter(response);
+                _logger.LogDebug("S-Meter Main: {SMeter}", sMeter);
+                return sMeter;
             }
             catch (Exception ex)
             {
@@ -202,13 +258,14 @@ namespace FTdx101MP_WebApp.Services
             return 0;
         }
 
-        // S-Meter Sub (VFO-B)
         public async Task<int> ReadSMeterSubAsync()
         {
             try
             {
                 var response = await SendCommandAsync(CatCommands.SMeterSub);
-                return CatCommands.ParseSMeter(response);
+                var sMeter = CatCommands.ParseSMeter(response);
+                _logger.LogDebug("S-Meter Sub: {SMeter}", sMeter);
+                return sMeter;
             }
             catch (Exception ex)
             {
@@ -217,7 +274,6 @@ namespace FTdx101MP_WebApp.Services
             return 0;
         }
 
-        // Mode Main (VFO-A)
         public async Task<string> ReadModeAsync()
         {
             return await ReadModeMainAsync();
@@ -228,7 +284,9 @@ namespace FTdx101MP_WebApp.Services
             try
             {
                 var response = await SendCommandAsync(CatCommands.ModeMain);
-                return CatCommands.ParseMode(response);
+                var mode = CatCommands.ParseMode(response);
+                _logger.LogDebug("Mode Main: {Mode}", mode);
+                return mode;
             }
             catch (Exception ex)
             {
@@ -237,13 +295,14 @@ namespace FTdx101MP_WebApp.Services
             return "UNKNOWN";
         }
 
-        // Mode Sub (VFO-B)
         public async Task<string> ReadModeSubAsync()
         {
             try
             {
                 var response = await SendCommandAsync(CatCommands.ModeSub);
-                return CatCommands.ParseMode(response);
+                var mode = CatCommands.ParseMode(response);
+                _logger.LogDebug("Mode Sub: {Mode}", mode);
+                return mode;
             }
             catch (Exception ex)
             {
@@ -257,7 +316,9 @@ namespace FTdx101MP_WebApp.Services
             try
             {
                 var response = await SendCommandAsync(CatCommands.TransmitStatus);
-                return response.Contains("TX1");
+                var isTx = response.Contains("TX1");
+                _logger.LogDebug("Transmit Status: {Status}", isTx ? "TX" : "RX");
+                return isTx;
             }
             catch (Exception ex)
             {

@@ -12,6 +12,7 @@ namespace FTdx101MP_WebApp
 
             // Add services to the container.
             builder.Services.AddRazorPages();
+            builder.Services.AddControllers(); // Enable API Controllers
 
             // Register Settings Service
             builder.Services.AddSingleton<ISettingsService, SettingsService>();
@@ -20,9 +21,9 @@ namespace FTdx101MP_WebApp
             builder.Services.AddSingleton<ICatClient, SerialPortCatClient>();
             builder.Services.AddSingleton<IRigStateService, RigStateService>();
 
+            
             // Register Background Service
-            builder.Services.AddHostedService<CatPollingService>();
-
+            builder.Services.AddHostedService<CatPollingService>();  // ✅ RE-ENABLE THIS
             // Load settings to configure web server
             var tempServiceProvider = builder.Services.BuildServiceProvider();
             var settingsService = tempServiceProvider.GetRequiredService<ISettingsService>();
@@ -48,6 +49,7 @@ namespace FTdx101MP_WebApp
 
             app.UseAuthorization();
 
+            app.MapControllers(); // Map API Controller routes
             app.MapStaticAssets();
             app.MapRazorPages()
                .WithStaticAssets();
@@ -67,6 +69,7 @@ namespace FTdx101MP_WebApp
                 logger.LogInformation("✅ Network Access: http://{IPAddress}:{Port}", settings.WebAddress, settings.WebPort);
             }
 
+            logger.LogInformation("✅ API Endpoint:  http://localhost:{Port}/api/cat/status", settings.WebPort);
             logger.LogInformation("========================================");
 
             // Start the web server in the background
