@@ -26,11 +26,11 @@
                 <div class="card-body">
                     <!-- Frequency Display -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Frequency (FA Command)</label>
+                        <label class="form-label fw-bold">Frequency</label>
                         <div class="input-group input-group-lg mb-2">
                             <input type="text" class="form-control text-center fw-bold"
-                                   id="freqA" value="14.250.000" readonly style="font-size: 2rem; letter-spacing: 0.1em;">
-                            <span class="input-group-text">MHz</span>
+                                   id="freqA" value="---.---.---" readonly style="font-size: 2rem; letter-spacing: 0.1em;">
+                            <span class="input-group-text">Hz</span>
                         </div>
                         <!-- Frequency Controls -->
                         <div class="row g-2">
@@ -67,70 +67,28 @@
                         </div>
                     </div>
 
-                    <!-- Mode Selection -->
+                    <!-- Mode Display -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Mode</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="modeA" id="modeA-USB" checked>
-                            <label class="btn btn-outline-primary" for="modeA-USB">USB</label>
-
-                            <input type="radio" class="btn-check" name="modeA" id="modeA-LSB">
-                            <label class="btn btn-outline-primary" for="modeA-LSB">LSB</label>
-
-                            <input type="radio" class="btn-check" name="modeA" id="modeA-CW">
-                            <label class="btn btn-outline-primary" for="modeA-CW">CW</label>
-
-                            <input type="radio" class="btn-check" name="modeA" id="modeA-AM">
-                            <label class="btn btn-outline-primary" for="modeA-AM">AM</label>
-
-                            <input type="radio" class="btn-check" name="modeA" id="modeA-FM">
-                            <label class="btn btn-outline-primary" for="modeA-FM">FM</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-gear"></i></span>
+                            <input type="text" class="form-control text-center fw-bold" id="modeA" value="---" readonly>
                         </div>
                     </div>
 
                     <!-- S-Meter -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">S-Meter</label>
+                        <label class="form-label fw-bold">S-Meter: <span id="sMeterValueA">S0</span></label>
                         <div class="progress" style="height: 30px;">
-                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                                 role="progressbar" style="width: 60%;"
-                                 aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">
-                                S9 +20dB
+                            <div class="progress-bar bg-success progress-bar-striped" id="sMeterBarA"
+                                 role="progressbar" style="width: 0%;"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="255">
                             </div>
                         </div>
                     </div>
-
-                    <!-- Volume Control -->
-                    <div class="mb-4">
-                        <label for="volumeA" class="form-label fw-bold">
-                            Volume <span class="badge bg-primary" id="volumeA-value">50%</span>
-                        </label>
-                        <input type="range" class="form-range" id="volumeA"
-                               min="0" max="100" value="50">
-                    </div>
-
-                    <!-- Filter Width -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Filter Width</label>
-                        <select class="form-select" id="filterA">
-                            <option>300 Hz</option>
-                            <option>500 Hz</option>
-                            <option>1.8 kHz</option>
-                            <option selected>2.4 kHz</option>
-                            <option>3.0 kHz</option>
-                            <option>4.0 kHz</option>
-                        </select>
-                    </div>
-
-                    <!-- Quick Actions -->
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg" type="button">
-                            <i class="bi bi-play-circle"></i> Active
-                        </button>
-                    </div>
                 </div>
                 <div class="card-footer text-muted">
-                    <small><i class="bi bi-wifi"></i> Connected | Last Update: <span id="lastUpdateA">--:--:--</span></small>
+                    <small><i class="bi bi-wifi" id="statusIconA"></i> <span id="connectionStatusA">Connecting...</span> | Last Update: <span id="lastUpdateA">--:--:--</span></small>
                 </div>
             </div>
         </div>
@@ -146,11 +104,11 @@
                 <div class="card-body">
                     <!-- Frequency Display -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Frequency (FB Command)</label>
+                        <label class="form-label fw-bold">Frequency</label>
                         <div class="input-group input-group-lg mb-2">
                             <input type="text" class="form-control text-center fw-bold"
-                                   id="freqB" value="14.195.000" readonly style="font-size: 2rem; letter-spacing: 0.1em;">
-                            <span class="input-group-text">MHz</span>
+                                   id="freqB" value="---.---.---" readonly style="font-size: 2rem; letter-spacing: 0.1em;">
+                            <span class="input-group-text">Hz</span>
                         </div>
                         <!-- Frequency Controls -->
                         <div class="row g-2">
@@ -187,70 +145,28 @@
                         </div>
                     </div>
 
-                    <!-- Mode Selection -->
+                    <!-- Mode Display -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Mode</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="modeB" id="modeB-USB" checked>
-                            <label class="btn btn-outline-success" for="modeB-USB">USB</label>
-
-                            <input type="radio" class="btn-check" name="modeB" id="modeB-LSB">
-                            <label class="btn btn-outline-success" for="modeB-LSB">LSB</label>
-
-                            <input type="radio" class="btn-check" name="modeB" id="modeB-CW">
-                            <label class="btn btn-outline-success" for="modeB-CW">CW</label>
-
-                            <input type="radio" class="btn-check" name="modeB" id="modeB-AM">
-                            <label class="btn btn-outline-success" for="modeB-AM">AM</label>
-
-                            <input type="radio" class="btn-check" name="modeB" id="modeB-FM">
-                            <label class="btn btn-outline-success" for="modeB-FM">FM</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-gear"></i></span>
+                            <input type="text" class="form-control text-center fw-bold" id="modeB" value="---" readonly>
                         </div>
                     </div>
 
                     <!-- S-Meter -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">S-Meter</label>
+                        <label class="form-label fw-bold">S-Meter: <span id="sMeterValueB">S0</span></label>
                         <div class="progress" style="height: 30px;">
-                            <div class="progress-bar bg-info progress-bar-striped progress-bar-animated"
-                                 role="progressbar" style="width: 40%;"
-                                 aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
-                                S7
+                            <div class="progress-bar bg-info progress-bar-striped" id="sMeterBarB"
+                                 role="progressbar" style="width: 0%;"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="255">
                             </div>
                         </div>
                     </div>
-
-                    <!-- Volume Control -->
-                    <div class="mb-4">
-                        <label for="volumeB" class="form-label fw-bold">
-                            Volume <span class="badge bg-success" id="volumeB-value">50%</span>
-                        </label>
-                        <input type="range" class="form-range" id="volumeB"
-                               min="0" max="100" value="50">
-                    </div>
-
-                    <!-- Filter Width -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Filter Width</label>
-                        <select class="form-select" id="filterB">
-                            <option>300 Hz</option>
-                            <option>500 Hz</option>
-                            <option>1.8 kHz</option>
-                            <option selected>2.4 kHz</option>
-                            <option>3.0 kHz</option>
-                            <option>4.0 kHz</option>
-                        </select>
-                    </div>
-
-                    <!-- Quick Actions -->
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-success btn-lg" type="button">
-                            <i class="bi bi-pause-circle"></i> Standby
-                        </button>
-                    </div>
                 </div>
                 <div class="card-footer text-muted">
-                    <small><i class="bi bi-wifi"></i> Connected | Last Update: <span id="lastUpdateB">--:--:--</span></small>
+                    <small><i class="bi bi-wifi" id="statusIconB"></i> <span id="connectionStatusB">Connecting...</span> | Last Update: <span id="lastUpdateB">--:--:--</span></small>
                 </div>
             </div>
         </div>
@@ -259,12 +175,10 @@
     <!-- Status Bar -->
     <div class="row mt-4">
         <div class="col-12">
-            <div class="alert alert-info d-flex align-items-center" role="alert">
+            <div class="alert alert-info d-flex align-items-center" role="alert" id="systemStatus">
                 <i class="bi bi-info-circle-fill me-2"></i>
                 <div>
-                    <strong>System Status:</strong> Both receivers operational |
-                    <strong>Serial:</strong> COM6 at 38400 baud |
-                    <strong>Connection:</strong> <span class="badge bg-success">Connected</span>
+                    <strong>System Status:</strong> <span id="statusText">Connecting to radio...</span>
                 </div>
             </div>
         </div>
@@ -273,70 +187,196 @@
 
 @section Scripts {
     <script>
-        // Current frequencies in Hz
-        let freqA = 14250000; // 14.250 MHz
-        let freqB = 14195000; // 14.195 MHz
+        // Current frequencies in Hz (from radio)
+        let freqA = 0;
+        let freqB = 0;
 
-        // Volume slider updates
-        document.getElementById('volumeA').addEventListener('input', function(e) {
-            document.getElementById('volumeA-value').textContent = e.target.value + '%';
-        });
+        // Request throttling
+        let isFetching = false;
+        let isAdjusting = false;
+        let consecutiveErrors = 0;
+        let pollInterval = 1000; // Start with 1 second polling
 
-        document.getElementById('volumeB').addEventListener('input', function(e) {
-            document.getElementById('volumeB-value').textContent = e.target.value + '%';
-        });
-
-        // Adjust frequency function
-        function adjustFrequency(receiver, change) {
-            if (receiver === 'A') {
-                freqA += change;
-                // Clamp to valid range (30 kHz to 75 MHz per CAT spec)
-                freqA = Math.max(30000, Math.min(75000000, freqA));
-                updateFrequencyDisplay('A', freqA);
-                sendCatCommand('FA', freqA);
-            } else {
-                freqB += change;
-                // Clamp to valid range (30 kHz to 75 MHz per CAT spec)
-                freqB = Math.max(30000, Math.min(75000000, freqB));
-                updateFrequencyDisplay('B', freqB);
-                sendCatCommand('FB', freqB);
+        // Fetch radio status from API
+        async function fetchRadioStatus() {
+            // Skip if already fetching or adjusting frequency
+            if (isFetching || isAdjusting) {
+                return;
             }
+
+            isFetching = true;
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+                const response = await fetch('/api/cat/status', {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                updateDisplay(data);
+
+                // Reset error counter on success
+                consecutiveErrors = 0;
+                pollInterval = 1000; // Back to 1 second
+
+            } catch (error) {
+                consecutiveErrors++;
+                console.error('Error fetching radio status:', error);
+
+                // Slow down polling on repeated errors
+                if (consecutiveErrors > 3) {
+                    pollInterval = 3000; // Slow to 3 seconds after errors
+                }
+
+                updateConnectionStatus(false, `Connection error (${consecutiveErrors} errors)`);
+            } finally {
+                isFetching = false;
+            }
+        }
+
+        // Update display with radio data
+        function updateDisplay(data) {
+            if (!data.isConnected) {
+                updateConnectionStatus(false, data.message || 'Not connected');
+                return;
+            }
+
+            // Update VFO-A
+            freqA = data.vfoA.frequency;
+            updateFrequencyDisplay('A', freqA);
+            document.getElementById('modeA').value = data.vfoA.mode;
+            updateSMeter('A', data.vfoA.sMeter);
+
+            // Update VFO-B
+            freqB = data.vfoB.frequency;
+            updateFrequencyDisplay('B', freqB);
+            document.getElementById('modeB').value = data.vfoB.mode;
+            updateSMeter('B', data.vfoB.sMeter);
+
+            // Update timestamps
+            const now = new Date().toLocaleTimeString();
+            document.getElementById('lastUpdateA').textContent = now;
+            document.getElementById('lastUpdateB').textContent = now;
+
+            // Update connection status
+            updateConnectionStatus(true, 'Connected to FT-dx101MP');
         }
 
         // Update frequency display
         function updateFrequencyDisplay(receiver, freqHz) {
-            // Convert Hz to MHz with proper formatting
-            const freqMHz = (freqHz / 1000000).toFixed(3);
-            // Format as XX.XXX.XXX
-            const parts = freqMHz.split('.');
-            const formatted = parts[0] + '.' + parts[1].substring(0, 3) + '.' + parts[1].substring(3);
-            document.getElementById('freq' + receiver).value = formatted;
+            if (freqHz === 0) {
+                document.getElementById('freq' + receiver).value = '---.---.---';
+                return;
+            }
+
+            // Format frequency with thousands separators
+            const formatted = freqHz.toString().padStart(9, '0');
+            const display = formatted.substring(0, 3) + '.' +
+                          formatted.substring(3, 6) + '.' +
+                          formatted.substring(6, 9);
+            document.getElementById('freq' + receiver).value = display;
         }
 
-        // Send CAT command to radio
-        function sendCatCommand(command, freqHz) {
-            // Format frequency as 9-digit Hz value (e.g., 014250000)
-            const freqString = freqHz.toString().padStart(9, '0');
-            const catCommand = command + freqString + ';';
+        // Update S-Meter display
+        function updateSMeter(receiver, value) {
+            // S-Meter scale: 0-255
+            const percentage = (value / 255) * 100;
 
-            console.log('Sending CAT command: ' + catCommand);
+            let displayText = 'S0';
+            if (value >= 150) {
+                displayText = 'S9+' + Math.round((value - 120) / 3) + 'dB';
+            } else if (value >= 120) {
+                displayText = 'S9';
+            } else if (value > 0) {
+                displayText = 'S' + Math.floor(value / 13.3);
+            }
 
-            // TODO: Send to backend API
-            // fetch('/api/cat/command', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ command: catCommand })
-            // });
+            document.getElementById('sMeterBar' + receiver).style.width = percentage + '%';
+            document.getElementById('sMeterBar' + receiver).setAttribute('aria-valuenow', value);
+            document.getElementById('sMeterValue' + receiver).textContent = displayText;
         }
 
-        // Update timestamps
-        function updateTimestamps() {
-            const now = new Date().toLocaleTimeString();
-            document.getElementById('lastUpdateA').textContent = now;
-            document.getElementById('lastUpdateB').textContent = now;
+        // Update connection status
+        function updateConnectionStatus(connected, message) {
+            const statusText = document.getElementById('statusText');
+            const systemStatus = document.getElementById('systemStatus');
+
+            if (connected) {
+                statusText.textContent = message;
+                systemStatus.className = 'alert alert-success d-flex align-items-center';
+                document.getElementById('connectionStatusA').textContent = 'Connected';
+                document.getElementById('connectionStatusB').textContent = 'Connected';
+            } else {
+                statusText.textContent = message;
+                systemStatus.className = 'alert alert-warning d-flex align-items-center';
+                document.getElementById('connectionStatusA').textContent = 'Error';
+                document.getElementById('connectionStatusB').textContent = 'Error';
+            }
         }
 
-        updateTimestamps();
-        setInterval(updateTimestamps, 1000);
+        // Adjust frequency function
+        async function adjustFrequency(receiver, change) {
+            if (isAdjusting) {
+                console.log('Already adjusting frequency, skipping...');
+                return;
+            }
+
+            const currentFreq = receiver === 'A' ? freqA : freqB;
+            const newFreq = Math.max(30000, Math.min(75000000, currentFreq + change));
+
+            isAdjusting = true;
+            try {
+                const endpoint = receiver === 'A' ? '/api/cat/frequency/a' : '/api/cat/frequency/b';
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ frequencyHz: newFreq }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    // Update local value immediately for responsiveness
+                    if (receiver === 'A') {
+                        freqA = newFreq;
+                    } else {
+                        freqB = newFreq;
+                    }
+                    updateFrequencyDisplay(receiver, newFreq);
+
+                    // Wait a bit before resuming polling
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                } else {
+                    console.error('Failed to set frequency:', await response.text());
+                }
+            } catch (error) {
+                console.error('Error setting frequency:', error);
+            } finally {
+                isAdjusting = false;
+            }
+        }
+
+        // Dynamic polling with adjustable interval
+        function startPolling() {
+            fetchRadioStatus(); // Initial fetch
+
+            setInterval(() => {
+                fetchRadioStatus();
+            }, () => pollInterval); // Use dynamic interval
+        }
+
+        // Start polling
+        startPolling();
     </script>
 }
