@@ -1,5 +1,5 @@
-﻿@page
-@model FTdx101MP_WebApp.Pages.SettingsModel
+@page
+@model FTdx101_WebApp.Pages.SettingsModel
 @{
     ViewData["Title"] = "Settings";
 }
@@ -10,7 +10,7 @@
 
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
-        <div class="alert @(Model.StatusMessage.Contains("success") || Model.StatusMessage.Contains("✅") ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+        <div class="alert @(Model.StatusMessage.Contains("success") || Model.StatusMessage.Contains("?") ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
             @Model.StatusMessage
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>

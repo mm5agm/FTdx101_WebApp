@@ -1,8 +1,8 @@
-﻿using FTdx101MP_WebApp.Services;
+using FTdx101_WebApp.Services;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace FTdx101MP_WebApp
+namespace FTdx101_WebApp
 {
     public class Program
     {
@@ -23,7 +23,7 @@ namespace FTdx101MP_WebApp
 
             
             // Register Background Service
-            builder.Services.AddHostedService<CatPollingService>();  // ✅ RE-ENABLE THIS
+            builder.Services.AddHostedService<CatPollingService>();  // ? RE-ENABLE THIS
             // Load settings to configure web server
             var tempServiceProvider = builder.Services.BuildServiceProvider();
             var settingsService = tempServiceProvider.GetRequiredService<ISettingsService>();
@@ -56,20 +56,20 @@ namespace FTdx101MP_WebApp
 
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("========================================");
-            logger.LogInformation("🌐 FT-dx101MP Web Server Started");
+            logger.LogInformation("?? FT-dx101MP Web Server Started");
             logger.LogInformation("========================================");
 
             if (settings.WebAddress == "localhost")
             {
-                logger.LogInformation("✅ Local Access:  http://localhost:{Port}", settings.WebPort);
+                logger.LogInformation("? Local Access:  http://localhost:{Port}", settings.WebPort);
             }
             else
             {
-                logger.LogInformation("✅ Local Access:  http://localhost:{Port}", settings.WebPort);
-                logger.LogInformation("✅ Network Access: http://{IPAddress}:{Port}", settings.WebAddress, settings.WebPort);
+                logger.LogInformation("? Local Access:  http://localhost:{Port}", settings.WebPort);
+                logger.LogInformation("? Network Access: http://{IPAddress}:{Port}", settings.WebAddress, settings.WebPort);
             }
 
-            logger.LogInformation("✅ API Endpoint:  http://localhost:{Port}/api/cat/status", settings.WebPort);
+            logger.LogInformation("? API Endpoint:  http://localhost:{Port}/api/cat/status", settings.WebPort);
             logger.LogInformation("========================================");
 
             // Start the web server in the background
@@ -81,7 +81,7 @@ namespace FTdx101MP_WebApp
             // Open the browser automatically
             var browserUrl = $"http://localhost:{settings.WebPort}";
             OpenBrowser(browserUrl);
-            logger.LogInformation("🌍 Browser opened: {Url}", browserUrl);
+            logger.LogInformation("?? Browser opened: {Url}", browserUrl);
 
             // Keep the application running
             await Task.Delay(-1);
