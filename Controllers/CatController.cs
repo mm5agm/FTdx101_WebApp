@@ -6,10 +6,11 @@ namespace FTdx101_WebApp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class CatController : ControllerBase
-    {
+    {   
         private readonly ICatClient _catClient;
         private readonly ISettingsService _settingsService;
         private readonly ILogger<CatController> _logger;
+        private static readonly SemaphoreSlim _requestSemaphore = new(1, 1);
 
         public CatController(ICatClient catClient, ISettingsService settingsService, ILogger<CatController> logger)
         {
@@ -30,6 +31,20 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("status")]
         public async Task<IActionResult> GetStatus()
         {
+            // FAST-FAIL for status requests - don't wait long if radio is busy
+            var acquired = await _requestSemaphore.WaitAsync(500); // Only wait 500ms for status polls
+            
+            if (!acquired)
+            {
+                _logger.LogDebug("Status request skipped - radio busy");
+                return StatusCode(503, new
+                {
+                    error = "Radio busy",
+                    message = "Radio is processing another command. Please retry.",
+                    isConnected = _catClient.IsConnected
+                });
+            }
+
             try
             {
                 await EnsureConnectedAsync();
@@ -73,14 +88,14 @@ namespace FTdx101_WebApp.Controllers
                     };
                 });
 
-                // Wait max 2 seconds
-                if (await Task.WhenAny(statusTask, Task.Delay(2000)) == statusTask)
+                // Timeout for actual serial operations
+                if (await Task.WhenAny(statusTask, Task.Delay(3000)) == statusTask)
                 {
                     return Ok(await statusTask);
                 }
                 else
                 {
-                    _logger.LogWarning("GetStatus timed out after 2 seconds");
+                    _logger.LogWarning("GetStatus serial operations timed out after 3 seconds");
                     return StatusCode(408, new
                     {
                         error = "Request timed out",
@@ -93,6 +108,10 @@ namespace FTdx101_WebApp.Controllers
             {
                 _logger.LogError(ex, "Error getting radio status");
                 return StatusCode(500, new { error = "Failed to get radio status", details = ex.Message });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
             }
         }
 
@@ -110,6 +129,11 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("frequency/a")]
         public async Task<IActionResult> GetFrequencyA()
         {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
             try
             {
                 await EnsureConnectedAsync();
@@ -121,11 +145,20 @@ namespace FTdx101_WebApp.Controllers
                 _logger.LogError(ex, "Error reading VFO-A frequency");
                 return StatusCode(500, new { error = ex.Message });
             }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
         }
 
         [HttpGet("frequency/b")]
         public async Task<IActionResult> GetFrequencyB()
         {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
             try
             {
                 await EnsureConnectedAsync();
@@ -137,15 +170,27 @@ namespace FTdx101_WebApp.Controllers
                 _logger.LogError(ex, "Error reading VFO-B frequency");
                 return StatusCode(500, new { error = ex.Message });
             }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
         }
 
         [HttpPost("frequency/a")]
         public async Task<IActionResult> SetFrequencyA([FromBody] FrequencyRequest request)
         {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
             try
             {
                 await EnsureConnectedAsync();
                 var success = await _catClient.SetFrequencyAAsync(request.FrequencyHz);
+                
+                // NO DELAY - let the radio settle naturally
+                
                 return success ? Ok(new { message = "Frequency set successfully" }) :
                     BadRequest(new { error = "Failed to set frequency" });
             }
@@ -154,15 +199,27 @@ namespace FTdx101_WebApp.Controllers
                 _logger.LogError(ex, "Error setting VFO-A frequency");
                 return StatusCode(500, new { error = "Failed to set frequency" });
             }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
         }
 
         [HttpPost("frequency/b")]
         public async Task<IActionResult> SetFrequencyB([FromBody] FrequencyRequest request)
         {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
             try
             {
                 await EnsureConnectedAsync();
                 var success = await _catClient.SetFrequencyBAsync(request.FrequencyHz);
+                
+                // NO DELAY - let the radio settle naturally
+                
                 return success ? Ok(new { message = "Frequency set successfully" }) :
                     BadRequest(new { error = "Failed to set frequency" });
             }
@@ -171,11 +228,20 @@ namespace FTdx101_WebApp.Controllers
                 _logger.LogError(ex, "Error setting VFO-B frequency");
                 return StatusCode(500, new { error = "Failed to set frequency" });
             }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
         }
 
         [HttpPost("command")]
         public async Task<IActionResult> SendCommand([FromBody] CommandRequest request)
         {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
             try
             {
                 await EnsureConnectedAsync();
@@ -186,6 +252,10 @@ namespace FTdx101_WebApp.Controllers
             {
                 _logger.LogError(ex, "Error sending CAT command");
                 return StatusCode(500, new { error = "Failed to send command" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
             }
         }
 

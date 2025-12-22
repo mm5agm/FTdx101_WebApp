@@ -4,6 +4,39 @@
     ViewData["Title"] = "FT-dx101 Series Control";
 }
 
+<style>
+    .digit-display {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        touch-action: pan-y;
+        font-size: 2rem;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        padding: 0.5rem;
+        background: white;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem 0 0 0.375rem;
+    }
+    
+    .digit:hover {
+        background-color: #e3f2fd !important;
+    }
+    
+    .digit {
+        display: inline-block;
+        min-width: 1em;
+        padding: 0 2px;
+        transition: background-color 0.2s;
+    }
+    
+    .digit.selected {
+        background-color: #ffeb3b;
+        font-weight: bold;
+    }
+</style>
+
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-12">
@@ -11,6 +44,9 @@
                 <i class="bi bi-broadcast-pin"></i> FT-dx101 Series Web Control
             </h1>
             <p class="lead text-muted">Supports FT-dx101MP (dual receiver) and FT-dx101D (single receiver)</p>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> <strong>Tip:</strong> Click on any frequency digit, then use mouse wheel (desktop) or swipe up/down (mobile) to tune!
+            </div>
         </div>
     </div>
 
@@ -28,8 +64,9 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold">Frequency</label>
                         <div class="input-group input-group-lg mb-2">
-                            <input type="text" class="form-control text-center fw-bold"
-                                   id="freqA" value="---.---.---" readonly style="font-size: 2rem; letter-spacing: 0.1em;">
+                            <div id="freqA" class="digit-display text-center fw-bold flex-grow-1">
+                                <span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>
+                            </div>
                             <span class="input-group-text">Hz</span>
                         </div>
                         <!-- Frequency Controls -->
@@ -106,8 +143,9 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold">Frequency</label>
                         <div class="input-group input-group-lg mb-2">
-                            <input type="text" class="form-control text-center fw-bold"
-                                   id="freqB" value="---.---.---" readonly style="font-size: 2rem; letter-spacing: 0.1em;">
+                            <div id="freqB" class="digit-display text-center fw-bold flex-grow-1">
+                                <span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>
+                            </div>
                             <span class="input-group-text">Hz</span>
                         </div>
                         <!-- Frequency Controls -->
@@ -191,28 +229,162 @@
         let freqA = 0;
         let freqB = 0;
 
-        // Request throttling
-        let isFetching = false;
-        let isAdjusting = false;
-        let consecutiveErrors = 0;
-        let pollInterval = 1000; // Start with 1 second polling
+        // Digit selection state
+        let selectedDigit = -1;
+        let activeReceiver = null;
 
-        // Fetch radio status from API
-        async function fetchRadioStatus() {
-            // Skip if already fetching or adjusting frequency
-            if (isFetching || isAdjusting) {
-                return;
+        // Request throttling - OPTIMIZED FOR NETWORK CLIENTS
+        let isFetching = false;
+        let pendingFrequencyUpdate = null;
+        let consecutiveErrors = 0;
+        let pollInterval = 1000;
+        let maxPollInterval = 3000;
+        let pollingIntervalId = null;
+
+        // Debounce timers for each receiver
+        let debounceTimerA = null;
+        let debounceTimerB = null;
+
+        // Initialize digit interaction on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDigitInteraction('A');
+            initializeDigitInteraction('B');
+        });
+
+        // Initialize clickable digits for a receiver
+        function initializeDigitInteraction(receiver) {
+            const display = document.getElementById('freq' + receiver);
+            const digits = display.querySelectorAll('.digit');
+            
+            digits.forEach((digit, index) => {
+                const textContent = digit.textContent;
+                if (textContent === '.') return;
+                
+                digit.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectDigit(receiver, getDigitPosition(display, digit));
+                });
+                
+                digit.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    selectDigit(receiver, getDigitPosition(display, digit));
+                });
+            });
+            
+            // Mouse wheel support (desktop)
+            display.addEventListener('wheel', (e) => {
+                if (activeReceiver === receiver && selectedDigit >= 0) {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? -1 : 1;
+                    adjustDigit(receiver, selectedDigit, delta);
+                }
+            }, { passive: false });
+            
+            // Touch swipe support (mobile/tablet)
+            let touchStartY = 0;
+            let touchThreshold = 30;
+            let lastAdjustTime = 0;
+            
+            display.addEventListener('touchstart', (e) => {
+                if (activeReceiver === receiver && selectedDigit >= 0) {
+                    touchStartY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+            
+            display.addEventListener('touchmove', (e) => {
+                if (activeReceiver === receiver && selectedDigit >= 0 && touchStartY !== 0) {
+                    const touchDelta = touchStartY - e.touches[0].clientY;
+                    
+                    if (Math.abs(touchDelta) > touchThreshold) {
+                        const now = Date.now();
+                        if (now - lastAdjustTime > 150) {
+                            e.preventDefault();
+                            const delta = touchDelta > 0 ? 1 : -1;
+                            adjustDigit(receiver, selectedDigit, delta);
+                            touchStartY = e.touches[0].clientY;
+                            lastAdjustTime = now;
+                        }
+                    }
+                }
+            }, { passive: false });
+            
+            display.addEventListener('touchend', () => {
+                touchStartY = 0;
+            });
+        }
+
+        function getDigitPosition(display, digitElement) {
+            const allElements = Array.from(display.querySelectorAll('.digit'));
+            const digitElements = allElements.filter(el => el.textContent !== '.');
+            const displayIndex = digitElements.indexOf(digitElement);
+            return 8 - displayIndex;
+        }
+
+        function selectDigit(receiver, position) {
+            if (activeReceiver) {
+                const prevDisplay = document.getElementById('freq' + activeReceiver);
+                const prevDigits = prevDisplay.querySelectorAll('.digit');
+                prevDigits.forEach(d => d.classList.remove('selected'));
             }
+            
+            activeReceiver = receiver;
+            selectedDigit = position;
+            
+            const display = document.getElementById('freq' + receiver);
+            const digitElements = Array.from(display.querySelectorAll('.digit')).filter(el => el.textContent !== '.');
+            const actualIndex = 8 - position;
+            
+            if (digitElements[actualIndex]) {
+                digitElements[actualIndex].classList.add('selected');
+            }
+        }
+
+        function adjustDigit(receiver, digitPos, delta) {
+            const multiplier = Math.pow(10, digitPos);
+            adjustFrequency(receiver, delta * multiplier);
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.digit-display')) {
+                if (activeReceiver) {
+                    const display = document.getElementById('freq' + activeReceiver);
+                    const digits = display.querySelectorAll('.digit');
+                    digits.forEach(d => d.classList.remove('selected'));
+                }
+                selectedDigit = -1;
+                activeReceiver = null;
+            }
+        });
+
+        async function fetchRadioStatus() {
+            if (isFetching) return;
 
             isFetching = true;
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
 
                 const response = await fetch('/api/cat/status', {
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
+
+                if (response.status === 503) {
+                    console.debug('Radio busy (503), skipping this poll cycle');
+                    consecutiveErrors = 0;
+                    isFetching = false;
+                    return;
+                }
+
+                if (response.status === 408) {
+                    console.debug('Request timeout (408), radio may be slow');
+                    consecutiveErrors++;
+                    if (consecutiveErrors > 5) {
+                        adjustPollingInterval(Math.min(maxPollInterval, pollInterval + 500));
+                    }
+                    isFetching = false;
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -221,71 +393,184 @@
                 const data = await response.json();
                 updateDisplay(data);
 
-                // Reset error counter on success
                 consecutiveErrors = 0;
-                pollInterval = 1000; // Back to 1 second
+                adjustPollingInterval(1000);
 
             } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.warn('Status request aborted (timeout)');
+                } else {
+                    console.error('Error fetching radio status:', error);
+                }
+                
                 consecutiveErrors++;
-                console.error('Error fetching radio status:', error);
 
-                // Slow down polling on repeated errors
                 if (consecutiveErrors > 3) {
-                    pollInterval = 3000; // Slow to 3 seconds after errors
+                    adjustPollingInterval(Math.min(maxPollInterval, pollInterval + 500));
                 }
 
-                updateConnectionStatus(false, `Connection error (${consecutiveErrors} errors)`);
+                if (consecutiveErrors > 2) {
+                    updateConnectionStatus(false, `Connection error (${consecutiveErrors} errors)`);
+                }
             } finally {
                 isFetching = false;
             }
         }
 
-        // Update display with radio data
+        function adjustPollingInterval(newInterval) {
+            if (pollInterval === newInterval) return;
+            
+            pollInterval = newInterval;
+            
+            if (pollingIntervalId) {
+                clearInterval(pollingIntervalId);
+            }
+            pollingIntervalId = setInterval(fetchRadioStatus, pollInterval);
+        }
+
+        function adjustFrequency(receiver, change) {
+            const currentFreq = receiver === 'A' ? freqA : freqB;
+            const newFreq = Math.max(30000, Math.min(75000000, currentFreq + change));
+
+            if (receiver === 'A') {
+                freqA = newFreq;
+            } else {
+                freqB = newFreq;
+            }
+            updateFrequencyDisplay(receiver, newFreq);
+
+            pendingFrequencyUpdate = { receiver, frequency: newFreq, timestamp: Date.now() };
+
+            if (receiver === 'A' && debounceTimerA) {
+                clearTimeout(debounceTimerA);
+            } else if (receiver === 'B' && debounceTimerB) {
+                clearTimeout(debounceTimerB);
+            }
+
+            const debounceDelay = 200;
+            const timerCallback = () => sendFrequencyToRadio(receiver, newFreq);
+            
+            if (receiver === 'A') {
+                debounceTimerA = setTimeout(timerCallback, debounceDelay);
+            } else {
+                debounceTimerB = setTimeout(timerCallback, debounceDelay);
+            }
+        }
+
+        async function sendFrequencyToRadio(receiver, newFreq) {
+            const endpoint = receiver === 'A' ? '/api/cat/frequency/a' : '/api/cat/frequency/b';
+            
+            console.log(`Sending frequency ${newFreq} to ${receiver}`);
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ frequencyHz: newFreq }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    console.error('Failed to set frequency');
+                    pendingFrequencyUpdate = null;
+                }
+                
+            } catch (error) {
+                console.error('Error setting frequency:', error);
+                pendingFrequencyUpdate = null;
+            }
+        }
+
         function updateDisplay(data) {
             if (!data.isConnected) {
                 updateConnectionStatus(false, data.message || 'Not connected');
                 return;
             }
 
-            // Update VFO-A
-            freqA = data.vfoA.frequency;
-            updateFrequencyDisplay('A', freqA);
+            const now = Date.now();
+            
+            if (!pendingFrequencyUpdate || pendingFrequencyUpdate.receiver !== 'A') {
+                freqA = data.vfoA.frequency;
+                updateFrequencyDisplay('A', freqA);
+            } else if (pendingFrequencyUpdate.receiver === 'A') {
+                if (data.vfoA.frequency === pendingFrequencyUpdate.frequency) {
+                    console.log('VFO-A: Radio caught up to pending frequency:', data.vfoA.frequency);
+                    pendingFrequencyUpdate = null;
+                    freqA = data.vfoA.frequency;
+                    updateFrequencyDisplay('A', freqA);
+                } else if (now - pendingFrequencyUpdate.timestamp > 3000) {
+                    console.log('VFO-A: Pending update timeout, using radio frequency:', data.vfoA.frequency);
+                    pendingFrequencyUpdate = null;
+                    freqA = data.vfoA.frequency;
+                    updateFrequencyDisplay('A', freqA);
+                } else {
+                    console.debug('VFO-A: Waiting for radio. Pending:', pendingFrequencyUpdate.frequency, 'Radio:', data.vfoA.frequency);
+                }
+            }
+            
             document.getElementById('modeA').value = data.vfoA.mode;
             updateSMeter('A', data.vfoA.sMeter);
 
-            // Update VFO-B
-            freqB = data.vfoB.frequency;
-            updateFrequencyDisplay('B', freqB);
+            if (!pendingFrequencyUpdate || pendingFrequencyUpdate.receiver !== 'B') {
+                freqB = data.vfoB.frequency;
+                updateFrequencyDisplay('B', freqB);
+            } else if (pendingFrequencyUpdate.receiver === 'B') {
+                if (data.vfoB.frequency === pendingFrequencyUpdate.frequency) {
+                    console.log('VFO-B: Radio caught up to pending frequency:', data.vfoB.frequency);
+                    pendingFrequencyUpdate = null;
+                    freqB = data.vfoB.frequency;
+                    updateFrequencyDisplay('B', freqB);
+                } else if (now - pendingFrequencyUpdate.timestamp > 3000) {
+                    console.log('VFO-B: Pending update timeout, using radio frequency:', data.vfoB.frequency);
+                    pendingFrequencyUpdate = null;
+                    freqB = data.vfoB.frequency;
+                    updateFrequencyDisplay('B', freqB);
+                } else {
+                    console.debug('VFO-B: Waiting for radio. Pending:', pendingFrequencyUpdate.frequency, 'Radio:', data.vfoB.frequency);
+                }
+            }
+            
             document.getElementById('modeB').value = data.vfoB.mode;
             updateSMeter('B', data.vfoB.sMeter);
 
-            // Update timestamps
-            const now = new Date().toLocaleTimeString();
-            document.getElementById('lastUpdateA').textContent = now;
-            document.getElementById('lastUpdateB').textContent = now;
+            const time = new Date().toLocaleTimeString();
+            document.getElementById('lastUpdateA').textContent = time;
+            document.getElementById('lastUpdateB').textContent = time;
 
-            // Update connection status
             updateConnectionStatus(true, 'Connected to FT-dx101');
         }
 
-        // Update frequency display
         function updateFrequencyDisplay(receiver, freqHz) {
+            const display = document.getElementById('freq' + receiver);
+            
             if (freqHz === 0) {
-                document.getElementById('freq' + receiver).value = '---.---.---';
+                const digits = display.querySelectorAll('.digit');
+                digits.forEach(d => {
+                    if (d.textContent !== '.') {
+                        d.textContent = '-';
+                    }
+                });
                 return;
             }
 
-            // Format frequency with thousands separators
             const formatted = freqHz.toString().padStart(9, '0');
-            const display = formatted.substring(0, 3) + '.' +
-                          formatted.substring(3, 6) + '.' +
-                          formatted.substring(6, 9);
-            document.getElementById('freq' + receiver).value = display;
+            const digitElements = Array.from(display.querySelectorAll('.digit')).filter(el => el.textContent !== '.');
+            
+            for (let i = 0; i < 9 && i < digitElements.length; i++) {
+                const currentlySelected = digitElements[i].classList.contains('selected');
+                digitElements[i].textContent = formatted[i];
+                if (currentlySelected) {
+                    digitElements[i].classList.add('selected');
+                }
+            }
         }
 
-        // Update S-Meter display
         function updateSMeter(receiver, value) {
-            // S-Meter scale: 0-255
             const percentage = (value / 255) * 100;
 
             let displayText = 'S0';
@@ -302,7 +587,6 @@
             document.getElementById('sMeterValue' + receiver).textContent = displayText;
         }
 
-        // Update connection status
         function updateConnectionStatus(connected, message) {
             const statusText = document.getElementById('statusText');
             const systemStatus = document.getElementById('systemStatus');
@@ -320,63 +604,11 @@
             }
         }
 
-        // Adjust frequency function
-        async function adjustFrequency(receiver, change) {
-            if (isAdjusting) {
-                console.log('Already adjusting frequency, skipping...');
-                return;
-            }
-
-            const currentFreq = receiver === 'A' ? freqA : freqB;
-            const newFreq = Math.max(30000, Math.min(75000000, currentFreq + change));
-
-            isAdjusting = true;
-            try {
-                const endpoint = receiver === 'A' ? '/api/cat/frequency/a' : '/api/cat/frequency/b';
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ frequencyHz: newFreq }),
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (response.ok) {
-                    // Update local value immediately for responsiveness
-                    if (receiver === 'A') {
-                        freqA = newFreq;
-                    } else {
-                        freqB = newFreq;
-                    }
-                    updateFrequencyDisplay(receiver, newFreq);
-
-                    // Wait a bit before resuming polling
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                } else {
-                    console.error('Failed to set frequency:', await response.text());
-                }
-            } catch (error) {
-                console.error('Error setting frequency:', error);
-            } finally {
-                isAdjusting = false;
-            }
-        }
-
-        // Dynamic polling with adjustable interval
         function startPolling() {
-            fetchRadioStatus(); // Initial fetch
-
-            setInterval(() => {
-                fetchRadioStatus();
-            }, () => pollInterval); // Use dynamic interval
+            fetchRadioStatus();
+            pollingIntervalId = setInterval(fetchRadioStatus, pollInterval);
         }
 
-        // Start polling
         startPolling();
     </script>
 }
