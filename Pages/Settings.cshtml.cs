@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using FTdx101MP_WebApp.Models;
-using FTdx101MP_WebApp.Services;
+using FTdx101_WebApp.Models;
+using FTdx101_WebApp.Services;
 
-namespace FTdx101MP_WebApp.Pages
+namespace FTdx101_WebApp.Pages
 {
     public class SettingsModel : PageModel
     {
@@ -49,7 +49,7 @@ namespace FTdx101MP_WebApp.Pages
                 ModelState.AddModelError("Settings.WebPort",
                     $"Port {Settings.WebPort} is blocked by most browsers for security reasons. " +
                     "Please use a different port (recommended: 8080, 5000, or 8000).");
-                StatusMessage = $"⚠️ Port validation failed: Port {Settings.WebPort} is unsafe.";
+                StatusMessage = $"?? Port validation failed: Port {Settings.WebPort} is unsafe.";
                 return Page();
             }
 
@@ -65,7 +65,7 @@ namespace FTdx101MP_WebApp.Pages
             {
                 await _settingsService.SaveSettingsAsync(Settings);
 
-                StatusMessage = $"✅ Settings saved successfully! Web server will be available at http://{Settings.WebAddress}:{Settings.WebPort}. " +
+                StatusMessage = $"? Settings saved successfully! Web server will be available at http://{Settings.WebAddress}:{Settings.WebPort}. " +
                     "Please restart the application for web server changes to take effect.";
 
                 _logger.LogInformation(
@@ -75,7 +75,7 @@ namespace FTdx101MP_WebApp.Pages
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving settings");
-                StatusMessage = "❌ Error saving settings. Please try again.";
+                StatusMessage = "? Error saving settings. Please try again.";
                 ModelState.AddModelError(string.Empty, "An error occurred while saving settings.");
                 return Page();
             }

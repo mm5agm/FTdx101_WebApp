@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using FTdx101MP_WebApp.Services;
+using FTdx101_WebApp.Services;
 
-namespace FTdx101MP_WebApp.Controllers
+namespace FTdx101_WebApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

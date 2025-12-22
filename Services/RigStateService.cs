@@ -1,6 +1,6 @@
-﻿using FTdx101MP_WebApp.Models;
+using FTdx101_WebApp.Models;
 
-namespace FTdx101MP_WebApp.Services
+namespace FTdx101_WebApp.Services
 {
     public class RigStateService : IRigStateService
     {

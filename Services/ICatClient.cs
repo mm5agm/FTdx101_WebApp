@@ -1,4 +1,4 @@
-﻿namespace FTdx101MP_WebApp.Services
+namespace FTdx101_WebApp.Services
 {
     public interface ICatClient : IDisposable
     {

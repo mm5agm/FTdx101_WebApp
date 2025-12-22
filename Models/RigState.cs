@@ -1,4 +1,4 @@
-﻿namespace FTdx101MP_WebApp.Models
+namespace FTdx101_WebApp.Models
 {
     public class RigState
     {

@@ -1,16 +1,16 @@
-﻿@page
+@page
 @model IndexModel
 @{
-    ViewData["Title"] = "FT-dx101MP Control";
+    ViewData["Title"] = "FT-dx101 Series Control";
 }
 
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-12">
             <h1 class="display-5">
-                <i class="bi bi-broadcast-pin"></i> FT-dx101MP Dual Receiver Control
+                <i class="bi bi-broadcast-pin"></i> FT-dx101 Series Web Control
             </h1>
-            <p class="lead text-muted">Monitor and control both receivers simultaneously</p>
+            <p class="lead text-muted">Supports FT-dx101MP (dual receiver) and FT-dx101D (single receiver)</p>
         </div>
     </div>
 
@@ -265,7 +265,7 @@
             document.getElementById('lastUpdateB').textContent = now;
 
             // Update connection status
-            updateConnectionStatus(true, 'Connected to FT-dx101MP');
+            updateConnectionStatus(true, 'Connected to FT-dx101');
         }
 
         // Update frequency display

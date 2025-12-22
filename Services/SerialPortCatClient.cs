@@ -1,7 +1,7 @@
-﻿using System.IO.Ports;
+using System.IO.Ports;
 using System.Text;
 
-namespace FTdx101MP_WebApp.Services
+namespace FTdx101_WebApp.Services
 {
     public class SerialPortCatClient : ICatClient
     {
@@ -142,7 +142,7 @@ namespace FTdx101MP_WebApp.Services
                             return cleaned;
                         }
 
-                        _logger.LogWarning("⚠️ TIMEOUT: No response for {Command} after {ElapsedMs}ms ({Iterations} iterations)",
+                        _logger.LogWarning("?? TIMEOUT: No response for {Command} after {ElapsedMs}ms ({Iterations} iterations)",
                             fullCommand.TrimEnd(';'), elapsedMs, iterations);
                         return string.Empty;
                     }
