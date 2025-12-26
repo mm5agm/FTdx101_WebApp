@@ -1,7 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using FTdx101_WebApp.Models;
 using FTdx101_WebApp.Services;
+using System.Net;
+using System.Net.Sockets;
+using System.Net.NetworkInformation;
 
 namespace FTdx101_WebApp.Pages
 {
@@ -16,6 +19,8 @@ namespace FTdx101_WebApp.Pages
         [TempData]
         public string? StatusMessage { get; set; }
 
+        public List<string> NetworkAddresses { get; set; } = new();
+
         public SettingsModel(ISettingsService settingsService, ILogger<SettingsModel> logger)
         {
             _settingsService = settingsService;
@@ -25,6 +30,7 @@ namespace FTdx101_WebApp.Pages
         public async Task<IActionResult> OnGetAsync()
         {
             Settings = await _settingsService.GetSettingsAsync();
+            NetworkAddresses = GetLocalIPAddresses();
             return Page();
         }
 
@@ -32,6 +38,7 @@ namespace FTdx101_WebApp.Pages
         {
             if (!ModelState.IsValid)
             {
+                NetworkAddresses = GetLocalIPAddresses();
                 return Page();
             }
 
@@ -40,6 +47,7 @@ namespace FTdx101_WebApp.Pages
             {
                 ModelState.AddModelError("Settings.WebPort",
                     "Port must be between 1024 and 65535. Ports below 1024 require administrator privileges.");
+                NetworkAddresses = GetLocalIPAddresses();
                 return Page();
             }
 
@@ -49,7 +57,8 @@ namespace FTdx101_WebApp.Pages
                 ModelState.AddModelError("Settings.WebPort",
                     $"Port {Settings.WebPort} is blocked by most browsers for security reasons. " +
                     "Please use a different port (recommended: 8080, 5000, or 8000).");
-                StatusMessage = $"?? Port validation failed: Port {Settings.WebPort} is unsafe.";
+                StatusMessage = $"❌ Port validation failed: Port {Settings.WebPort} is unsafe.";
+                NetworkAddresses = GetLocalIPAddresses();
                 return Page();
             }
 
@@ -58,6 +67,7 @@ namespace FTdx101_WebApp.Pages
             {
                 ModelState.AddModelError("Settings.SerialPort",
                     "Serial port must start with 'COM' (e.g., COM3, COM4).");
+                NetworkAddresses = GetLocalIPAddresses();
                 return Page();
             }
 
@@ -65,22 +75,61 @@ namespace FTdx101_WebApp.Pages
             {
                 await _settingsService.SaveSettingsAsync(Settings);
 
-                StatusMessage = $"? Settings saved successfully! Web server will be available at http://{Settings.WebAddress}:{Settings.WebPort}. " +
+                var accessInfo = Settings.WebAddress == "0.0.0.0" 
+                    ? "all network interfaces" 
+                    : Settings.WebAddress == "localhost"
+                        ? "localhost only"
+                        : $"{Settings.WebAddress}";
+
+                StatusMessage = $"✓ Settings saved successfully! Web server will be available on {accessInfo} at port {Settings.WebPort}. " +
                     "Please restart the application for web server changes to take effect.";
 
                 _logger.LogInformation(
-                    "Settings updated: SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort={WebPort}",
-                    Settings.SerialPort, Settings.BaudRate, Settings.WebAddress, Settings.WebPort);
+                    "Settings updated: RadioModel={RadioModel}, SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort={WebPort}",
+                    Settings.RadioModel, Settings.SerialPort, Settings.BaudRate, Settings.WebAddress, Settings.WebPort);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving settings");
-                StatusMessage = "? Error saving settings. Please try again.";
+                StatusMessage = "❌ Error saving settings. Please try again.";
                 ModelState.AddModelError(string.Empty, "An error occurred while saving settings.");
+                NetworkAddresses = GetLocalIPAddresses();
                 return Page();
             }
 
             return RedirectToPage();
+        }
+
+        private List<string> GetLocalIPAddresses()
+        {
+            var addresses = new List<string>();
+            
+            try
+            {
+                var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(ni => ni.OperationalStatus == OperationalStatus.Up &&
+                                ni.NetworkInterfaceType != NetworkInterfaceType.Loopback);
+
+                foreach (var networkInterface in networkInterfaces)
+                {
+                    var ipProperties = networkInterface.GetIPProperties();
+                    foreach (var ip in ipProperties.UnicastAddresses)
+                    {
+                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork) // IPv4 only
+                        {
+                            addresses.Add(ip.Address.ToString());
+                        }
+                    }
+                }
+
+                _logger.LogDebug("Detected network addresses: {Addresses}", string.Join(", ", addresses));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to detect network addresses");
+            }
+
+            return addresses;
         }
     }
 }

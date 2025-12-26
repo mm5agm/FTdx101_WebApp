@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using FTdx101_WebApp.Services;
 
 namespace FTdx101_WebApp.Controllers
@@ -189,8 +189,6 @@ namespace FTdx101_WebApp.Controllers
                 await EnsureConnectedAsync();
                 var success = await _catClient.SetFrequencyAAsync(request.FrequencyHz);
                 
-                // NO DELAY - let the radio settle naturally
-                
                 return success ? Ok(new { message = "Frequency set successfully" }) :
                     BadRequest(new { error = "Failed to set frequency" });
             }
@@ -218,8 +216,6 @@ namespace FTdx101_WebApp.Controllers
                 await EnsureConnectedAsync();
                 var success = await _catClient.SetFrequencyBAsync(request.FrequencyHz);
                 
-                // NO DELAY - let the radio settle naturally
-                
                 return success ? Ok(new { message = "Frequency set successfully" }) :
                     BadRequest(new { error = "Failed to set frequency" });
             }
@@ -227,6 +223,114 @@ namespace FTdx101_WebApp.Controllers
             {
                 _logger.LogError(ex, "Error setting VFO-B frequency");
                 return StatusCode(500, new { error = "Failed to set frequency" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("mode/a")]
+        public async Task<IActionResult> SetModeA([FromBody] ModeRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
+            try
+            {
+                await EnsureConnectedAsync();
+                var success = await _catClient.SetModeMainAsync(request.Mode);
+                
+                return success ? Ok(new { message = $"Mode set to {request.Mode}" }) :
+                    BadRequest(new { error = "Failed to set mode" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting VFO-A mode");
+                return StatusCode(500, new { error = "Failed to set mode" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("mode/b")]
+        public async Task<IActionResult> SetModeB([FromBody] ModeRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
+            try
+            {
+                await EnsureConnectedAsync();
+                var success = await _catClient.SetModeSubAsync(request.Mode);
+                
+                return success ? Ok(new { message = $"Mode set to {request.Mode}" }) :
+                    BadRequest(new { error = "Failed to set mode" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting VFO-B mode");
+                return StatusCode(500, new { error = "Failed to set mode" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("antenna/a")]
+        public async Task<IActionResult> SetAntennaA([FromBody] AntennaRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
+            try
+            {
+                await EnsureConnectedAsync();
+                var command = $"AN0{request.Antenna};";
+                await _catClient.SendCommandAsync(command);
+                _logger.LogInformation("Set Main antenna to {Antenna}", request.Antenna);
+                return Ok(new { message = $"Antenna {request.Antenna} selected" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Main antenna");
+                return StatusCode(500, new { error = "Failed to set antenna" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("antenna/b")]
+        public async Task<IActionResult> SetAntennaB([FromBody] AntennaRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+            
+            try
+            {
+                await EnsureConnectedAsync();
+                var command = $"AN1{request.Antenna};";
+                await _catClient.SendCommandAsync(command);
+                _logger.LogInformation("Set Sub antenna to {Antenna}", request.Antenna);
+                return Ok(new { message = $"Antenna {request.Antenna} selected" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Sub antenna");
+                return StatusCode(500, new { error = "Failed to set antenna" });
             }
             finally
             {
@@ -259,7 +363,26 @@ namespace FTdx101_WebApp.Controllers
             }
         }
 
+        [HttpPost("disconnect")]
+        public async Task<IActionResult> Disconnect()
+        {
+            try
+            {
+                _logger.LogInformation("📴 Manual disconnect requested");
+                await _catClient.DisconnectAsync();
+                return Ok(new { message = "Disconnected successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error disconnecting");
+                return StatusCode(500, new { error = "Failed to disconnect" });
+            }
+        }
+
+        // Request models
         public class FrequencyRequest { public long FrequencyHz { get; set; } }
+        public class ModeRequest { public string Mode { get; set; } = string.Empty; }
         public class CommandRequest { public string Command { get; set; } = string.Empty; }
+        public class AntennaRequest { public string Antenna { get; set; } = string.Empty; }
     }
 }

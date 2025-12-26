@@ -1,4 +1,4 @@
-using FTdx101_WebApp.Services;
+﻿using FTdx101_WebApp.Services;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -56,21 +56,36 @@ namespace FTdx101_WebApp
 
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("========================================");
-            logger.LogInformation("?? FT-dx101MP Web Server Started");
+            logger.LogInformation("📡 FT-dx101MP Web Server Started");
             logger.LogInformation("========================================");
 
             if (settings.WebAddress == "localhost")
             {
-                logger.LogInformation("? Local Access:  http://localhost:{Port}", settings.WebPort);
+                logger.LogInformation("🏠 Local Access:  http://localhost:{Port}", settings.WebPort);
             }
             else
             {
-                logger.LogInformation("? Local Access:  http://localhost:{Port}", settings.WebPort);
-                logger.LogInformation("? Network Access: http://{IPAddress}:{Port}", settings.WebAddress, settings.WebPort);
+                logger.LogInformation("🏠 Local Access:  http://localhost:{Port}", settings.WebPort);
+                logger.LogInformation("🌐 Network Access: http://{IPAddress}:{Port}", settings.WebAddress, settings.WebPort);
             }
 
-            logger.LogInformation("? API Endpoint:  http://localhost:{Port}/api/cat/status", settings.WebPort);
+            logger.LogInformation("🔌 API Endpoint:  http://localhost:{Port}/api/cat/status", settings.WebPort);
             logger.LogInformation("========================================");
+
+            // Register cleanup on application shutdown (OPTION 1)
+            var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+            lifetime.ApplicationStopping.Register(() =>
+            {
+                logger.LogInformation("⚠️ Application stopping - releasing COM port...");
+                
+                var catClient = app.Services.GetRequiredService<ICatClient>();
+                if (catClient is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+                
+                logger.LogInformation("✅ COM port released successfully");
+            });
 
             // Start the web server in the background
             _ = Task.Run(() => app.Run());
@@ -81,7 +96,7 @@ namespace FTdx101_WebApp
             // Open the browser automatically
             var browserUrl = $"http://localhost:{settings.WebPort}";
             OpenBrowser(browserUrl);
-            logger.LogInformation("?? Browser opened: {Url}", browserUrl);
+            logger.LogInformation("🌐 Browser opened: {Url}", browserUrl);
 
             // Keep the application running
             await Task.Delay(-1);

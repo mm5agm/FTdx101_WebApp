@@ -1,4 +1,4 @@
-namespace FTdx101_WebApp.Services
+﻿namespace FTdx101_WebApp.Services
 {
     public interface ICatClient : IDisposable
     {
@@ -15,12 +15,14 @@ namespace FTdx101_WebApp.Services
         Task<int> ReadSMeterMainAsync();
         Task<string> ReadModeAsync();
         Task<string> ReadModeMainAsync();
+        Task<bool> SetModeMainAsync(string mode);  // ← ADD THIS LINE
 
         // VFO-B (Sub) Methods
         Task<long> ReadFrequencyBAsync();
         Task<bool> SetFrequencyBAsync(long frequencyHz);
         Task<int> ReadSMeterSubAsync();
         Task<string> ReadModeSubAsync();
+        Task<bool> SetModeSubAsync(string mode);  // ← ADD THIS LINE
 
         // Common Methods
         Task<bool> ReadTransmitStatusAsync();
