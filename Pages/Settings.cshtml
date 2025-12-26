@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model FTdx101_WebApp.Pages.SettingsModel
 @{
     ViewData["Title"] = "Settings";
@@ -6,15 +6,74 @@
 
 <div class="container mt-4">
     <h1 class="display-4">Application Settings</h1>
-    <p class="lead">Configure your FT-dx101MP connection and web server settings.</p>
+    <p class="lead">Configure your FT-dx101 Series radio connection and web server settings.</p>
 
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
-        <div class="alert @(Model.StatusMessage.Contains("success") || Model.StatusMessage.Contains("?") ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+        <div class="alert @(Model.StatusMessage.Contains("success") || Model.StatusMessage.Contains("✓") ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
             @Model.StatusMessage
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
+
+    <!-- Network Access URLs Card -->
+    <div class="card mb-4 border-info">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0"><i class="bi bi-globe"></i> Network Access URLs</h4>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">Use these URLs to access the web interface:</p>
+            
+            <div class="list-group">
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1"><i class="bi bi-laptop"></i> Local Access (This PC)</h6>
+                            <code class="fs-5" id="localUrl">http://localhost:@Model.Settings.WebPort</code>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('localUrl')">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                
+                @if (Model.NetworkAddresses != null && Model.NetworkAddresses.Any())
+                {
+                    @foreach (var addr in Model.NetworkAddresses)
+                    {
+                        var urlId = $"netUrl{addr.Replace(".", "_")}";
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1"><i class="bi bi-tablet"></i> Network Access (Tablets/Phones)</h6>
+                                    <code class="fs-5" id="@urlId">http://@addr:@Model.Settings.WebPort</code>
+                                    @if (addr.StartsWith("192.168") || addr.StartsWith("10.") || addr.StartsWith("172."))
+                                    {
+                                        <small class="text-muted d-block">Private Network</small>
+                                    }
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('@urlId')">
+                                    <i class="bi bi-clipboard"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="list-group-item">
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> No network interfaces detected. Connect to a network to access from other devices.
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0">
+                <i class="bi bi-info-circle"></i> <strong>Tip:</strong> Bookmark these URLs on your tablets and phones for quick access!
+            </div>
+        </div>
+    </div>
 
     <div class="card">
         <div class="card-header">
@@ -27,10 +86,23 @@
                         <h5 class="mb-3">Radio Connection</h5>
 
                         <div class="mb-3">
+                            <label asp-for="Settings.RadioModel" class="form-label">Radio Model</label>
+                            <select asp-for="Settings.RadioModel" class="form-select">
+                                <option value="FTdx101MP">FT-dx101MP (Dual Receiver)</option>
+                                <option value="FTdx101D">FT-dx101D (Single Receiver)</option>
+                            </select>
+                            <div class="form-text">
+                                <strong>FT-dx101MP:</strong> Dual receiver model - displays both VFO A and VFO B<br />
+                                <strong>FT-dx101D:</strong> Single receiver model - displays VFO A only
+                            </div>
+                            <span asp-validation-for="Settings.RadioModel" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
                             <label asp-for="Settings.SerialPort" class="form-label">Serial Port</label>
                             <input asp-for="Settings.SerialPort" class="form-control" placeholder="COM3" required />
                             <div class="form-text">
-                                Enter the COM port where your FT-dx101MP is connected (e.g., COM3, COM4).
+                                Enter the COM port where your radio is connected (e.g., COM3, COM4).
                                 <br /><strong>Tip:</strong> Check Device Manager to find the correct port.
                             </div>
                             <span asp-validation-for="Settings.SerialPort" class="text-danger"></span>
@@ -42,13 +114,13 @@
                                 <option value="4800">4800</option>
                                 <option value="9600">9600</option>
                                 <option value="19200">19200</option>
-                                <option value="38400">38400 (Default)</option>
+                                <option value="38400" selected>38400 (Default)</option>
                                 <option value="57600">57600</option>
                                 <option value="115200">115200</option>
                             </select>
                             <div class="form-text">
                                 Select the baud rate configured in your radio.
-                                <br /><strong>Default:</strong> 38400 for FT-dx101MP
+                                <br /><strong>Default:</strong> 38400 for FT-dx101 Series
                             </div>
                             <span asp-validation-for="Settings.BaudRate" class="text-danger"></span>
                         </div>
@@ -58,13 +130,31 @@
                         <h5 class="mb-3">Web Server</h5>
 
                         <div class="mb-3">
-                            <label asp-for="Settings.WebAddress" class="form-label">Web Address</label>
-                            <input asp-for="Settings.WebAddress" class="form-control" placeholder="localhost" required />
+                            <label asp-for="Settings.WebAddress" class="form-label">Network Interface</label>
+                            <select asp-for="Settings.WebAddress" class="form-select" id="webAddressSelect">
+                                <option value="localhost">localhost (This PC only)</option>
+                                <option value="0.0.0.0" selected>All Interfaces (Recommended - works with DHCP and Static IP)</option>
+                                @if (Model.NetworkAddresses != null)
+                                {
+                                    @foreach (var addr in Model.NetworkAddresses)
+                                    {
+                                        <option value="@addr">@addr (Specific IP)</option>
+                                    }
+                                }
+                            </select>
                             <div class="form-text">
-                                <strong>localhost</strong> - Only accessible from this computer<br />
-                                <strong>Your IP (e.g., 192.168.0.100)</strong> - Accessible from other devices on your network
+                                <strong>localhost:</strong> Only accessible from this computer<br />
+                                <strong>All Interfaces (0.0.0.0):</strong> Best choice - works regardless of DHCP or Static IP<br />
+                                <strong>Specific IP:</strong> Bind to a particular network interface
                             </div>
                             <span asp-validation-for="Settings.WebAddress" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>DHCP vs Static IP:</strong><br />
+                            • <strong>DHCP (Dynamic):</strong> Your IP address may change when you reboot. Use "All Interfaces" setting.<br />
+                            • <strong>Static IP:</strong> Your IP address never changes. Any setting works, but "All Interfaces" is still recommended.<br />
+                            • This application works with both - no router configuration needed!
                         </div>
 
                         <div class="mb-3">
@@ -105,20 +195,40 @@
         </div>
         <div class="card-body">
             <dl class="row">
+                <dt class="col-sm-3">Radio Model:</dt>
+                <dd class="col-sm-9">
+                    <code>@Model.Settings.RadioModel</code>
+                    @if (Model.Settings.RadioModel == "FTdx101MP")
+                    {
+                        <span class="badge bg-primary">Dual Receiver</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-info">Single Receiver</span>
+                    }
+                </dd>
+
                 <dt class="col-sm-3">Serial Port:</dt>
                 <dd class="col-sm-9"><code>@Model.Settings.SerialPort</code></dd>
 
                 <dt class="col-sm-3">Baud Rate:</dt>
                 <dd class="col-sm-9"><code>@Model.Settings.BaudRate</code></dd>
 
-                <dt class="col-sm-3">Web Address:</dt>
-                <dd class="col-sm-9"><code>@Model.Settings.WebAddress</code></dd>
+                <dt class="col-sm-3">Network Interface:</dt>
+                <dd class="col-sm-9">
+                    <code>@Model.Settings.WebAddress</code>
+                    @if (Model.Settings.WebAddress == "0.0.0.0")
+                    {
+                        <span class="badge bg-success">All Interfaces</span>
+                    }
+                    else if (Model.Settings.WebAddress == "localhost")
+                    {
+                        <span class="badge bg-secondary">Local Only</span>
+                    }
+                </dd>
 
                 <dt class="col-sm-3">Web Port:</dt>
                 <dd class="col-sm-9"><code>@Model.Settings.WebPort</code></dd>
-
-                <dt class="col-sm-3">Web URL:</dt>
-                <dd class="col-sm-9"><code>http://@Model.Settings.WebAddress:@Model.Settings.WebPort</code></dd>
             </dl>
         </div>
     </div>
@@ -126,4 +236,29 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Visual feedback
+                const button = event.target.closest('button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-primary');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+    </script>
 }

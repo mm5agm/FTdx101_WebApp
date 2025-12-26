@@ -1,4 +1,4 @@
-using System.IO.Ports;
+﻿using System.IO.Ports;
 using System.Text;
 
 namespace FTdx101_WebApp.Services
@@ -24,7 +24,41 @@ namespace FTdx101_WebApp.Services
 
                 if (_serialPort?.IsOpen == true)
                 {
+                    _logger.LogInformation("Port {PortName} already connected", portName);
                     return true;
+                }
+
+                // DIAGNOSTIC: Check if port exists
+                var availablePorts = SerialPort.GetPortNames();
+                _logger.LogInformation("Available COM ports: {Ports}", string.Join(", ", availablePorts));
+                
+                if (!availablePorts.Contains(portName))
+                {
+                    _logger.LogError("Port {PortName} not found. Available ports: {Ports}", 
+                        portName, string.Join(", ", availablePorts));
+                    return false;
+                }
+
+                // DIAGNOSTIC: Try to detect if port is already open
+                try
+                {
+                    using (var testPort = new SerialPort(portName))
+                    {
+                        testPort.Open();
+                        testPort.Close();
+                    }
+                    _logger.LogInformation("Port {PortName} is available", portName);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    _logger.LogError("Port {PortName} is already in use by another application", portName);
+                    throw new InvalidOperationException(
+                        $"COM port {portName} is already in use. Please close any other programs using this port " +
+                        "(e.g., WSJT-X, logging software, terminal programs) and try again.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to test port {PortName}", portName);
                 }
 
                 _serialPort = new SerialPort
@@ -37,8 +71,8 @@ namespace FTdx101_WebApp.Services
                     Handshake = Handshake.None,
                     ReadTimeout = 500,
                     WriteTimeout = 500,
-                    DtrEnable = true,   // CHANGED: Try enabling DTR (RealTerm might do this)
-                    RtsEnable = true    // CHANGED: Try enabling RTS (RealTerm might do this)
+                    DtrEnable = true,
+                    RtsEnable = true
                 };
 
                 _serialPort.Open();
@@ -46,8 +80,14 @@ namespace FTdx101_WebApp.Services
                 // Wait for port to stabilize
                 await Task.Delay(200);
 
-                _logger.LogInformation("Connected to {PortName} at {BaudRate} baud, 8-N-2 (DTR/RTS enabled)", portName, baudRate);
+                _logger.LogInformation("✓ Connected to {PortName} at {BaudRate} baud, 8-N-2 (DTR/RTS enabled)", 
+                    portName, baudRate);
                 return true;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Access denied to {PortName} - port is in use by another application", portName);
+                return false;
             }
             catch (Exception ex)
             {
@@ -67,9 +107,20 @@ namespace FTdx101_WebApp.Services
             {
                 if (_serialPort?.IsOpen == true)
                 {
+                    // Disable DTR/RTS before closing to properly release the port
+                    _serialPort.DtrEnable = false;
+                    _serialPort.RtsEnable = false;
+
+                    // Discard any pending data
+                    _serialPort.DiscardInBuffer();
+                    _serialPort.DiscardOutBuffer();
+
                     _serialPort.Close();
                     _logger.LogInformation("Disconnected from serial port");
                 }
+
+                _serialPort?.Dispose();
+                _serialPort = null;
             }
             finally
             {
@@ -327,10 +378,74 @@ namespace FTdx101_WebApp.Services
             return false;
         }
 
+        public async Task<bool> SetModeMainAsync(string mode)
+        {
+            try
+            {
+                var command = CatCommands.FormatMode(mode, false);
+                await SendCommandAsync(command);
+                _logger.LogInformation("Set Main mode to {Mode}", mode);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Main mode");
+                return false;
+            }
+        }
+
+        public async Task<bool> SetModeSubAsync(string mode)
+        {
+            try
+            {
+                var command = CatCommands.FormatMode(mode, true);
+                await SendCommandAsync(command);
+                _logger.LogInformation("Set Sub mode to {Mode}", mode);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Sub mode");
+                return false;
+            }
+        }
+
         public void Dispose()
         {
-            _serialPort?.Dispose();
-            _semaphore?.Dispose();
+            try
+            {
+                _semaphore?.Wait(); // Use synchronous Wait since Dispose can't be async
+
+                if (_serialPort?.IsOpen == true)
+                {
+                    // Disable DTR/RTS before closing
+                    _serialPort.DtrEnable = false;
+                    _serialPort.RtsEnable = false;
+
+                    // Discard any pending data
+                    try
+                    {
+                        _serialPort.DiscardInBuffer();
+                        _serialPort.DiscardOutBuffer();
+                    }
+                    catch { /* Ignore errors during cleanup */ }
+
+                    _serialPort.Close();
+                    _logger.LogInformation("Closed serial port during disposal");
+                }
+
+                _serialPort?.Dispose();
+                _serialPort = null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during disposal");
+            }
+            finally
+            {
+                _semaphore?.Release();
+                _semaphore?.Dispose();
+            }
         }
     }
 }

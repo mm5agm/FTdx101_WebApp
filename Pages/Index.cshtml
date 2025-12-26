@@ -1,10 +1,52 @@
-@page
+﻿@page
 @model IndexModel
 @{
     ViewData["Title"] = "FT-dx101 Series Control";
 }
 
 <style>
+    body {
+        background: linear-gradient(135deg, #0F1B2D 0%, #2E3A4A 100%);
+        min-height: 100vh;
+        color: #F2F5F7; /* Soft white text */
+    }
+
+    .container-fluid {
+        background: rgba(46, 58, 74, 0.4); /* Frosted slate with transparency */
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(63, 224, 197, 0.2); /* Electric teal border */
+    }
+
+    .card {
+        background: rgba(46, 58, 74, 0.3); /* Frosted slate panels */
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(63, 224, 197, 0.15); /* Subtle teal glow */
+        border-radius: 15px;
+        color: #F2F5F7;
+    }
+
+    .card-body {
+        color: #F2F5F7;
+    }
+
+    .form-label, .form-control {
+        color: #F2F5F7 !important;
+    }
+
+    .form-control {
+        background-color: rgba(15, 27, 45, 0.6) !important; /* Deep navy input */
+        border-color: rgba(63, 224, 197, 0.3) !important;
+        border-radius: 10px;
+    }
+
     .digit-display {
         user-select: none;
         -webkit-user-select: none;
@@ -15,29 +57,208 @@
         letter-spacing: 0.1em;
         cursor: pointer;
         padding: 0.5rem;
-        background: white;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem 0 0 0.375rem;
+        background: rgba(15, 27, 45, 0.8); /* Deep navy display */
+        color: #3FE0C5; /* Electric teal digits */
+        border: 1px solid rgba(63, 224, 197, 0.3);
+        border-radius: 12px 0 0 12px;
+        box-shadow: inset 0 0 15px rgba(63, 224, 197, 0.1); /* Teal inner glow */
+        text-shadow: 0 0 10px rgba(63, 224, 197, 0.5); /* Glowing digits */
     }
-    
+
     .digit:hover {
-        background-color: #e3f2fd !important;
+        background-color: rgba(255, 111, 97, 0.15) !important; /* Warm coral hover */
     }
-    
+
     .digit {
         display: inline-block;
         min-width: 1em;
         padding: 0 2px;
-        transition: background-color 0.2s;
+        color: #3FE0C5; /* Electric teal */
     }
-    
-    .digit.selected {
-        background-color: #ffeb3b;
-        font-weight: bold;
+
+        .digit.selected {
+            background-color: rgba(255, 111, 97, 0.3) !important; /* Warm coral highlight */
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 111, 97, 0.6);
+            color: #FF6F61; /* Warm coral when selected */
+            text-shadow: 0 0 12px rgba(255, 111, 97, 0.8);
+        }
+
+        .digit.hidden {
+            display: none;
+        }
+
+    .mode-btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        background-color: rgba(46, 58, 74, 0.6);
+        color: #3FE0C5; /* Electric teal */
+        border-color: rgba(63, 224, 197, 0.4);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .mode-btn:hover {
+            background-color: rgba(63, 224, 197, 0.2);
+            color: #FF6F61; /* Warm coral on hover */
+            border-color: #3FE0C5;
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active {
+            background-color: rgba(63, 224, 197, 0.25);
+            color: #FF6F61; /* Warm coral when active */
+            font-weight: bold;
+            box-shadow: 0 0 12px rgba(63, 224, 197, 0.4);
+            border-color: #3FE0C5;
+        }
+
+    .antenna-btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        background-color: rgba(46, 58, 74, 0.6);
+        color: #3FE0C5;
+        border-color: rgba(63, 224, 197, 0.4);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .antenna-btn:hover {
+            background-color: rgba(63, 224, 197, 0.2);
+            color: #FF6F61;
+            border-color: #3FE0C5;
+            transform: translateY(-2px);
+        }
+
+        .antenna-btn.active {
+            background-color: rgba(63, 224, 197, 0.25);
+            color: #FF6F61;
+            font-weight: bold;
+            box-shadow: 0 0 12px rgba(63, 224, 197, 0.4);
+            border-color: #3FE0C5;
+        }
+
+    .progress {
+        background-color: rgba(15, 27, 45, 0.6) !important;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #3FE0C5 0%, #FF6F61 100%) !important; /* Teal to coral gradient */
+        box-shadow: 0 0 15px rgba(63, 224, 197, 0.5);
+        transition: width 0.3s ease;
+    }
+
+    .alert-info {
+        background-color: rgba(63, 224, 197, 0.15); /* Electric teal alert */
+        color: #3FE0C5;
+        border-color: rgba(63, 224, 197, 0.3);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+
+    .alert-success {
+        background-color: rgba(63, 224, 197, 0.2); /* Teal success */
+        color: #3FE0C5;
+        border-color: rgba(63, 224, 197, 0.4);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+
+    .alert-warning {
+        background-color: rgba(255, 111, 97, 0.15); /* Warm coral warning */
+        color: #FF6F61;
+        border-color: rgba(255, 111, 97, 0.3);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+
+    #connectionBtn {
+        transition: all 0.3s ease;
+        min-width: 200px;
+        max-width: 400px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+        #connectionBtn:hover {
+            transform: scale(1.05) translateY(-2px);
+        }
+
+        #connectionBtn.btn-danger {
+            background: linear-gradient(135deg, #FF6F61 0%, #FF8A3D 100%); /* Warm coral gradient */
+            border: none;
+            box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
+        }
+
+            #connectionBtn.btn-danger:hover {
+                box-shadow: 0 6px 20px rgba(255, 111, 97, 0.6);
+            }
+
+        #connectionBtn.btn-success {
+            background: linear-gradient(135deg, #3FE0C5 0%, #2AC9B0 100%); /* Electric teal gradient */
+            border: none;
+            color: #0F1B2D;
+            box-shadow: 0 4px 15px rgba(63, 224, 197, 0.4);
+        }
+
+            #connectionBtn.btn-success:hover {
+                box-shadow: 0 6px 20px rgba(63, 224, 197, 0.6);
+            }
+
+    .card-header {
+        border-bottom: 1px solid rgba(63, 224, 197, 0.2);
+        backdrop-filter: blur(10px);
+        border-radius: 15px 15px 0 0 !important;
+    }
+
+    .card-footer {
+        background-color: rgba(15, 27, 45, 0.4) !important;
+        border-top: 1px solid rgba(63, 224, 197, 0.2);
+        color: #3FE0C5 !important;
+        backdrop-filter: blur(10px);
+        border-radius: 0 0 15px 15px !important;
+    }
+
+    .text-muted {
+        color: #9BA8B8 !important;
+    }
+
+    .input-group-text {
+        background-color: rgba(15, 27, 45, 0.8);
+        color: #3FE0C5; /* Electric teal */
+        border-color: rgba(63, 224, 197, 0.3);
+        text-shadow: 0 0 5px rgba(63, 224, 197, 0.3);
+        border-radius: 0 12px 12px 0;
+    }
+
+    h1, h3 {
+        color: #F2F5F7;
+        font-weight: 600;
+    }
+
+    .lead {
+        color: #9BA8B8 !important;
+    }
+
+    /* Glass morphism enhancement */
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(63, 224, 197, 0.5), transparent);
+    }
+
+    /* Smooth transitions */
+    .card, .btn, .mode-btn, .antenna-btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 </style>
-
-<div class="container-fluid mt-4">
+<div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12">
             <h1 class="display-5">
@@ -63,43 +284,26 @@
                     <!-- Frequency Display -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Frequency</label>
-                        <div class="input-group input-group-lg mb-2">
+                        <div class="input-group input-group-lg">
                             <div id="freqA" class="digit-display text-center fw-bold flex-grow-1">
-                                <span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>
+                                <span class="digit hidden">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>
                             </div>
                             <span class="input-group-text">Hz</span>
                         </div>
-                        <!-- Frequency Controls -->
-                        <div class="row g-2">
+                    </div>
+
+                    <!-- Antenna Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Antenna</label>
+                        <div class="row g-1">
                             <div class="col-4">
-                                <button class="btn btn-outline-primary w-100" onclick="adjustFrequency('A', 1000000)">
-                                    <i class="bi bi-plus-lg"></i> 1 MHz
-                                </button>
+                                <button class="btn btn-outline-primary antenna-btn w-100" onclick="setAntenna('A', '1')" data-receiver="A" data-antenna="1">ANT 1</button>
                             </div>
                             <div class="col-4">
-                                <button class="btn btn-outline-primary w-100" onclick="adjustFrequency('A', 10000)">
-                                    <i class="bi bi-plus-lg"></i> 10 kHz
-                                </button>
+                                <button class="btn btn-outline-primary antenna-btn w-100" onclick="setAntenna('A', '2')" data-receiver="A" data-antenna="2">ANT 2</button>
                             </div>
                             <div class="col-4">
-                                <button class="btn btn-outline-primary w-100" onclick="adjustFrequency('A', 100)">
-                                    <i class="bi bi-plus-lg"></i> 100 Hz
-                                </button>
-                            </div>
-                            <div class="col-4">
-                                <button class="btn btn-outline-primary w-100" onclick="adjustFrequency('A', -1000000)">
-                                    <i class="bi bi-dash-lg"></i> 1 MHz
-                                </button>
-                            </div>
-                            <div class="col-4">
-                                <button class="btn btn-outline-primary w-100" onclick="adjustFrequency('A', -10000)">
-                                    <i class="bi bi-dash-lg"></i> 10 kHz
-                                </button>
-                            </div>
-                            <div class="col-4">
-                                <button class="btn btn-outline-primary w-100" onclick="adjustFrequency('A', -100)">
-                                    <i class="bi bi-dash-lg"></i> 100 Hz
-                                </button>
+                                <button class="btn btn-outline-primary antenna-btn w-100" onclick="setAntenna('A', '3')" data-receiver="A" data-antenna="3">ANT 3</button>
                             </div>
                         </div>
                     </div>
@@ -107,9 +311,36 @@
                     <!-- Mode Display -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Mode</label>
-                        <div class="input-group">
+                        <div class="input-group mb-2">
                             <span class="input-group-text"><i class="bi bi-gear"></i></span>
                             <input type="text" class="form-control text-center fw-bold" id="modeA" value="---" readonly>
+                        </div>
+                        <!-- Mode Selection Buttons -->
+                        <div class="row g-1">
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'LSB')" data-receiver="A" data-mode="LSB">LSB</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'USB')" data-receiver="A" data-mode="USB">USB</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'CW')" data-receiver="A" data-mode="CW">CW</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'FM')" data-receiver="A" data-mode="FM">FM</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'AM')" data-receiver="A" data-mode="AM">AM</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'DATA-USB')" data-receiver="A" data-mode="DATA-USB">DATA</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'RTTY-USB')" data-receiver="A" data-mode="RTTY-USB">RTTY</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-primary mode-btn w-100" onclick="setMode('A', 'C4FM')" data-receiver="A" data-mode="C4FM">C4FM</button>
+                            </div>
                         </div>
                     </div>
 
@@ -142,43 +373,26 @@
                     <!-- Frequency Display -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Frequency</label>
-                        <div class="input-group input-group-lg mb-2">
+                        <div class="input-group input-group-lg">
                             <div id="freqB" class="digit-display text-center fw-bold flex-grow-1">
-                                <span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>
+                                <span class="digit hidden">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>
                             </div>
                             <span class="input-group-text">Hz</span>
                         </div>
-                        <!-- Frequency Controls -->
-                        <div class="row g-2">
+                    </div>
+
+                    <!-- Antenna Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Antenna</label>
+                        <div class="row g-1">
                             <div class="col-4">
-                                <button class="btn btn-outline-success w-100" onclick="adjustFrequency('B', 1000000)">
-                                    <i class="bi bi-plus-lg"></i> 1 MHz
-                                </button>
+                                <button class="btn btn-outline-success antenna-btn w-100" onclick="setAntenna('B', '1')" data-receiver="B" data-antenna="1">ANT 1</button>
                             </div>
                             <div class="col-4">
-                                <button class="btn btn-outline-success w-100" onclick="adjustFrequency('B', 10000)">
-                                    <i class="bi bi-plus-lg"></i> 10 kHz
-                                </button>
+                                <button class="btn btn-outline-success antenna-btn w-100" onclick="setAntenna('B', '2')" data-receiver="B" data-antenna="2">ANT 2</button>
                             </div>
                             <div class="col-4">
-                                <button class="btn btn-outline-success w-100" onclick="adjustFrequency('B', 100)">
-                                    <i class="bi bi-plus-lg"></i> 100 Hz
-                                </button>
-                            </div>
-                            <div class="col-4">
-                                <button class="btn btn-outline-success w-100" onclick="adjustFrequency('B', -1000000)">
-                                    <i class="bi bi-dash-lg"></i> 1 MHz
-                                </button>
-                            </div>
-                            <div class="col-4">
-                                <button class="btn btn-outline-success w-100" onclick="adjustFrequency('B', -10000)">
-                                    <i class="bi bi-dash-lg"></i> 10 kHz
-                                </button>
-                            </div>
-                            <div class="col-4">
-                                <button class="btn btn-outline-success w-100" onclick="adjustFrequency('B', -100)">
-                                    <i class="bi bi-dash-lg"></i> 100 Hz
-                                </button>
+                                <button class="btn btn-outline-success antenna-btn w-100" onclick="setAntenna('B', '3')" data-receiver="B" data-antenna="3">ANT 3</button>
                             </div>
                         </div>
                     </div>
@@ -186,9 +400,36 @@
                     <!-- Mode Display -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Mode</label>
-                        <div class="input-group">
+                        <div class="input-group mb-2">
                             <span class="input-group-text"><i class="bi bi-gear"></i></span>
                             <input type="text" class="form-control text-center fw-bold" id="modeB" value="---" readonly>
+                        </div>
+                        <!-- Mode Selection Buttons -->
+                        <div class="row g-1">
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'LSB')" data-receiver="B" data-mode="LSB">LSB</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'USB')" data-receiver="B" data-mode="USB">USB</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'CW')" data-receiver="B" data-mode="CW">CW</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'FM')" data-receiver="B" data-mode="FM">FM</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'AM')" data-receiver="B" data-mode="AM">AM</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'DATA-USB')" data-receiver="B" data-mode="DATA-USB">DATA</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'RTTY-USB')" data-receiver="B" data-mode="RTTY-USB">RTTY</button>
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-outline-success mode-btn w-100" onclick="setMode('B', 'C4FM')" data-receiver="B" data-mode="C4FM">C4FM</button>
+                            </div>
                         </div>
                     </div>
 
@@ -196,7 +437,7 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold">S-Meter: <span id="sMeterValueB">S0</span></label>
                         <div class="progress" style="height: 30px;">
-                            <div class="progress-bar bg-info progress-bar-striped" id="sMeterBarB"
+                            <div class="progress-bar bg-success progress-bar-striped" id="sMeterBarB"
                                  role="progressbar" style="width: 0%;"
                                  aria-valuenow="0" aria-valuemin="0" aria-valuemax="255">
                             </div>
@@ -221,197 +462,124 @@
             </div>
         </div>
     </div>
+
+    <!-- Connection Control -->
+    <div class="row mt-2">
+        <div class="col-12 text-center">
+            <button id="connectionBtn" class="btn btn-danger" onclick="toggleConnection()">
+                <i class="bi bi-wifi" id="connectionBtnIcon"></i> <span id="connectionBtnText">Disconnect Radio</span>
+            </button>
+            <div id="connectionHelpText" class="form-text text-muted mt-2">
+                <i class="bi bi-info-circle"></i> Use this button to properly release the COM port before closing the application
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script>
-        // Current frequencies in Hz (from radio)
-        let freqA = 0;
-        let freqB = 0;
+        let freqA = 0, freqB = 0, currentModeA = '', currentModeB = '', currentAntennaA = '', currentAntennaB = '';
+        let isConnected = false, isConnecting = false, selectedDigit = -1, activeReceiver = null, isFetching = false;
+        let pendingFrequencyUpdate = null, consecutiveErrors = 0, pollInterval = 1000, maxPollInterval = 3000;
+        let pollingIntervalId = null, debounceTimerA = null, debounceTimerB = null;
 
-        // Digit selection state
-        let selectedDigit = -1;
-        let activeReceiver = null;
-
-        // Request throttling - OPTIMIZED FOR NETWORK CLIENTS
-        let isFetching = false;
-        let pendingFrequencyUpdate = null;
-        let consecutiveErrors = 0;
-        let pollInterval = 1000;
-        let maxPollInterval = 3000;
-        let pollingIntervalId = null;
-
-        // Debounce timers for each receiver
-        let debounceTimerA = null;
-        let debounceTimerB = null;
-
-        // Initialize digit interaction on page load
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Page loaded');
             initializeDigitInteraction('A');
             initializeDigitInteraction('B');
         });
 
-        // Initialize clickable digits for a receiver
         function initializeDigitInteraction(receiver) {
             const display = document.getElementById('freq' + receiver);
             const digits = display.querySelectorAll('.digit');
-            
-            digits.forEach((digit, index) => {
-                const textContent = digit.textContent;
-                if (textContent === '.') return;
-                
+            digits.forEach((digit) => {
+                if (digit.textContent === '.' || digit.classList.contains('hidden')) return;
                 digit.addEventListener('click', (e) => {
                     e.stopPropagation();
                     selectDigit(receiver, getDigitPosition(display, digit));
                 });
-                
-                digit.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    selectDigit(receiver, getDigitPosition(display, digit));
-                });
             });
-            
-            // Mouse wheel support (desktop)
             display.addEventListener('wheel', (e) => {
                 if (activeReceiver === receiver && selectedDigit >= 0) {
                     e.preventDefault();
-                    const delta = e.deltaY > 0 ? -1 : 1;
-                    adjustDigit(receiver, selectedDigit, delta);
+                    adjustDigit(receiver, selectedDigit, e.deltaY > 0 ? -1 : 1);
                 }
             }, { passive: false });
-            
-            // Touch swipe support (mobile/tablet)
-            let touchStartY = 0;
-            let touchThreshold = 30;
-            let lastAdjustTime = 0;
-            
-            display.addEventListener('touchstart', (e) => {
-                if (activeReceiver === receiver && selectedDigit >= 0) {
-                    touchStartY = e.touches[0].clientY;
-                }
-            }, { passive: true });
-            
-            display.addEventListener('touchmove', (e) => {
-                if (activeReceiver === receiver && selectedDigit >= 0 && touchStartY !== 0) {
-                    const touchDelta = touchStartY - e.touches[0].clientY;
-                    
-                    if (Math.abs(touchDelta) > touchThreshold) {
-                        const now = Date.now();
-                        if (now - lastAdjustTime > 150) {
-                            e.preventDefault();
-                            const delta = touchDelta > 0 ? 1 : -1;
-                            adjustDigit(receiver, selectedDigit, delta);
-                            touchStartY = e.touches[0].clientY;
-                            lastAdjustTime = now;
-                        }
-                    }
-                }
-            }, { passive: false });
-            
-            display.addEventListener('touchend', () => {
-                touchStartY = 0;
-            });
         }
 
         function getDigitPosition(display, digitElement) {
-            const allElements = Array.from(display.querySelectorAll('.digit'));
-            const digitElements = allElements.filter(el => el.textContent !== '.');
-            const displayIndex = digitElements.indexOf(digitElement);
-            return 8 - displayIndex;
+            const digitElements = Array.from(display.querySelectorAll('.digit')).filter(el => el.textContent !== '.' && !el.classList.contains('hidden'));
+            return 7 - digitElements.indexOf(digitElement);
         }
 
         function selectDigit(receiver, position) {
             if (activeReceiver) {
-                const prevDisplay = document.getElementById('freq' + activeReceiver);
-                const prevDigits = prevDisplay.querySelectorAll('.digit');
-                prevDigits.forEach(d => d.classList.remove('selected'));
+                document.getElementById('freq' + activeReceiver).querySelectorAll('.digit').forEach(d => d.classList.remove('selected'));
             }
-            
             activeReceiver = receiver;
             selectedDigit = position;
-            
-            const display = document.getElementById('freq' + receiver);
-            const digitElements = Array.from(display.querySelectorAll('.digit')).filter(el => el.textContent !== '.');
-            const actualIndex = 8 - position;
-            
-            if (digitElements[actualIndex]) {
-                digitElements[actualIndex].classList.add('selected');
-            }
+            const digitElements = Array.from(document.getElementById('freq' + receiver).querySelectorAll('.digit')).filter(el => el.textContent !== '.' && !el.classList.contains('hidden'));
+            if (digitElements[7 - position]) digitElements[7 - position].classList.add('selected');
         }
 
         function adjustDigit(receiver, digitPos, delta) {
-            const multiplier = Math.pow(10, digitPos);
-            adjustFrequency(receiver, delta * multiplier);
+            adjustFrequency(receiver, delta * Math.pow(10, digitPos));
         }
 
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.digit-display')) {
-                if (activeReceiver) {
-                    const display = document.getElementById('freq' + activeReceiver);
-                    const digits = display.querySelectorAll('.digit');
-                    digits.forEach(d => d.classList.remove('selected'));
-                }
+            if (!e.target.closest('.digit-display') && activeReceiver) {
+                document.getElementById('freq' + activeReceiver).querySelectorAll('.digit').forEach(d => d.classList.remove('selected'));
                 selectedDigit = -1;
                 activeReceiver = null;
             }
         });
 
+        async function setAntenna(receiver, antenna) {
+            try {
+                const response = await fetch(`/api/cat/antenna/${receiver.toLowerCase()}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ antenna })
+                });
+                if (response.ok) {
+                    if (receiver === 'A') currentAntennaA = antenna; else currentAntennaB = antenna;
+                    highlightAntennaButton(receiver, antenna);
+                    console.log(`✓ Antenna ${antenna} set for receiver ${receiver}`);
+                }
+            } catch (error) {
+                console.error('Error setting antenna:', error);
+            }
+        }
+
+        function highlightAntennaButton(receiver, antenna) {
+            document.querySelectorAll(`button[data-receiver="${receiver}"][data-antenna]`).forEach(btn => btn.classList.remove('active'));
+            const activeButton = document.querySelector(`button[data-receiver="${receiver}"][data-antenna="${antenna}"]`);
+            if (activeButton) activeButton.classList.add('active');
+        }
+
         async function fetchRadioStatus() {
             if (isFetching) return;
-
             isFetching = true;
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                const response = await fetch('/api/cat/status', {
-                    signal: controller.signal
-                });
+                const response = await fetch('/api/cat/status', { signal: controller.signal });
                 clearTimeout(timeoutId);
-
-                if (response.status === 503) {
-                    console.debug('Radio busy (503), skipping this poll cycle');
-                    consecutiveErrors = 0;
+                if (response.status === 503 || response.status === 408) {
+                    consecutiveErrors = response.status === 503 ? 0 : consecutiveErrors + 1;
+                    if (consecutiveErrors > 5) adjustPollingInterval(Math.min(maxPollInterval, pollInterval + 500));
                     isFetching = false;
                     return;
                 }
-
-                if (response.status === 408) {
-                    console.debug('Request timeout (408), radio may be slow');
-                    consecutiveErrors++;
-                    if (consecutiveErrors > 5) {
-                        adjustPollingInterval(Math.min(maxPollInterval, pollInterval + 500));
-                    }
-                    isFetching = false;
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                updateDisplay(data);
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                updateDisplay(await response.json());
                 consecutiveErrors = 0;
                 adjustPollingInterval(1000);
-
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    console.warn('Status request aborted (timeout)');
-                } else {
-                    console.error('Error fetching radio status:', error);
-                }
-                
+                console.error('Error fetching status:', error);
                 consecutiveErrors++;
-
-                if (consecutiveErrors > 3) {
-                    adjustPollingInterval(Math.min(maxPollInterval, pollInterval + 500));
-                }
-
-                if (consecutiveErrors > 2) {
-                    updateConnectionStatus(false, `Connection error (${consecutiveErrors} errors)`);
-                }
+                if (consecutiveErrors > 3) adjustPollingInterval(Math.min(maxPollInterval, pollInterval + 500));
+                if (consecutiveErrors > 2) updateConnectionStatus(false, `Connection error (${consecutiveErrors})`);
             } finally {
                 isFetching = false;
             }
@@ -419,188 +587,172 @@
 
         function adjustPollingInterval(newInterval) {
             if (pollInterval === newInterval) return;
-            
             pollInterval = newInterval;
-            
-            if (pollingIntervalId) {
-                clearInterval(pollingIntervalId);
-            }
+            if (pollingIntervalId) clearInterval(pollingIntervalId);
             pollingIntervalId = setInterval(fetchRadioStatus, pollInterval);
         }
 
         function adjustFrequency(receiver, change) {
             const currentFreq = receiver === 'A' ? freqA : freqB;
             const newFreq = Math.max(30000, Math.min(75000000, currentFreq + change));
-
-            if (receiver === 'A') {
-                freqA = newFreq;
-            } else {
-                freqB = newFreq;
-            }
+            if (receiver === 'A') freqA = newFreq; else freqB = newFreq;
             updateFrequencyDisplay(receiver, newFreq);
-
             pendingFrequencyUpdate = { receiver, frequency: newFreq, timestamp: Date.now() };
-
-            if (receiver === 'A' && debounceTimerA) {
-                clearTimeout(debounceTimerA);
-            } else if (receiver === 'B' && debounceTimerB) {
-                clearTimeout(debounceTimerB);
-            }
-
-            const debounceDelay = 200;
-            const timerCallback = () => sendFrequencyToRadio(receiver, newFreq);
-            
-            if (receiver === 'A') {
-                debounceTimerA = setTimeout(timerCallback, debounceDelay);
-            } else {
-                debounceTimerB = setTimeout(timerCallback, debounceDelay);
-            }
+            const timer = receiver === 'A' ? debounceTimerA : debounceTimerB;
+            if (timer) clearTimeout(timer);
+            const newTimer = setTimeout(() => sendFrequencyToRadio(receiver, newFreq), 200);
+            if (receiver === 'A') debounceTimerA = newTimer; else debounceTimerB = newTimer;
         }
 
         async function sendFrequencyToRadio(receiver, newFreq) {
-            const endpoint = receiver === 'A' ? '/api/cat/frequency/a' : '/api/cat/frequency/b';
-            
-            console.log(`Sending frequency ${newFreq} to ${receiver}`);
-            
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-                const response = await fetch(endpoint, {
+                await fetch(`/api/cat/frequency/${receiver.toLowerCase()}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ frequencyHz: newFreq }),
-                    signal: controller.signal
+                    body: JSON.stringify({ frequencyHz: newFreq })
                 });
-                
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    console.error('Failed to set frequency');
-                    pendingFrequencyUpdate = null;
-                }
-                
             } catch (error) {
                 console.error('Error setting frequency:', error);
                 pendingFrequencyUpdate = null;
             }
         }
 
+        async function setMode(receiver, mode) {
+            try {
+                const response = await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode })
+                });
+                if (response.ok) {
+                    document.getElementById('mode' + receiver).value = mode;
+                    if (receiver === 'A') currentModeA = mode; else currentModeB = mode;
+                    highlightModeButton(receiver, mode);
+                }
+            } catch (error) {
+                console.error('Error setting mode:', error);
+            }
+        }
+
+        function highlightModeButton(receiver, mode) {
+            document.querySelectorAll(`button[data-receiver="${receiver}"][data-mode]`).forEach(btn => btn.classList.remove('active'));
+            const activeButton = document.querySelector(`button[data-receiver="${receiver}"][data-mode="${mode}"]`);
+            if (activeButton) activeButton.classList.add('active');
+        }
+
         function updateDisplay(data) {
-            if (!data.isConnected) {
-                updateConnectionStatus(false, data.message || 'Not connected');
-                return;
-            }
-
+            if (!data.isConnected) { updateConnectionStatus(false, data.message || 'Not connected'); return; }
+            isConnected = true;
             const now = Date.now();
-            
-            if (!pendingFrequencyUpdate || pendingFrequencyUpdate.receiver !== 'A') {
-                freqA = data.vfoA.frequency;
-                updateFrequencyDisplay('A', freqA);
-            } else if (pendingFrequencyUpdate.receiver === 'A') {
-                if (data.vfoA.frequency === pendingFrequencyUpdate.frequency) {
-                    console.log('VFO-A: Radio caught up to pending frequency:', data.vfoA.frequency);
+            ['A', 'B'].forEach(vfo => {
+                const vfoData = vfo === 'A' ? data.vfoA : data.vfoB;
+                const currentFreq = vfo === 'A' ? freqA : freqB;
+                if (!pendingFrequencyUpdate || pendingFrequencyUpdate.receiver !== vfo) {
+                    if (vfo === 'A') freqA = vfoData.frequency; else freqB = vfoData.frequency;
+                    updateFrequencyDisplay(vfo, vfoData.frequency);
+                } else if (vfoData.frequency === pendingFrequencyUpdate.frequency || now - pendingFrequencyUpdate.timestamp > 3000) {
                     pendingFrequencyUpdate = null;
-                    freqA = data.vfoA.frequency;
-                    updateFrequencyDisplay('A', freqA);
-                } else if (now - pendingFrequencyUpdate.timestamp > 3000) {
-                    console.log('VFO-A: Pending update timeout, using radio frequency:', data.vfoA.frequency);
-                    pendingFrequencyUpdate = null;
-                    freqA = data.vfoA.frequency;
-                    updateFrequencyDisplay('A', freqA);
-                } else {
-                    console.debug('VFO-A: Waiting for radio. Pending:', pendingFrequencyUpdate.frequency, 'Radio:', data.vfoA.frequency);
+                    if (vfo === 'A') freqA = vfoData.frequency; else freqB = vfoData.frequency;
+                    updateFrequencyDisplay(vfo, vfoData.frequency);
                 }
-            }
-            
-            document.getElementById('modeA').value = data.vfoA.mode;
-            updateSMeter('A', data.vfoA.sMeter);
-
-            if (!pendingFrequencyUpdate || pendingFrequencyUpdate.receiver !== 'B') {
-                freqB = data.vfoB.frequency;
-                updateFrequencyDisplay('B', freqB);
-            } else if (pendingFrequencyUpdate.receiver === 'B') {
-                if (data.vfoB.frequency === pendingFrequencyUpdate.frequency) {
-                    console.log('VFO-B: Radio caught up to pending frequency:', data.vfoB.frequency);
-                    pendingFrequencyUpdate = null;
-                    freqB = data.vfoB.frequency;
-                    updateFrequencyDisplay('B', freqB);
-                } else if (now - pendingFrequencyUpdate.timestamp > 3000) {
-                    console.log('VFO-B: Pending update timeout, using radio frequency:', data.vfoB.frequency);
-                    pendingFrequencyUpdate = null;
-                    freqB = data.vfoB.frequency;
-                    updateFrequencyDisplay('B', freqB);
-                } else {
-                    console.debug('VFO-B: Waiting for radio. Pending:', pendingFrequencyUpdate.frequency, 'Radio:', data.vfoB.frequency);
+                document.getElementById('mode' + vfo).value = vfoData.mode;
+                const currentMode = vfo === 'A' ? currentModeA : currentModeB;
+                if (currentMode !== vfoData.mode) {
+                    if (vfo === 'A') currentModeA = vfoData.mode; else currentModeB = vfoData.mode;
+                    highlightModeButton(vfo, vfoData.mode);
                 }
-            }
-            
-            document.getElementById('modeB').value = data.vfoB.mode;
-            updateSMeter('B', data.vfoB.sMeter);
-
+                updateSMeter(vfo, vfoData.sMeter);
+            });
             const time = new Date().toLocaleTimeString();
             document.getElementById('lastUpdateA').textContent = time;
             document.getElementById('lastUpdateB').textContent = time;
-
             updateConnectionStatus(true, 'Connected to FT-dx101');
         }
 
         function updateFrequencyDisplay(receiver, freqHz) {
             const display = document.getElementById('freq' + receiver);
-            
             if (freqHz === 0) {
-                const digits = display.querySelectorAll('.digit');
-                digits.forEach(d => {
-                    if (d.textContent !== '.') {
-                        d.textContent = '-';
-                    }
-                });
+                display.querySelectorAll('.digit').forEach(d => { if (d.textContent !== '.' && !d.classList.contains('hidden')) d.textContent = '-'; });
                 return;
             }
-
             const formatted = freqHz.toString().padStart(9, '0');
             const digitElements = Array.from(display.querySelectorAll('.digit')).filter(el => el.textContent !== '.');
-            
             for (let i = 0; i < 9 && i < digitElements.length; i++) {
-                const currentlySelected = digitElements[i].classList.contains('selected');
+                const selected = digitElements[i].classList.contains('selected');
                 digitElements[i].textContent = formatted[i];
-                if (currentlySelected) {
-                    digitElements[i].classList.add('selected');
-                }
+                if (selected) digitElements[i].classList.add('selected');
             }
         }
 
         function updateSMeter(receiver, value) {
             const percentage = (value / 255) * 100;
-
-            let displayText = 'S0';
-            if (value >= 150) {
-                displayText = 'S9+' + Math.round((value - 120) / 3) + 'dB';
-            } else if (value >= 120) {
-                displayText = 'S9';
-            } else if (value > 0) {
-                displayText = 'S' + Math.floor(value / 13.3);
-            }
-
+            let displayText = value >= 150 ? 'S9+' + Math.round((value - 120) / 3) + 'dB' : value >= 120 ? 'S9' : value > 0 ? 'S' + Math.floor(value / 13.3) : 'S0';
             document.getElementById('sMeterBar' + receiver).style.width = percentage + '%';
             document.getElementById('sMeterBar' + receiver).setAttribute('aria-valuenow', value);
             document.getElementById('sMeterValue' + receiver).textContent = displayText;
         }
 
         function updateConnectionStatus(connected, message) {
-            const statusText = document.getElementById('statusText');
-            const systemStatus = document.getElementById('systemStatus');
+            document.getElementById('statusText').textContent = message;
+            document.getElementById('systemStatus').className = connected ? 'alert alert-success d-flex align-items-center' : 'alert alert-warning d-flex align-items-center';
+            document.getElementById('connectionStatusA').textContent = connected ? 'Connected' : 'Error';
+            document.getElementById('connectionStatusB').textContent = connected ? 'Connected' : 'Error';
+        }
 
-            if (connected) {
-                statusText.textContent = message;
-                systemStatus.className = 'alert alert-success d-flex align-items-center';
-                document.getElementById('connectionStatusA').textContent = 'Connected';
-                document.getElementById('connectionStatusB').textContent = 'Connected';
+        async function toggleConnection() {
+            const btn = document.getElementById('connectionBtn');
+            const btnText = document.getElementById('connectionBtnText');
+            const btnIcon = document.getElementById('connectionBtnIcon');
+            const helpText = document.getElementById('connectionHelpText');
+            if (isConnected) {
+                if (!confirm('Disconnect from the radio?')) return;
+                if (pollingIntervalId) { clearInterval(pollingIntervalId); pollingIntervalId = null; }
+                btn.disabled = true;
+                btnText.textContent = 'Disconnecting...';
+                try {
+                    const response = await fetch('/api/cat/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                    if (response.ok) {
+                        isConnected = false;
+                        btn.className = 'btn btn-success';
+                        btnIcon.className = 'bi bi-check-circle';
+                        btnText.textContent = 'Reconnect Radio';
+                        helpText.innerHTML = '<i class="bi bi-info-circle"></i> Click to reconnect';
+                        updateConnectionStatus(false, 'Disconnected');
+                    } else if (!pollingIntervalId) startPolling();
+                } catch (error) {
+                    console.error('Error disconnecting:', error);
+                    if (!pollingIntervalId) startPolling();
+                } finally {
+                    btn.disabled = false;
+                }
             } else {
-                statusText.textContent = message;
-                systemStatus.className = 'alert alert-warning d-flex align-items-center';
-                document.getElementById('connectionStatusA').textContent = 'Error';
-                document.getElementById('connectionStatusB').textContent = 'Error';
+                if (isConnecting) return;
+                isConnecting = true;
+                btn.disabled = true;
+                btnText.textContent = 'Reconnecting...';
+                btnIcon.className = 'bi bi-arrow-clockwise';
+                try {
+                    const response = await fetch('/api/cat/status');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.isConnected) {
+                            isConnected = true;
+                            btn.className = 'btn btn-danger';
+                            btnIcon.className = 'bi bi-wifi';
+                            btnText.textContent = 'Disconnect Radio';
+                            helpText.innerHTML = '<i class="bi bi-info-circle"></i> Release COM port before closing';
+                            if (!pollingIntervalId) startPolling();
+                            updateDisplay(data);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error reconnecting:', error);
+                    btnIcon.className = 'bi bi-check-circle';
+                    btnText.textContent = 'Reconnect Radio';
+                } finally {
+                    btn.disabled = false;
+                    isConnecting = false;
+                }
             }
         }
 
@@ -610,5 +762,10 @@
         }
 
         startPolling();
+        window.addEventListener('beforeunload', () => { if (pollingIntervalId) clearInterval(pollingIntervalId); if (isConnected) try { navigator.sendBeacon('/api/cat/disconnect', JSON.stringify({})); } catch (e) {} });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && pollingIntervalId && isConnected) { clearInterval(pollingIntervalId); pollingIntervalId = setInterval(fetchRadioStatus, 5000); }
+            else if (!document.hidden && pollingIntervalId && isConnected) { clearInterval(pollingIntervalId); pollingIntervalId = setInterval(fetchRadioStatus, pollInterval); }
+        });
     </script>
 }
