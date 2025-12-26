@@ -50,7 +50,7 @@ This ASP.NET Core Razor Pages application connects to your FT-dx101 radio via se
 - [ ] Limited error handling in some scenarios
 - [ ] Settings validation could be improved
 - [ ] No multi-user support (single connection only)
-
+- [ ] No connection to other programs like WSJT-X. I need to get familiar with Omnirig I think
 ### 🎨 Available Themes
 - Modern Glass Palette (default)
 - Ocean Blue
@@ -70,7 +70,7 @@ This ASP.NET Core Razor Pages application connects to your FT-dx101 radio via se
 ### Hardware
 - **Yaesu FT-dx101MP** (dual receiver) or **FT-dx101D** (single receiver)
 - USB cable or USB-to-Serial adapter
-- Proper CAT configuration on radio (19200 baud recommended)
+- Proper CAT configuration on radio (38400 baud recommended)
 
 ---
 
