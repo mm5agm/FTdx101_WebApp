@@ -6,6 +6,12 @@
 
 ---
 
+I couldn't use OmniRig because the full installaion package doesn't appear to be available anymore.
+
+I tried Com0Com and Hub4Com but had trouble getting them to work reliably on my system.
+
+It was suggested using Com0Com with Com2TCP to create a virtual COM port that can be accessed over TCP/IP but there can be problems with that so I'm going to try and write a CAT Multiplexer with my good friend github copilot
+
 ## 📻 What is This?
 
 A **modern, web-based control interface** for the **Yaesu FT-dx101 Series** amateur radio transceivers (FT-dx101MP and FT-dx101D). Control your radio through your web browser with a sleek, glass-morphism UI design!
@@ -52,10 +58,8 @@ This ASP.NET Core Razor Pages application connects to your FT-dx101 radio via se
 
 ### 🎨 Available Themes
 - Modern Glass Palette (default)
-- Ocean Blue
-- Dark Operator
-- LCD Green
-- Purple Gradient
+- Maybe later I'll add more themes:
+
 
 ---
 
@@ -69,10 +73,34 @@ This ASP.NET Core Razor Pages application connects to your FT-dx101 radio via se
 ### Hardware
 - **Yaesu FT-dx101MP** (dual receiver) or **FT-dx101D** (single receiver)
 - USB cable or USB-to-Serial adapter
-- Proper CAT configuration on radio (19200 baud recommended)
+- Proper CAT configuration on radio (38400 baud recommended)
 
 ---
 
 ## 🚀 Quick Start
 
 ### 1. Clone the Repository
+
+````````
+### 📝 TODO List
+
+- [ ] Implement advanced features (split, clarifier, filters)
+- [ ] Test and improve TX indicators
+- [ ] Add memory channel management
+- [ ] Add band stacking register access
+- [ ] Add logging and contest mode features
+- [ ] Improve error handling in all services
+- [ ] Enhance settings validation
+- [ ] Add multi-user support
+- [ ] Expand documentation for setup and troubleshooting
+- [ ] Add more UI themes
+- [ ] Document JTAlert and WSJT-X integration steps
+- [ ] Add automated tests for CAT multiplexer and client logic
+- [ ] Add proper signal strength and power meters to the UI
+- [ ] Persist and restore last used antenna and other key settings on startup
+- [ ] Remove the MODE bar from the UI (the mode button is sufficient)
+- [ ] Check WSJT-X works with the built-in rigctld server
+- [ ] Check Log4OM works with the CAT multiplexer and rigctld server
+- [ ] Check JTAlert works with WSJT-X and receives correct radio status
+
+---

@@ -26,18 +26,8 @@ namespace FTdx101_WebApp.Services
         {
             _logger.LogInformation("CAT Polling Service starting...");
 
-            var settings = await _settingsService.GetSettingsAsync();
-            var portName = settings.SerialPort;
-            var baudRate = settings.BaudRate;
-
-            var connected = await _catClient.ConnectAsync(portName, baudRate);
-            if (!connected)
-            {
-                _logger.LogError("Failed to connect to CAT interface on {PortName} at {BaudRate} baud", portName, baudRate);
-                return;
-            }
-
-            _logger.LogInformation("CAT Polling Service started on {PortName} at {BaudRate} baud", portName, baudRate);
+            // Do not call ConnectAsync or DisconnectAsync here.
+            _logger.LogInformation("CAT Polling Service started");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -66,7 +56,6 @@ namespace FTdx101_WebApp.Services
                 await Task.Delay(_pollingInterval, stoppingToken);
             }
 
-            await _catClient.DisconnectAsync();
             _logger.LogInformation("CAT Polling Service stopped");
         }
     }
