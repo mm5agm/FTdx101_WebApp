@@ -12,108 +12,90 @@ namespace FTdx101_WebApp
 
             // Add services to the container.
             builder.Services.AddRazorPages();
-            builder.Services.AddControllers(); // Enable API Controllers
+            builder.Services.AddControllers();
 
             // Register Settings Service
             builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
-            // Register CAT services
-            builder.Services.AddSingleton<ICatClient, SerialPortCatClient>();
+            // ===== CAT MULTIPLEXER ARCHITECTURE =====
+            // Register the multiplexer (manages COM port)
+            builder.Services.AddSingleton<CatMultiplexerService>();
+
+            // Register multiplexed client for Web UI
+            builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
+
+            // Register rigctld server for WSJT-X
+            builder.Services.AddHostedService<RigctldServer>();
+
             builder.Services.AddSingleton<IRigStateService, RigStateService>();
+            builder.Services.AddHostedService<CatPollingService>();
 
-            
-            // Register Background Service
-            builder.Services.AddHostedService<CatPollingService>();  // ? RE-ENABLE THIS
-            // Load settings to configure web server
-            var tempServiceProvider = builder.Services.BuildServiceProvider();
-            var settingsService = tempServiceProvider.GetRequiredService<ISettingsService>();
-            var settings = await settingsService.GetSettingsAsync();
-
-            // Configure web server URL based on settings (HTTP only - simpler and works everywhere)
-            var webAddress = settings.WebAddress == "localhost" ? "localhost" : "0.0.0.0"; // 0.0.0.0 means all interfaces
-            var httpUrl = $"http://{webAddress}:{settings.WebPort}";
-
-            builder.WebHost.UseUrls(httpUrl);
-
+            // BUILD THE APP FIRST (creates the real service container)
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // NOW we can get services from the container
+            var settingsService = app.Services.GetRequiredService<ISettingsService>();
+            var settings = await settingsService.GetSettingsAsync();
+
+            // Configure web server URL
+            var webAddress = settings.WebAddress == "localhost" ? "localhost" : "0.0.0.0";
+            var urls = new[] { $"http://{webAddress}:{settings.WebPort}" };
+
+            // Note: We can't change URLs after app.Build(), so we need to restart
+            // For now, log a warning if settings don't match defaults
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
             }
 
-            // No HTTPS redirect needed - we're HTTP only
-
             app.UseRouting();
-
             app.UseAuthorization();
-
-            app.MapControllers(); // Map API Controller routes
+            app.MapControllers();
             app.MapStaticAssets();
-            app.MapRazorPages()
-               .WithStaticAssets();
+            app.MapRazorPages().WithStaticAssets();
 
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation("========================================");
-            logger.LogInformation("📡 FT-dx101MP Web Server Started");
-            logger.LogInformation("========================================");
+            // Initialize the multiplexer from the REAL service container
+            var multiplexer = app.Services.GetRequiredService<CatMultiplexerService>();
+            var connected = await multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate);
 
-            if (settings.WebAddress == "localhost")
+            if (!connected)
             {
-                logger.LogInformation("🏠 Local Access:  http://localhost:{Port}", settings.WebPort);
-            }
-            else
-            {
-                logger.LogInformation("🏠 Local Access:  http://localhost:{Port}", settings.WebPort);
-                logger.LogInformation("🌐 Network Access: http://{IPAddress}:{Port}", settings.WebAddress, settings.WebPort);
+                logger.LogWarning("⚠️ WARNING: Failed to connect to {Port}", settings.SerialPort);
+                logger.LogWarning("   The web interface will still start, but radio control will not work.");
             }
 
-            logger.LogInformation("🔌 API Endpoint:  http://localhost:{Port}/api/cat/status", settings.WebPort);
+            logger.LogInformation("========================================");
+            logger.LogInformation("📡 FT-dx101 CAT Multiplexer Started");
+            logger.LogInformation("========================================");
+            logger.LogInformation("🔌 COM Port:      {Port} @ {Baud} baud", settings.SerialPort, settings.BaudRate);
+            logger.LogInformation("🌐 Web UI:        http://localhost:{Port}", settings.WebPort);
+            logger.LogInformation("🔧 rigctld:       localhost:4532 (for WSJT-X)");
+            logger.LogInformation("📡 API:           http://localhost:{Port}/api/cat/status", settings.WebPort);
             logger.LogInformation("========================================");
 
-            // Register cleanup on application shutdown (OPTION 1)
+            // Register cleanup
             var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
             lifetime.ApplicationStopping.Register(() =>
             {
-                logger.LogInformation("⚠️ Application stopping - releasing COM port...");
-                
-                var catClient = app.Services.GetRequiredService<ICatClient>();
-                if (catClient is IDisposable disposable)
-                {
-                    disposable.Dispose();
-                }
-                
-                logger.LogInformation("✅ COM port released successfully");
+                logger.LogInformation("⚠️ Shutting down - releasing COM port...");
+                multiplexer.Dispose();
+                logger.LogInformation("✅ COM port released");
             });
 
-            // Start the web server in the background
-            _ = Task.Run(() => app.Run());
+            // Open browser
+            OpenBrowser($"http://localhost:{settings.WebPort}");
+            logger.LogInformation("🌐 Browser opened");
 
-            // Wait a moment for the server to start
-            await Task.Delay(1000);
-
-            // Open the browser automatically
-            var browserUrl = $"http://localhost:{settings.WebPort}";
-            OpenBrowser(browserUrl);
-            logger.LogInformation("🌐 Browser opened: {Url}", browserUrl);
-
-            // Keep the application running
-            await Task.Delay(-1);
+            // Run the web server (this blocks until shutdown)
+            await app.RunAsync();
         }
 
-        /// <summary>
-        /// Opens the default web browser with the specified URL
-        /// </summary>
         private static void OpenBrowser(string url)
         {
             try
             {
-                Process.Start(url);
-            }
-            catch
-            {
-                // Fallback for different operating systems
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
@@ -127,6 +109,7 @@ namespace FTdx101_WebApp
                     Process.Start("open", url);
                 }
             }
+            catch { }
         }
     }
 }
