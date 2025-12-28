@@ -29,3 +29,66 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.band-row-scroll {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-bottom: 0.25rem;
+    overflow-x: unset;
+    white-space: normal;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+@media (min-width: 992px) {
+    .receiver-card {
+        min-width: 900px;
+    }
+}
+
+function formatFrequency(freq) {
+    if (!freq || freq < 1000) return "---.---.---";
+    let s = freq.toString().padStart(9, "0");
+    return `${s[0]}${s[1]}${s[2]}.${s[3]}${s[4]}${s[5]}.${s[6]}${s[7]}${s[8]}`;
+}
+
+function updateStatus() {
+    fetch('/api/cat/status')
+        .then(r => r.json())
+        .then(data => {
+            // Frequency
+            document.getElementById('freqA').textContent = formatFrequency(data.vfoA.frequency);
+            document.getElementById('freqB').textContent = formatFrequency(data.vfoB.frequency);
+            // Mode
+            document.getElementById('modeA').value = data.vfoA.mode;
+            document.getElementById('modeB').value = data.vfoB.mode;
+            // S-Meter
+            document.getElementById('sMeterValueA').textContent = "S" + data.vfoA.sMeter;
+            document.getElementById('sMeterValueB').textContent = "S" + data.vfoB.sMeter;
+            document.getElementById('sMeterBarA').style.width = (data.vfoA.sMeter / 9 * 100) + "%";
+            document.getElementById('sMeterBarB').style.width = (data.vfoB.sMeter / 9 * 100) + "%";
+        });
+}
+setInterval(updateStatus, 2000);
+updateStatus();
+
+async function setBand(receiver, band) {
+    await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ band })
+    });
+}
+
+<button class="btn btn-outline-success band-btn" onclick="setBand('B','160m')">160m</button>
