@@ -384,5 +384,83 @@ namespace FTdx101_WebApp.Controllers
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
         public class CommandRequest { public string Command { get; set; } = string.Empty; }
         public class AntennaRequest { public string Antenna { get; set; } = string.Empty; }
+        // Add this class inside CatController (after AntennaRequest)
+        public class BandRequest { public string Band { get; set; } = string.Empty; }
+
+        // Add these endpoints to CatController
+
+        [HttpPost("band/a")]
+        public async Task<IActionResult> SetBandA([FromBody] BandRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+
+                // Map band string to code
+                var bandCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "160m", "00" }, { "80m", "01" }, { "60m", "02" }, { "40m", "03" },
+            { "30m", "04" }, { "20m", "05" }, { "17m", "06" }, { "15m", "07" },
+            { "12m", "08" }, { "10m", "09" }, { "6m", "10" }, { "4m", "11" }
+        };
+
+                if (!bandCodes.TryGetValue(request.Band, out var code))
+                    return BadRequest(new { error = "Invalid band" });
+
+                var command = $"BS{code};";
+                await _catClient.SendCommandAsync(command);
+                _logger.LogInformation("Set Main band to {Band} (code {Code})", request.Band, code);
+                return Ok(new { message = $"Band {request.Band} selected" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Main band");
+                return StatusCode(500, new { error = "Failed to set band" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("band/b")]
+        public async Task<IActionResult> SetBandB([FromBody] BandRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+
+                // Map band string to code
+                var bandCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "160m", "00" }, { "80m", "01" }, { "60m", "02" }, { "40m", "03" },
+            { "30m", "04" }, { "20m", "05" }, { "17m", "06" }, { "15m", "07" },
+            { "12m", "08" }, { "10m", "09" }, { "6m", "10" }, { "4m", "11" }
+        };
+
+                if (!bandCodes.TryGetValue(request.Band, out var code))
+                    return BadRequest(new { error = "Invalid band" });
+
+                var command = $"BS{code};";
+                await _catClient.SendCommandAsync(command);
+                _logger.LogInformation("Set Sub band to {Band} (code {Code})", request.Band, code);
+                return Ok(new { message = $"Band {request.Band} selected" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Sub band");
+                return StatusCode(500, new { error = "Failed to set band" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
     }
 }
