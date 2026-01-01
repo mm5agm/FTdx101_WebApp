@@ -6,7 +6,7 @@ namespace FTdx101_WebApp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class CatController : ControllerBase
-    {   
+    {
         private readonly ICatClient _catClient;
         private readonly ISettingsService _settingsService;
         private readonly ILogger<CatController> _logger;
@@ -28,12 +28,19 @@ namespace FTdx101_WebApp.Controllers
             }
         }
 
+        // Helper: Get which VFO is currently main ("A" or "B") using IF; CAT command
+        private async Task<string> GetMainVfoAsync()
+        {
+            var response = await _catClient.SendCommandAsync("IF;");
+            if (!string.IsNullOrEmpty(response) && response.Length > 5)
+                return response[5] == '1' ? "B" : "A";
+            return "A";
+        }
+
         [HttpGet("status")]
         public async Task<IActionResult> GetStatus()
         {
-            // FAST-FAIL for status requests - don't wait long if radio is busy
-            var acquired = await _requestSemaphore.WaitAsync(500); // Only wait 500ms for status polls
-            
+            var acquired = await _requestSemaphore.WaitAsync(500);
             if (!acquired)
             {
                 _logger.LogDebug("Status request skipped - radio busy");
@@ -57,26 +64,24 @@ namespace FTdx101_WebApp.Controllers
                         vfoB = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0 },
                         isTransmitting = false,
                         isConnected = false,
+                        mainVfo = "A",
                         timestamp = DateTime.Now,
                         message = "Radio not connected"
                     });
                 }
 
-                // Read BOTH VFOs with timeout
                 var statusTask = Task.Run(async () =>
                 {
-                    // VFO-A (Main)
                     var freqA = await _catClient.ReadFrequencyAAsync();
                     var modeA = await _catClient.ReadModeMainAsync();
                     var sMeterA = await _catClient.ReadSMeterMainAsync();
 
-                    // VFO-B (Sub)
                     var freqB = await _catClient.ReadFrequencyBAsync();
                     var modeB = await _catClient.ReadModeSubAsync();
                     var sMeterB = await _catClient.ReadSMeterSubAsync();
 
-                    // TX Status
                     var isTx = await _catClient.ReadTransmitStatusAsync();
+                    var mainVfo = await GetMainVfoAsync();
 
                     return new
                     {
@@ -84,11 +89,11 @@ namespace FTdx101_WebApp.Controllers
                         vfoB = new { frequency = freqB, mode = modeB, sMeter = sMeterB },
                         isTransmitting = isTx,
                         isConnected = _catClient.IsConnected,
+                        mainVfo = mainVfo,
                         timestamp = DateTime.Now
                     };
                 });
 
-                // Timeout for actual serial operations
                 if (await Task.WhenAny(statusTask, Task.Delay(3000)) == statusTask)
                 {
                     return Ok(await statusTask);
@@ -133,7 +138,7 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
@@ -158,7 +163,7 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
@@ -183,14 +188,14 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
-                var success = await _catClient.SetFrequencyAAsync(request.FrequencyHz);
-                
-                return success ? Ok(new { message = "Frequency set successfully" }) :
-                    BadRequest(new { error = "Failed to set frequency" });
+                // Set VFO A frequency directly, regardless of which is active
+                var command = $"FA{request.FrequencyHz:D9};";
+                await _catClient.SendCommandAsync(command);
+                return Ok(new { message = "Frequency set successfully" });
             }
             catch (Exception ex)
             {
@@ -210,14 +215,14 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
-                var success = await _catClient.SetFrequencyBAsync(request.FrequencyHz);
-                
-                return success ? Ok(new { message = "Frequency set successfully" }) :
-                    BadRequest(new { error = "Failed to set frequency" });
+                // Set VFO B frequency directly, regardless of which is active
+                var command = $"FB{request.FrequencyHz:D9};";
+                await _catClient.SendCommandAsync(command);
+                return Ok(new { message = "Frequency set successfully" });
             }
             catch (Exception ex)
             {
@@ -237,12 +242,11 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
                 var success = await _catClient.SetModeMainAsync(request.Mode);
-                
                 return success ? Ok(new { message = $"Mode set to {request.Mode}" }) :
                     BadRequest(new { error = "Failed to set mode" });
             }
@@ -264,12 +268,11 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
                 var success = await _catClient.SetModeSubAsync(request.Mode);
-                
                 return success ? Ok(new { message = $"Mode set to {request.Mode}" }) :
                     BadRequest(new { error = "Failed to set mode" });
             }
@@ -291,7 +294,7 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
@@ -318,7 +321,7 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
@@ -345,7 +348,7 @@ namespace FTdx101_WebApp.Controllers
             {
                 return StatusCode(503, new { error = "Radio busy" });
             }
-            
+
             try
             {
                 await EnsureConnectedAsync();
@@ -384,10 +387,7 @@ namespace FTdx101_WebApp.Controllers
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
         public class CommandRequest { public string Command { get; set; } = string.Empty; }
         public class AntennaRequest { public string Antenna { get; set; } = string.Empty; }
-        // Add this class inside CatController (after AntennaRequest)
         public class BandRequest { public string Band { get; set; } = string.Empty; }
-
-        // Add these endpoints to CatController
 
         [HttpPost("band/a")]
         public async Task<IActionResult> SetBandA([FromBody] BandRequest request)
@@ -399,25 +399,28 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
 
-                // Map band string to code
-                var bandCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "160m", "00" }, { "80m", "01" }, { "60m", "02" }, { "40m", "03" },
-            { "30m", "04" }, { "20m", "05" }, { "17m", "06" }, { "15m", "07" },
-            { "12m", "08" }, { "10m", "09" }, { "6m", "10" }, { "4m", "11" }
-        };
+                // Map band to center frequency in Hz
+                var bandFreqs = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "160m", 1840000 }, { "80m", 3700000 }, { "60m", 5357000 },
+                    { "40m", 7100000 }, { "30m", 10136000 }, { "20m", 14074000 },
+                    { "17m", 18110000 }, { "15m", 21074000 }, { "12m", 24915000 },
+                    { "10m", 28074000 }, { "6m", 50313000 }, { "4m", 70100000 }
+                };
 
-                if (!bandCodes.TryGetValue(request.Band, out var code))
+                if (!bandFreqs.TryGetValue(request.Band, out var freq))
                     return BadRequest(new { error = "Invalid band" });
 
-                var command = $"BS{code};";
+                // Set VFO A frequency directly
+                var command = $"FA{freq:D9};";
                 await _catClient.SendCommandAsync(command);
-                _logger.LogInformation("Set Main band to {Band} (code {Code})", request.Band, code);
+
+                _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, freq);
                 return Ok(new { message = $"Band {request.Band} selected" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting Main band");
+                _logger.LogError(ex, "Error setting Receiver A band");
                 return StatusCode(500, new { error = "Failed to set band" });
             }
             finally
@@ -436,25 +439,27 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
 
-                // Map band string to code
-                var bandCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "160m", "00" }, { "80m", "01" }, { "60m", "02" }, { "40m", "03" },
-            { "30m", "04" }, { "20m", "05" }, { "17m", "06" }, { "15m", "07" },
-            { "12m", "08" }, { "10m", "09" }, { "6m", "10" }, { "4m", "11" }
-        };
+                var bandFreqs = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "160m", 1840000 }, { "80m", 3700000 }, { "60m", 5357000 },
+                    { "40m", 7100000 }, { "30m", 10136000 }, { "20m", 14074000 },
+                    { "17m", 18110000 }, { "15m", 21074000 }, { "12m", 24915000 },
+                    { "10m", 28074000 }, { "6m", 50313000 }, { "4m", 70100000 }
+                };
 
-                if (!bandCodes.TryGetValue(request.Band, out var code))
+                if (!bandFreqs.TryGetValue(request.Band, out var freq))
                     return BadRequest(new { error = "Invalid band" });
 
-                var command = $"BS{code};";
+                // Set VFO B frequency directly
+                var command = $"FB{freq:D9};";
                 await _catClient.SendCommandAsync(command);
-                _logger.LogInformation("Set Sub band to {Band} (code {Code})", request.Band, code);
+
+                _logger.LogInformation("Set Receiver B band to {Band} (freq {Freq})", request.Band, freq);
                 return Ok(new { message = $"Band {request.Band} selected" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting Sub band");
+                _logger.LogError(ex, "Error setting Receiver B band");
                 return StatusCode(500, new { error = "Failed to set band" });
             }
             finally

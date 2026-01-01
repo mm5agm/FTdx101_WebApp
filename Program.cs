@@ -1,6 +1,7 @@
 ﻿using FTdx101_WebApp.Services;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Serilog;
 
 namespace FTdx101_WebApp
 {
@@ -8,7 +9,19 @@ namespace FTdx101_WebApp
     {
         public static async Task Main(string[] args)
         {
+            // Configure Serilog FIRST (before builder)
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json")
+                    .Build())
+                .WriteTo.Console()
+                .WriteTo.File("Logs/app.log", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
+
+            // Use Serilog for logging
+            builder.Host.UseSerilog();
 
             // Add services to the container.
             builder.Services.AddRazorPages();
@@ -18,15 +31,9 @@ namespace FTdx101_WebApp
             builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
             // ===== CAT MULTIPLEXER ARCHITECTURE =====
-            // Register the multiplexer (manages COM port)
             builder.Services.AddSingleton<CatMultiplexerService>();
-
-            // Register multiplexed client for Web UI
             builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
-
-            // Register rigctld server for WSJT-X
             builder.Services.AddHostedService<RigctldServer>();
-
             builder.Services.AddSingleton<IRigStateService, RigStateService>();
             builder.Services.AddHostedService<CatPollingService>();
 
@@ -37,12 +44,9 @@ namespace FTdx101_WebApp
             var settingsService = app.Services.GetRequiredService<ISettingsService>();
             var settings = await settingsService.GetSettingsAsync();
 
-            // Configure web server URL
-            var webAddress = settings.WebAddress == "localhost" ? "localhost" : "0.0.0.0";
-            var urls = new[] { $"http://{webAddress}:{settings.WebPort}" };
+            // Configure web server URL for LAN access
+            var listenUrl = $"http://0.0.0.0:{settings.WebPort}";
 
-            // Note: We can't change URLs after app.Build(), so we need to restart
-            // For now, log a warning if settings don't match defaults
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
             if (!app.Environment.IsDevelopment())
@@ -70,9 +74,9 @@ namespace FTdx101_WebApp
             logger.LogInformation("📡 FT-dx101 CAT Multiplexer Started");
             logger.LogInformation("========================================");
             logger.LogInformation("🔌 COM Port:      {Port} @ {Baud} baud", settings.SerialPort, settings.BaudRate);
-            logger.LogInformation("🌐 Web UI:        http://localhost:{Port}", settings.WebPort);
+            logger.LogInformation("🌐 Web UI:        http://{Host}:{Port}", GetLocalIPAddress(), settings.WebPort);
             logger.LogInformation("🔧 rigctld:       localhost:4532 (for WSJT-X)");
-            logger.LogInformation("📡 API:           http://localhost:{Port}/api/cat/status", settings.WebPort);
+            logger.LogInformation("📡 API:           http://{Host}:{Port}/api/cat/status", GetLocalIPAddress(), settings.WebPort);
             logger.LogInformation("========================================");
 
             // Register cleanup
@@ -84,12 +88,12 @@ namespace FTdx101_WebApp
                 logger.LogInformation("✅ COM port released");
             });
 
-            // Open browser
+            // Open browser (optional, opens localhost on the server)
             OpenBrowser($"http://localhost:{settings.WebPort}");
             logger.LogInformation("🌐 Browser opened");
 
-            // Run the web server (this blocks until shutdown)
-            await app.RunAsync();
+            // Run the web server on all interfaces for LAN access
+            await app.RunAsync(listenUrl);
         }
 
         private static void OpenBrowser(string url)
@@ -110,6 +114,24 @@ namespace FTdx101_WebApp
                 }
             }
             catch { }
+        }
+
+        // Helper to get the local LAN IP address for logging
+        private static string GetLocalIPAddress()
+        {
+            try
+            {
+                var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && !ip.ToString().StartsWith("127."))
+                    {
+                        return ip.ToString();
+                    }
+                }
+            }
+            catch { }
+            return "localhost";
         }
     }
 }
