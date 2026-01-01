@@ -142,6 +142,7 @@ namespace FTdx101_WebApp.Services
             {
                 if (_serialPort?.IsOpen != true)
                 {
+                    _logger.LogError("[{ClientId}] Command #{RequestId} failed: Serial port not open", request.ClientId, request.RequestId);
                     request.CompletionSource.SetResult(string.Empty);
                     return;
                 }
@@ -164,6 +165,16 @@ namespace FTdx101_WebApp.Services
 
                 // Read response
                 var response = await ReadResponseAsync(request);
+
+                if (string.IsNullOrWhiteSpace(response))
+                {
+                    _logger.LogWarning("[{ClientId}] Command #{RequestId} received empty response for '{Command}'", request.ClientId, request.RequestId, fullCommand.TrimEnd(';'));
+                }
+                else if (response.Contains("?") || response.Contains("ERROR", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogError("[{ClientId}] Command #{RequestId} received error response: '{Response}' for '{Command}'", request.ClientId, request.RequestId, response, fullCommand.TrimEnd(';'));
+                }
+
                 request.CompletionSource.SetResult(response);
 
                 _logger.LogDebug("[{ClientId}] <<< #{RequestId}: '{Response}' ({ElapsedMs}ms)",
@@ -172,8 +183,8 @@ namespace FTdx101_WebApp.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[{ClientId}] Error processing command #{RequestId}",
-                    request.ClientId, request.RequestId);
+                _logger.LogError(ex, "[{ClientId}] Error processing command #{RequestId}: '{Command}'",
+                    request.ClientId, request.RequestId, request.Command);
                 request.CompletionSource.SetException(ex);
             }
         }

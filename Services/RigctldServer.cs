@@ -149,8 +149,8 @@ namespace FTdx101_WebApp.Services
                 case "m": return await GetModeAsync(clientId);
                 case "M": return parts.Length > 1 ? await SetModeAsync(parts[1], parts.Length > 2 ? parts[2] : null, clientId) : "RPRT -1";
                 // VFO
-                case "v": return GetVfo();
-                case "V": return parts.Length > 1 ? SetVfo(parts[1]) : "RPRT -1";
+                case "v": return "VFOA"; // Always report VFOA
+                case "V": return SetVfo(parts[1]); // Always ignore VFO selection
                 // PTT
                 case "t": return await GetPttAsync(clientId);
                 case "T": return parts.Length > 1 ? await SetPttAsync(parts[1], clientId) : "RPRT -1";
@@ -205,6 +205,7 @@ namespace FTdx101_WebApp.Services
             {
                 if (freq < MinFrequency || freq > MaxFrequency)
                     return "RPRT -1 // E_RANGE: Value out of valid range for this rig.";
+                // Always send to VFO A
                 var command = CatCommands.FormatFrequencyA(freq);
                 await _multiplexer.SendCommandAsync(command, clientId);
                 return "RPRT 0";
@@ -260,20 +261,16 @@ namespace FTdx101_WebApp.Services
             return "RPRT 0";
         }
 
-        private string GetVfo()
-        {
-            return _currentVfo;
-        }
-
         private string SetVfo(string vfo)
         {
-            if (vfo.Equals("VFOA", StringComparison.OrdinalIgnoreCase) ||
-                vfo.Equals("VFOB", StringComparison.OrdinalIgnoreCase))
-            {
-                _currentVfo = vfo.ToUpper();
-                return "RPRT 0";
-            }
-            return "RPRT -1";
+            // Always ignore VFO selection and force VFOA
+            _logger.LogInformation("WSJT-X requested VFO change to {Vfo}, but only VFOA is supported. Ignoring.", vfo);
+            return "RPRT 0";
+        }
+
+        private string GetVfo()
+        {
+            return "VFOA";
         }
 
         private string GetSplit() => _splitEnabled ? "1" : "0";
@@ -347,9 +344,9 @@ namespace FTdx101_WebApp.Services
         // --- Band change support using BSxx; command ---
         private async Task<string> SetBandAsync(string band, string clientId)
         {
-            // Accept band as "20m", "14", "14074000", etc.
             if (BandCodes.TryGetValue(band.ToLower(), out var code))
             {
+                // Always send to VFO A
                 await _multiplexer.SendCommandAsync($"BS{code};", clientId);
                 return "RPRT 0";
             }
