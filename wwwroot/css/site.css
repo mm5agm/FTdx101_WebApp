@@ -91,22 +91,16 @@ body {
 }
 
 /* Frequency digit styling for interactive tuning */
-.freq-digit {
+.digit {
     cursor: pointer;
     padding: 0 2px;
     border-radius: 2px;
     transition: background 0.2s;
 }
 
-.freq-dot {
-    padding: 0 2px;
-    color: #888;
-}
-
-/* Focus outline for accessibility and mouse wheel support */
-.freq-digit:focus {
-    outline: 2px solid #ffc107;
-    outline-offset: 1px;
-}
-
-/* Remove accidental JS and HTML from previous CSS */
+    .digit.selected {
+        background: yellow;
+        color: black;
+        border-radius: 3px;
+        padding: 2px 4px;
+    }

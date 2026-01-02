@@ -1,137 +1,60 @@
-﻿using FTdx101_WebApp.Services;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using Serilog;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using FTdx101_WebApp.Services;
 
-namespace FTdx101_WebApp
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddRazorPages();
+builder.Services.AddControllers();
+
+// Register the main CAT client for the web app
+builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
+
+// Register the multiplexer and radio state services
+builder.Services.AddSingleton<CatMultiplexerService>();
+builder.Services.AddSingleton<RadioStateService>();
+
+// Register the rigctld server as a background service
+builder.Services.AddHostedService<RigctldServer>();
+
+// Register your settings service
+builder.Services.AddSingleton<ISettingsService, SettingsService>();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
 {
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            // Configure Serilog FIRST (before builder)
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json")
-                    .Build())
-                .WriteTo.Console()
-                .WriteTo.File("Logs/app.log", rollingInterval: RollingInterval.Day)
-                .CreateLogger();
-
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Use Serilog for logging
-            builder.Host.UseSerilog();
-
-            // Add services to the container.
-            builder.Services.AddRazorPages();
-            builder.Services.AddControllers();
-
-            // Register Settings Service
-            builder.Services.AddSingleton<ISettingsService, SettingsService>();
-
-            // ===== CAT MULTIPLEXER ARCHITECTURE =====
-            builder.Services.AddSingleton<CatMultiplexerService>();
-            builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
-            builder.Services.AddHostedService<RigctldServer>();
-            builder.Services.AddSingleton<IRigStateService, RigStateService>();
-            builder.Services.AddHostedService<CatPollingService>();
-
-            // BUILD THE APP FIRST (creates the real service container)
-            var app = builder.Build();
-
-            // NOW we can get services from the container
-            var settingsService = app.Services.GetRequiredService<ISettingsService>();
-            var settings = await settingsService.GetSettingsAsync();
-
-            // Configure web server URL for LAN access
-            var listenUrl = $"http://0.0.0.0:{settings.WebPort}";
-
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-            }
-
-            app.UseRouting();
-            app.UseAuthorization();
-            app.MapControllers();
-            app.MapStaticAssets();
-            app.MapRazorPages().WithStaticAssets();
-
-            // Initialize the multiplexer from the REAL service container
-            var multiplexer = app.Services.GetRequiredService<CatMultiplexerService>();
-            var connected = await multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate);
-
-            if (!connected)
-            {
-                logger.LogWarning("⚠️ WARNING: Failed to connect to {Port}", settings.SerialPort);
-                logger.LogWarning("   The web interface will still start, but radio control will not work.");
-            }
-
-            logger.LogInformation("========================================");
-            logger.LogInformation("📡 FT-dx101 CAT Multiplexer Started");
-            logger.LogInformation("========================================");
-            logger.LogInformation("🔌 COM Port:      {Port} @ {Baud} baud", settings.SerialPort, settings.BaudRate);
-            logger.LogInformation("🌐 Web UI:        http://{Host}:{Port}", GetLocalIPAddress(), settings.WebPort);
-            logger.LogInformation("🔧 rigctld:       localhost:4532 (for WSJT-X)");
-            logger.LogInformation("📡 API:           http://{Host}:{Port}/api/cat/status", GetLocalIPAddress(), settings.WebPort);
-            logger.LogInformation("========================================");
-
-            // Register cleanup
-            var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-            lifetime.ApplicationStopping.Register(() =>
-            {
-                logger.LogInformation("⚠️ Shutting down - releasing COM port...");
-                multiplexer.Dispose();
-                logger.LogInformation("✅ COM port released");
-            });
-
-            // Open browser (optional, opens localhost on the server)
-            OpenBrowser($"http://localhost:{settings.WebPort}");
-            logger.LogInformation("🌐 Browser opened");
-
-            // Run the web server on all interfaces for LAN access
-            await app.RunAsync(listenUrl);
-        }
-
-        private static void OpenBrowser(string url)
-        {
-            try
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    Process.Start("xdg-open", url);
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    Process.Start("open", url);
-                }
-            }
-            catch { }
-        }
-
-        // Helper to get the local LAN IP address for logging
-        private static string GetLocalIPAddress()
-        {
-            try
-            {
-                var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-                foreach (var ip in host.AddressList)
-                {
-                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && !ip.ToString().StartsWith("127."))
-                    {
-                        return ip.ToString();
-                    }
-                }
-            }
-            catch { }
-            return "localhost";
-        }
-    }
+    app.UseDeveloperExceptionPage();
 }
+else
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapRazorPages();
+app.MapControllers();
+
+// Ensure CAT multiplexer connects to the serial port at startup
+using (var scope = app.Services.CreateScope())
+{
+    var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
+    var multiplexer = scope.ServiceProvider.GetRequiredService<CatMultiplexerService>();
+    var settings = settingsService.GetSettingsAsync().GetAwaiter().GetResult();
+    multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate).GetAwaiter().GetResult();
+
+    // Optional: Log a test CAT command response for diagnostics
+    var response = multiplexer.SendCommandAsync("FA;", "StartupDiag").GetAwaiter().GetResult();
+    var logger = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>();
+    logger.LogInformation("Startup CAT FA; response: {Response}", response);
+}
+
+app.Run();
