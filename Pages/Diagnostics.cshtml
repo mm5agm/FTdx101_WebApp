@@ -1,0 +1,19 @@
+﻿@page "/Diagnostics"
+@model FTdx101_WebApp.Pages.DiagnosticsModel
+@{
+    ViewData["Title"] = "Diagnostics";
+}
+<h1>@ViewData["Title"]</h1>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <ul class="navbar-nav flex-grow-1">
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-page="/Index">Home</a>
+        </li>
+    </ul>
+</nav>
+
+<ul>
+    <li><a href="/Ports" target="_blank">Ports</a> &mdash; View available COM ports</li>
+    <li><a href="/api/cat/status" target="_blank">Status</a> &mdash; View CAT status (JSON)</li>
+</ul>

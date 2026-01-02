@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="~/css/site.css" />
 
 <div class="container-fluid">
-    <div class="row g-3">
+    <div class="row g-3 flex-wrap">
         <!-- Receiver A Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-primary h-100 receiver-card">
@@ -26,7 +26,11 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var band in new[] { "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "4m" })
                             {
-                                <button class="btn btn-outline-primary btn-sm" onclick="setBand('A','@band')">@band</button>
+                                <button class="btn btn-outline-primary btn-sm band-btn"
+                                        data-receiver="A" data-value="@band"
+                                        onclick="setBand('A','@band')">
+                                    @band
+                                </button>
                             }
                         </div>
                     </div>
@@ -35,7 +39,11 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "AM", "DATA-USB", "RTTY-USB", "C4FM" })
                             {
-                                <button class="btn btn-outline-primary btn-sm" onclick="setMode('A','@mode')">@mode</button>
+                                <button class="btn btn-outline-primary btn-sm mode-btn"
+                                        data-receiver="A" data-value="@mode"
+                                        onclick="setMode('A','@mode')">
+                                    @mode
+                                </button>
                             }
                         </div>
                     </div>
@@ -44,7 +52,11 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var ant in new[] { "1", "2", "3" })
                             {
-                                <button class="btn btn-outline-primary btn-sm" onclick="setAntenna('A','@ant')">ANT @ant</button>
+                                <button class="btn btn-outline-primary btn-sm antenna-btn"
+                                        data-receiver="A" data-value="@ant"
+                                        onclick="setAntenna('A','@ant')">
+                                    ANT @ant
+                                </button>
                             }
                         </div>
                     </div>
@@ -77,7 +89,11 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var band in new[] { "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "4m" })
                             {
-                                <button class="btn btn-outline-success btn-sm" onclick="setBand('B','@band')">@band</button>
+                                <button class="btn btn-outline-success btn-sm band-btn"
+                                        data-receiver="B" data-value="@band"
+                                        onclick="setBand('B','@band')">
+                                    @band
+                                </button>
                             }
                         </div>
                     </div>
@@ -86,7 +102,11 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "AM", "DATA-USB", "RTTY-USB", "C4FM" })
                             {
-                                <button class="btn btn-outline-success btn-sm" onclick="setMode('B','@mode')">@mode</button>
+                                <button class="btn btn-outline-success btn-sm mode-btn"
+                                        data-receiver="B" data-value="@mode"
+                                        onclick="setMode('B','@mode')">
+                                    @mode
+                                </button>
                             }
                         </div>
                     </div>
@@ -95,7 +115,11 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var ant in new[] { "1", "2", "3" })
                             {
-                                <button class="btn btn-outline-success btn-sm" onclick="setAntenna('B','@ant')">ANT @ant</button>
+                                <button class="btn btn-outline-success btn-sm antenna-btn"
+                                        data-receiver="B" data-value="@ant"
+                                        onclick="setAntenna('B','@ant')">
+                                    ANT @ant
+                                </button>
                             }
                         </div>
                     </div>
@@ -112,59 +136,103 @@
         </div>
     </div>
 </div>
-
 @section Scripts {
     <script>
-        // --- Frequency Digit Display and Interaction ---
-        function renderFrequencyDigits(freq) {
+        let editing = { A: false, B: false };
+        let localFreq = { A: null, B: null };
+        let selectedIdx = { A: null, B: null };
+        let lastSentFreq = { A: null, B: null };
+        let lastBackendFreq = { A: null, B: null };
+
+        function renderFrequencyDigits(freq, selIdx) {
             if (!freq || freq < 1000) return '<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
             let s = freq.toString().padStart(9, "0");
             let html = "";
+            let digitIdx = 0;
             for (let i = 0; i < 9; i++) {
-                if (i === 3 || i === 6) html += '<span class="digit">.</span>';
-                html += `<span class="digit" tabindex="0">${s[i]}</span>`;
+                if (i === 3 || i === 6) {
+                    html += '<span class="digit">.</span>';
+                }
+                let selected = (selIdx === digitIdx) ? " selected" : "";
+                html += `<span class="digit${selected}" tabindex="0">${s[i]}</span>`;
+                digitIdx++;
             }
             return html;
         }
 
         function updateFrequencyDisplay(receiver, freqHz) {
             const display = document.getElementById('freq' + receiver);
-            display.innerHTML = renderFrequencyDigits(freqHz);
+            let selIdx = selectedIdx[receiver];
+            let freqToShow = (editing[receiver] && localFreq[receiver] !== null) ? localFreq[receiver] : freqHz;
+            display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
         }
 
         function initializeDigitInteraction(receiver) {
             const display = document.getElementById('freq' + receiver);
+            if (display._initialized) return;
+            display._initialized = true;
+
             display.addEventListener('click', function (e) {
                 if (!e.target.classList.contains('digit') || e.target.textContent === '.') return;
-                display.querySelectorAll('.digit').forEach(d => d.classList.remove('selected'));
-                e.target.classList.add('selected');
+                let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                digits.forEach(d => d.classList.remove('selected'));
+                selectedIdx[receiver] = digits.indexOf(e.target);
+                if (selectedIdx[receiver] !== -1) {
+                    digits[selectedIdx[receiver]].classList.add('selected');
+                    editing[receiver] = true;
+                    localFreq[receiver] = parseInt(digits.map(d => d.textContent).join(''));
+                }
             });
+
             display.addEventListener('wheel', function (e) {
-                const selected = display.querySelector('.digit.selected');
-                if (!selected || selected.textContent === '.') return;
-                const digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
-                const idx = digits.indexOf(selected);
-                if (idx === -1) return;
-                let freqStr = digits.map(d => d.textContent).join('');
-                let freq = parseInt(freqStr);
-                let pos = 8 - idx;
-                let delta = Math.pow(10, pos) * (e.deltaY < 0 ? 1 : -1);
-                let newFreq = Math.max(30000, Math.min(75000000, freq + delta));
+                let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                let idx = selectedIdx[receiver];
+                if (idx === null || !digits[idx]) return;
+                let freqArr = digits.map(d => parseInt(d.textContent));
+                let carry = e.deltaY < 0 ? 1 : -1;
+                let i = idx;
+                while (carry !== 0 && i >= 0 && i < freqArr.length) {
+                    let newVal = freqArr[i] + carry;
+                    if (newVal > 9) {
+                        freqArr[i] = 0;
+                        carry = 1;
+                        i--;
+                    } else if (newVal < 0) {
+                        freqArr[i] = 9;
+                        carry = -1;
+                        i--;
+                    } else {
+                        freqArr[i] = newVal;
+                        carry = 0;
+                    }
+                }
+                let newFreq = parseInt(freqArr.join(''));
+                newFreq = Math.max(30000, Math.min(75000000, newFreq));
+                localFreq[receiver] = newFreq;
                 updateFrequencyDisplay(receiver, newFreq);
                 // Keep selection
-                const newDigits = display.querySelectorAll('.digit');
-                let digitIdx = 0;
-                for (let i = 0; i < newDigits.length; i++) {
-                    if (newDigits[i].textContent !== '.') {
-                        if (digitIdx === idx) newDigits[i].classList.add('selected');
-                        digitIdx++;
-                    }
+                let newDigits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                newDigits.forEach(d => d.classList.remove('selected'));
+                if (selectedIdx[receiver] !== null && newDigits[selectedIdx[receiver]]) {
+                    newDigits[selectedIdx[receiver]].classList.add('selected');
                 }
                 // Debounce send
                 clearTimeout(display._debounceTimer);
-                display._debounceTimer = setTimeout(() => setFrequency(receiver, newFreq), 200);
+                display._debounceTimer = setTimeout(() => {
+                    setFrequency(receiver, newFreq);
+                    lastSentFreq[receiver] = newFreq;
+                }, 600);
                 e.preventDefault();
             }, { passive: false });
+
+            document.addEventListener('click', function (e) {
+                if (!display.contains(e.target)) {
+                    selectedIdx[receiver] = null;
+                    editing[receiver] = false;
+                    localFreq[receiver] = null;
+                    updateFrequencyDisplay(receiver, lastBackendFreq[receiver]);
+                }
+            });
         }
 
         async function setFrequency(receiver, freqHz) {
@@ -202,7 +270,6 @@
             setTimeout(fetchRadioStatus, 500);
         }
 
-        // --- S-Meter Mapping with Interpolation ---
         function sMeterLabel(val) {
             const points = [
                 { label: "S0", value: 0 },
@@ -246,19 +313,51 @@
             document.getElementById('sMeterRaw' + receiver).textContent = `[${value}]`;
         }
 
+        function highlightButtons(receiver, band, mode, antenna) {
+            document.querySelectorAll(`.band-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === band);
+            });
+            document.querySelectorAll(`.mode-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === mode);
+            });
+            document.querySelectorAll(`.antenna-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === antenna);
+            });
+        }
+
         async function fetchRadioStatus() {
             const response = await fetch('/api/cat/status');
             if (!response.ok) return;
             const data = await response.json();
-            updateFrequencyDisplay('A', data.vfoA.frequency);
-            updateFrequencyDisplay('B', data.vfoB.frequency);
+            lastBackendFreq.A = data.vfoA.frequency;
+            lastBackendFreq.B = data.vfoB.frequency;
+
+            // Only exit editing if backend confirms the last sent value
+            if (editing.A && lastSentFreq.A !== null && data.vfoA.frequency === lastSentFreq.A) {
+                editing.A = false;
+                localFreq.A = null;
+                selectedIdx.A = null;
+            }
+            if (editing.B && lastSentFreq.B !== null && data.vfoB.frequency === lastSentFreq.B) {
+                editing.B = false;
+                localFreq.B = null;
+                selectedIdx.B = null;
+            }
+
+            if (!editing.A) updateFrequencyDisplay('A', data.vfoA.frequency);
+            else updateFrequencyDisplay('A', localFreq.A);
+
+            if (!editing.B) updateFrequencyDisplay('B', data.vfoB.frequency);
+            else updateFrequencyDisplay('B', localFreq.B);
+
             updateSMeter('A', data.vfoA.sMeter);
             updateSMeter('B', data.vfoB.sMeter);
-            initializeDigitInteraction('A');
-            initializeDigitInteraction('B');
-            // ... update other UI as needed ...
+            highlightButtons('A', data.vfoA.band, data.vfoA.mode, data.vfoA.antenna);
+            highlightButtons('B', data.vfoB.band, data.vfoB.mode, data.vfoB.antenna);
         }
 
+        initializeDigitInteraction('A');
+        initializeDigitInteraction('B');
         setInterval(fetchRadioStatus, 2000);
         fetchRadioStatus();
     </script>
