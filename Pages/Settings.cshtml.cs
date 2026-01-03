@@ -2,9 +2,8 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using FTdx101_WebApp.Models;
 using FTdx101_WebApp.Services;
-using System.Net;
-using System.Net.Sockets;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace FTdx101_WebApp.Pages
 {
@@ -42,26 +41,6 @@ namespace FTdx101_WebApp.Pages
                 return Page();
             }
 
-            // Validate port number is in acceptable range
-            if (Settings.WebPort < 1024 || Settings.WebPort > 65535)
-            {
-                ModelState.AddModelError("Settings.WebPort",
-                    "Port must be between 1024 and 65535. Ports below 1024 require administrator privileges.");
-                NetworkAddresses = GetLocalIPAddresses();
-                return Page();
-            }
-
-            // Validate port isn't in blocked range (6000-6063)
-            if (Settings.WebPort >= 6000 && Settings.WebPort <= 6063)
-            {
-                ModelState.AddModelError("Settings.WebPort",
-                    $"Port {Settings.WebPort} is blocked by most browsers for security reasons. " +
-                    "Please use a different port (recommended: 8080, 5000, or 8000).");
-                StatusMessage = $"❌ Port validation failed: Port {Settings.WebPort} is unsafe.";
-                NetworkAddresses = GetLocalIPAddresses();
-                return Page();
-            }
-
             // Validate Serial Port format
             if (!Settings.SerialPort.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
             {
@@ -75,18 +54,18 @@ namespace FTdx101_WebApp.Pages
             {
                 await _settingsService.SaveSettingsAsync(Settings);
 
-                var accessInfo = Settings.WebAddress == "0.0.0.0" 
-                    ? "all network interfaces" 
+                var accessInfo = Settings.WebAddress == "0.0.0.0"
+                    ? "all network interfaces"
                     : Settings.WebAddress == "localhost"
                         ? "localhost only"
                         : $"{Settings.WebAddress}";
 
-                StatusMessage = $"✓ Settings saved successfully! Web server will be available on {accessInfo} at port {Settings.WebPort}. " +
+                StatusMessage = $"✓ Settings saved successfully! Web server will be available on {accessInfo} at port 8080. " +
                     "Please restart the application for web server changes to take effect.";
 
                 _logger.LogInformation(
-                    "Settings updated: RadioModel={RadioModel}, SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort={WebPort}",
-                    Settings.RadioModel, Settings.SerialPort, Settings.BaudRate, Settings.WebAddress, Settings.WebPort);
+                    "Settings updated: RadioModel={RadioModel}, SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}",
+                    Settings.RadioModel, Settings.SerialPort, Settings.BaudRate, Settings.WebAddress);
             }
             catch (Exception ex)
             {
@@ -103,7 +82,7 @@ namespace FTdx101_WebApp.Pages
         private List<string> GetLocalIPAddresses()
         {
             var addresses = new List<string>();
-            
+
             try
             {
                 var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces()

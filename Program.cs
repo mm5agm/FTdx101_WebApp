@@ -21,6 +21,9 @@ builder.Services.AddHostedService<RigctldServer>();
 // Register your settings service
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
+// Force the web host to use port 8080 on all interfaces
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

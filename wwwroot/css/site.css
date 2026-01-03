@@ -53,7 +53,7 @@ body {
 
 @media (min-width: 992px) {
     .receiver-card {
-        min-width: 900px;
+        width: 100%;
     }
 }
 
