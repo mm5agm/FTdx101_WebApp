@@ -31,13 +31,13 @@ namespace FTdx101_WebApp.Services
 
                     _cachedSettings = JsonSerializer.Deserialize<ApplicationSettings>(json) ?? new ApplicationSettings();
 
-                    _logger.LogInformation("Settings deserialized: SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort={WebPort}",
-                        _cachedSettings.SerialPort, _cachedSettings.BaudRate, _cachedSettings.WebAddress, _cachedSettings.WebPort);
+                    _logger.LogInformation("Settings deserialized: SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort=8080",
+                        _cachedSettings.SerialPort, _cachedSettings.BaudRate, _cachedSettings.WebAddress);
                 }
                 else
                 {
                     _cachedSettings = new ApplicationSettings();
-                    _logger.LogWarning("Settings file does not exist at {Path}. Using defaults: SerialPort={SerialPort}, WebAddress={WebAddress}",
+                    _logger.LogWarning("Settings file does not exist at {Path}. Using defaults: SerialPort={SerialPort}, WebAddress={WebAddress}, WebPort=8080",
                         _settingsFilePath, _cachedSettings.SerialPort, _cachedSettings.WebAddress);
                 }
 
@@ -59,8 +59,8 @@ namespace FTdx101_WebApp.Services
             await _semaphore.WaitAsync();
             try
             {
-                _logger.LogInformation("SaveSettingsAsync called with: SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort={WebPort}",
-                    settings.SerialPort, settings.BaudRate, settings.WebAddress, settings.WebPort);
+                _logger.LogInformation("SaveSettingsAsync called with: SerialPort={SerialPort}, BaudRate={BaudRate}, WebAddress={WebAddress}, WebPort=8080",
+                    settings.SerialPort, settings.BaudRate, settings.WebAddress);
 
                 var options = new JsonSerializerOptions
                 {
