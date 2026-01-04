@@ -143,6 +143,9 @@
         let selectedIdx = { A: null, B: null };
         let lastSentFreq = { A: null, B: null };
         let lastBackendFreq = { A: null, B: null };
+        let lastBand = { A: null, B: null };
+        let lastMode = { A: null, B: null };
+        let lastAntenna = { A: null, B: null };
 
         function renderFrequencyDigits(freq, selIdx) {
             if (!freq || freq < 1000) return '<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
@@ -165,6 +168,18 @@
             let selIdx = selectedIdx[receiver];
             let freqToShow = (editing[receiver] && localFreq[receiver] !== null) ? localFreq[receiver] : freqHz;
             display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
+        }
+
+        function highlightButtons(receiver, band, mode, antenna) {
+            document.querySelectorAll(`.band-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === band);
+            });
+            document.querySelectorAll(`.mode-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === mode);
+            });
+            document.querySelectorAll(`.antenna-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-value') === antenna);
+            });
         }
 
         function initializeDigitInteraction(receiver) {
@@ -221,6 +236,7 @@
                 display._debounceTimer = setTimeout(() => {
                     setFrequency(receiver, newFreq);
                     lastSentFreq[receiver] = newFreq;
+                    localFreq[receiver] = null;
                 }, 600);
                 e.preventDefault();
             }, { passive: false });
@@ -241,9 +257,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ frequencyHz: freqHz })
             });
+            // Update UI immediately
+            updateFrequencyDisplay(receiver, freqHz);
         }
 
         async function setBand(receiver, band) {
+            highlightButtons(receiver, band, lastMode[receiver], lastAntenna[receiver]);
+            lastBand[receiver] = band;
             await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -253,6 +273,8 @@
         }
 
         async function setMode(receiver, mode) {
+            highlightButtons(receiver, lastBand[receiver], mode, lastAntenna[receiver]);
+            lastMode[receiver] = mode;
             await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -262,6 +284,8 @@
         }
 
         async function setAntenna(receiver, antenna) {
+            highlightButtons(receiver, lastBand[receiver], lastMode[receiver], antenna);
+            lastAntenna[receiver] = antenna;
             await fetch(`/api/cat/antenna/${receiver.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -313,18 +337,6 @@
             document.getElementById('sMeterRaw' + receiver).textContent = `[${value}]`;
         }
 
-        function highlightButtons(receiver, band, mode, antenna) {
-            document.querySelectorAll(`.band-btn[data-receiver="${receiver}"]`).forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-value') === band);
-            });
-            document.querySelectorAll(`.mode-btn[data-receiver="${receiver}"]`).forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-value') === mode);
-            });
-            document.querySelectorAll(`.antenna-btn[data-receiver="${receiver}"]`).forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-value') === antenna);
-            });
-        }
-
         async function fetchRadioStatus() {
             const response = await fetch('/api/cat/status');
             if (!response.ok) return;
@@ -332,15 +344,20 @@
             lastBackendFreq.A = data.vfoA.frequency;
             lastBackendFreq.B = data.vfoB.frequency;
 
-            // Only exit editing if backend confirms the last sent value
-            if (editing.A && lastSentFreq.A !== null && data.vfoA.frequency === lastSentFreq.A) {
+            lastBand.A = data.vfoA.band;
+            lastBand.B = data.vfoB.band;
+            lastMode.A = data.vfoA.mode;
+            lastMode.B = data.vfoB.mode;
+            lastAntenna.A = data.vfoA.antenna;
+            lastAntenna.B = data.vfoB.antenna;
+
+            // Only exit editing if backend confirms the last sent value AND the user is not in the middle of editing
+            if (editing.A && lastSentFreq.A !== null && localFreq.A === null && data.vfoA.frequency === lastSentFreq.A) {
                 editing.A = false;
-                localFreq.A = null;
                 selectedIdx.A = null;
             }
-            if (editing.B && lastSentFreq.B !== null && data.vfoB.frequency === lastSentFreq.B) {
+            if (editing.B && lastSentFreq.B !== null && localFreq.B === null && data.vfoB.frequency === lastSentFreq.B) {
                 editing.B = false;
-                localFreq.B = null;
                 selectedIdx.B = null;
             }
 

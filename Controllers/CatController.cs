@@ -130,6 +130,66 @@ namespace FTdx101_WebApp.Controllers
             }
         }
 
+        [HttpPost("frequency/a")]
+        public async Task<IActionResult> SetFrequencyA([FromBody] FrequencyRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var freq = request.FrequencyHz;
+                if (freq < 30000 || freq > 75000000)
+                    return BadRequest(new { error = "Frequency out of range" });
+
+                var command = $"FA{freq:D9};";
+                await _catClient.SendCommandAsync(command);
+
+                _logger.LogInformation("Set Receiver A frequency to {Freq}", freq);
+                return Ok(new { message = $"Frequency {freq} Hz set for Receiver A" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Receiver A frequency");
+                return StatusCode(500, new { error = "Failed to set frequency" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("frequency/b")]
+        public async Task<IActionResult> SetFrequencyB([FromBody] FrequencyRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var freq = request.FrequencyHz;
+                if (freq < 30000 || freq > 75000000)
+                    return BadRequest(new { error = "Frequency out of range" });
+
+                var command = $"FB{freq:D9};";
+                await _catClient.SendCommandAsync(command);
+
+                _logger.LogInformation("Set Receiver B frequency to {Freq}", freq);
+                return Ok(new { message = $"Frequency {freq} Hz set for Receiver B" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Receiver B frequency");
+                return StatusCode(500, new { error = "Failed to set frequency" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
         [HttpPost("band/a")]
         public async Task<IActionResult> SetBandA([FromBody] BandRequest request)
         {
@@ -317,5 +377,6 @@ namespace FTdx101_WebApp.Controllers
         public class BandRequest { public string Band { get; set; } = string.Empty; }
         public class AntennaRequest { public string Antenna { get; set; } = string.Empty; }
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
+        public class FrequencyRequest { public long FrequencyHz { get; set; } }
     }
 }

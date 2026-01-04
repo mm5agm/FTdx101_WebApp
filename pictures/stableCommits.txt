@@ -1,0 +1,44 @@
+	4f78df2 (HEAD -> main) Stable layout: receiver panels fixed, no overlap
+
+																		  
+		git checkout 4f78df2											 
+	
+	
+	To get back to that version
+	git stash
+	 git reset --hard 4f78df2
+	 
+	 
+	 **********************************************************************
+** Visual Studio 2026 Developer PowerShell v18.1.1
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+PS C:\Users\colin\source\repos\FTdx101_WebApp> git stash
+warning: in the working copy of 'Controllers/CatController.cs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Pages/Index.cshtml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'wwwroot/css/site.css', LF will be replaced by CRLF the next time Git touches it
+Saved working directory and index state WIP on main: 4f78df2 Stable layout: receiver panels fixed, no overlap
+PS C:\Users\colin\source\repos\FTdx101_WebApp>  git reset --hard 4f78df2
+HEAD is now at 4f78df2 Stable layout: receiver panels fixed, no overlap
+PS C:\Users\colin\source\repos\FTdx101_WebApp>
+}														  
+										   
+		
+													  
+ 
+
+				
+											   
+												
+
+							  
+									   
+																 
+	 
+																			
+										  
+		
+													 
+ 
+
+							  
