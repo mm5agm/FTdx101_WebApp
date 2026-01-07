@@ -28,7 +28,7 @@
                             {
                                 <button class="btn btn-outline-primary btn-sm band-btn"
                                         data-receiver="A" data-value="@band"
-                                        onclick="setBand('A','@band')">
+                                        onclick="window.radioControl.setBand('A','@band')">
                                     @band
                                 </button>
                             }
@@ -41,7 +41,7 @@
                             {
                                 <button class="btn btn-outline-primary btn-sm mode-btn"
                                         data-receiver="A" data-value="@mode"
-                                        onclick="setMode('A','@mode')">
+                                        onclick="window.radioControl.setMode('A','@mode')">
                                     @mode
                                 </button>
                             }
@@ -54,7 +54,7 @@
                             {
                                 <button class="btn btn-outline-primary btn-sm antenna-btn"
                                         data-receiver="A" data-value="@ant"
-                                        onclick="setAntenna('A','@ant')">
+                                        onclick="window.radioControl.setAntenna('A','@ant')">
                                     ANT @ant
                                 </button>
                             }
@@ -91,7 +91,7 @@
                             {
                                 <button class="btn btn-outline-success btn-sm band-btn"
                                         data-receiver="B" data-value="@band"
-                                        onclick="setBand('B','@band')">
+                                        onclick="window.radioControl.setBand('B','@band')">
                                     @band
                                 </button>
                             }
@@ -104,7 +104,7 @@
                             {
                                 <button class="btn btn-outline-success btn-sm mode-btn"
                                         data-receiver="B" data-value="@mode"
-                                        onclick="setMode('B','@mode')">
+                                        onclick="window.radioControl.setMode('B','@mode')">
                                     @mode
                                 </button>
                             }
@@ -117,7 +117,7 @@
                             {
                                 <button class="btn btn-outline-success btn-sm antenna-btn"
                                         data-receiver="B" data-value="@ant"
-                                        onclick="setAntenna('B','@ant')">
+                                        onclick="window.radioControl.setAntenna('B','@ant')">
                                     ANT @ant
                                 </button>
                             }
@@ -136,246 +136,335 @@
         </div>
     </div>
 </div>
+
 @section Scripts {
     <script>
-        let editing = { A: false, B: false };
-        let localFreq = { A: null, B: null };
-        let selectedIdx = { A: null, B: null };
-        let lastSentFreq = { A: null, B: null };
-        let lastBackendFreq = { A: null, B: null };
-        let lastBand = { A: null, B: null };
-        let lastMode = { A: null, B: null };
-        let lastAntenna = { A: null, B: null };
+        (function() {
+            'use strict';
 
-        function renderFrequencyDigits(freq, selIdx) {
-            if (!freq || freq < 1000) return '<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
-            let s = freq.toString().padStart(9, "0");
-            let html = "";
-            let digitIdx = 0;
-            for (let i = 0; i < 9; i++) {
-                if (i === 3 || i === 6) {
-                    html += '<span class="digit">.</span>';
+            console.log('=== FTdx101 Control Interface Starting ===');
+
+            // State variables
+            const state = {
+                editing: { A: false, B: false },
+                localFreq: { A: null, B: null },
+                selectedIdx: { A: null, B: null },
+                lastSentFreq: { A: null, B: null },
+                lastBackendFreq: { A: null, B: null },
+                lastBand: { A: null, B: null },
+                lastMode: { A: null, B: null },
+                lastAntenna: { A: null, B: null }
+            };
+
+            function renderFrequencyDigits(freq, selIdx) {
+                if (!freq || freq < 1000) {
+                    return '<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
                 }
-                let selected = (selIdx === digitIdx) ? " selected" : "";
-                html += `<span class="digit${selected}" tabindex="0">${s[i]}</span>`;
-                digitIdx++;
+                let s = freq.toString().padStart(9, "0");
+                let html = "";
+                let digitIdx = 0;
+                for (let i = 0; i < 9; i++) {
+                    if (i === 3 || i === 6) {
+                        html += '<span class="digit">.</span>';
+                    }
+                    let selected = (selIdx === digitIdx) ? " selected" : "";
+                    html += `<span class="digit${selected}" tabindex="0">${s[i]}</span>`;
+                    digitIdx++;
+                }
+                return html;
             }
-            return html;
-        }
 
-        function updateFrequencyDisplay(receiver, freqHz) {
-            const display = document.getElementById('freq' + receiver);
-            let selIdx = selectedIdx[receiver];
-            let freqToShow = (editing[receiver] && localFreq[receiver] !== null) ? localFreq[receiver] : freqHz;
-            display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
-        }
-
-        function highlightButtons(receiver, band, mode, antenna) {
-            document.querySelectorAll(`.band-btn[data-receiver="${receiver}"]`).forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-value') === band);
-            });
-            document.querySelectorAll(`.mode-btn[data-receiver="${receiver}"]`).forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-value') === mode);
-            });
-            document.querySelectorAll(`.antenna-btn[data-receiver="${receiver}"]`).forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-value') === antenna);
-            });
-        }
-
-        function initializeDigitInteraction(receiver) {
-            const display = document.getElementById('freq' + receiver);
-            if (display._initialized) return;
-            display._initialized = true;
-
-            display.addEventListener('click', function (e) {
-                if (!e.target.classList.contains('digit') || e.target.textContent === '.') return;
-                let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
-                digits.forEach(d => d.classList.remove('selected'));
-                selectedIdx[receiver] = digits.indexOf(e.target);
-                if (selectedIdx[receiver] !== -1) {
-                    digits[selectedIdx[receiver]].classList.add('selected');
-                    editing[receiver] = true;
-                    localFreq[receiver] = parseInt(digits.map(d => d.textContent).join(''));
+            function updateFrequencyDisplay(receiver, freqHz) {
+                const display = document.getElementById('freq' + receiver);
+                if (!display) {
+                    console.warn(`Frequency display element not found: freq${receiver}`);
+                    return;
                 }
-            });
+                let selIdx = state.selectedIdx[receiver];
+                let freqToShow = (state.editing[receiver] && state.localFreq[receiver] !== null) ? state.localFreq[receiver] : freqHz;
+                display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
+            }
 
-            display.addEventListener('wheel', function (e) {
-                let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
-                let idx = selectedIdx[receiver];
-                if (idx === null || !digits[idx]) return;
-                let freqArr = digits.map(d => parseInt(d.textContent));
-                let carry = e.deltaY < 0 ? 1 : -1;
-                let i = idx;
-                while (carry !== 0 && i >= 0 && i < freqArr.length) {
-                    let newVal = freqArr[i] + carry;
-                    if (newVal > 9) {
-                        freqArr[i] = 0;
-                        carry = 1;
-                        i--;
-                    } else if (newVal < 0) {
-                        freqArr[i] = 9;
-                        carry = -1;
-                        i--;
+            function highlightButtons(receiver, band, mode, antenna) {
+                document.querySelectorAll(`.band-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-value') === band);
+                });
+                document.querySelectorAll(`.mode-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-value') === mode);
+                });
+                document.querySelectorAll(`.antenna-btn[data-receiver="${receiver}"]`).forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-value') === antenna);
+                });
+            }
+
+            function initializeDigitInteraction(receiver) {
+                const display = document.getElementById('freq' + receiver);
+                if (!display) {
+                    console.warn(`Cannot initialize digit interaction: freq${receiver} not found`);
+                    return;
+                }
+                if (display._initialized) return;
+                display._initialized = true;
+
+                display.addEventListener('click', function (e) {
+                    if (!e.target.classList.contains('digit') || e.target.textContent === '.') return;
+                    let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                    digits.forEach(d => d.classList.remove('selected'));
+                    state.selectedIdx[receiver] = digits.indexOf(e.target);
+                    if (state.selectedIdx[receiver] !== -1) {
+                        digits[state.selectedIdx[receiver]].classList.add('selected');
+                        state.editing[receiver] = true;
+                        state.localFreq[receiver] = parseInt(digits.map(d => d.textContent).join(''));
+                    }
+                });
+
+                display.addEventListener('wheel', function (e) {
+                    let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                    let idx = state.selectedIdx[receiver];
+                    if (idx === null || !digits[idx]) return;
+                    let freqArr = digits.map(d => parseInt(d.textContent));
+                    let carry = e.deltaY < 0 ? 1 : -1;
+                    let i = idx;
+                    while (carry !== 0 && i >= 0 && i < freqArr.length) {
+                        let newVal = freqArr[i] + carry;
+                        if (newVal > 9) {
+                            freqArr[i] = 0;
+                            carry = 1;
+                            i--;
+                        } else if (newVal < 0) {
+                            freqArr[i] = 9;
+                            carry = -1;
+                            i--;
+                        } else {
+                            freqArr[i] = newVal;
+                            carry = 0;
+                        }
+                    }
+                    let newFreq = parseInt(freqArr.join(''));
+                    newFreq = Math.max(30000, Math.min(75000000, newFreq));
+                    state.localFreq[receiver] = newFreq;
+                    updateFrequencyDisplay(receiver, newFreq);
+                    let newDigits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                    newDigits.forEach(d => d.classList.remove('selected'));
+                    if (state.selectedIdx[receiver] !== null && newDigits[state.selectedIdx[receiver]]) {
+                        newDigits[state.selectedIdx[receiver]].classList.add('selected');
+                    }
+                    clearTimeout(display._debounceTimer);
+                    display._debounceTimer = setTimeout(() => {
+                        setFrequency(receiver, newFreq);
+                        state.lastSentFreq[receiver] = newFreq;
+                        state.localFreq[receiver] = null;
+                    }, 600);
+                    e.preventDefault();
+                }, { passive: false });
+
+                document.addEventListener('click', function (e) {
+                    if (!display.contains(e.target)) {
+                        state.selectedIdx[receiver] = null;
+                        state.editing[receiver] = false;
+                        state.localFreq[receiver] = null;
+                        updateFrequencyDisplay(receiver, state.lastBackendFreq[receiver]);
+                    }
+                });
+            }
+
+            async function setFrequency(receiver, freqHz) {
+                try {
+                    console.log(`Setting ${receiver} frequency to ${freqHz} Hz`);
+                    const response = await fetch(`/api/cat/frequency/${receiver.toLowerCase()}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ frequencyHz: freqHz })
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to set frequency:', await response.text());
                     } else {
-                        freqArr[i] = newVal;
-                        carry = 0;
+                        console.log(`Frequency set successfully: ${receiver} -> ${freqHz} Hz`);
+                    }
+                    updateFrequencyDisplay(receiver, freqHz);
+                } catch (error) {
+                    console.error('Error setting frequency:', error);
+                }
+            }
+
+            async function setBand(receiver, band) {
+                try {
+                    console.log(`Setting ${receiver} band to ${band}`);
+                    highlightButtons(receiver, band, state.lastMode[receiver], state.lastAntenna[receiver]);
+                    state.lastBand[receiver] = band;
+                    const response = await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ band })
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to set band:', await response.text());
+                    } else {
+                        console.log(`Band set successfully: ${receiver} -> ${band}`);
+                    }
+                    setTimeout(fetchRadioStatus, 500);
+                } catch (error) {
+                    console.error('Error setting band:', error);
+                }
+            }
+
+            async function setMode(receiver, mode) {
+                try {
+                    console.log(`Setting ${receiver} mode to ${mode}`);
+                    highlightButtons(receiver, state.lastBand[receiver], mode, state.lastAntenna[receiver]);
+                    state.lastMode[receiver] = mode;
+                    const response = await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mode })
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to set mode:', await response.text());
+                    } else {
+                        console.log(`Mode set successfully: ${receiver} -> ${mode}`);
+                    }
+                    setTimeout(fetchRadioStatus, 500);
+                } catch (error) {
+                    console.error('Error setting mode:', error);
+                }
+            }
+
+            async function setAntenna(receiver, antenna) {
+                try {
+                    console.log(`Setting ${receiver} antenna to ${antenna}`);
+                    highlightButtons(receiver, state.lastBand[receiver], state.lastMode[receiver], antenna);
+                    state.lastAntenna[receiver] = antenna;
+                    const response = await fetch(`/api/cat/antenna/${receiver.toLowerCase()}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ antenna })
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to set antenna:', await response.text());
+                    } else {
+                        console.log(`Antenna set successfully: ${receiver} -> ${antenna}`);
+                    }
+                    setTimeout(fetchRadioStatus, 500);
+                } catch (error) {
+                    console.error('Error setting antenna:', error);
+                }
+            }
+
+            function sMeterLabel(val) {
+                const points = [
+                    { label: "S0", value: 0 },
+                    { label: "S1", value: 4 },
+                    { label: "S3", value: 30 },
+                    { label: "S5", value: 65 },
+                    { label: "S7", value: 95 },
+                    { label: "S9", value: 130 },
+                    { label: "S9+20", value: 171 },
+                    { label: "S9+40", value: 212 },
+                    { label: "S9+60", value: 255 }
+                ];
+                if (val <= points[0].value) return points[0].label;
+                for (let i = 1; i < points.length; i++) {
+                    if (val <= points[i].value) {
+                        const prev = points[i - 1];
+                        const next = points[i];
+                        const frac = (val - prev.value) / (next.value - prev.value);
+                        if (val === next.value) return next.label;
+                        if (next.label.startsWith("S9+")) {
+                            const plus = parseInt(next.label.replace("S9+", ""));
+                            const prevPlus = prev.label.startsWith("S9+") ? parseInt(prev.label.replace("S9+", "")) : 0;
+                            const interp = Math.round(prevPlus + frac * (plus - prevPlus));
+                            return "S9+" + interp;
+                        } else {
+                            const prevNum = parseInt(prev.label.replace("S", ""));
+                            const nextNum = parseInt(next.label.replace("S", ""));
+                            const interp = Math.round(prevNum + frac * (nextNum - prevNum));
+                            return "S" + interp;
+                        }
                     }
                 }
-                let newFreq = parseInt(freqArr.join(''));
-                newFreq = Math.max(30000, Math.min(75000000, newFreq));
-                localFreq[receiver] = newFreq;
-                updateFrequencyDisplay(receiver, newFreq);
-                // Keep selection
-                let newDigits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
-                newDigits.forEach(d => d.classList.remove('selected'));
-                if (selectedIdx[receiver] !== null && newDigits[selectedIdx[receiver]]) {
-                    newDigits[selectedIdx[receiver]].classList.add('selected');
+                return "S9+60";
+            }
+
+            function updateSMeter(receiver, value) {
+                const percentage = (value / 255) * 100;
+                const bar = document.getElementById('sMeterBar' + receiver);
+                const valueSpan = document.getElementById('sMeterValue' + receiver);
+                const rawSpan = document.getElementById('sMeterRaw' + receiver);
+
+                if (bar) {
+                    bar.style.width = percentage + '%';
+                    bar.setAttribute('aria-valuenow', value);
                 }
-                // Debounce send
-                clearTimeout(display._debounceTimer);
-                display._debounceTimer = setTimeout(() => {
-                    setFrequency(receiver, newFreq);
-                    lastSentFreq[receiver] = newFreq;
-                    localFreq[receiver] = null;
-                }, 600);
-                e.preventDefault();
-            }, { passive: false });
+                if (valueSpan) valueSpan.textContent = sMeterLabel(value);
+                if (rawSpan) rawSpan.textContent = `[${value}]`;
+            }
 
-            document.addEventListener('click', function (e) {
-                if (!display.contains(e.target)) {
-                    selectedIdx[receiver] = null;
-                    editing[receiver] = false;
-                    localFreq[receiver] = null;
-                    updateFrequencyDisplay(receiver, lastBackendFreq[receiver]);
-                }
-            });
-        }
-
-        async function setFrequency(receiver, freqHz) {
-            await fetch(`/api/cat/frequency/${receiver.toLowerCase()}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ frequencyHz: freqHz })
-            });
-            // Update UI immediately
-            updateFrequencyDisplay(receiver, freqHz);
-        }
-
-        async function setBand(receiver, band) {
-            highlightButtons(receiver, band, lastMode[receiver], lastAntenna[receiver]);
-            lastBand[receiver] = band;
-            await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ band })
-            });
-            setTimeout(fetchRadioStatus, 500);
-        }
-
-        async function setMode(receiver, mode) {
-            highlightButtons(receiver, lastBand[receiver], mode, lastAntenna[receiver]);
-            lastMode[receiver] = mode;
-            await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode })
-            });
-            setTimeout(fetchRadioStatus, 500);
-        }
-
-        async function setAntenna(receiver, antenna) {
-            highlightButtons(receiver, lastBand[receiver], lastMode[receiver], antenna);
-            lastAntenna[receiver] = antenna;
-            await fetch(`/api/cat/antenna/${receiver.toLowerCase()}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ antenna })
-            });
-            setTimeout(fetchRadioStatus, 500);
-        }
-
-        function sMeterLabel(val) {
-            const points = [
-                { label: "S0", value: 0 },
-                { label: "S1", value: 4 },
-                { label: "S3", value: 30 },
-                { label: "S5", value: 65 },
-                { label: "S7", value: 95 },
-                { label: "S9", value: 130 },
-                { label: "S9+20", value: 171 },
-                { label: "S9+40", value: 212 },
-                { label: "S9+60", value: 255 }
-            ];
-            if (val <= points[0].value) return points[0].label;
-            for (let i = 1; i < points.length; i++) {
-                if (val <= points[i].value) {
-                    const prev = points[i - 1];
-                    const next = points[i];
-                    const frac = (val - prev.value) / (next.value - prev.value);
-                    if (val === next.value) return next.label;
-                    if (next.label.startsWith("S9+")) {
-                        const plus = parseInt(next.label.replace("S9+", ""));
-                        const prevPlus = prev.label.startsWith("S9+") ? parseInt(prev.label.replace("S9+", "")) : 0;
-                        const interp = Math.round(prevPlus + frac * (plus - prevPlus));
-                        return "S9+" + interp;
-                    } else {
-                        const prevNum = parseInt(prev.label.replace("S", ""));
-                        const nextNum = parseInt(next.label.replace("S", ""));
-                        const interp = Math.round(prevNum + frac * (nextNum - prevNum));
-                        return "S" + interp;
+            async function fetchRadioStatus() {
+                try {
+                    const response = await fetch('/api/cat/status');
+                    if (!response.ok) {
+                        console.error('Failed to fetch status:', response.status);
+                        return;
                     }
+                    const data = await response.json();
+                    console.log('Radio status updated:', data);
+
+                    state.lastBackendFreq.A = data.vfoA.frequency;
+                    state.lastBackendFreq.B = data.vfoB.frequency;
+
+                    state.lastBand.A = data.vfoA.band;
+                    state.lastBand.B = data.vfoB.band;
+                    state.lastMode.A = data.vfoA.mode;
+                    state.lastMode.B = data.vfoB.mode;
+                    state.lastAntenna.A = data.vfoA.antenna;
+                    state.lastAntenna.B = data.vfoB.antenna;
+
+                    if (state.editing.A && state.lastSentFreq.A !== null && state.localFreq.A === null && data.vfoA.frequency === state.lastSentFreq.A) {
+                        state.editing.A = false;
+                        state.selectedIdx.A = null;
+                    }
+                    if (state.editing.B && state.lastSentFreq.B !== null && state.localFreq.B === null && data.vfoB.frequency === state.lastSentFreq.B) {
+                        state.editing.B = false;
+                        state.selectedIdx.B = null;
+                    }
+
+                    if (!state.editing.A) updateFrequencyDisplay('A', data.vfoA.frequency);
+                    else updateFrequencyDisplay('A', state.localFreq.A);
+
+                    if (!state.editing.B) updateFrequencyDisplay('B', data.vfoB.frequency);
+                    else updateFrequencyDisplay('B', state.localFreq.B);
+
+                    updateSMeter('A', data.vfoA.sMeter);
+                    updateSMeter('B', data.vfoB.sMeter);
+                    highlightButtons('A', data.vfoA.band, data.vfoA.mode, data.vfoA.antenna);
+                    highlightButtons('B', data.vfoB.band, data.vfoB.mode, data.vfoB.antenna);
+                } catch (error) {
+                    console.error('Error fetching radio status:', error);
                 }
             }
-            return "S9+60";
-        }
 
-        function updateSMeter(receiver, value) {
-            const percentage = (value / 255) * 100;
-            document.getElementById('sMeterBar' + receiver).style.width = percentage + '%';
-            document.getElementById('sMeterBar' + receiver).setAttribute('aria-valuenow', value);
-            document.getElementById('sMeterValue' + receiver).textContent = sMeterLabel(value);
-            document.getElementById('sMeterRaw' + receiver).textContent = `[${value}]`;
-        }
+            // Expose public API to window for onclick handlers
+            window.radioControl = {
+                setBand: setBand,
+                setMode: setMode,
+                setAntenna: setAntenna
+            };
 
-        async function fetchRadioStatus() {
-            const response = await fetch('/api/cat/status');
-            if (!response.ok) return;
-            const data = await response.json();
-            lastBackendFreq.A = data.vfoA.frequency;
-            lastBackendFreq.B = data.vfoB.frequency;
-
-            lastBand.A = data.vfoA.band;
-            lastBand.B = data.vfoB.band;
-            lastMode.A = data.vfoA.mode;
-            lastMode.B = data.vfoB.mode;
-            lastAntenna.A = data.vfoA.antenna;
-            lastAntenna.B = data.vfoB.antenna;
-
-            // Only exit editing if backend confirms the last sent value AND the user is not in the middle of editing
-            if (editing.A && lastSentFreq.A !== null && localFreq.A === null && data.vfoA.frequency === lastSentFreq.A) {
-                editing.A = false;
-                selectedIdx.A = null;
-            }
-            if (editing.B && lastSentFreq.B !== null && localFreq.B === null && data.vfoB.frequency === lastSentFreq.B) {
-                editing.B = false;
-                selectedIdx.B = null;
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initialize);
+            } else {
+                initialize();
             }
 
-            if (!editing.A) updateFrequencyDisplay('A', data.vfoA.frequency);
-            else updateFrequencyDisplay('A', localFreq.A);
-
-            if (!editing.B) updateFrequencyDisplay('B', data.vfoB.frequency);
-            else updateFrequencyDisplay('B', localFreq.B);
-
-            updateSMeter('A', data.vfoA.sMeter);
-            updateSMeter('B', data.vfoB.sMeter);
-            highlightButtons('A', data.vfoA.band, data.vfoA.mode, data.vfoA.antenna);
-            highlightButtons('B', data.vfoB.band, data.vfoB.mode, data.vfoB.antenna);
-        }
-
-        initializeDigitInteraction('A');
-        initializeDigitInteraction('B');
-        setInterval(fetchRadioStatus, 2000);
-        fetchRadioStatus();
+            function initialize() {
+                console.log('Initializing radio control interface...');
+                initializeDigitInteraction('A');
+                initializeDigitInteraction('B');
+                fetchRadioStatus();
+                setInterval(fetchRadioStatus, 2000);
+                console.log('=== FTdx101 Control Interface Ready ===');
+            }
+        })();
     </script>
 }

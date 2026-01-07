@@ -9,6 +9,13 @@
 	 git reset --hard 4f78df2
 	 
 	 
+	 
+	 
+	 To get latest good files 
+	 git checkout stable-ui-2026-01-04
+	 
+	 
+	 
 	 **********************************************************************
 ** Visual Studio 2026 Developer PowerShell v18.1.1
 ** Copyright (c) 2025 Microsoft Corporation
