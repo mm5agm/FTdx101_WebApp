@@ -15,6 +15,9 @@ builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
 builder.Services.AddSingleton<CatMultiplexerService>();
 builder.Services.AddSingleton<RadioStateService>();
 
+// Register the persistence service
+builder.Services.AddSingleton<RadioStatePersistenceService>();
+
 // Register the rigctld server as a background service
 builder.Services.AddHostedService<RigctldServer>();
 
