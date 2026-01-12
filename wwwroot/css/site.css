@@ -59,7 +59,7 @@ body {
 
 /* Frequency display: large, readable, monospace, matches h3 size */
 .frequency-display {
-    font-size: 2.2rem; /* Adjust as needed to match h3 "Receiver" */
+    font-size: 2.2rem;
     font-family: 'Consolas', 'Courier New', monospace;
     letter-spacing: 0.05em;
     line-height: 1.1;
@@ -73,6 +73,19 @@ body {
     margin-bottom: 0.2rem;
     font-size: 1rem;
     padding: 0.3rem 0.7rem;
+}
+
+/* Active button state */
+.btn-outline-primary.active {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+.btn-outline-success.active {
+    background-color: #198754;
+    color: white;
+    border-color: #198754;
 }
 
 /* Progress bar for S-meter: thicker and more visible */
@@ -104,3 +117,196 @@ body {
         border-radius: 3px;
         padding: 2px 4px;
     }
+
+/* Analog S-Meter Container */
+.analog-meter-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    position: relative; /* Added for label positioning */
+}
+
+    .analog-meter-container canvas {
+        max-width: 100%;
+        height: auto;
+    }
+
+/* Gauge wrapper for positioning labels */
+.gauge-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Custom gauge labels positioned outside the arc */
+.gauge-labels-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+    .gauge-labels-overlay .gauge-label {
+        position: absolute;
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+    }
+
+function initialize() {
+    console.log('Initializing radio control interface...');
+
+    const gaugeWidth = 560;
+    const gaugeHeight = 180; // Increased to accommodate external labels
+
+    // Function to create labels outside the gauge
+    function createGaugeLabels(containerId, labels, width, height) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        const centerX = width / 2;
+        const centerY = height - 20; // Position center lower
+        const radius = width * 0.32; // Distance from center for labels
+        const startAngle = 180; // 9 o'clock position
+        const endAngle = 0;     // 3 o'clock position
+        const angleStep = (startAngle - endAngle) / (labels.length - 1);
+        
+        labels.forEach((label, index) => {
+            const angle = startAngle - (angleStep * index);
+            const radians = (angle * Math.PI) / 180;
+            const x = centerX + radius * Math.cos(radians);
+            const y = centerY - radius * Math.sin(radians);
+            
+            const span = document.createElement('span');
+            span.className = 'gauge-label';
+            span.textContent = label;
+            span.style.left = x + 'px';
+            span.style.top = y + 'px';
+            container.appendChild(span);
+        });
+    }
+
+    // Wrap canvases and add label overlays
+    ['A', 'B'].forEach(receiver => {
+        const canvas = document.getElementById(`sMeterCanvas${receiver}`);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'gauge-wrapper';
+        
+        const labelsDiv = document.createElement('div');
+        labelsDiv.className = 'gauge-labels-overlay';
+        labelsDiv.id = `gaugeLabels${receiver}`;
+        
+        canvas.parentNode.insertBefore(wrapper, canvas);
+        wrapper.appendChild(canvas);
+        wrapper.appendChild(labelsDiv);
+    });
+
+    // Create labels for both gauges
+    const labels = ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"];
+    createGaugeLabels('gaugeLabelsA', labels, gaugeWidth, gaugeHeight);
+    createGaugeLabels('gaugeLabelsB', labels, gaugeWidth, gaugeHeight);
+
+    // Initialize canvas-gauges analog S-meters with tick marks only
+    gaugeA = new RadialGauge({
+        renderTo: 'sMeterCanvasA',
+        width: gaugeWidth,
+        height: gaugeHeight,
+        units: "",
+        minValue: 0,
+        maxValue: 255,
+        startAngle: 90,
+        ticksAngle: 180,
+        valueBox: false,
+        majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+        minorTicks: 0,
+        strokeTicks: true,
+        highlights: [
+            { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
+            { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
+        ],
+        colorPlate: "#ffffff",
+        borderShadowWidth: 0,
+        borders: false,
+        needleShadow: false,
+        colorMajorTicks: "#555555",
+        colorMinorTicks: "transparent",
+        colorNumbers: "transparent",
+        fontNumbersSize: 0,
+        colorBarProgress: "#198754",
+        colorBarProgressEnd: "#198754",
+        colorBar: "#dddddd",
+        barShadow: 0,
+        barWidth: 10,
+        barStrokeWidth: 0,
+        needleType: "arrow",
+        needleWidth: 3,
+        needleCircleSize: 7,
+        needleCircleOuter: false,
+        needleCircleInner: true,
+        colorNeedleCircleInner: "#dc3545",
+        colorNeedleCircleInnerEnd: "#dc3545",
+        animationDuration: 1500,
+        animationRule: "linear",
+        value: 0
+    });
+    gaugeA.draw();
+
+    gaugeB = new RadialGauge({
+        renderTo: 'sMeterCanvasB',
+        width: gaugeWidth,
+        height: gaugeHeight,
+        units: "",
+        minValue: 0,
+        maxValue: 255,
+        startAngle: 90,
+        ticksAngle: 180,
+        valueBox: false,
+        majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+        minorTicks: 0,
+        strokeTicks: true,
+        highlights: [
+            { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
+            { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
+        ],
+        colorPlate: "#ffffff",
+        borderShadowWidth: 0,
+        borders: false,
+        needleShadow: false,
+        colorMajorTicks: "#555555",
+        colorMinorTicks: "transparent",
+        colorNumbers: "transparent",
+        fontNumbersSize: 0,
+        colorBarProgress: "#198754",
+        colorBarProgressEnd: "#198754",
+        colorBar: "#dddddd",
+        barShadow: 0,
+        barWidth: 10,
+        barStrokeWidth: 0,
+        needleType: "arrow",
+        needleWidth: 3,
+        needleCircleSize: 7,
+        needleCircleOuter: false,
+        needleCircleInner: true,
+        colorNeedleCircleInner: "#dc3545",
+        colorNeedleCircleInnerEnd: "#dc3545",
+        animationDuration: 1500,
+        animationRule: "linear",
+        value: 0
+    });
+    gaugeB.draw();
+
+    initializeDigitInteraction('A');
+    initializeDigitInteraction('B');
+
+    fetchRadioStatus();
+    setInterval(fetchRadioStatus, 2000);
+    console.log('=== FTdx101 Control Interface Ready ===');
+}
