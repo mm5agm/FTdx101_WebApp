@@ -1,5 +1,5 @@
 ﻿
-4. **Configure serial port** in Settings (default: COM3,38400 baud)
+4. **Configure serial port** in Settings (default: COM3, 38400 baud)
 
 5. **Access the interface** at: http://localhost:5000
 
@@ -17,12 +17,12 @@
 4. **Go to Settings page** and configure your COM port
 5. **Click Connect** and start operating!
 
-### DailyOperation
+### Daily Operation
 
 - **Change Frequency:** Click any digit and use mouse wheel to tune
 - **Change Band:** Click the band button (160m, 80m, etc.)
 - **Change Mode:** Click mode button (LSB, USB, CW, etc.)
-- **Switch Antenna:** Click ANT 1, 2,or 3
+- **Switch Antenna:** Click ANT 1, 2, or 3
 - **Monitor Signal:** Watch the analog S-Meter gauge
 
 ---
@@ -32,10 +32,10 @@
 This application is designed to work alongside:
 
 - **WSJT-X** - Digital mode software
-- **JTAlert** -Alert notification system
+- **JTAlert** - Alert notification system
 - **Log4OM** - Amateur radio logging software
 
-> **Note:** I use these programs daily. The FT-dx101 WebControl app provides visual monitoring and quick access to controls I need, while WSJT-X handles digital mode operations and logging programs manage QSO records.
+> **Note:** I use these programs daily. The FT-dx101 WebControl app provides visual monitoring and quick access to controls I need, while WSJT-X handles digital mode operations and logging programs manage QSO records.The built-in CAT multiplexer allows all these programs to share the radio's serial port without conflicts.
 
 ---
 
@@ -44,7 +44,7 @@ This application is designed to work alongside:
 ### Interactive Frequency Display
 - Large, easy-to-read 9-digit frequency display
 - Click any digit to select it
-- Use mouse wheel toincrement/decrement
+- Use mouse wheel to increment/decrement
 - Touch-friendly for tablet operation
 - Auto-updates from radio status
 
@@ -55,7 +55,7 @@ This application is designed to work alongside:
 - Green zone (S0-S9), Red zone (S9+)
 - Custom positioned labels along arc
 
-###Dual Receiver Control
+### Dual Receiver Control
 - Independent control of both VFOs
 - Color-coded panels (Blue = Receiver A, Green = Receiver B)
 - Simultaneous monitoring and control
@@ -74,14 +74,14 @@ This application is designed to work alongside:
 
 ### Software
 - **Operating System:** Windows 10/11 (64-bit)
-- **.NET Runtime:** .NET 10.0 (included with self-contained installer)
+- **.NET Runtime:** .NET10.0 (included with self-contained installer)
 - **Web Browser:** Chrome, Edge, Firefox, or Safari (latest versions)
 
 ### Hardware
 - **Radio:** Yaesu FT-dx101MP or FT-dx101D
 - **Connection:** USB cable (supplied with radio) or USB-to-Serial adapter
 - **Computer:** Any modern PC capable of running .NET applications
-- **SerialPort:** Physical or virtual COM port
+- **Serial Port:** Physical or virtual COM port
 
 ### Radio Configuration
 - **CAT Rate:** 38400 baud (recommended)
@@ -112,7 +112,7 @@ The application is in active development and **fully functional for daily use**.
 
 ### Known Limitations
 - Windows only (due to SerialPort library)
-- Single user connection (no multi-client support)
+- Single user connection (nomulti-client support)
 - No TX power control yet (coming soon)
 - Basic error recovery (adequate for normal operation)
 
@@ -120,7 +120,7 @@ The application is in active development and **fully functional for daily use**.
 
 ## 🤝 Contributing
 
-I builtthis for my own use, but if you find it helpful and have suggestions:
+I built this for my own use, but if you find it helpful and have suggestions:
 
 1. **Open an Issue** - Describe the feature or problem
 2. **Start a Discussion** - Share your ideas for improvements
@@ -135,7 +135,7 @@ I'm particularly interested in hearing from users who:
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](FILE) for details.
 
 ---
 
@@ -148,7 +148,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📞Contact
+## 📞 Contact
 
 **Callsign:** MM5AGM  
 **GitHub:** [mm5agm](https://github.com/mm5agm)  
