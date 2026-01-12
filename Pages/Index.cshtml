@@ -17,6 +17,19 @@
                     </h3>
                 </div>
                 <div class="card-body">
+                    <!-- S-Meter at top -->
+                    <div class="mb-3">
+                        <label>S-Meter:</label>
+                        <div class="analog-meter-container">
+                            <canvas id="sMeterCanvasA"></canvas>
+                        </div>
+                        <div class="text-center mt-1">
+                            <span id="sMeterValueA" class="badge bg-secondary">S0</span>
+                            <span id="sMeterRawA" class="text-muted ms-2 small">[0]</span>
+                        </div>
+                    </div>
+
+                    <!-- Controls below -->
                     <div>
                         <label>Frequency:</label>
                         <span id="freqA" class="fw-bold frequency-display digit-display"></span>
@@ -60,14 +73,6 @@
                             }
                         </div>
                     </div>
-                    <div>
-                        <label>S-Meter:</label>
-                        <span id="sMeterValueA">S0</span>
-                        <span id="sMeterRawA" class="text-muted" style="margin-left:0.5em; font-size:1rem;"></span>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-success" id="sMeterBarA" style="width:0%"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -80,6 +85,19 @@
                     </h3>
                 </div>
                 <div class="card-body">
+                    <!-- S-Meter at top -->
+                    <div class="mb-3">
+                        <label>S-Meter:</label>
+                        <div class="analog-meter-container">
+                            <canvas id="sMeterCanvasB"></canvas>
+                        </div>
+                        <div class="text-center mt-1">
+                            <span id="sMeterValueB" class="badge bg-secondary">S0</span>
+                            <span id="sMeterRawB" class="text-muted ms-2 small">[0]</span>
+                        </div>
+                    </div>
+
+                    <!-- Controls below -->
                     <div>
                         <label>Frequency:</label>
                         <span id="freqB" class="fw-bold frequency-display digit-display"></span>
@@ -123,14 +141,6 @@
                             }
                         </div>
                     </div>
-                    <div>
-                        <label>S-Meter:</label>
-                        <span id="sMeterValueB">S0</span>
-                        <span id="sMeterRawB" class="text-muted" style="margin-left:0.5em; font-size:1rem;"></span>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-success" id="sMeterBarB" style="width:0%"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -144,7 +154,9 @@
 
             console.log('=== FTdx101 Control Interface Starting ===');
 
-            // State variables
+            // Gauge instances
+            let gaugeA, gaugeB;
+
             const state = {
                 editing: { A: false, B: false },
                 localFreq: { A: null, B: null },
@@ -386,17 +398,18 @@
             }
 
             function updateSMeter(receiver, value) {
-                const percentage = (value / 255) * 100;
-                const bar = document.getElementById('sMeterBar' + receiver);
                 const valueSpan = document.getElementById('sMeterValue' + receiver);
                 const rawSpan = document.getElementById('sMeterRaw' + receiver);
 
-                if (bar) {
-                    bar.style.width = percentage + '%';
-                    bar.setAttribute('aria-valuenow', value);
-                }
                 if (valueSpan) valueSpan.textContent = sMeterLabel(value);
                 if (rawSpan) rawSpan.textContent = `[${value}]`;
+
+                // Update the canvas-gauges analog meter
+                if (receiver === 'A' && gaugeA) {
+                    gaugeA.value = value;
+                } else if (receiver === 'B' && gaugeB) {
+                    gaugeB.value = value;
+                }
             }
 
             async function fetchRadioStatus() {
@@ -407,7 +420,6 @@
                         return;
                     }
                     const data = await response.json();
-                    console.log('Radio status updated:', data);
 
                     state.lastBackendFreq.A = data.vfoA.frequency;
                     state.lastBackendFreq.B = data.vfoB.frequency;
@@ -443,14 +455,12 @@
                 }
             }
 
-            // Expose public API to window for onclick handlers
             window.radioControl = {
                 setBand: setBand,
                 setMode: setMode,
                 setAntenna: setAntenna
             };
 
-            // Initialize when DOM is ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initialize);
             } else {
@@ -459,8 +469,157 @@
 
             function initialize() {
                 console.log('Initializing radio control interface...');
+
+                const gaugeWidth = 560;
+                const gaugeHeight = 180;
+
+                // Function to create labels outside the gauge
+                function createGaugeLabels(canvasId, labels) {
+                    const canvas = document.getElementById(canvasId);
+                    if (!canvas || canvas.nextElementSibling?.classList.contains('gauge-labels-overlay')) {
+                        return; // Already created
+                    }
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'gauge-wrapper';
+                    wrapper.style.position = 'relative';
+                    wrapper.style.display = 'inline-block';
+                    wrapper.style.width = gaugeWidth + 'px';
+                    wrapper.style.height = gaugeHeight + 'px';
+
+                    const labelsDiv = document.createElement('div');
+                    labelsDiv.className = 'gauge-labels-overlay';
+
+                    // Match canvas-gauges library's actual rendering
+                    const centerX = gaugeWidth / 2;
+                    const centerY = gaugeHeight - 85; // Aligned with gauge center point
+                    const radius = gaugeWidth * 0.17; // Slightly reduced - tighter to ticks
+                    const startAngle = 180;
+                    const endAngle = 0;
+                    const angleStep = (startAngle - endAngle) / (labels.length - 1);
+
+                    labels.forEach((label, index) => {
+                        const angle = startAngle - (angleStep * index);
+                        const radians = (angle * Math.PI) / 180;
+                        const x = centerX + radius * Math.cos(radians);
+                        const y = centerY - radius * Math.sin(radians);
+
+                        const span = document.createElement('span');
+                        span.className = 'gauge-label';
+                        span.textContent = label;
+                        span.style.left = x + 'px';
+                        span.style.top = y + 'px';
+                        labelsDiv.appendChild(span);
+                    });
+
+                    // Wrap canvas
+                    canvas.parentNode.insertBefore(wrapper, canvas);
+                    wrapper.appendChild(canvas);
+                    wrapper.appendChild(labelsDiv);
+                }
+
+                // Initialize canvas-gauges analog S-meters with ticks on OUTSIDE
+                gaugeA = new RadialGauge({
+                    renderTo: 'sMeterCanvasA',
+                    width: gaugeWidth,
+                    height: gaugeHeight,
+                    units: "",
+                    minValue: 0,
+                    maxValue: 255,
+                    startAngle: 90,
+                    ticksAngle: 180,
+                    valueBox: false,
+                    majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+                    minorTicks: 0,
+                    strokeTicks: false,
+                    tickSide: "out",
+                    needleSide: "center",
+                    highlights: [
+                        { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
+                        { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
+                    ],
+                    colorPlate: "#ffffff",
+                    borderShadowWidth: 0,
+                    borders: false,
+                    needleShadow: false,
+                    colorMajorTicks: "#555555",
+                    colorMinorTicks: "transparent",
+                    colorNumbers: "transparent",
+                    fontNumbersSize: 0,
+                    colorBarProgress: "#198754",
+                    colorBarProgressEnd: "#198754",
+                    colorBar: "#dddddd",
+                    barShadow: 0,
+                    barWidth: 10,
+                    barStrokeWidth: 0,
+                    needleType: "arrow",
+                    needleWidth: 3,
+                    needleCircleSize: 7,
+                    needleCircleOuter: false,
+                    needleCircleInner: true,
+                    colorNeedleCircleInner: "#dc3545",
+                    colorNeedleCircleInnerEnd: "#dc3545",
+                    animationDuration: 1500,
+                    animationRule: "linear",
+                    value: 0
+                });
+                gaugeA.draw();
+
+                // Create custom labels after gauge is drawn
+                const labels = ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"];
+                createGaugeLabels('sMeterCanvasA', labels);
+
+                gaugeB = new RadialGauge({
+                    renderTo: 'sMeterCanvasB',
+                    width: gaugeWidth,
+                    height: gaugeHeight,
+                    units: "",
+                    minValue: 0,
+                    maxValue: 255,
+                    startAngle: 90,
+                    ticksAngle: 180,
+                    valueBox: false,
+                    majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+                    minorTicks: 0,
+                    strokeTicks: false,
+                    tickSide: "out",
+                    needleSide: "center",
+                    highlights: [
+                        { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
+                        { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
+                    ],
+                    colorPlate: "#ffffff",
+                    borderShadowWidth: 0,
+                    borders: false,
+                    needleShadow: false,
+                    colorMajorTicks: "#555555",
+                    colorMinorTicks: "transparent",
+                    colorNumbers: "transparent",
+                    fontNumbersSize: 0,
+                    colorBarProgress: "#198754",
+                    colorBarProgressEnd: "#198754",
+                    colorBar: "#dddddd",
+                    barShadow: 0,
+                    barWidth: 10,
+                    barStrokeWidth: 0,
+                    needleType: "arrow",
+                    needleWidth: 3,
+                    needleCircleSize: 7,
+                    needleCircleOuter: false,
+                    needleCircleInner: true,
+                    colorNeedleCircleInner: "#dc3545",
+                    colorNeedleCircleInnerEnd: "#dc3545",
+                    animationDuration: 1500,
+                    animationRule: "linear",
+                    value: 0
+                });
+                gaugeB.draw();
+
+                createGaugeLabels('sMeterCanvasB', labels);
+
                 initializeDigitInteraction('A');
                 initializeDigitInteraction('B');
+
                 fetchRadioStatus();
                 setInterval(fetchRadioStatus, 2000);
                 console.log('=== FTdx101 Control Interface Ready ===');
