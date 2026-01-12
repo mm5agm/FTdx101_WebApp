@@ -1,6 +1,5 @@
 ﻿# FT-dx101 Web Control Application
 
-<img width="1326" height="1054" alt="WebApp" src="https://github.com/user-attachments/assets/052fe288-02f1-4461-b015-c94c63111c3f" />
 
 ![FT-dx101 Web Control Interface](pictures/WebAppMeters.png)
 
