@@ -170,13 +170,15 @@
 
             function renderFrequencyDigits(freq, selIdx) {
                 if (!freq || freq < 1000) {
-                    return '<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
+                    return '<span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
                 }
-                let s = freq.toString().padStart(9, "0");
+                // Pad to 8 digits instead of 9 (removes leading zero for frequencies under 100 MHz)
+                let s = freq.toString().padStart(8, "0");
                 let html = "";
                 let digitIdx = 0;
-                for (let i = 0; i < 9; i++) {
-                    if (i === 3 || i === 6) {
+                // Changed loop to iterate over 8 digits: XX.XXX.XXX format
+                for (let i = 0; i < 8; i++) {
+                    if (i === 2 || i === 5) {
                         html += '<span class="digit">.</span>';
                     }
                     let selected = (selIdx === digitIdx) ? " selected" : "";
@@ -253,7 +255,7 @@
                         }
                     }
                     let newFreq = parseInt(freqArr.join(''));
-                    newFreq = Math.max(30000, Math.min(75000000, newFreq));
+                    newFreq = Math.max(30000, Math.min(70000000, newFreq));
                     state.localFreq[receiver] = newFreq;
                     updateFrequencyDisplay(receiver, newFreq);
                     let newDigits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
