@@ -180,7 +180,6 @@ namespace FTdx101_WebApp.Services
                 "FM-N" => "B",
                 "DATA-USB" => "C",
                 "AM-N" => "D",
-                "C4FM" => "E",
                 _ => "2" // Default to USB
             };
             return $"MD{(isSubVfo ? "1" : "0")}{modeCode};";
@@ -207,7 +206,6 @@ namespace FTdx101_WebApp.Services
                     "B" => "FM-N",
                     "C" => "DATA-USB",
                     "D" => "AM-N",
-                    "E" => "C4FM",
                     _ => "UNKNOWN"
                 };
             }
