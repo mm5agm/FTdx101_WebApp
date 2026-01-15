@@ -33,7 +33,7 @@ body {
 .band-row-scroll {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
     padding-bottom: 0.25rem;
     overflow-x: unset;
     white-space: normal;
@@ -48,7 +48,7 @@ body {
 }
 
 .gap-2 {
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 @media (min-width: 992px) {
@@ -66,13 +66,13 @@ body {
     vertical-align: middle;
 }
 
-/* Optional: Make band/mode/antenna buttons more visually distinct */
+/* Band/mode/antenna buttons - optimized for 2-line layout with good touch targets */
 .btn-outline-primary.btn-sm,
 .btn-outline-success.btn-sm {
-    min-width: 3.5rem;
+    min-width: 3rem;
     margin-bottom: 0.2rem;
-    font-size: 1rem;
-    padding: 0.3rem 0.7rem;
+    font-size: 0.95rem;
+    padding: 0.3rem 0.6rem;
 }
 
 /* Active button state */
