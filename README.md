@@ -4,7 +4,7 @@
 ![FT-dx101 Web Control Interface](pictures/WebAppMeters.png)
 
 ---
-
+Now with a groups.io page, ft101dx-webapp
 ## 📖 Why This Application Exists
 
 I wrote this application because **I can't see the FT-dx101MP controls without using a magnifying glass**. As a ham who uses **WSJT-X** along with **JTAlert** and **Log4OM**, there are many controls on the radio that I simply never touch. This web-based interface gives me a clean, large, easy-to-read control panel for the functions I actually use day-to-day.
