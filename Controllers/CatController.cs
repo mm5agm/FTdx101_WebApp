@@ -75,78 +75,39 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("status")]
         public async Task<IActionResult> GetStatus()
         {
-            var acquired = await _requestSemaphore.WaitAsync(5000);
-            if (!acquired)
-            {
-                _logger.LogDebug("Status request skipped - radio busy, returning cached state");
-                var cachedState = _radioStateService.GetState();
-                var cachedSettings = await _settingsService.GetSettingsAsync();
-                return Ok(new
-                {
-                    vfoA = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = cachedState.BandA, antenna = cachedState.AntennaA, power = 100 },
-                    vfoB = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = cachedState.BandB, antenna = cachedState.AntennaB, power = 100 },
-                    controls = cachedState.Controls,
-                    isTransmitting = false,
-                    isConnected = _catClient.IsConnected,
-                    mainVfo = "A",
-                    maxPower = cachedSettings.RadioModel == "FTdx101MP" ? 200 : 100,
-                    radioModel = cachedSettings.RadioModel,
-                    timestamp = DateTime.Now,
-                    cached = true
-                });
-            }
-
             try
             {
                 await EnsureConnectedAsync();
 
-                if (!_catClient.IsConnected)
-                {
-                    var disconnectedState = _radioStateService.GetState();
-                    var disconnectedSettings = await _settingsService.GetSettingsAsync();
-                    return Ok(new
-                    {
-                        vfoA = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = disconnectedState.BandA, antenna = disconnectedState.AntennaA, power = 100 },
-                        vfoB = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = disconnectedState.BandB, antenna = disconnectedState.AntennaB, power = 100 },
-                        controls = disconnectedState.Controls,
-                        isTransmitting = false,
-                        isConnected = false,
-                        mainVfo = "A",
-                        maxPower = disconnectedSettings.RadioModel == "FTdx101MP" ? 200 : 100,
-                        radioModel = disconnectedSettings.RadioModel,
-                        timestamp = DateTime.Now,
-                        message = "Radio not connected"
-                    });
-                }
-
-                // Use IF; to get VFO A frequency + mode in ONE command
-                var ifResponse = await _catClient.SendCommandAsync("IF;");
-                var (freqA, modeA) = IFCommandParser.ParseIFResponse(ifResponse);
-
-                // Get VFO B info
-                var freqB = await _catClient.ReadFrequencyBAsync();
-                var modeB = await _catClient.ReadModeSubAsync();
-
-                // Get S-meters
-                var sMeterA = await _catClient.ReadSMeterMainAsync();
-                var sMeterB = await _catClient.ReadSMeterSubAsync();
-
-                // Get power
-                var powerResponse = await _catClient.SendCommandAsync("PC;");
-                int currentPower = ParsePower(powerResponse);
-
+                // Get current state from reactive state service
+                var state = _radioStateService.GetState();
+                
                 // Get settings for max power
                 var settings = await _settingsService.GetSettingsAsync();
                 int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
 
-                var state = _radioStateService.GetState();
-
                 return Ok(new
                 {
-                    vfoA = new { frequency = freqA, mode = modeA, sMeter = sMeterA, band = state.BandA, antenna = state.AntennaA, power = currentPower },
-                    vfoB = new { frequency = freqB, mode = modeB, sMeter = sMeterB, band = state.BandB, antenna = state.AntennaB, power = currentPower },
+                    vfoA = new 
+                    { 
+                        frequency = _radioStateService.FrequencyA,  // ← FROM REACTIVE STATE
+                        mode = _radioStateService.ModeA, 
+                        sMeter = _radioStateService.SMeterA,
+                        band = state.BandA, 
+                        antenna = _radioStateService.AntennaA, 
+                        power = _radioStateService.Power 
+                    },
+                    vfoB = new 
+                    { 
+                        frequency = _radioStateService.FrequencyB,  // ← FROM REACTIVE STATE
+                        mode = _radioStateService.ModeB, 
+                        sMeter = _radioStateService.SMeterB,
+                        band = state.BandB, 
+                        antenna = _radioStateService.AntennaB, 
+                        power = _radioStateService.Power 
+                    },
                     controls = state.Controls,
-                    isTransmitting = false,
+                    isTransmitting = _radioStateService.IsTransmitting,
                     isConnected = _catClient.IsConnected,
                     mainVfo = "A",
                     maxPower = maxPower,
@@ -158,10 +119,6 @@ namespace FTdx101_WebApp.Controllers
             {
                 _logger.LogError(ex, "Error getting radio status");
                 return StatusCode(500, new { error = "Failed to get radio status", details = ex.Message });
-            }
-            finally
-            {
-                _requestSemaphore.Release();
             }
         }
 

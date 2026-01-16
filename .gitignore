@@ -130,3 +130,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Publish folders
+publish/
+bin/
+obj/
+*.user

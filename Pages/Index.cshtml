@@ -727,7 +727,7 @@
             initializeDigitInteraction('A');
             initializeDigitInteraction('B');
             fetchRadioStatus();
-            state.pollingInterval = setInterval(fetchRadioStatus, 2000);
+            state.pollingInterval = setInterval(fetchRadioStatus, 500);  // 2x per second
 
             window.radioControl = {
                 setFrequency,

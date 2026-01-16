@@ -1,1 +1,11 @@
-{"FrequencyA":0,"BandA":"160m","ModeA":"","AntennaA":"2","FrequencyB":0,"BandB":"20m","ModeB":"","AntennaB":"3","Controls":{}}
+{
+  "frequencyA": 0,
+  "bandA": "",
+  "modeA": "",
+  "antennaA": "",
+  "frequencyB": 0,
+  "bandB": "20m",
+  "modeB": "",
+  "antennaB": "",
+  "controls": {}
+}

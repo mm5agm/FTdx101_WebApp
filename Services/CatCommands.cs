@@ -215,13 +215,27 @@ namespace FTdx101_WebApp.Services
         /// <summary>Parse S-Meter response (0-255 scale)</summary>
         public static int ParseSMeter(string response)
         {
-            if (response.Length >= 6 && response.StartsWith("SM"))
+            if (string.IsNullOrEmpty(response) || !response.StartsWith("SM"))
+                return 0;
+            
+            // Response may contain multiple commands: "SM0085;RM0085086;..."
+            // Extract just the SM command part before the first semicolon
+            int semicolonIndex = response.IndexOf(';');
+            if (semicolonIndex > 0)
             {
-                if (int.TryParse(response.Substring(3), out int value))
+                response = response.Substring(0, semicolonIndex);
+            }
+            
+            // Now parse: "SM0085" or "SM1084"
+            if (response.Length >= 5) // SM + receiver (0/1) + 3 digits minimum
+            {
+                string valueStr = response.Substring(3); // Skip "SM0" or "SM1"
+                if (int.TryParse(valueStr, out int value))
                 {
                     return value;
                 }
             }
+            
             return 0;
         }
     }

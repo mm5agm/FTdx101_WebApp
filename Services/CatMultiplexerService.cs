@@ -17,11 +17,30 @@ namespace FTdx101_WebApp.Services
         private Task? _processingTask;
         private int _nextRequestId = 0;
 
+        // NEW: Auto-Information support
+        private readonly CatMessageBuffer _messageBuffer;
+        private readonly CatMessageDispatcher _messageDispatcher;
+        private bool _autoInformationEnabled = false;
+
         public bool IsConnected => _serialPort?.IsOpen ?? false;
 
-        public CatMultiplexerService(ILogger<CatMultiplexerService> logger)
+        public CatMultiplexerService(
+            ILogger<CatMultiplexerService> logger,
+            CatMessageBuffer messageBuffer,
+            CatMessageDispatcher messageDispatcher)
         {
             _logger = logger;
+            _messageBuffer = messageBuffer;
+            _messageDispatcher = messageDispatcher;
+
+            // Hook up message received event
+            _messageBuffer.MessageReceived += OnMessageReceived;
+        }
+
+        private void OnMessageReceived(object? sender, CatMessageReceivedEventArgs e)
+        {
+            _logger.LogDebug("Auto-Info: {Message}", e.Message);
+            _messageDispatcher.DispatchMessage(e.Message);
         }
 
         public async Task<bool> ConnectAsync(string portName, int baudRate = 38400)
@@ -77,6 +96,74 @@ namespace FTdx101_WebApp.Services
             {
                 _serialSemaphore.Release();
             }
+        }
+
+        /// <summary>
+        /// Enable Auto Information mode - radio sends updates automatically
+        /// </summary>
+        public async Task EnableAutoInformationAsync()
+        {
+            if (_autoInformationEnabled)
+                return;
+
+            try
+            {
+                _logger.LogInformation("Enabling Auto Information (AI) mode...");
+
+                // Send AI1; to enable auto information
+                await SendCommandAsync("AI1;", "System");
+
+                // Query initial state for all parameters
+                await QueryInitialStateAsync();
+
+                _autoInformationEnabled = true;
+                _logger.LogInformation("✓ Auto Information mode enabled - radio will stream updates");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to enable Auto Information mode");
+            }
+        }
+
+        /// <summary>
+        /// Query all initial radio parameters to populate state
+        /// </summary>
+        private async Task QueryInitialStateAsync()
+        {
+            _logger.LogInformation("Querying initial radio state...");
+
+            var commands = new[]
+            {
+                "FA;",    // VFO A frequency
+                "FB;",    // VFO B frequency
+                "MD0;",   // VFO A mode
+                "MD1;",   // VFO B mode
+                "SM0;",   // VFO A S-meter
+                "SM1;",   // VFO B S-meter
+                "PC;",    // Power
+                "AN0;",   // VFO A antenna
+                "AN1;",   // VFO B antenna
+                "TX;",    // TX status
+            };
+
+            foreach (var cmd in commands)
+            {
+                try
+                {
+                    var response = await SendCommandAsync(cmd, "InitialQuery");
+                    if (!string.IsNullOrEmpty(response))
+                    {
+                        _messageDispatcher.DispatchMessage(response + ";");
+                    }
+                    await Task.Delay(50); // Small delay between commands
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to query {Command}", cmd);
+                }
+            }
+
+            _logger.LogInformation("✓ Initial state queried");
         }
 
         public async Task<string> SendCommandAsync(string command, string clientId, CancellationToken cancellationToken = default)
@@ -206,6 +293,13 @@ namespace FTdx101_WebApp.Services
                     var buffer = new byte[_serialPort.BytesToRead];
                     _serialPort.Read(buffer, 0, buffer.Length);
                     var data = Encoding.ASCII.GetString(buffer);
+
+                    // NEW: Feed all received data to message buffer for AI processing
+                    if (_autoInformationEnabled && !string.IsNullOrEmpty(data))
+                    {
+                        _messageBuffer.AppendData(data);
+                    }
+
                     return data.Trim(';', '\r', '\n', '?', ' ');
                 }
 
@@ -227,6 +321,18 @@ namespace FTdx101_WebApp.Services
 
                 if (_serialPort?.IsOpen == true)
                 {
+                    // Disable AI mode before disconnect
+                    if (_autoInformationEnabled)
+                    {
+                        try
+                        {
+                            var cmdBytes = Encoding.ASCII.GetBytes("AI0;");
+                            _serialPort.Write(cmdBytes, 0, cmdBytes.Length);
+                            await Task.Delay(100);
+                        }
+                        catch { /* Ignore errors during disconnect */ }
+                    }
+
                     _serialPort.DtrEnable = false;
                     _serialPort.RtsEnable = false;
                     _serialPort.DiscardInBuffer();
@@ -237,6 +343,7 @@ namespace FTdx101_WebApp.Services
 
                 _serialPort?.Dispose();
                 _serialPort = null;
+                _autoInformationEnabled = false;
             }
             finally
             {

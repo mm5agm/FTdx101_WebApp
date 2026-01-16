@@ -49,3 +49,7 @@ PS C:\Users\colin\source\repos\FTdx101_WebApp>
  
 
 							  
+
+a0c747b v0.8.5.2-alpha - Fixed IF; parser, power slider, polling optimization
+    Working polling version - All features functional
+    To restore: git checkout a0c747b
