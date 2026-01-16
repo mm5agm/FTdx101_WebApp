@@ -225,4 +225,42 @@ namespace FTdx101_WebApp.Services
             return 0;
         }
     }
+
+    // ADD THIS NEW CLASS HERE (after the CatCommands class closing brace)
+    public static class IFCommandParser
+    {
+        public static (long frequency, string mode) ParseIFResponse(string response)
+        {
+            // IF response format varies by radio model
+            // FT-dx101 returns shorter format: IF001021074000+000000200000 (27 chars)
+            // vs manual spec: IF00000014074000     00000+000000002000000; (38 chars)
+            
+            if (string.IsNullOrEmpty(response) || response.Length < 20 || !response.StartsWith("IF"))
+            {
+                Console.WriteLine($"IFCommandParser: Invalid response: [{response}]");
+                return (0, "UNKNOWN");
+            }
+
+            try
+            {
+                // P1: Memory channel (positions 2-4, 3 chars)
+                // P2: Frequency (positions 5-13, 9 chars) - FT-dx101 uses 9 digits, not 11!
+                string freqStr = response.Substring(5, 9);
+                long frequency = long.Parse(freqStr);
+                
+                Console.WriteLine($"IFCommandParser: Parsed freq from [{response}] -> [{freqStr}] = {frequency} Hz");
+
+                // Mode is at a different position in the shorter format
+                // For now, default to USB since we can't reliably parse mode from this format
+                string mode = "USB";
+                
+                return (frequency, mode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"IFCommandParser: Exception parsing [{response}]: {ex.Message}");
+                return (0, "UNKNOWN");
+            }
+        }
+    }
 }

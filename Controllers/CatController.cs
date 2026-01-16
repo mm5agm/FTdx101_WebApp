@@ -75,15 +75,24 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("status")]
         public async Task<IActionResult> GetStatus()
         {
-            var acquired = await _requestSemaphore.WaitAsync(500);
+            var acquired = await _requestSemaphore.WaitAsync(5000);
             if (!acquired)
             {
-                _logger.LogDebug("Status request skipped - radio busy");
-                return StatusCode(503, new
+                _logger.LogDebug("Status request skipped - radio busy, returning cached state");
+                var cachedState = _radioStateService.GetState();
+                var cachedSettings = await _settingsService.GetSettingsAsync();
+                return Ok(new
                 {
-                    error = "Radio busy",
-                    message = "Radio is processing another command. Please retry.",
-                    isConnected = _catClient.IsConnected
+                    vfoA = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = cachedState.BandA, antenna = cachedState.AntennaA, power = 100 },
+                    vfoB = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = cachedState.BandB, antenna = cachedState.AntennaB, power = 100 },
+                    controls = cachedState.Controls,
+                    isTransmitting = false,
+                    isConnected = _catClient.IsConnected,
+                    mainVfo = "A",
+                    maxPower = cachedSettings.RadioModel == "FTdx101MP" ? 200 : 100,
+                    radioModel = cachedSettings.RadioModel,
+                    timestamp = DateTime.Now,
+                    cached = true
                 });
             }
 
@@ -93,61 +102,57 @@ namespace FTdx101_WebApp.Controllers
 
                 if (!_catClient.IsConnected)
                 {
-                    var state = _radioStateService.GetState();
+                    var disconnectedState = _radioStateService.GetState();
+                    var disconnectedSettings = await _settingsService.GetSettingsAsync();
                     return Ok(new
                     {
-                        vfoA = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = state.BandA, antenna = state.AntennaA },
-                        vfoB = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = state.BandB, antenna = state.AntennaB },
-                        controls = state.Controls,
+                        vfoA = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = disconnectedState.BandA, antenna = disconnectedState.AntennaA, power = 100 },
+                        vfoB = new { frequency = 0L, mode = "UNKNOWN", sMeter = 0, band = disconnectedState.BandB, antenna = disconnectedState.AntennaB, power = 100 },
+                        controls = disconnectedState.Controls,
                         isTransmitting = false,
                         isConnected = false,
                         mainVfo = "A",
+                        maxPower = disconnectedSettings.RadioModel == "FTdx101MP" ? 200 : 100,
+                        radioModel = disconnectedSettings.RadioModel,
                         timestamp = DateTime.Now,
                         message = "Radio not connected"
                     });
                 }
 
-                var statusTask = Task.Run(async () =>
+                // Use IF; to get VFO A frequency + mode in ONE command
+                var ifResponse = await _catClient.SendCommandAsync("IF;");
+                var (freqA, modeA) = IFCommandParser.ParseIFResponse(ifResponse);
+
+                // Get VFO B info
+                var freqB = await _catClient.ReadFrequencyBAsync();
+                var modeB = await _catClient.ReadModeSubAsync();
+
+                // Get S-meters
+                var sMeterA = await _catClient.ReadSMeterMainAsync();
+                var sMeterB = await _catClient.ReadSMeterSubAsync();
+
+                // Get power
+                var powerResponse = await _catClient.SendCommandAsync("PC;");
+                int currentPower = ParsePower(powerResponse);
+
+                // Get settings for max power
+                var settings = await _settingsService.GetSettingsAsync();
+                int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
+
+                var state = _radioStateService.GetState();
+
+                return Ok(new
                 {
-                    var freqA = await _catClient.ReadFrequencyAAsync();
-                    var modeA = await _catClient.ReadModeMainAsync();
-                    var sMeterA = await _catClient.ReadSMeterMainAsync();
-
-                    var freqB = await _catClient.ReadFrequencyBAsync();
-                    var modeB = await _catClient.ReadModeSubAsync();
-                    var sMeterB = await _catClient.ReadSMeterSubAsync();
-
-                    var isTx = await _catClient.ReadTransmitStatusAsync();
-                    var mainVfo = await GetMainVfoAsync();
-
-                    var state = _radioStateService.GetState();
-
-                    return new
-                    {
-                        vfoA = new { frequency = freqA, mode = modeA, sMeter = sMeterA, band = state.BandA, antenna = state.AntennaA },
-                        vfoB = new { frequency = freqB, mode = modeB, sMeter = sMeterB, band = state.BandB, antenna = state.AntennaB },
-                        controls = state.Controls,
-                        isTransmitting = isTx,
-                        isConnected = _catClient.IsConnected,
-                        mainVfo = mainVfo,
-                        timestamp = DateTime.Now
-                    };
+                    vfoA = new { frequency = freqA, mode = modeA, sMeter = sMeterA, band = state.BandA, antenna = state.AntennaA, power = currentPower },
+                    vfoB = new { frequency = freqB, mode = modeB, sMeter = sMeterB, band = state.BandB, antenna = state.AntennaB, power = currentPower },
+                    controls = state.Controls,
+                    isTransmitting = false,
+                    isConnected = _catClient.IsConnected,
+                    mainVfo = "A",
+                    maxPower = maxPower,
+                    radioModel = settings.RadioModel,
+                    timestamp = DateTime.Now
                 });
-
-                if (await Task.WhenAny(statusTask, Task.Delay(3000)) == statusTask)
-                {
-                    return Ok(await statusTask);
-                }
-                else
-                {
-                    _logger.LogWarning("GetStatus serial operations timed out after 3 seconds");
-                    return StatusCode(408, new
-                    {
-                        error = "Request timed out",
-                        message = "Radio is taking too long to respond.",
-                        isConnected = _catClient.IsConnected
-                    });
-                }
             }
             catch (Exception ex)
             {
@@ -432,9 +437,63 @@ namespace FTdx101_WebApp.Controllers
             }
         }
 
+        [HttpPost("power/{receiver}")]
+        public async Task<IActionResult> SetPower(string receiver, [FromBody] PowerRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                
+                // Get radio model from settings to determine max power
+                var settings = await _settingsService.GetSettingsAsync();
+                int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
+                
+                // Validate power range
+                if (request.Watts < 0 || request.Watts > maxPower)
+                    return BadRequest(new { error = $"Power out of range (0-{maxPower}W for {settings.RadioModel})" });
+
+                // Format: PC000-PC200 (pad to 3 digits)
+                var command = $"PC{request.Watts:D3};";
+                await _catClient.SendCommandAsync(command);
+
+                _logger.LogInformation("Set power to {Power}W on {RadioModel}", request.Watts, settings.RadioModel);
+                return Ok(new { message = $"Power set to {request.Watts}W", maxPower = maxPower });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting power");
+                return StatusCode(500, new { error = "Failed to set power" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        // Add this helper method (put it near other helper methods like ParseSMeter)
+        private int ParsePower(string response)
+        {
+            // Response format: PC123; (3 digits for watts)
+            if (response.Length >= 5 && response.StartsWith("PC"))
+            {
+                if (int.TryParse(response.Substring(2, 3), out int watts))
+                {
+                    return watts;
+                }
+            }
+            return 100; // Default to 100W if can't parse
+        }
+
         public class BandRequest { public string Band { get; set; } = string.Empty; }
         public class AntennaRequest { public string Antenna { get; set; } = string.Empty; }
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
         public class FrequencyRequest { public long FrequencyHz { get; set; } }
+        public class PowerRequest 
+        { 
+            public int Watts { get; set; } 
+        }
     }
 }

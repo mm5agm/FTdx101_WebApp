@@ -47,6 +47,23 @@
                             }
                         </div>
                     </div>
+                    <!-- POWER CONTROL FOR RECEIVER A -->
+                    <div class="mb-3">
+                        <label>Power: <span id="powerValueA" class="fw-bold">0W</span></label>
+                        <input type="range" class="form-range power-slider"
+                               id="powerSliderA"
+                               min="0"
+                               max="200"
+                               step="5"
+                               value="100"
+                               oninput="window.radioControl.updatePowerDisplay('A', this.value)"
+                               onchange="window.radioControl.setPower('A', this.value)">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>0W</span>
+                            <span>100W</span>
+                            <span id="powerMaxLabelA">200W</span>
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">
@@ -115,6 +132,23 @@
                             }
                         </div>
                     </div>
+                    <!-- POWER CONTROL FOR RECEIVER B -->
+                    <div class="mb-3">
+                        <label>Power: <span id="powerValueB" class="fw-bold">0W</span></label>
+                        <input type="range" class="form-range power-slider"
+                               id="powerSliderB"
+                               min="0"
+                               max="200"
+                               step="5"
+                               value="100"
+                               oninput="window.radioControl.updatePowerDisplay('B', this.value)"
+                               onchange="window.radioControl.setPower('B', this.value)">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>0W</span>
+                            <span>100W</span>
+                            <span id="powerMaxLabelB">200W</span>
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">
@@ -146,7 +180,6 @@
         </div>
     </div>
 </div>
-
 @section Scripts {
     <script>
         (function() {
@@ -159,24 +192,28 @@
 
             const state = {
                 editing: { A: false, B: false },
+                editingPower: { A: false, B: false },
                 localFreq: { A: null, B: null },
                 selectedIdx: { A: null, B: null },
                 lastSentFreq: { A: null, B: null },
                 lastBackendFreq: { A: null, B: null },
                 lastBand: { A: null, B: null },
                 lastMode: { A: null, B: null },
-                lastAntenna: { A: null, B: null }
+                lastAntenna: { A: null, B: null },
+                lastPower: { A: 100, B: 100 },
+                maxPower: 200,
+                radioModel: 'FTdx101MP',
+                pollingInterval: null,
+                operationInProgress: false
             };
 
             function renderFrequencyDigits(freq, selIdx) {
                 if (!freq || freq < 1000) {
                     return '<span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
                 }
-                // Pad to 8 digits instead of 9 (removes leading zero for frequencies under 100 MHz)
                 let s = freq.toString().padStart(8, "0");
                 let html = "";
                 let digitIdx = 0;
-                // Changed loop to iterate over 8 digits: XX.XXX.XXX format
                 for (let i = 0; i < 8; i++) {
                     if (i === 2 || i === 5) {
                         html += '<span class="digit">.</span>';
@@ -316,7 +353,6 @@
                     } else {
                         console.log(`Band set successfully: ${receiver} -> ${band}`);
                     }
-                    setTimeout(fetchRadioStatus, 500);
                 } catch (error) {
                     console.error('Error setting band:', error);
                 }
@@ -337,13 +373,13 @@
                     } else {
                         console.log(`Mode set successfully: ${receiver} -> ${mode}`);
                     }
-                    setTimeout(fetchRadioStatus, 500);
                 } catch (error) {
                     console.error('Error setting mode:', error);
                 }
             }
 
             async function setAntenna(receiver, antenna) {
+                pausePolling();  // ADD THIS LINE
                 try {
                     console.log(`Setting ${receiver} antenna to ${antenna}`);
                     highlightButtons(receiver, state.lastBand[receiver], state.lastMode[receiver], antenna);
@@ -358,10 +394,138 @@
                     } else {
                         console.log(`Antenna set successfully: ${receiver} -> ${antenna}`);
                     }
-                    setTimeout(fetchRadioStatus, 500);
                 } catch (error) {
                     console.error('Error setting antenna:', error);
+                } finally {
+                    resumePolling();  // ADD THIS LINE
                 }
+            }
+
+            function pausePolling() {
+                if (state.pollingInterval && !state.operationInProgress) {
+                    state.operationInProgress = true;
+                    console.log('Polling paused for operation');
+                }
+            }
+
+            function resumePolling() {
+                if (state.operationInProgress) {
+                    state.operationInProgress = false;
+                    setTimeout(fetchRadioStatus, 500);
+                    console.log('Polling resumed');
+                }
+            }
+
+            async function fetchRadioStatus() {
+                if (state.operationInProgress) {
+                    console.log('Skipping poll - operation in progress');
+                    return;
+                }
+                try {
+                    const response = await fetch('/api/cat/status');
+                    if (!response.ok) {
+                        console.error('Failed to fetch status:', response.status);
+                        return;
+                    }
+                    const data = await response.json();
+
+                    if (data.maxPower !== undefined) {
+                        state.maxPower = data.maxPower;
+                        updatePowerSliderMax(data.maxPower);
+                    }
+                    if (data.radioModel !== undefined) {
+                        state.radioModel = data.radioModel;
+                    }
+
+                    state.lastBackendFreq.A = data.vfoA.frequency;
+                    state.lastBackendFreq.B = data.vfoB.frequency;
+                    state.lastBand.A = data.vfoA.band;
+                    state.lastBand.B = data.vfoB.band;
+                    state.lastMode.A = data.vfoA.mode;
+                    state.lastMode.B = data.vfoB.mode;
+                    state.lastAntenna.A = data.vfoA.antenna;
+                    state.lastAntenna.B = data.vfoB.antenna;
+
+                    if (data.vfoA.power !== undefined) {
+                        updatePowerSlider('A', data.vfoA.power);
+                    }
+                    if (data.vfoB.power !== undefined) {
+                        updatePowerSlider('B', data.vfoB.power);
+                    }
+
+                    if (state.editing.A && state.lastSentFreq.A !== null && state.localFreq.A === null && data.vfoA.frequency === state.lastSentFreq.A) {
+                        state.editing.A = false;
+                        state.selectedIdx.A = null;
+                    }
+                    if (state.editing.B && state.lastSentFreq.B !== null && state.localFreq.B === null && data.vfoB.frequency === state.lastSentFreq.B) {
+                        state.editing.B = false;
+                        state.selectedIdx.B = null;
+                    }
+
+                    if (!state.editing.A) updateFrequencyDisplay('A', data.vfoA.frequency);
+                    else updateFrequencyDisplay('A', state.localFreq.A);
+
+                    if (!state.editing.B) updateFrequencyDisplay('B', data.vfoB.frequency);
+                    else updateFrequencyDisplay('B', state.localFreq.B);
+
+                    updateSMeter('A', data.vfoA.sMeter);
+                    updateSMeter('B', data.vfoB.sMeter);
+                    highlightButtons('A', data.vfoA.band, data.vfoA.mode, data.vfoA.antenna);
+                    highlightButtons('B', data.vfoB.band, data.vfoB.mode, data.vfoB.antenna);
+                } catch (error) {
+                    console.error('Error fetching radio status:', error);
+                }
+            }
+
+            // Power control functions
+            function updatePowerDisplay(receiver, watts) {
+                const display = document.getElementById('powerValue' + receiver);
+                if (display) {
+                    display.textContent = watts + 'W';
+                }
+            }
+
+            async function setPower(receiver, watts) {
+                try {
+                    console.log(`Setting ${receiver} power to ${watts}W`);
+                    state.lastPower[receiver] = parseInt(watts);
+                    const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ watts: parseInt(watts) })
+                    });
+                    if (!response.ok) {
+                        console.error('Failed to set power:', await response.text());
+                    } else {
+                        console.log(`Power set successfully: ${receiver} -> ${watts}W`);
+                    }
+                    updatePowerDisplay(receiver, watts);
+                } catch (error) {
+                    console.error('Error setting power:', error);
+                }
+            }
+
+            function updatePowerSlider(receiver, watts) {
+                if (state.editingPower && state.editingPower[receiver]) {
+                    return; // Don't update while user is editing
+                }
+                const slider = document.getElementById('powerSlider' + receiver);
+                if (slider) {
+                    slider.value = watts;
+                }
+                updatePowerDisplay(receiver, watts);
+            }
+
+            function updatePowerSliderMax(maxPower) {
+                const sliderA = document.getElementById('powerSliderA');
+                const sliderB = document.getElementById('powerSliderB');
+                const labelMaxA = document.getElementById('powerMaxLabelA');
+                const labelMaxB = document.getElementById('powerMaxLabelB');
+
+                if (sliderA) sliderA.max = maxPower;
+                if (sliderB) sliderB.max = maxPower;
+                if (labelMaxA) labelMaxA.textContent = maxPower + 'W';
+                if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
             }
 
             function sMeterLabel(val) {
@@ -406,7 +570,6 @@
                 if (valueSpan) valueSpan.textContent = sMeterLabel(value);
                 if (rawSpan) rawSpan.textContent = `[${value}]`;
 
-                // Update the canvas-gauges analog meter
                 if (receiver === 'A' && gaugeA) {
                     gaugeA.value = value;
                 } else if (receiver === 'B' && gaugeB) {
@@ -414,72 +577,15 @@
                 }
             }
 
-            async function fetchRadioStatus() {
-                try {
-                    const response = await fetch('/api/cat/status');
-                    if (!response.ok) {
-                        console.error('Failed to fetch status:', response.status);
-                        return;
-                    }
-                    const data = await response.json();
-
-                    state.lastBackendFreq.A = data.vfoA.frequency;
-                    state.lastBackendFreq.B = data.vfoB.frequency;
-
-                    state.lastBand.A = data.vfoA.band;
-                    state.lastBand.B = data.vfoB.band;
-                    state.lastMode.A = data.vfoA.mode;
-                    state.lastMode.B = data.vfoB.mode;
-                    state.lastAntenna.A = data.vfoA.antenna;
-                    state.lastAntenna.B = data.vfoB.antenna;
-
-                    if (state.editing.A && state.lastSentFreq.A !== null && state.localFreq.A === null && data.vfoA.frequency === state.lastSentFreq.A) {
-                        state.editing.A = false;
-                        state.selectedIdx.A = null;
-                    }
-                    if (state.editing.B && state.lastSentFreq.B !== null && state.localFreq.B === null && data.vfoB.frequency === state.lastSentFreq.B) {
-                        state.editing.B = false;
-                        state.selectedIdx.B = null;
-                    }
-
-                    if (!state.editing.A) updateFrequencyDisplay('A', data.vfoA.frequency);
-                    else updateFrequencyDisplay('A', state.localFreq.A);
-
-                    if (!state.editing.B) updateFrequencyDisplay('B', data.vfoB.frequency);
-                    else updateFrequencyDisplay('B', state.localFreq.B);
-
-                    updateSMeter('A', data.vfoA.sMeter);
-                    updateSMeter('B', data.vfoB.sMeter);
-                    highlightButtons('A', data.vfoA.band, data.vfoA.mode, data.vfoA.antenna);
-                    highlightButtons('B', data.vfoB.band, data.vfoB.mode, data.vfoB.antenna);
-                } catch (error) {
-                    console.error('Error fetching radio status:', error);
-                }
-            }
-
-            window.radioControl = {
-                setBand: setBand,
-                setMode: setMode,
-                setAntenna: setAntenna
-            };
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initialize);
-            } else {
-                initialize();
-            }
-
-            function initialize() {
-                console.log('Initializing radio control interface...');
-
+            // S-Meter Gauge Initialization
+            function initializeGauges() {
                 const gaugeWidth = 560;
                 const gaugeHeight = 180;
 
-                // Function to create labels outside the gauge
                 function createGaugeLabels(canvasId, labels) {
                     const canvas = document.getElementById(canvasId);
                     if (!canvas || canvas.nextElementSibling?.classList.contains('gauge-labels-overlay')) {
-                        return; // Already created
+                        return;
                     }
 
                     const wrapper = document.createElement('div');
@@ -492,10 +598,9 @@
                     const labelsDiv = document.createElement('div');
                     labelsDiv.className = 'gauge-labels-overlay';
 
-                    // Match canvas-gauges library's actual rendering
                     const centerX = gaugeWidth / 2;
-                    const centerY = gaugeHeight - 85; // Aligned with gauge center point
-                    const radius = gaugeWidth * 0.17; // Slightly reduced - tighter to ticks
+                    const centerY = gaugeHeight - 85;
+                    const radius = gaugeWidth * 0.17;
                     const startAngle = 180;
                     const endAngle = 0;
                     const angleStep = (startAngle - endAngle) / (labels.length - 1);
@@ -514,13 +619,11 @@
                         labelsDiv.appendChild(span);
                     });
 
-                    // Wrap canvas
                     canvas.parentNode.insertBefore(wrapper, canvas);
                     wrapper.appendChild(canvas);
                     wrapper.appendChild(labelsDiv);
                 }
 
-                // Initialize canvas-gauges analog S-meters with ticks on OUTSIDE
                 gaugeA = new RadialGauge({
                     renderTo: 'sMeterCanvasA',
                     width: gaugeWidth,
@@ -561,13 +664,12 @@
                     needleCircleInner: true,
                     colorNeedleCircleInner: "#dc3545",
                     colorNeedleCircleInnerEnd: "#dc3545",
-                    animationDuration: 400,  // Faster animation to match 500ms update rate
+                    animationDuration: 400,
                     animationRule: "linear",
                     value: 0
                 });
                 gaugeA.draw();
 
-                // Create custom labels after gauge is drawn
                 const labels = ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"];
                 createGaugeLabels('sMeterCanvasA', labels);
 
@@ -611,21 +713,36 @@
                     needleCircleInner: true,
                     colorNeedleCircleInner: "#dc3545",
                     colorNeedleCircleInnerEnd: "#dc3545",
-                    animationDuration: 400,  // Faster animation to match 500ms update rate
+                    animationDuration: 400,
                     animationRule: "linear",
                     value: 0
                 });
                 gaugeB.draw();
 
                 createGaugeLabels('sMeterCanvasB', labels);
-
-                initializeDigitInteraction('A');
-                initializeDigitInteraction('B');
-
-                fetchRadioStatus();
-                setInterval(fetchRadioStatus, 500);  // Update every 500ms for realistic S-meter response
-                console.log('=== FTdx101 Control Interface Ready ===');
             }
+
+            // Call initialization
+            initializeGauges();
+            initializeDigitInteraction('A');
+            initializeDigitInteraction('B');
+            fetchRadioStatus();
+            state.pollingInterval = setInterval(fetchRadioStatus, 2000);
+
+            window.radioControl = {
+                setFrequency,
+                setBand,
+                setMode,
+                setAntenna,
+                updatePowerDisplay: (receiver, value) => {
+                    state.editingPower[receiver] = true;  // ADD THIS LINE
+                    updatePowerDisplay(receiver, value);   // CHANGE TO CALL THE FUNCTION
+                },
+                setPower: async (receiver, value) => {
+                    state.editingPower[receiver] = true;  // ADD THIS LINE
+                    // ... rest of setPower code with timeout to clear editingPower ...
+                }
+            };
         })();
     </script>
 }
