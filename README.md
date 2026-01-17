@@ -67,18 +67,32 @@ Feel free to open an issue or discussion with your ideas!
 
 ---
 
-## 📦 Installation
+## Downloads
 
-> **⚠️ Installation Program Coming Soon!**  
-> I am currently building an installation program for easy deployment. Once complete, I'll publish full installation instructions here.
+- **FTdx101_WebApp-v0.9.0-win-x64.zip** - Windows x64 (self-contained, no .NET runtime required)
+- **FTdx101_WebApp-v0.9.0-linux-x64.zip** - Linux x64 (self-contained, no .NET runtime required)
+- **FTdx101_WebApp-v0.9.0-framework-dependent.zip** - Framework-dependent (requires .NET 10 Runtime)
 
-### Manual Installation (For Now)
+## Installation
 
-If you want to try it before the installer is ready:
+### Windows (Self-Contained)
+1. Download `FTdx101_WebApp-v0.9.0-win-x64.zip`
+2. Extract to a folder
+3. Edit `appsettings.user.json` to configure your COM port
+4. Run `FTdx101_WebApp.exe`
+5. Open browser to `http://localhost:8080`
 
-1. **Install .NET 10 Runtime** (required if not using self-contained deployment)
-   - Download from: https://dotnet.microsoft.com/download/dotnet/10.0
+### Linux (Self-Contained)
+1. Download `FTdx101_WebApp-v0.9.0-linux-x64.zip`
+2. Extract: `unzip FTdx101_WebApp-v0.9.0-linux-x64.zip`
+3. Make executable: `chmod +x FTdx101_WebApp`
+4. Edit `appsettings.user.json` to configure your COM port
+5. Run: `./FTdx101_WebApp`
+6. Open browser to `http://localhost:8080`
 
-2. **Download the latest release** from the [Releases page](https://github.com/mm5agm/FTdx101_WebApp/releases)
-
-3. **Extract and run** the application:
+## What's New in v0.9.0
+- ✅ Auto-Information (AI) mode integration
+- ✅ Reactive state architecture
+- ✅ Background S-meter polling
+- ✅ Smooth UI updates (2x per second)
+- ✅ Zero-dropout defensive validation
