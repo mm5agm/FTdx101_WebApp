@@ -1,6 +1,11 @@
 ﻿# FT-dx101 Web Control Application
 
-![FT-dx101 Web Control Interface](pictures/WebApp.png)
+
+
+## 📸 Screenshots
+
+![Web Interface](pictures/WebApp.png)
+*Main control interface showing dual receivers with analog S-meters and reactive state updates*
 
 ---
 
@@ -12,19 +17,19 @@ I wrote this application because **I can't see the FT-dx101MP controls without u
 
 **I also use this application on my tablet**, which provides a portable control panel in the shack. The large buttons and readable display work great on touchscreens, though the digit-by-digit frequency tuning feature (click digit + mouse wheel) hasn't been implemented for touch devices yet.
 
-### 🔌 Serial Port Multiplexing Solution
-
-I needed a way to share the radio's serial port between this web app and other software like WSJT-X. After investigating various options:
-
-- **OmniRig** - Couldn't find a complete, working version available for download
-- **Com0Com** - Had reliability issues on my system
-- **Com0Com + Com2TCP** - Complex setup with potential stability problems
-
-**Solution:** I built a **CAT multiplexer** directly into this application. It allows multiple programs to share access to the radio's serial port simultaneously, without needing third-party virtual COM port utilities.
 
 ### 🏗️ Architecture: Reactive State with Intelligent Polling
 
-**Special thanks to Martin G8MAB** for suggesting a hybrid reactive architecture that dramatically improved performance and responsiveness!
+## 🆕 Auto Information Mode (`AI1;`)
+
+This application now leverages the FTdx101's **Auto Information mode** by sending the `AI1;` CAT command. When enabled, the radio automatically streams status updates to the application, eliminating the need for constant polling and providing a more responsive user experience.
+
+**How it works:**
+- On connection, the app sends `AI1;` to the radio.
+- The radio pushes real-time status messages, which are processed and reflected in the UI.
+- This reduces latency and improves the experience for live frequency and S-meter updates.
+
+**Special thanks to Martin G8MAB** for suggesting this.
 
 **The Problem:** Early versions polled the radio constantly for all parameters, creating serial port congestion and slow UI updates.
 
@@ -33,8 +38,6 @@ I needed a way to share the radio's serial port between this web app and other s
 - **Smart Polling** - Only S-meters are polled (3x per second) since AI mode doesn't provide them
 - **Instant Updates** - Frequency, mode, and antenna changes propagate immediately
 - **No Queue Backup** - Minimal serial commands = fast, responsive UI
-
-This architecture change in **v0.9.0** transformed the app from sluggish polling to buttery-smooth real-time control!
 
 ### 🎯 Current Capabilities
 
@@ -73,18 +76,18 @@ Feel free to open an issue or discussion with your ideas!
 - **Framework:** ASP.NET Core Razor Pages (.NET 10)
 - **Frontend:** Bootstrap 5, JavaScript, HTML5 Canvas
 - **CAT Control:** Serial Port communication via FT-dx101 CAT protocol
+- **TCP Server:** rigctld-compatible interface for external apps
 - **Gauges:** Canvas-Gauges library for analog S-Meter display
 - **Architecture:** Reactive state with Auto-Information (AI) mode streaming
-- **Multiplexer:** Built-in CAT command multiplexer for port sharing
 - **Platform:** Windows only (serial port implementation requires Windows)
 
 ---
 
 ## 📥 Downloads
 
-- **[FTdx101_WebApp-v0.9.0-win-x64.zip](https://github.com/mm5agm/FTdx101_WebApp/releases/download/v0.9.0/FTdx101_WebApp-v0.9.0-win-x64.zip)** - Windows x64 (self-contained, no .NET runtime required) ✅ **Recommended**
+- **[FTdx101_WebApp-v0.1.0-win-x64.zip](https://github.com/mm5agm/FTdx101_WebApp/releases/download/v0.9.0/FTdx101_WebApp-v0.9.0-win-x64.zip)** - Windows x64 (self-contained, no .NET runtime required) ✅ **Recommended**
 
-**⚠️ Note:** Linux builds are currently not functional due to serial port implementation issues in .NET 10. This is a known limitation and may be addressed in future versions.
+**⚠️ Note:** Linux builds are currently not functional due to serial port implementation issues in .NET 10. This is a known limitation and will not be addressed in future versions.
 
 ---
 
@@ -115,7 +118,7 @@ Feel free to open an issue or discussion with your ideas!
 
 ---
 
-## ✨ What's New in v0.9.0 - "First Reactive Version"
+## ✨ What's New in v0.1.0 - "First Reactive Version"
 
 **Major architectural overhaul thanks to Martin G8MAB's suggestion!**
 
@@ -157,11 +160,6 @@ Feel free to open an issue or discussion with your ideas!
 - **License:** MIT (see LICENSE file)
 
 ---
-
-## 📸 Screenshots
-
-![Web Interface](pictures/WebApp.png)
-*Main control interface showing dual receivers with analog S-meters and reactive state updates*
 
 ---
 
