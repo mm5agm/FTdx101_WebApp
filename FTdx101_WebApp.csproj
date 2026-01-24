@@ -7,9 +7,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="YaesuCatNew\**" />
+    <Content Remove="YaesuCatNew\**" />
+    <EmbeddedResource Remove="YaesuCatNew\**" />
+    <None Remove="YaesuCatNew\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="System.IO.Ports" Version="10.0.1" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
+    <AssemblyTitle>YourTitle</AssemblyTitle>
+    <AssemblyConfiguration>Debug</AssemblyConfiguration>
+  </PropertyGroup>
+
 
 </Project>

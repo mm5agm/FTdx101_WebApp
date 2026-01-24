@@ -16,6 +16,8 @@ namespace FTdx101_WebApp.Services
             _logger = logger;
         }
 
+        private bool initialization_complete = false;
+
         /// <summary>
         /// Process a complete CAT message and update state
         /// </summary>
@@ -67,6 +69,10 @@ namespace FTdx101_WebApp.Services
                         _logger.LogInformation("AI mode: {Message}", message);
                         break;
 
+                    case "DT": // Dummy Trigram for initialization
+                        HandleInitialization(message);
+                        break;
+
                     default:
                         _logger.LogDebug("Unhandled command: {Command} - {Message}", command, message);
                         break;
@@ -81,6 +87,7 @@ namespace FTdx101_WebApp.Services
         private void HandleFrequencyA(string message)
         {
             long freq = CatCommands.ParseFrequency(message);
+            _logger.LogDebug("Parsed FA message: {Message} -> {Freq}", message, freq);
             if (freq > 0)
             {
                 _stateService.FrequencyA = freq;
@@ -163,5 +170,35 @@ namespace FTdx101_WebApp.Services
                 _stateService.IsTransmitting = message[2] == '1';
             }
         }
+
+        public void HandleResponse(string response)
+        {
+            if (response.StartsWith("DT0") && response.EndsWith(";"))
+            {
+                initialization_complete = true;
+                // Optionally log or trigger UI update
+            }
+            else if (response.StartsWith("FA")) // Example for frequency response
+            {
+                // Parse frequency and update RadioStateService.FrequencyA
+            }
+            // Handle frequency and other responses as usual
+        }
+
+        private void HandleInitialization(string message)
+        {
+            if (message.StartsWith("DT0") && message.EndsWith(";"))
+            {
+                initialization_complete = true;
+                _logger.LogInformation("Initialization complete: DT0 response received ({Message})", message);
+                // Optionally, trigger any post-initialization logic here
+            }
+            else if (message.Length >= 3)
+            {
+                _logger.LogInformation("Initialization message received: {Message}", message);
+            }
+        }
+
+        
     }
 }

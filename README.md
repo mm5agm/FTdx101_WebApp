@@ -1,84 +1,115 @@
-﻿# FT-dx101 Web Control Application
+﻿# FTdx101 Web Control Application
 
-
-![FT-dx101 Web Control Interface](pictures/WebAppMeters.png)
+![FTdx101 Web Control Interface](pictures/WebAppMeters.png)
 
 ---
-Now with a groups.io page, ft101dx-webapp
+
 ## 📖 Why This Application Exists
 
-I wrote this application because **I can't see the FT-dx101MP controls without using a magnifying glass**. As a ham who uses **WSJT-X** along with **JTAlert** and **Log4OM**, there are many controls on the radio that I simply never touch. This web-based interface gives me a clean, large, easy-to-read control panel for the functions I actually use day-to-day.
+I wrote this application because **I can't see the FTdx101MP controls without using a magnifying glass**. As a ham who uses **WSJT-X**, **JTAlert**, and **Log4OM**, there are many controls on the radio that I simply never touch. This web-based interface gives me a clean, large, easy-to-read control panel for the functions I actually use day-to-day.
 
 **I also use this application on my tablet**, which provides a portable control panel in the shack. The large buttons and readable display work great on touchscreens, though the digit-by-digit frequency tuning feature (click digit + mouse wheel) hasn't been implemented for touch devices yet.
 
-### 🔌 Serial Port Multiplexing Solution
+---
 
-I needed a way to share the radio's serial port between this web app and other software like WSJT-X. After investigating various options:
+## 🚀 Key Features
 
-- **OmniRig** - Couldn't find a complete, working version available for download
-- **Com0Com** - Had reliability issues on my system
-- **Com0Com + Com2TCP** - Complex setup with potential stability problems
+- **Large, Accessible UI:** Clean, readable controls for frequency, band, mode, and antenna selection.
+- **Dual Receiver Support:** Independent control and display for VFO A and VFO B.
+- **Live S-Meter and Power Display:** Real-time analog-style meters.
+- **Auto Information Mode (`AI1;`):** The app enables the radio’s Auto Information mode, so the radio streams status updates (frequency, mode, S-meter, etc.) automatically to the web app for low-latency, real-time updates.
+- **TCP Integration:** The app acts as a TCP server (rigctld-compatible), allowing external applications (WSJT-X, Log4OM, JTAlert, etc.) to connect over TCP. The web app is the only process that opens the radio's serial port.
+- **No Virtual COM Ports Needed:** Eliminates the need for third-party serial port sharing utilities.
+- **Tablet and Touch Friendly:** Optimized for use on tablets and touch devices.
 
-**Solution:** I built a **CAT multiplexer** directly into this application. It allows multiple programs to share access to the radio's serial port simultaneously, without needing third-party virtual COM port utilities.
+---
 
-### 🎯 Current Capabilities
+## 🌐 TCP Communication with Logging/Contest Software
 
-The application currently **fulfills my personal needs** for daily operation:
+**Current architecture:**  
+The web app now acts as a TCP server (rigctld-compatible), and external applications (WSJT-X, Log4OM, JTAlert, etc.) connect to it over TCP.  
+**Only the web app opens the radio's serial port.**  
+This eliminates the need for serial port multiplexers or virtual COM port utilities. All CAT communication is managed by the web app, and other software interacts with the radio through the TCP interface.
 
-✅ **Frequency Control** - Large, readable frequency display with interactive tuning  
-✅ **Band Selection** - Quick access to all amateur bands (160m - 4m)  
-✅ **Mode Selection** - LSB, USB, CW, FM, AM, DATA-USB, RTTY-USB, C4FM  
-✅ **Antenna Switching** - Select between ANT 1, 2, or 3  
-✅ **S-Meter Display** - Analog gauge showing signal strength with proper calibration  
-✅ **Dual Receiver Support** - Independent control of both VFO A and VFO B  
-✅ **Built-in CAT Multiplexer** - Share serial port with other applications  
-✅ **Tablet Compatible** - Works on tablets and touch devices (band/mode/antenna selection)  
+---
 
-### 🔧 What's Missing (For Now)
+## 🆕 Auto Information Mode (`AI1;`)
 
-The only control I still need to add is **power output adjustment**. Once I have an installation program built and tested, that will likely be the next feature.
+This application now leverages the FTdx101's **Auto Information mode** by sending the `AI1;` CAT command. When enabled, the radio automatically streams status updates to the application, eliminating the need for constant polling and providing a more responsive user experience.
 
-**Tablet limitation:** The digit-by-digit frequency tuning (click digit + mouse wheel) hasn't been implemented for touch devices yet, but band selection and mode changes work perfectly on tablets.
+**How it works:**
+- On connection, the app sends `AI1;` to the radio.
+- The radio pushes real-time status messages, which are processed and reflected in the UI.
+- This reduces latency and improves the experience for live frequency and S-meter updates.
 
-### 🤝 Open to Suggestions
+**Credit:**  
+Special thanks to **Martin Bradford G8MAB** for suggesting the use of Auto Information mode (`AI1;`).
 
-**If there's interest in this program, I'm open to suggestions** for additional controls to add, such as:
-- Power output control (coming soon)
-- Touch-friendly frequency tuning for tablets
+---
+
+## 🔧 What’s Missing / Roadmap
+
+- Power output adjustment (coming soon)
+- Touch-friendly digit-by-digit frequency tuning
 - Filter selection (width, shift)
 - Noise blanker controls
 - AGC settings
 - Clarifier/RIT controls
 - Split operation
 - Memory management
-- Other features you'd find useful
 
-Feel free to open an issue or discussion with your ideas!
+**Suggestions are welcome!**  
+Open an issue or discussion with your ideas.
 
 ---
 
 ## 🏗️ Technology Stack
 
-- **Framework:** ASP.NET Core Razor Pages (.NET 10)
+- **Backend:** ASP.NET Core Razor Pages (.NET 10)
 - **Frontend:** Bootstrap 5, JavaScript, HTML5 Canvas
-- **CAT Control:** Serial Port communication via FT-dx101 CAT protocol
+- **CAT Control:** Serial Port communication via FTdx101 CAT protocol
+- **TCP Server:** rigctld-compatible interface for external apps
 - **Gauges:** Canvas-Gauges library for analog S-Meter display
-- **Multiplexer:** Built-in CAT command multiplexer for port sharing
 
 ---
 
 ## 📦 Installation
 
 > **⚠️ Installation Program Coming Soon!**  
-> I am currently building an installation program for easy deployment. Once complete, I'll publish full installation instructions here.
+> A full installer is in development. For now, follow the manual steps below.
 
-### Manual Installation (For Now)
+### Manual Installation
 
-If you want to try it before the installer is ready:
+1. **Install .NET 10 Runtime**  
+   [Download .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0)
 
-1. **Install .NET 10 Runtime** (required if not using self-contained deployment)
-   - Download from: https://dotnet.microsoft.com/download/dotnet/10.0
+2. **Clone this repository**
 
-2. **Download the latest release** from the [Releases page](https://github.com/mm5agm/FTdx101_WebApp/releases)
+3. **Configure your serial port and radio settings**  
+   Edit `appsettings.user.json` to match your radio's COM port and baud rate.
 
-3. **Extract and run** the application:
+4. **Run the application**  
+   Then open your browser to [http://localhost:8080](http://localhost:8080).
+
+---
+
+## 🖥️ Usage
+
+- Use the web interface to control frequency, band, mode, and antenna.
+- Connect WSJT-X, Log4OM, JTAlert, or other logging/contest software to the app’s TCP server (rigctld-compatible).
+- All radio state changes are reflected in real time thanks to Auto Information mode.
+
+---
+
+## 📝 License
+
+This project is open source and available under the MIT License.
+
+---
+
+## 🙏 Acknowledgements
+
+- **Martin Bradford G8MAB** for suggesting Auto Information mode (`AI1;`).
+- The ham radio and open source communities for feedback and support.
+
+---

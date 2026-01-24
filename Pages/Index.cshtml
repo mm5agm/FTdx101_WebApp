@@ -1,5 +1,5 @@
 ﻿@page
-@model IndexModel
+@model FTdx101_WebApp.Pages.IndexModel
 @{
     ViewData["Title"] = "FT-dx101 Series Control";
 }
@@ -32,7 +32,8 @@
                     <!-- Controls below -->
                     <div>
                         <label>Frequency:</label>
-                        <span id="freqA" class="fw-bold frequency-display digit-display"></span>
+                        //<span id="freqA" class="fw-bold frequency-display digit-display">@Model.RadioState.FrequencyA</span>
+                        <span id="freqA">@Model.RadioState.FrequencyA</span>
                     </div>
                     <div class="mb-3">
                         <label>Bands:</label>
@@ -259,7 +260,7 @@
 
                 display.addEventListener('click', function (e) {
                     if (!e.target.classList.contains('digit') || e.target.textContent === '.') return;
-                    let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                    let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.' );
                     digits.forEach(d => d.classList.remove('selected'));
                     state.selectedIdx[receiver] = digits.indexOf(e.target);
                     if (state.selectedIdx[receiver] !== -1) {
@@ -270,7 +271,7 @@
                 });
 
                 display.addEventListener('wheel', function (e) {
-                    let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                    let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.' );
                     let idx = state.selectedIdx[receiver];
                     if (idx === null || !digits[idx]) return;
                     let freqArr = digits.map(d => parseInt(d.textContent));
@@ -295,7 +296,7 @@
                     newFreq = Math.max(30000, Math.min(70000000, newFreq));
                     state.localFreq[receiver] = newFreq;
                     updateFrequencyDisplay(receiver, newFreq);
-                    let newDigits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+                    let newDigits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.' );
                     newDigits.forEach(d => d.classList.remove('selected'));
                     if (state.selectedIdx[receiver] !== null && newDigits[state.selectedIdx[receiver]]) {
                         newDigits[state.selectedIdx[receiver]].classList.add('selected');
@@ -744,5 +745,26 @@
                 }
             };
         })();
+                // Add this inside your <script> block, after your other JS code
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/radioHub")
+            .build();
+
+        connection.on("RadioStateUpdate", function (update) {
+            // Example: update.property = "FrequencyA", update.value = 14200000
+            if (update.property && update.value !== undefined) {
+                if (update.property === "FrequencyA") {
+                    updateFrequencyDisplay('A', update.value);
+                }
+                if (update.property === "FrequencyB") {
+                    updateFrequencyDisplay('B', update.value);
+                }
+                // Add more property handlers as needed
+            }
+        });
+
+        connection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
     </script>
 }

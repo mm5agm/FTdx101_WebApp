@@ -136,3 +136,7 @@ publish/
 bin/
 obj/
 *.user
+
+# Add this line to your .gitignore file in the root of your FTdx101_WebApp repository
+/101Cats/
+/YaesuCatNew/

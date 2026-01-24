@@ -1,0 +1,8 @@
+frequency not showing. On startup, the first command sent to the radio should be "AI1;" Then send the very long list of commands to read all the relevant parameters from the radio. The last command to send during initialisation is "DT0;" That queries the date from the real time clock in the radio - you need to look for the "DT0xxx;" response and set an internal initialization_complete flag to indicate it's up and running.
+
+
+note, also, that Auto Information can be turned on and off - I think it defaults to OFF. The first command you send to the radio during startup of your code should be "AI1;".
+ 
+When you start the application, you will need to send a (very) long list of commands to read all the relevant parameters. It is useful to be able to detect that all of the required responses have been received in order to know that it is safe to allow the application to complete its initialization and start processing user input. The best way to do that is to make sure that the last command you send during initialization is "DT0;". That will query the date set in the radio's real time clock. Your code that is processing the received Auto Information messages should look for the "DT0.....;" response and set an internal initialization_complete flag that indicates that the application is up and running.
+ 
+--

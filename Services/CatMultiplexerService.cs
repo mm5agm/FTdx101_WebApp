@@ -85,6 +85,9 @@ namespace FTdx101_WebApp.Services
                 // Start processing queue
                 _processingTask = Task.Run(() => ProcessCommandQueueAsync(_cancellationTokenSource.Token));
 
+                // --- ADD THIS: Query initial state right after connecting ---
+                await QueryInitialStateAsync();
+
                 return true;
             }
             catch (Exception ex)
@@ -103,26 +106,19 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public async Task EnableAutoInformationAsync()
         {
-            if (_autoInformationEnabled)
-                return;
+            // Enable Auto Information (AI1;)
+            await SendCommandAsync("AI1;", "System");
+            // Optionally, send Data Terminal Off (DT0;)
+            await SendCommandAsync("DT0;", "System");
+        }
 
-            try
-            {
-                _logger.LogInformation("Enabling Auto Information (AI) mode...");
-
-                // Send AI1; to enable auto information
-                await SendCommandAsync("AI1;", "System");
-
-                // Query initial state for all parameters
-                await QueryInitialStateAsync();
-
-                _autoInformationEnabled = true;
-                _logger.LogInformation("✓ Auto Information mode enabled - radio will stream updates");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to enable Auto Information mode");
-            }
+        /// <summary>
+        /// Disable Auto Information mode
+        /// </summary>
+        public async Task DisableAutoInformationAsync()
+        {
+            // Disable Auto Information (AI0;)
+            await SendCommandAsync("AI0;", "System");
         }
 
         /// <summary>
@@ -244,8 +240,7 @@ namespace FTdx101_WebApp.Services
                 var fullCommand = request.Command.EndsWith(";") ? request.Command : request.Command + ";";
                 var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
 
-                _logger.LogDebug("[{ClientId}] >>> #{RequestId}: {Command}",
-                    request.ClientId, request.RequestId, fullCommand.TrimEnd(';'));
+                _logger.LogDebug("[{ClientId}] >>> #{RequestId}: {Command}", request.ClientId, request.RequestId, fullCommand.TrimEnd(';'));
 
                 _serialPort.Write(commandBytes, 0, commandBytes.Length);
                 await Task.Delay(50);
@@ -259,8 +254,7 @@ namespace FTdx101_WebApp.Services
                 }
                 else if (response.Contains("?") || response.Contains("ERROR", StringComparison.OrdinalIgnoreCase))
                 {
-                    _logger.LogError("[{ClientId}] Command #{RequestId} received error response: '{Response}' for '{Command}'", request.ClientId, request.RequestId, response, fullCommand.TrimEnd(';'));
-                }
+               }
 
                 request.CompletionSource.SetResult(response);
 
@@ -365,6 +359,152 @@ namespace FTdx101_WebApp.Services
             public string Command { get; set; } = string.Empty;
             public TaskCompletionSource<string> CompletionSource { get; set; } = null!;
             public DateTime Timestamp { get; set; }
+        }
+
+        public async Task SendCommand(string command, bool processResult = false, int delay = 0)
+        {
+            var response = await SendCommandAsync(command, "InitialValues");
+            _logger.LogDebug("Command {Command} got response: {Response}", command, response);
+            if (processResult && !string.IsNullOrEmpty(response))
+            {
+                _messageDispatcher.DispatchMessage(response + ";");
+            }
+            if (delay > 0)
+                await Task.Delay(delay);
+        }
+
+        public async Task SendCommandPause(string command, bool processResult = false)
+        {
+            // Always pause 100ms after sending
+            await SendCommand(command, processResult, delay: 100);
+        }
+
+        public async Task GetInitialValues()
+        {
+            // Enable Auto Information mode first
+            await SendCommand("AI1;", true);
+
+            // The following is a direct translation of the original command sequence:
+            await SendCommand("ID;", true);
+            await SendCommand("AG0;", true);
+            await SendCommand("AG1;", true);
+            await SendCommand("RG0;", true);
+            await SendCommand("RG1;", true);
+            await SendCommand("FA;", true);
+            await SendCommand("FB;", true);
+            await SendCommand("FR;", true);
+            await SendCommand("FT;", true);
+            await SendCommand("SS04;", true);
+            await SendCommand("SS14;", true);
+            await SendCommand("AO;", true);
+            await SendCommand("MG;", true);
+            await SendCommand("PL;", true);
+            await SendCommand("PR0;", true);
+            await SendCommand("PR1;", true);
+            await SendCommand("MD0;", true);
+            await SendCommand("MD1;", true);
+            await SendCommand("VS;", true);
+            await SendCommand("KP;", true);
+            await SendCommand("PC;", true);
+            await SendCommand("RL0;", true);
+            await SendCommand("RL1;", true);
+            await SendCommand("NR0;", true);
+            await SendCommand("NR1;", true);
+            await SendCommand("NB0;", true);
+            await SendCommand("NB1;", true);
+            await SendCommand("NL0;", true);
+            await SendCommand("CO00;", true);
+            await SendCommand("CO10;", true);
+            await SendCommand("CO01;", true);
+            await SendCommand("CO11;", true);
+            await SendCommand("CO02;", true);
+            await SendCommand("CO12;", true);
+            await SendCommand("CO03;", true);
+            await SendCommand("CO13;", true);
+            await SendCommand("CN00;", true);
+            await SendCommand("CN10;", true);
+            await SendCommand("CT0;", true);
+            await SendCommand("CT1;", true);
+            await SendCommandPause("EX030203;", true);
+            await SendCommandPause("EX030202;", true);
+            await SendCommandPause("EX030102;", true);
+            await SendCommandPause("EX030103;", true);
+            await SendCommandPause("EX040105;", true);
+            await SendCommandPause("EX030201;", true);
+            await SendCommandPause("EX010111;", true);
+            await SendCommandPause("EX010112;", true);
+            await SendCommandPause("EX030405;", true);
+            await SendCommandPause("EX010111;", true);
+            await SendCommandPause("EX010211;", true);
+            await SendCommandPause("EX010310;", true);
+            await SendCommandPause("EX010413;", true);
+            await SendCommandPause("EX010112;", true);
+            await SendCommandPause("EX010213;", true);
+            await SendCommandPause("EX010312;", true);
+            await SendCommandPause("EX010414;", true);
+            await SendCommandPause("EX0403021;", false);
+            await SendCommand("SH0;", true);
+            await SendCommand("SH1;", true);
+            await SendCommand("IS0;", true);
+            await SendCommand("SS06;", true);
+            await SendCommand("IS1;", true);
+            await SendCommand("AC;", true);
+            await SendCommand("KP;", true);
+            await SendCommand("FT;", true);
+            await SendCommand("IF;", true);
+            await SendCommand("BP00;", true);
+            await SendCommand("BP01;", true);
+            await SendCommand("BP10;", true);
+            await SendCommand("BP11;", true);
+            await SendCommand("GT0;", true);
+            await SendCommand("GT1;", true);
+            await SendCommand("AN0;", true);
+            await SendCommand("AN1;", true);
+            await SendCommand("PA0;", true);
+            await SendCommand("PA1;", true);
+            await SendCommand("RF0;", true);
+            await SendCommand("RF1;", true);
+            await SendCommand("ID;", true);
+            await SendCommand("CS;", true);
+            await SendCommand("ML0;", true);
+            await SendCommand("ML1;", true);
+            await SendCommand("BI;", true);
+            await SendCommand("MS;", true);
+            await SendCommand("KS;", true);
+            await SendCommand("SS05;", true);
+            await SendCommand("SS15;", true);
+            await SendCommand("SS06;", true);
+            await SendCommand("SS16;", true);
+            await SendCommand("VT0;", true);
+            await SendCommand("VX;", true);
+            await SendCommand("VG;", true);
+            await SendCommand("AV;", true);
+            await SendCommand("CF000;", true);
+            await SendCommand("CF100;", true);
+            await SendCommand("CF001;", true);
+            await SendCommand("CF101;", true);
+            await SendCommand("BC0;", true);
+            await SendCommand("BC1;", true);
+            await SendCommand("KR;", true);
+            await SendCommand("RA0;", true);
+            await SendCommand("RA1;", true);
+            await SendCommand("SY;", true);
+            await SendCommandPause("VD;", true);
+            await SendCommandPause("DT0;", true);
+        }
+
+        public async Task InitializeRadioAsync()
+        {
+            await SendCommandAsync("AI1;","Initialization", CancellationToken.None);
+            foreach (var cmd in CatCommands.InitializationCommands)
+            {
+                await SendCommandAsync(cmd, "Initialization", CancellationToken.None);
+            }
+            await SendCommandAsync("DT0;","Initialization", CancellationToken.None);
+        } 
+        public async Task ShutdownRadioAsync()
+        {
+            // Implementation (if needed) or leave empty
         }
     }
 }

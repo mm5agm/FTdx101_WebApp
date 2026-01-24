@@ -4,7 +4,7 @@
   "modeA": "",
   "antennaA": "",
   "frequencyB": 0,
-  "bandB": "20m",
+  "bandB": "10m",
   "modeB": "",
   "antennaB": "",
   "controls": {}

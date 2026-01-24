@@ -5,6 +5,9 @@ using FTdx101_WebApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Register your services
+builder.Services.AddSingleton<RadioStateService>();
+
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
 
@@ -16,7 +19,6 @@ builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
 
 // Register the multiplexer and radio state services
 builder.Services.AddSingleton<CatMultiplexerService>();
-builder.Services.AddSingleton<RadioStateService>();
 
 // Register the persistence service
 builder.Services.AddSingleton<RadioStatePersistenceService>();
@@ -31,6 +33,9 @@ builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddSingleton<CatMessageBuffer>();
 builder.Services.AddSingleton<CatMessageDispatcher>();
 builder.Services.AddHostedService<SMeterPollingService>();
+
+// Register the radio state service
+builder.Services.AddSingleton<IRadioStateService, RadioStateService>();
 
 // Force the web host to use port 8080 on all interfaces
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
