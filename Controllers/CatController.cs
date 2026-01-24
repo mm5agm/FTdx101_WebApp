@@ -215,7 +215,7 @@ namespace FTdx101_WebApp.Controllers
                 _radioState.BandA = request.Band;
                 _statePersistence.Save(_radioState);
 
-                _radioStateService.SetBand("A", request.Band);
+                _radioStateService.SetBand("A", request.Band);  // This line is important!
 
                 _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, freq);
                 return Ok(new { message = $"Band {request.Band} selected" });
