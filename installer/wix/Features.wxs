@@ -1,0 +1,45 @@
+xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <Fragment>
+
+ 
+
+    <ComponentGroup Id="AppFiles_SC">
+
+      <Component Id="Files_SC" Guid="PUT-GUID-HERE">
+
+        <File Source="$(var.PublishDir_SC)\FTdx101WebApp.exe" />
+
+        <File Source="$(var.PublishDir_SC)\appsettings.json" />
+
+        <File Source="$(var.PublishDir_SC)\wwwroot\**" />
+
+      </Component>
+
+    </ComponentGroup>
+
+ 
+
+    <ComponentGroup Id="AppFiles_FD">
+
+      <Component Id="Files_FD" Guid="PUT-GUID-HERE">
+
+        <File Source="$(var.PublishDir_FD)\FTdx101WebApp.exe" />
+
+        <File Source="$(var.PublishDir_FD)\appsettings.json" />
+
+        <File Source="$(var.PublishDir_FD)\wwwroot\**" />
+
+      </Component>
+
+    </ComponentGroup>
+
+ 
+
+  </Fragment>
+
+</Wix>

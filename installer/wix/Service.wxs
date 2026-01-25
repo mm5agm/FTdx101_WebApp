@@ -1,0 +1,97 @@
+xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <Fragment>
+
+ 
+
+    <Component Id="FTdx101WebService_SC" Guid="PUT-GUID-HERE">
+
+      <File Id="ServiceExe_SC" Source="$(var.PublishDir_SC)\FTdx101WebApp.exe" KeyPath="yes" />
+
+ 
+
+      <ServiceInstall
+
+          Id="ServiceInstaller_SC"
+
+          Type="ownProcess"
+
+          Name="FTdx101WebService"
+
+          DisplayName="FTdx101 Web Service"
+
+          Description="Yaesu FTdx101 Web Control Service"
+
+          Start="auto"
+
+          ErrorControl="normal" />
+
+ 
+
+      <ServiceControl
+
+          Id="StartService_SC"
+
+          Name="FTdx101WebService"
+
+          Start="install"
+
+          Stop="both"
+
+          Remove="uninstall"
+
+          Wait="yes" />
+
+    </Component>
+
+ 
+
+    <Component Id="FTdx101WebService_FD" Guid="PUT-GUID-HERE">
+
+      <File Id="ServiceExe_FD" Source="$(var.PublishDir_FD)\FTdx101WebApp.exe" KeyPath="yes" />
+
+ 
+
+      <ServiceInstall
+
+          Id="ServiceInstaller_FD"
+
+          Type="ownProcess"
+
+          Name="FTdx101WebService"
+
+          DisplayName="FTdx101 Web Service"
+
+          Description="Yaesu FTdx101 Web Control Service"
+
+          Start="auto"
+
+          ErrorControl="normal" />
+
+ 
+
+      <ServiceControl
+
+          Id="StartService_FD"
+
+          Name="FTdx101WebService"
+
+          Start="install"
+
+          Stop="both"
+
+          Remove="uninstall"
+
+          Wait="yes" />
+
+    </Component>
+
+ 
+
+  </Fragment>
+
+</Wix>
