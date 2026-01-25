@@ -1,11 +1,15 @@
-﻿namespace FTdx101_WebApp.Services
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace FTdx101_WebApp.Services
 {
     public interface ICatClient : IDisposable
     {
         Task<bool> ConnectAsync(string portName, int baudRate = 38400);
         Task DisconnectAsync();
         bool IsConnected { get; }
-        Task<string> SendCommandAsync(string command);
+        Task<string> SendCommandAsync(string command, string clientId, CancellationToken cancellationToken = default);
 
         // VFO-A (Main) Methods
         Task<long> ReadFrequencyAsync();
@@ -15,14 +19,14 @@
         Task<int> ReadSMeterMainAsync();
         Task<string> ReadModeAsync();
         Task<string> ReadModeMainAsync();
-        Task<bool> SetModeMainAsync(string mode);  // ← ADD THIS LINE
+        Task<bool> SetModeMainAsync(string mode);
 
         // VFO-B (Sub) Methods
         Task<long> ReadFrequencyBAsync();
         Task<bool> SetFrequencyBAsync(long frequencyHz);
         Task<int> ReadSMeterSubAsync();
         Task<string> ReadModeSubAsync();
-        Task<bool> SetModeSubAsync(string mode);  // ← ADD THIS LINE
+        Task<bool> SetModeSubAsync(string mode);
 
         // Common Methods
         Task<bool> ReadTransmitStatusAsync();

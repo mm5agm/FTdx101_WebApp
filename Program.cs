@@ -62,6 +62,9 @@ builder.Services.AddSingleton<IRadioStateService, RadioStateService>();
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 var app = builder.Build();
+// Test: Manually trigger a [received] log
+var buffer = app.Services.GetRequiredService<CatMessageBuffer>();
+buffer.AppendData("FA0142000;"); // This should log [received] FA0142000;
 
 if (app.Environment.IsDevelopment())
 {

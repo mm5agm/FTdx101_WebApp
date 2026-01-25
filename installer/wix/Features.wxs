@@ -1,16 +1,12 @@
-xml
-
 <?xml version="1.0" encoding="UTF-8"?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
   <Fragment>
 
- 
-
     <ComponentGroup Id="AppFiles_SC">
 
-      <Component Id="Files_SC" Guid="PUT-GUID-HERE">
+      <Component Id="Files_SC" Guid="e1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c">
 
         <File Source="$(var.PublishDir_SC)\FTdx101WebApp.exe" />
 
@@ -26,7 +22,7 @@ xml
 
     <ComponentGroup Id="AppFiles_FD">
 
-      <Component Id="Files_FD" Guid="PUT-GUID-HERE">
+      <Component Id="Files_FD" Guid="f2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d">
 
         <File Source="$(var.PublishDir_FD)\FTdx101WebApp.exe" />
 

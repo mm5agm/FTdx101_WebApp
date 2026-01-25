@@ -85,6 +85,11 @@ namespace FTdx101_WebApp.Services
                 // Start processing queue
                 _processingTask = Task.Run(() => ProcessCommandQueueAsync(_cancellationTokenSource.Token));
 
+                _serialPort.DataReceived += (s, e) => {
+                    var data = _serialPort.ReadExisting();
+                    _messageBuffer.AppendData(data);
+                  };
+
                 // --- ADD THIS: Query initial state right after connecting ---
                 await QueryInitialStateAsync();
 

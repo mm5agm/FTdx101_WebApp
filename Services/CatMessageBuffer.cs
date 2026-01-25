@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace FTdx101_WebApp.Services
 {
@@ -51,7 +52,10 @@ namespace FTdx101_WebApp.Services
                 // Dispatch message
                 if (message.Length >= 3) // Minimum: "XX;"
                 {
-                    _logger.LogDebug("Complete message: {Message}", message);
+                    if (!message.StartsWith("RM") && !message.StartsWith("SM"))
+                    {
+                        _logger.LogWarning("[received] {Message}", message.Trim());
+                    }
                     OnMessageReceived(message);
                 }
             }

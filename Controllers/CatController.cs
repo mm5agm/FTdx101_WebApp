@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FTdx101_WebApp.Services;
 using System.Text.Json;
+using System.Threading;
 
 namespace FTdx101_WebApp.Controllers
 {
@@ -51,22 +52,22 @@ namespace FTdx101_WebApp.Controllers
         {
             var state = _statePersistence.Load();
             if (state.FrequencyA > 0)
-                await _catClient.SendCommandAsync($"FA{state.FrequencyA:D9};");
+                await _catClient.SendCommandAsync($"FA{state.FrequencyA:D9};", "WebUI", CancellationToken.None);
             if (!string.IsNullOrEmpty(state.ModeA))
                 await _catClient.SetModeMainAsync(state.ModeA);
             if (!string.IsNullOrEmpty(state.AntennaA))
-                await _catClient.SendCommandAsync($"AN0{state.AntennaA};");
+                await _catClient.SendCommandAsync($"AN0{state.AntennaA};", "WebUI", CancellationToken.None);
             if (state.FrequencyB > 0)
-                await _catClient.SendCommandAsync($"FB{state.FrequencyB:D9};");
+                await _catClient.SendCommandAsync($"FB{state.FrequencyB:D9};", "WebUI", CancellationToken.None);
             if (!string.IsNullOrEmpty(state.ModeB))
                 await _catClient.SetModeSubAsync(state.ModeB);
             if (!string.IsNullOrEmpty(state.AntennaB))
-                await _catClient.SendCommandAsync($"AN1{state.AntennaB};");
+                await _catClient.SendCommandAsync($"AN1{state.AntennaB};", "WebUI", CancellationToken.None);
         }
 
         private async Task<string> GetMainVfoAsync()
         {
-            var response = await _catClient.SendCommandAsync("IF;");
+            var response = await _catClient.SendCommandAsync("IF;", "WebUI", CancellationToken.None);
             if (!string.IsNullOrEmpty(response) && response.Length > 5)
                 return response[5] == '1' ? "B" : "A";
             return "A";
@@ -81,30 +82,30 @@ namespace FTdx101_WebApp.Controllers
 
                 // Get current state from reactive state service
                 var state = _radioStateService.GetState();
-                
+
                 // Get settings for max power
                 var settings = await _settingsService.GetSettingsAsync();
                 int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
 
                 return Ok(new
                 {
-                    vfoA = new 
-                    { 
+                    vfoA = new
+                    {
                         frequency = _radioStateService.FrequencyA,  // ← FROM REACTIVE STATE
-                        mode = _radioStateService.ModeA, 
+                        mode = _radioStateService.ModeA,
                         sMeter = _radioStateService.SMeterA,
-                        band = state.BandA, 
-                        antenna = _radioStateService.AntennaA, 
-                        power = _radioStateService.Power 
+                        band = state.BandA,
+                        antenna = _radioStateService.AntennaA,
+                        power = _radioStateService.Power
                     },
-                    vfoB = new 
-                    { 
+                    vfoB = new
+                    {
                         frequency = _radioStateService.FrequencyB,  // ← FROM REACTIVE STATE
-                        mode = _radioStateService.ModeB, 
+                        mode = _radioStateService.ModeB,
                         sMeter = _radioStateService.SMeterB,
-                        band = state.BandB, 
-                        antenna = _radioStateService.AntennaB, 
-                        power = _radioStateService.Power 
+                        band = state.BandB,
+                        antenna = _radioStateService.AntennaB,
+                        power = _radioStateService.Power
                     },
                     controls = state.Controls,
                     isTransmitting = _radioStateService.IsTransmitting,
@@ -136,7 +137,7 @@ namespace FTdx101_WebApp.Controllers
                     return BadRequest(new { error = "Frequency out of range" });
 
                 var command = $"FA{freq:D9};";
-                await _catClient.SendCommandAsync(command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.FrequencyA = freq;
                 _statePersistence.Save(_radioState);
@@ -169,7 +170,7 @@ namespace FTdx101_WebApp.Controllers
                     return BadRequest(new { error = "Frequency out of range" });
 
                 var command = $"FB{freq:D9};";
-                await _catClient.SendCommandAsync(command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.FrequencyB = freq;
                 _statePersistence.Save(_radioState);
@@ -210,7 +211,7 @@ namespace FTdx101_WebApp.Controllers
                     return BadRequest(new { error = "Invalid band" });
 
                 var command = $"FA{freq:D9};";
-                await _catClient.SendCommandAsync(command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.BandA = request.Band;
                 _statePersistence.Save(_radioState);
@@ -253,7 +254,7 @@ namespace FTdx101_WebApp.Controllers
                     return BadRequest(new { error = "Invalid band" });
 
                 var command = $"FB{freq:D9};";
-                await _catClient.SendCommandAsync(command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.BandB = request.Band;
                 _statePersistence.Save(_radioState);
@@ -286,7 +287,7 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
                 var command = $"AN0{request.Antenna};";
-                await _catClient.SendCommandAsync(command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.AntennaA = request.Antenna;
                 _statePersistence.Save(_radioState);
@@ -318,7 +319,7 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
                 var command = $"AN1{request.Antenna};";
-                await _catClient.SendCommandAsync(command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.AntennaB = request.Antenna;
                 _statePersistence.Save(_radioState);
@@ -403,18 +404,18 @@ namespace FTdx101_WebApp.Controllers
             try
             {
                 await EnsureConnectedAsync();
-                
+
                 // Get radio model from settings to determine max power
                 var settings = await _settingsService.GetSettingsAsync();
                 int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
-                
+
                 // Validate power range
                 if (request.Watts < 0 || request.Watts > maxPower)
                     return BadRequest(new { error = $"Power out of range (0-{maxPower}W for {settings.RadioModel})" });
 
                 // Format: PC000-PC200 (pad to 3 digits)
                 var command = $"PC{request.Watts:D3};";
-                await _catClient.SendCommandAsync(command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _logger.LogInformation("Set power to {Power}W on {RadioModel}", request.Watts, settings.RadioModel);
                 return Ok(new { message = $"Power set to {request.Watts}W", maxPower = maxPower });
@@ -448,9 +449,9 @@ namespace FTdx101_WebApp.Controllers
         public class AntennaRequest { public string Antenna { get; set; } = string.Empty; }
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
         public class FrequencyRequest { public long FrequencyHz { get; set; } }
-        public class PowerRequest 
-        { 
-            public int Watts { get; set; } 
+        public class PowerRequest
+        {
+            public int Watts { get; set; }
         }
     }
 }

@@ -278,5 +278,11 @@ namespace FTdx101_WebApp.Services
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public void UpdateFrequencyB(long freq)
+        {
+            _frequencyB = freq;
+            // Add any notification or persistence logic if needed
+        }
     }
 }
