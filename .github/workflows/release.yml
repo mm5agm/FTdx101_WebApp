@@ -1,91 +1,45 @@
-yaml
-
 name: Build Installers
 
- 
-
 on:
-
   push:
-
     tags:
-
       - "v*"
 
- 
-
 jobs:
-
   build:
-
     runs-on: windows-latest
 
- 
-
     steps:
-
       - name: Checkout
-
         uses: actions/checkout@v4
 
- 
-
       - name: Setup .NET 10
-
         uses: actions/setup-dotnet@v4
-
         with:
-
           dotnet-version: "10.x"
 
- 
-
       - name: Install WiX
-
         run: choco install wixtoolset --yes
 
- 
-
       - name: Publish Self-Contained
-
         run: dotnet publish src/YourWebApp.csproj -c Release -r win-x64 --self-contained true -o publish_sc
 
- 
-
       - name: Publish Framework-Dependent
-
         run: dotnet publish src/YourWebApp.csproj -c Release -r win-x64 --self-contained false -o publish_fd
 
- 
-
       - name: Build MSI (Self-Contained)
-
         run: |
-
           candle.exe installer/wix/Product_SC.wxs installer/wix/Directory.wxs installer/wix/Features.wxs installer/wix/Service.wxs -dPublishDir_SC=publish_sc
-
           light.exe Product_SC.wixobj Directory.wixobj Features.wixobj Service.wixobj -o FTdx101WebApp_SC.msi
 
- 
-
       - name: Build MSI (Framework-Dependent)
-
         run: |
-
           candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Features.wxs installer/wix/Service.wxs -dPublishDir_FD=publish_fd
-
           light.exe Product_FD.wixobj Directory.wixobj Features.wixobj Service.wixobj -o FTdx101WebApp_FD.msi
 
- 
-
       - name: Upload Installers to Release
-
         uses: softprops/action-gh-release@v2
-
         with:
-
           files: |
-
             FTdx101WebApp_SC.msi
-
             FTdx101WebApp_FD.msi
