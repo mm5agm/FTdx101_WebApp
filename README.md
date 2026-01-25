@@ -1,21 +1,10 @@
 ﻿# FTdx101 Web Control Application
 
-<<<<<<< HEAD
-![FTdx101 Web Control Interface](pictures/WebAppMeters.png)
+![FT-dx101 Web Control Interface](pictures/WebApp.png)
 
 ---
 
 =======
-
-
-## 📸 Screenshots
-
-![Web Interface](pictures/WebApp.png)
-*Main control interface showing dual receivers with analog S-meters and reactive state updates*
-
----
-
-Now with a groups.io page: **ft101dx-webapp**
 
 ## 📖 Why This Application Exists
 
@@ -59,34 +48,15 @@ This application now leverages the FTdx101's **Auto Information mode** by sendin
 - **Instant Updates** - Frequency, mode, and antenna changes propagate immediately
 - **No Queue Backup** - Minimal serial commands = fast, responsive UI
 
-## 🌐 TCP Communication with Logging/Contest Software
+This architecture change in **v0.9.0** transformed the app from sluggish polling to buttery-smooth real-time control!
+
+### 🎯 Current Capabilities
 
 **Current architecture:**  
 The web app now acts as a TCP server (rigctld-compatible), and external applications (WSJT-X, Log4OM, JTAlert, etc.) connect to it over TCP.  
 **Only the web app opens the radio's serial port.**  
 This eliminates the need for serial port multiplexers or virtual COM port utilities. All CAT communication is managed by the web app, and other software interacts with the radio through the TCP interface.
 
----
-
-## 🆕 Auto Information Mode (`AI1;`)
-
-This application now leverages the FTdx101's **Auto Information mode** by sending the `AI1;` CAT command. When enabled, the radio automatically streams status updates to the application, eliminating the need for constant polling and providing a more responsive user experience.
-
-**How it works:**
-- On connection, the app sends `AI1;` to the radio.
-- The radio pushes real-time status messages, which are processed and reflected in the UI.
-- This reduces latency and improves the experience for live frequency and S-meter updates.
-
-**Credit:**  
-Special thanks to **Martin Bradford G8MAB** for suggesting the use of Auto Information mode (`AI1;`).
-
----
-
-## 🔧 What’s Missing / Roadmap
-
-- Power output adjustment (coming soon)
-- Touch-friendly digit-by-digit frequency tuning
-=======
 ✅ **Frequency Control** - Large, readable frequency display with interactive tuning  
 ✅ **Band Selection** - Quick access to all amateur bands (160m - 4m)  
 ✅ **Mode Selection** - LSB, USB, CW, FM, AM, DATA-USB, RTTY-USB, C4FM  
@@ -124,24 +94,6 @@ Open an issue or discussion with your ideas.
 - **Gauges:** Canvas-Gauges library for analog S-Meter display
 - **Architecture:** Reactive state with Auto-Information (AI) mode streaming
 - **Platform:** Windows only (serial port implementation requires Windows)
----
-
-## 📥 Downloads
-
-> **⚠️ Installation Program Coming Soon!**  
-
-### Manual Installation
-
-1. **Install .NET 10 Runtime**  
-   [Download .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0)
-
-2. **Clone this repository**
-
-3. **Configure your serial port and radio settings**  
-   Edit `appsettings.user.json` to match your radio's COM port and baud rate.
-
-4. **Run the application**  
-   Then open your browser to [http://localhost:8080](http://localhost:8080).
 
 ---
 
@@ -153,7 +105,7 @@ Open an issue or discussion with your ideas.
 
 ---
 
-## 📝 License
+- **[FTdx101_WebApp-v0.9.0-win-x64.zip](https://github.com/mm5agm/FTdx101_WebApp/releases/download/v0.9.0/FTdx101_WebApp-v0.9.0-win-x64.zip)** - Windows x64 (self-contained, no .NET runtime required) ✅ **Recommended**
 
 This project is open source and available under the MIT License.
 
