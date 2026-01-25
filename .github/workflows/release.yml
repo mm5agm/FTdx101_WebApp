@@ -22,10 +22,10 @@ jobs:
         run: choco install wixtoolset --yes
 
       - name: Publish Self-Contained
-        run: dotnet publish src/YourWebApp.csproj -c Release -r win-x64 --self-contained true -o publish_sc
+        run: dotnet publish FTdx101_WebApp.csproj -c Release -r win-x64 --self-contained true -o publish_sc
 
       - name: Publish Framework-Dependent
-        run: dotnet publish src/YourWebApp.csproj -c Release -r win-x64 --self-contained false -o publish_fd
+        run: dotnet publish FTdx101_WebApp.csproj -c Release -r win-x64 --self-contained false -o publish_fd
 
       - name: Build MSI (Self-Contained)
         run: |
