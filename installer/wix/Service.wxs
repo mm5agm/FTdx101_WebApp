@@ -38,9 +38,4 @@
           Wait="yes" />
     </Component>
   </Fragment>
-  <Fragment>
-    <ComponentRef Id="Files_SC" />
-    <ComponentRef Id="Files_FD" />
-    <!-- ServiceInstall and ServiceControl can be in a separate component, but do not duplicate the EXE file -->
-  </Fragment>
 </Wix>
