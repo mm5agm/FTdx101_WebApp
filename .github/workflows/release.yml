@@ -29,13 +29,13 @@ jobs:
 
       - name: Build MSI (Self-Contained)
         run: |
-          candle.exe installer/wix/Product_SC.wxs installer/wix/Directory.wxs installer/wix/Features.wxs installer/wix/Service.wxs -dPublishDir_SC=publish_sc -dPublishDir_FD=publish_fd
-          light.exe Product_SC.wixobj Directory.wixobj Features.wixobj Service.wixobj -o FTdx101WebApp_SC.msi
+          candle.exe installer/wix/Product_SC.wxs installer/wix/Directory.wxs installer/wix/Features_SC.wsx installer/wix/Service_SC.wsx -dPublishDir_SC=publish_sc
+          light.exe Product_SC.wixobj Directory.wixobj Features_SC.wixobj Service_SC.wixobj -o FTdx101WebApp_SC.msi
 
       - name: Build MSI (Framework-Dependent)
         run: |
-          candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Features.wxs installer/wix/Service.wxs -dPublishDir_SC=publish_sc -dPublishDir_FD=publish_fd
-          light.exe Product_FD.wixobj Directory.wixobj Features.wixobj Service.wixobj -o FTdx101WebApp_FD.msi
+          candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Features_FD.wsx installer/wix/Service_FD.wsx -dPublishDir_FD=publish_fd
+          light.exe Product_FD.wixobj Directory.wixobj Features_FD.wixobj Service_FD.wixobj -o FTdx101WebApp_FD.msi
 
       - name: Upload Installers to Release
         uses: softprops/action-gh-release@v2
