@@ -1,47 +1,18 @@
-xml
-
 <?xml version="1.0" encoding="UTF-8"?>
-
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-
   <Product
-
       Id="*"
-
       Name="FTdx101 WebApp (Framework-Dependent)"
-
       Language="1033"
-
       Version="1.0.0.0"
-
       Manufacturer="Colin"
-
       UpgradeCode="c3f1a1b2-2d3c-4e5f-8a9b-0c1d2e3f4a5b">
-
- 
-
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
-
- 
-
     <MediaTemplate />
-
- 
-
     <Feature Id="MainFeature" Title="FTdx101 WebApp" Level="1">
-
       <ComponentGroupRef Id="AppFiles_FD" />
-
       <ComponentRef Id="FTdx101WebService_FD" />
-
     </Feature>
-
- 
-
     <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
-
- 
-
   </Product>
-
 </Wix>
