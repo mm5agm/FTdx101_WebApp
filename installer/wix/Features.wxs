@@ -3,11 +3,9 @@
   <Fragment>
     <ComponentGroup Id="AppFiles_SC">
       <Component Id="Files_SC" Guid="e1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c" Directory="INSTALLFOLDER">
-        <File Source="$(var.PublishDir_SC)\FTdx101WebApp.exe" />
-        <File Source="$(var.PublishDir_SC)\appsettings.json" />
-        <!-- Add more files as needed, e.g.: -->
-        <!-- <File Source="$(var.PublishDir_SC)\wwwroot\index.html" /> -->
-        <!-- <File Source="$(var.PublishDir_SC)\wwwroot\css\site.css" /> -->
+        <File Id="FTdx101WebAppExe_SC" Source="$(var.PublishDir_SC)\FTdx101WebApp.exe" KeyPath="yes" />
+        <File Id="AppSettingsJson_SC" Source="$(var.PublishDir_SC)\appsettings.json" />
+        <!-- Add more files as needed -->
       </Component>
     </ComponentGroup>
     <ComponentGroup Id="AppFiles_FD">
