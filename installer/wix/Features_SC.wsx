@@ -8,14 +8,5 @@
         <!-- Add more files as needed -->
       </Component>
     </ComponentGroup>
-    <ComponentGroup Id="AppFiles_FD">
-      <Component Id="Files_FD" Guid="f2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d" Directory="INSTALLFOLDER">
-        <File Source="$(var.PublishDir_FD)\FTdx101WebApp.exe" />
-        <File Source="$(var.PublishDir_FD)\appsettings.json" />
-        <!-- Add more files as needed, e.g.: -->
-        <!-- <File Source="$(var.PublishDir_FD)\wwwroot\index.html" /> -->
-        <!-- <File Source="$(var.PublishDir_FD)\wwwroot\css\site.css" /> -->
-      </Component>
-    </ComponentGroup>
   </Fragment>
 </Wix>

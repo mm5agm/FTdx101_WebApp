@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <ComponentGroup Id="AppFiles_FD">
+      <Component Id="Files_FD" Guid="f2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d" Directory="INSTALLFOLDER">
+        <File Id="FTdx101WebAppExe_FD" Source="$(var.PublishDir_FD)\FTdx101WebApp.exe" KeyPath="yes" />
+        <File Id="AppSettingsJson_FD" Source="$(var.PublishDir_FD)\appsettings.json" />
+        <!-- Add more files as needed -->
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
