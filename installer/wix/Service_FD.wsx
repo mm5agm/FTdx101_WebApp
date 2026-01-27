@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Fragment>
     <Component Id="FTdx101WebService_FD" Guid="b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e" Directory="INSTALLFOLDER">
-      <File Id="ServiceExe_FD" Source="$(var.PublishDir_FD)\FTdx101WebApp.exe" KeyPath="yes" />
+      <File Id="ServiceExe_FD" Source="$(var.PublishDir_FD)\FTdx101_WebApp.exe" KeyPath="yes" />
       <ServiceInstall
           Id="ServiceInstaller_FD"
           Type="ownProcess"
