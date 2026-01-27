@@ -95,7 +95,11 @@ Open an issue or discussion with your ideas.
 
 **Releases can be found at the [Releases Section](https://github.com/mm5agm/FTdx101_WebApp/releases).**  
 The latest builds include both self-contained and framework-dependent packages. If you already gave .NET 10 a try, the framework-dependent version is smaller.
-
+•	FTdx101WebApp_sc.zip Self-contained build: This package includes the application and all required .NET 10 runtime files.
+No separate .NET installation is needed—just extract and run on any supported Windows x64 system.
+•	FTdx101WebApp_fd.zip Framework-dependent build: This package contains only the application files.
+Requires .NET 10 runtime to be installed on the target system. The download is smaller, but you must have the correct .NET runtime already present.
+You can get .NET 10 from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 ---
 
 ## 💡 Known Limitations
