@@ -1,49 +1,56 @@
-name: Build Installers
+name: Release
 
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET 10
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.x"
+          dotnet-version: '10.0.x'
 
-      - name: Install WiX
-        run: choco install wixtoolset --yes
+      - name: Restore dependencies
+        run: dotnet restore FTdx101WebApp.csproj
 
       - name: Publish Self-Contained
-        run: dotnet publish FTdx101_WebApp.csproj -c Release -r win-x64 --self-contained true -o publish_sc
-      - name: List publish_sc contents
-        run: dir publish_sc
+        run: dotnet publish FTdx101WebApp.csproj -c Release -r win-x64 --self-contained true -o publish_sc
+
       - name: Publish Framework-Dependent
-        run: dotnet publish FTdx101_Web_App.csproj -c Release -r win-x64 --self-contained false -o publish_fd
+        run: dotnet publish FTdx101WebApp.csproj -c Release -r win-x64 --self-contained false -o publish_fd
 
-      - name: List publish_sc contents
-        run: dir publish_sc
+      - name: Zip Self-Contained Output
+        run: Compress-Archive -Path publish_sc\* -DestinationPath FTdx101WebApp_sc.zip
 
-      - name: Build MSI (Self-Contained)
-        run: |
-          candle.exe installer/wix/Product_SC.wxs installer/wix/Directory.wxs installer/wix/Features_SC.wsx installer/wix/Service_SC.wsx -dPublishDir_SC=publish_sc
-          light.exe Product_SC.wixobj Directory.wixobj Features_SC.wixobj Service_SC.wixobj -o FTdx101WebApp_SC.msi
+      - name: Zip Framework-Dependent Output
+        run: Compress-Archive -Path publish_fd\* -DestinationPath FTdx101WebApp_fd.zip
 
-      - name: Build MSI (Framework-Dependent)
-        run: |
-          candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Features_FD.wsx installer/wix/Service_FD.wsx -dPublishDir_FD=publish_fd
-          light.exe Product_FD.wixobj Directory.wixobj Features_FD.wixobj Service_FD.wixobj -o FTdx101WebApp_FD.msi
+      - name: Upload Self-Contained Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FTdx101WebApp_sc
+          path: FTdx101WebApp_sc.zip
 
-      - name: Upload Installers to Release
+      - name: Upload Framework-Dependent Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FTdx101WebApp_fd
+          path: FTdx101WebApp_fd.zip
+
+      # Optional: Create a GitHub Release and upload artifacts
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            FTdx101WebApp_SC.msi
-            FTdx101WebApp_FD.msi
+            FTdx101WebApp_sc.zip
+            FTdx101WebApp_fd.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
