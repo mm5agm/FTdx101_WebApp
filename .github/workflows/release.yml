@@ -23,9 +23,13 @@ jobs:
 
       - name: Publish Self-Contained
         run: dotnet publish FTdx101_WebApp.csproj -c Release -r win-x64 --self-contained true -o publish_sc
-
+      - name: List publish_sc contents
+        run: dir publish_sc
       - name: Publish Framework-Dependent
-        run: dotnet publish FTdx101_WebApp.csproj -c Release -r win-x64 --self-contained false -o publish_fd
+        run: dotnet publish FTdx101_Web_App.csproj -c Release -r win-x64 --self-contained false -o publish_fd
+
+      - name: List publish_sc contents
+        run: dir publish_sc
 
       - name: Build MSI (Self-Contained)
         run: |
