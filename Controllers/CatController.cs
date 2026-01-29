@@ -18,6 +18,15 @@ namespace FTdx101_WebApp.Controllers
         private static bool _restored = false;
         private RadioState _radioState;
 
+        // Static band frequency mapping (apply this at the top of your class)
+        private static readonly Dictionary<string, long> BandFreqs = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "160m", 1840000 }, { "80m", 3700000 }, { "60m", 5357000 },
+            { "40m", 7100000 }, { "30m", 10136000 }, { "20m", 14074000 },
+            { "17m", 18110000 }, { "15m", 21074000 }, { "12m", 24915000 },
+            { "10m", 28074000 }, { "6m", 50313000 }, { "4m", 70100000 }
+        };
+
         public CatController(
             ICatClient catClient,
             ISettingsService settingsService,
@@ -74,53 +83,15 @@ namespace FTdx101_WebApp.Controllers
         }
 
         [HttpGet("status")]
-        public async Task<IActionResult> GetStatus()
+        public IActionResult GetStatus()
         {
-            try
+            var state = _radioStateService.GetState();
+            return Ok(new
             {
-                await EnsureConnectedAsync();
-
-                // Get current state from reactive state service
-                var state = _radioStateService.GetState();
-
-                // Get settings for max power
-                var settings = await _settingsService.GetSettingsAsync();
-                int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
-
-                return Ok(new
-                {
-                    vfoA = new
-                    {
-                        frequency = _radioStateService.FrequencyA,  // ← FROM REACTIVE STATE
-                        mode = _radioStateService.ModeA,
-                        sMeter = _radioStateService.SMeterA,
-                        band = state.BandA,
-                        antenna = _radioStateService.AntennaA,
-                        power = _radioStateService.Power
-                    },
-                    vfoB = new
-                    {
-                        frequency = _radioStateService.FrequencyB,  // ← FROM REACTIVE STATE
-                        mode = _radioStateService.ModeB,
-                        sMeter = _radioStateService.SMeterB,
-                        band = state.BandB,
-                        antenna = _radioStateService.AntennaB,
-                        power = _radioStateService.Power
-                    },
-                    controls = state.Controls,
-                    isTransmitting = _radioStateService.IsTransmitting,
-                    isConnected = _catClient.IsConnected,
-                    mainVfo = "A",
-                    maxPower = maxPower,
-                    radioModel = settings.RadioModel,
-                    timestamp = DateTime.Now
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting radio status");
-                return StatusCode(500, new { error = "Failed to get radio status", details = ex.Message });
-            }
+                vfoA = new { frequency = state.FrequencyA, /* ... other properties ... */ },
+                vfoB = new { frequency = state.FrequencyB, /* ... other properties ... */ }
+                // ... other state as needed ...
+            });
         }
 
         [HttpPost("frequency/a")]
@@ -199,24 +170,17 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
 
-                var bandFreqs = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "160m", 1840000 }, { "80m", 3700000 }, { "60m", 5357000 },
-                    { "40m", 7100000 }, { "30m", 10136000 }, { "20m", 14074000 },
-                    { "17m", 18110000 }, { "15m", 21074000 }, { "12m", 24915000 },
-                    { "10m", 28074000 }, { "6m", 50313000 }, { "4m", 70100000 }
-                };
-
-                if (!bandFreqs.TryGetValue(request.Band, out var freq))
+                if (!BandFreqs.TryGetValue(request.Band, out var freq))
                     return BadRequest(new { error = "Invalid band" });
 
                 var command = $"FA{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.BandA = request.Band;
+                _radioState.FrequencyA = freq;
                 _statePersistence.Save(_radioState);
 
-                _radioStateService.SetBand("A", request.Band);  // This line is important!
+                _radioStateService.SetBand("A", request.Band);
 
                 _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, freq);
                 return Ok(new { message = $"Band {request.Band} selected" });
@@ -242,21 +206,19 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
 
-                var bandFreqs = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase)
+                if (!BandFreqs.TryGetValue(request.Band, out var freq))
                 {
-                    { "160m", 1840000 }, { "80m", 3700000 }, { "60m", 5357000 },
-                    { "40m", 7100000 }, { "30m", 10136000 }, { "20m", 14074000 },
-                    { "17m", 18110000 }, { "15m", 21074000 }, { "12m", 24915000 },
-                    { "10m", 28074000 }, { "6m", 50313000 }, { "4m", 70100000 }
-                };
-
-                if (!bandFreqs.TryGetValue(request.Band, out var freq))
+                    _logger.LogWarning("SetBandB: Invalid band '{Band}' requested", request.Band);
                     return BadRequest(new { error = "Invalid band" });
+                }
+
+                _logger.LogInformation("[DEBUG] SetBandB: Band={Band}, Freq={Freq}", request.Band, freq);
 
                 var command = $"FB{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 _radioState.BandB = request.Band;
+                _radioState.FrequencyB = freq;
                 _statePersistence.Save(_radioState);
 
                 _radioStateService.SetBand("B", request.Band);

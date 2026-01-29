@@ -23,6 +23,8 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public void DispatchMessage(string message)
         {
+            _logger.LogDebug("DispatchMessagereceived: {Message}", message);
+
             if (string.IsNullOrEmpty(message) || message.Length < 3)
                 return;
 
@@ -49,6 +51,7 @@ namespace FTdx101_WebApp.Services
                         HandleFrequencyA(message);
                         break;
                     case "FB": // VFO B Frequency
+                        _logger.LogWarning("=== DISPATCH_FB === About to call HandleFrequencyB with: {Message}", message);
                         HandleFrequencyB(message);
                         break;
                     case "MD": // Mode
@@ -104,8 +107,16 @@ namespace FTdx101_WebApp.Services
 
         private void HandleFrequencyB(string message)
         {
-            var freq = CatCommands.ParseFrequency(message); // parses FB014074000; to 14074000
-            _stateService.UpdateFrequencyB(freq); // This should update RadioState.FrequencyB
+            _logger.LogWarning("=== HANDLE_FREQUENCY_B_CALLED === FB message: {Message}", message);
+            if (message.Length >= 11)
+            {
+                long freq = CatCommands.ParseFrequency(message);
+                _logger.LogDebug("=== VFOB_DEBUG === FB message: {Message} -> {Freq}", message, freq);
+                if (freq > 0)
+                {
+                    _stateService.FrequencyB = freq;
+                }
+            }
         }
 
         private void HandleMode(string message)
@@ -213,18 +224,40 @@ namespace FTdx101_WebApp.Services
         private void HandleOppositeInformation(string message)
         {
             // OI message: OI + VFO-B frequency at a fixed position (see your radio's CAT manual)
-            if (message.Length >= 13)
-            {
-                // Example: OI001001840000+000000200000;
-                // Frequency is at position 2-12 (10 digits)
-                string freqStr = message.Substring(2, 10);
-                if (long.TryParse(freqStr, out long freq) && freq > 0)
-                {
-                    _stateService.FrequencyB = freq;
-                    _logger.LogDebug("OI message updated FrequencyB: {Freq}", freq);
-                }
-            }
+            // Do NOT update FrequencyB here!
             _logger.LogInformation("Received OI (Opposite Band) message: {Message}", message);
+        }
+
+        // Example: Only process frequency messages that start with "FA" or "FB" and are the correct length
+        public void HandleCatMessage(string message)
+        {
+            // Example for Receiver A
+            if (message.StartsWith("FA") && message.Length >= 11)
+            {
+                // FA + 9 digits + ;
+                var freqStr = message.Substring(2, 9);
+                if (long.TryParse(freqStr, out var freq))
+                {
+                    // Update FrequencyA in your state
+                    _stateService.FrequencyA = freq;
+                }
+                return;
+            }
+
+            // Example for Receiver B
+            if (message.StartsWith("FB") && message.Length >= 11)
+            {
+                // FB + 9 digits + ;
+                var freqStr = message.Substring(2, 9);
+                if (long.TryParse(freqStr, out var freq))
+                {
+                    // Update FrequencyB in your state
+                    _stateService.FrequencyB = freq;
+                }
+                return;
+            }
+
+            // Ignore all other message types for frequency updates
         }
     }
 }
