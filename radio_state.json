@@ -1,10 +1,10 @@
 {
   "frequencyA": 0,
-  "bandA": "4m",
+  "bandA": "",
   "modeA": "",
   "antennaA": "",
-  "frequencyB": 0,
-  "bandB": "",
+  "frequencyB": 1840000,
+  "bandB": "160m",
   "modeB": "",
   "antennaB": "",
   "controls": {}

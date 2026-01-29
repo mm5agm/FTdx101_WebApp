@@ -95,11 +95,14 @@ namespace FTdx101_WebApp.Services
 
         public static long ParseFrequency(string response)
         {
-            if (response.Length >= 11 && (response.StartsWith("FA") || response.StartsWith("FB")))
+            if ((response.StartsWith("FA") || response.StartsWith("FB")))
             {
-                if (long.TryParse(response.Substring(2, 9), out long freq))
+                int semicolonIndex = response.IndexOf(';');
+                if (semicolonIndex > 2)
                 {
-                    return freq;
+                    string freqStr = response.Substring(2, semicolonIndex - 2);
+                    if (long.TryParse(freqStr, out long freq))
+                        return freq;
                 }
             }
             return 0;
