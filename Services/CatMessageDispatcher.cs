@@ -57,9 +57,9 @@ namespace FTdx101_WebApp.Services
                     case "MD": // Mode
                         HandleMode(message);
                         break;
-                    // case "SM": // S-Meter
-                    //     HandleSMeter(message);
-                    //     break;
+                    case "SM": // S-Meter
+                         HandleSMeter(message);
+                         break;
                     case "PC": // Power
                         HandlePower(message);
                         break;

@@ -88,8 +88,18 @@ namespace FTdx101_WebApp.Controllers
             var state = _radioStateService.GetState();
             return Ok(new
             {
-                vfoA = new { frequency = state.FrequencyA, /* ... other properties ... */ },
-                vfoB = new { frequency = state.FrequencyB, /* ... other properties ... */ }
+                vfoA = new
+                {
+                    frequency = state.FrequencyA,
+                    sMeter = _radioStateService.SMeterA,
+                    // ... other properties ...
+                },
+                vfoB = new
+                {
+                    frequency = state.FrequencyB,
+                    sMeter = _radioStateService.SMeterB,
+                    // ... other properties ...
+                }
                 // ... other state as needed ...
             });
         }
