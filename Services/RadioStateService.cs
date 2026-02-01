@@ -284,5 +284,7 @@ namespace FTdx101_WebApp.Services
             _frequencyB = freq;
             // Add any notification or persistence logic if needed
         }
+
+        
     }
 }

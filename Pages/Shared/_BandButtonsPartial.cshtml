@@ -1,0 +1,21 @@
+﻿@model Tuple<string, string, string>
+@{
+    var bands = new[] { "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "4m" };
+    var receiver = Model.Item2;
+    var selectedBand = (Model.Item3 ?? "").Trim().ToLowerInvariant();
+}
+<div class="band-radio-group" id="bandRadioGroup@(receiver)">
+    @foreach (var band in bands)
+    {
+        var bandValue = band.Trim().ToLowerInvariant();
+        <label class="me-2">
+            <input type="radio"
+                   name="band-@receiver"
+                   value="@band"
+                   @(bandValue == selectedBand ? "checked" : "")
+                   onchange="window.radioControl.setBand('@receiver','@band', this)">
+            @band
+        </label>
+    }
+   
+</div>

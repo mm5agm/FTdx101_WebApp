@@ -35,17 +35,8 @@
                         <span id="freqA" class="fw-bold frequency-display digit-display">@Model.RadioState.FrequencyA</span>
                     </div>
                     <div class="mb-3">
-                        <label>Bands:</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var band in new[] { "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "4m" })
-                            {
-                                <button class="btn btn-outline-primary btn-sm band-btn"
-                                        data-receiver="A" data-value="@band"
-                                        onclick="window.radioControl.setBand('A','@band')">
-                                    @band
-                                </button>
-                            }
-                        </div>
+                        <label>Bands (A):</label>
+                        @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER A -->
                     <div class="mb-3">
@@ -90,6 +81,7 @@
                             }
                         </div>
                     </div>
+                   
                 </div>
             </div>
         </div>
@@ -120,17 +112,8 @@
                         <span id="freqB" class="fw-bold frequency-display digit-display"></span>
                     </div>
                     <div class="mb-3">
-                        <label>Bands:</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var band in new[] { "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "4m" })
-                            {
-                                <button class="btn btn-outline-success btn-sm band-btn"
-                                        data-receiver="B" data-value="@band"
-                                        onclick="window.radioControl.setBand('B','@band')">
-                                    @band
-                                </button>
-                            }
-                        </div>
+                        <label>Bands (B):</label>
+                        @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER B -->
                     <div class="mb-3">
@@ -175,6 +158,7 @@
                             }
                         </div>
                     </div>
+                 
                 </div>
             </div>
         </div>
@@ -182,6 +166,8 @@
 </div>
 @section Scripts {
     <script>
+                // Band button active state logic for both receivers
+      
         (function() {
             'use strict';
 

@@ -2,9 +2,9 @@
   "frequencyA": 0,
   "bandA": "",
   "modeA": "",
-  "antennaA": "2",
-  "frequencyB": 0,
-  "bandB": "",
+  "antennaA": "",
+  "frequencyB": 14074000,
+  "bandB": "20m",
   "modeB": "",
   "antennaB": "",
   "controls": {}
