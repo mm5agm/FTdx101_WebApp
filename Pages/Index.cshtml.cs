@@ -13,8 +13,8 @@ namespace FTdx101_WebApp.Pages
             _radioStateService = radioStateService;
         }
 
-        public string SelectedBandA { get; set; }
-        public string SelectedBandB { get; set; }
+        public string SelectedBandA { get; set; } = string.Empty;
+        public string SelectedBandB { get; set; } = string.Empty;
 
         public void OnGet()
         {
@@ -35,8 +35,8 @@ namespace FTdx101_WebApp.Pages
 
         public class BandChangeRequest
         {
-            public string receiver { get; set; }
-            public string band { get; set; }
+            public string receiver { get; set; } = string.Empty;
+            public string band { get; set; } = string.Empty;
         }
     }
 }

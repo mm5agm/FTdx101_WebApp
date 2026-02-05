@@ -64,7 +64,7 @@ builder.WebHost.UseUrls("http://0.0.0.0:8080");
 var app = builder.Build();
 // Test: Manually trigger a [received] log
 var buffer = app.Services.GetRequiredService<CatMessageBuffer>();
-buffer.AppendData("FA0142000;"); // This should log [received] FA0142000;
+// buffer.AppendData("FA0142000;"); // This should log [received] FA0142000;
 
 if (app.Environment.IsDevelopment())
 {
@@ -103,11 +103,14 @@ using (var scope = app.Services.CreateScope())
 
     // Enable Auto Information mode and query initial state
     multiplexer.EnableAutoInformationAsync().GetAwaiter().GetResult();
-    
-    // Give the initial query time to complete and populate reactive state
+
+    // Wait for initial data (consider replacing with a more robust check)
     System.Threading.Thread.Sleep(1500);
-    
-    logger.LogInformation("✓ Radio connected with Auto Information streaming enabled");
+
+    // Now initialize the radio
+    multiplexer.InitializeRadioAsync().GetAwaiter().GetResult();
+
+    logger.LogInformation("✓ Radio connected, initialized, and Auto Information streaming enabled");
     
     // NOW check if we got valid data from radio, otherwise use persisted state
     var persistedState = statePersistence.Load();

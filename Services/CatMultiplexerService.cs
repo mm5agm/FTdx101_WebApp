@@ -22,6 +22,8 @@ namespace FTdx101_WebApp.Services
         private readonly CatMessageDispatcher _messageDispatcher;
         private bool _autoInformationEnabled = false;
 
+        private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> _pendingResponses = new();
+
         public bool IsConnected => _serialPort?.IsOpen ?? false;
 
         public CatMultiplexerService(
@@ -39,8 +41,18 @@ namespace FTdx101_WebApp.Services
 
         private void OnMessageReceived(object? sender, CatMessageReceivedEventArgs e)
         {
-            _logger.LogDebug("Auto-Info: {Message}", e.Message);
-            _messageDispatcher.DispatchMessage(e.Message);
+            var message = e.Message.Trim();
+            var prefix = message.Substring(0, 2); // e.g., "FA", "FB", etc.
+
+            if (_pendingResponses.TryRemove(prefix, out var tcs))
+            {
+                tcs.TrySetResult(message.TrimEnd(';'));
+            }
+            else
+            {
+                // Unsolicited or broadcast message, dispatch as usual
+                _messageDispatcher.DispatchMessage(message);
+            }
         }
 
         public async Task<bool> ConnectAsync(string portName, int baudRate = 38400)
@@ -169,6 +181,10 @@ namespace FTdx101_WebApp.Services
 
         public async Task<string> SendCommandAsync(string command, string clientId, CancellationToken cancellationToken = default)
         {
+            var prefix = command.Substring(0, 2);
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _pendingResponses[prefix] = tcs;
+
             var requestId = Interlocked.Increment(ref _nextRequestId);
             var request = new CatRequest
             {
@@ -184,15 +200,14 @@ namespace FTdx101_WebApp.Services
 
             // Wait for response with timeout
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
-
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(2));
             try
             {
-                return await request.CompletionSource.Task.WaitAsync(timeoutCts.Token);
+                return await tcs.Task.WaitAsync(timeoutCts.Token);
             }
             catch (OperationCanceledException)
             {
-                _logger.LogWarning("[{ClientId}] Command #{RequestId} timed out", clientId, requestId);
+                _pendingResponses.TryRemove(prefix, out _);
                 return string.Empty;
             }
         }
@@ -248,24 +263,13 @@ namespace FTdx101_WebApp.Services
                 _logger.LogDebug("[{ClientId}] >>> #{RequestId}: {Command}", request.ClientId, request.RequestId, fullCommand.TrimEnd(';'));
 
                 _serialPort.Write(commandBytes, 0, commandBytes.Length);
-                await Task.Delay(50);
 
-                // Read response
-                var response = await ReadResponseAsync(request);
+                // No direct read here! The response will be handled by OnMessageReceived and _pendingResponses
 
-                if (string.IsNullOrWhiteSpace(response))
-                {
-                    _logger.LogWarning("[{ClientId}] Command #{RequestId} received empty response for '{Command}'", request.ClientId, request.RequestId, fullCommand.TrimEnd(';'));
-                }
-                else if (response.Contains("?") || response.Contains("ERROR", StringComparison.OrdinalIgnoreCase))
-                {
-               }
+                // Optionally, you can set a timeout here if you want to handle cases where no response is received
+                // But the actual response will be set via the TaskCompletionSource in OnMessageReceived
 
-                request.CompletionSource.SetResult(response);
-
-                _logger.LogDebug("[{ClientId}] <<< #{RequestId}: '{Response}' ({ElapsedMs}ms)",
-                    request.ClientId, request.RequestId, response,
-                    (DateTime.UtcNow - request.Timestamp).TotalMilliseconds);
+                _logger.LogDebug("[{ClientId}] <<< #{RequestId}: (response will be handled asynchronously)", request.ClientId, request.RequestId);
             }
             catch (Exception ex)
             {
@@ -273,37 +277,6 @@ namespace FTdx101_WebApp.Services
                     request.ClientId, request.RequestId, request.Command);
                 request.CompletionSource.SetException(ex);
             }
-        }
-
-        private async Task<string> ReadResponseAsync(CatRequest request)
-        {
-            return await Task.Run(() =>
-            {
-                var startTime = DateTime.Now;
-                var timeout = TimeSpan.FromMilliseconds(1000);
-
-                while (_serialPort!.BytesToRead == 0 && (DateTime.Now - startTime) < timeout)
-                {
-                    Thread.Sleep(20);
-                }
-
-                if (_serialPort.BytesToRead > 0)
-                {
-                    var buffer = new byte[_serialPort.BytesToRead];
-                    _serialPort.Read(buffer, 0, buffer.Length);
-                    var data = Encoding.ASCII.GetString(buffer);
-
-                    // NEW: Feed all received data to message buffer for AI processing
-                    if (_autoInformationEnabled && !string.IsNullOrEmpty(data))
-                    {
-                        _messageBuffer.AppendData(data);
-                    }
-
-                    return data.Trim(';', '\r', '\n', '?', ' ');
-                }
-
-                return string.Empty;
-            });
         }
 
         public async Task DisconnectAsync()
