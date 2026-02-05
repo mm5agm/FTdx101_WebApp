@@ -58,13 +58,18 @@
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">
-                            @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "AM", "DATA-USB", "RTTY-USB" })
+                            @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "DATA-USB", "RTTY-USB" })
                             {
-                                <button class="btn btn-outline-primary btn-sm mode-btn"
-                                        data-receiver="A" data-value="@mode"
-                                        onclick="window.radioControl.setMode('A','@mode')">
-                                    @mode
-                                </button>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="modeA"
+                                           id="modeA_@mode"
+                                           value="@mode"
+                                           @(Model.RadioState.ModeA == mode ? "checked" : "")
+                                           onchange="window.radioControl.setMode('A','@mode')">
+                                    <label class="form-check-label" for="modeA_@mode">@mode</label>
+                                </div>
                             }
                         </div>
                     </div>
@@ -73,11 +78,16 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var ant in new[] { "1", "2", "3" })
                             {
-                                <button class="btn btn-outline-primary btn-sm antenna-btn"
-                                        data-receiver="A" data-value="@ant"
-                                        onclick="window.radioControl.setAntenna('A','@ant')">
-                                    ANT @ant
-                                </button>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="antennaA"
+                                           id="antennaA_@ant"
+                                           value="@ant"
+                                           @(Model.RadioState.AntennaA == ant ? "checked" : "")
+                                           onchange="window.radioControl.setAntenna('A','@ant')">
+                                    <label class="form-check-label" for="antennaA_@ant">ANT @ant</label>
+                                </div>
                             }
                         </div>
                     </div>
@@ -135,13 +145,18 @@
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">
-                            @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "AM", "DATA-USB", "RTTY-USB" })
+                            @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "DATA-USB", "RTTY-USB" })
                             {
-                                <button class="btn btn-outline-success btn-sm mode-btn"
-                                        data-receiver="B" data-value="@mode"
-                                        onclick="window.radioControl.setMode('B','@mode')">
-                                    @mode
-                                </button>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="modeB"
+                                           id="modeB_@mode"
+                                           value="@mode"
+                                           @(Model.RadioState.ModeB == mode ? "checked" : "")
+                                           onchange="window.radioControl.setMode('B','@mode')">
+                                    <label class="form-check-label" for="modeB_@mode">@mode</label>
+                                </div>
                             }
                         </div>
                     </div>
@@ -150,11 +165,16 @@
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var ant in new[] { "1", "2", "3" })
                             {
-                                <button class="btn btn-outline-success btn-sm antenna-btn"
-                                        data-receiver="B" data-value="@ant"
-                                        onclick="window.radioControl.setAntenna('B','@ant')">
-                                    ANT @ant
-                                </button>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="antennaB"
+                                           id="antennaB_@ant"
+                                           value="@ant"
+                                           @(Model.RadioState.AntennaB == ant ? "checked" : "")
+                                           onchange="window.radioControl.setAntenna('B','@ant')">
+                                    <label class="form-check-label" for="antennaB_@ant">ANT @ant</label>
+                                </div>
                             }
                         </div>
                     </div>
@@ -166,8 +186,6 @@
 </div>
 @section Scripts {
     <script>
-                // Band button active state logic for both receivers
-      
         (function() {
             'use strict';
 
@@ -365,7 +383,7 @@
             }
 
             async function setAntenna(receiver, antenna) {
-                pausePolling();  // ADD THIS LINE
+                pausePolling();
                 try {
                     console.log(`Setting ${receiver} antenna to ${antenna}`);
                     highlightButtons(receiver, state.lastBand[receiver], state.lastMode[receiver], antenna);
@@ -383,7 +401,7 @@
                 } catch (error) {
                     console.error('Error setting antenna:', error);
                 } finally {
-                    resumePolling();  // ADD THIS LINE
+                    resumePolling();
                 }
             }
 
@@ -514,6 +532,7 @@
                 if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
             }
 
+            // S-Meter rendering (simplified for brevity)
             function sMeterLabel(val) {
                 const points = [
                     { label: "S0", value: 0 },
@@ -713,7 +732,7 @@
             initializeDigitInteraction('A');
             initializeDigitInteraction('B');
             fetchRadioStatus();
-            state.pollingInterval = setInterval(fetchRadioStatus, 500);  // 2x per second
+            state.pollingInterval = setInterval(fetchRadioStatus, 500);
 
             window.radioControl = {
                 setFrequency,
@@ -721,22 +740,27 @@
                 setMode,
                 setAntenna,
                 updatePowerDisplay: (receiver, value) => {
-                    state.editingPower[receiver] = true;  // ADD THIS LINE
-                    updatePowerDisplay(receiver, value);   // CHANGE TO CALL THE FUNCTION
+                    state.editingPower[receiver] = true;
+                    updatePowerDisplay(receiver, value);
                 },
                 setPower: async (receiver, value) => {
-                    state.editingPower[receiver] = true;  // ADD THIS LINE
-                    // ... rest of setPower code with timeout to clear editingPower ...
+                    state.editingPower[receiver] = true;
+                    setPower(receiver, value);
+                    clearTimeout(state.editingPowerTimeout);
+                    state.editingPowerTimeout = setTimeout(() => {
+                        state.editingPower[receiver] = false;
+                        updatePowerDisplay(receiver, state.lastPower[receiver]);
+                    }, 1000);
                 }
             };
         })();
-                // Add this inside your <script> block, after your other JS code
+
+        // SignalR integration for live updates
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/radioHub")
             .build();
 
         connection.on("RadioStateUpdate", function (update) {
-            // Example: update.property = "FrequencyA", update.value = 14200000
             if (update.property && update.value !== undefined) {
                 if (update.property === "FrequencyA") {
                     updateFrequencyDisplay('A', update.value);
