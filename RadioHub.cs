@@ -25,5 +25,10 @@ namespace FTdx101_WebApp.Hubs
             _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
         }
+
+        public async Task SendInitializationStatus(string status)
+        {
+            await Clients.All.SendAsync("InitializationStatus", status);
+        }
     }
 }

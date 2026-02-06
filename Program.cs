@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FTdx101_WebApp.Services;
+using Microsoft.AspNetCore.SignalR;
+using FTdx101_WebApp.Hubs; // Adjust namespace as needed
 
 // ADD THIS HELPER METHOD AT THE TOP
 static string GetBandFromFrequency(long frequencyHz)
@@ -26,20 +28,18 @@ static string GetBandFromFrequency(long frequencyHz)
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register your services
+// Register RadioStateService and CatMessageBuffer as singletons
 builder.Services.AddSingleton<RadioStateService>();
+builder.Services.AddSingleton<CatMessageBuffer>();
 
-builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+// Register CatMessageDispatcher as singleton
+builder.Services.AddSingleton<CatMessageDispatcher>();
 
-// ADD SIGNALR:
-builder.Services.AddSignalR();
+// Register CatMultiplexerService as singleton
+builder.Services.AddSingleton<CatMultiplexerService>();
 
 // Register the main CAT client for the web app
 builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
-
-// Register the multiplexer and radio state services
-builder.Services.AddSingleton<CatMultiplexerService>();
 
 // Register the persistence service
 builder.Services.AddSingleton<RadioStatePersistenceService>();
@@ -51,12 +51,19 @@ builder.Services.AddHostedService<RigctldServer>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
 // Add after existing service registrations
-builder.Services.AddSingleton<CatMessageBuffer>();
-builder.Services.AddSingleton<CatMessageDispatcher>();
 builder.Services.AddHostedService<SMeterPollingService>();
 
 // Register the radio state service
 builder.Services.AddSingleton<IRadioStateService, RadioStateService>();
+
+// Register the radio initialization service
+builder.Services.AddHostedService<RadioInitializationService>();
+
+// ADD SIGNALR:
+builder.Services.AddSignalR();
+
+// ADD THIS LINE for Razor Pages support:
+builder.Services.AddRazorPages();
 
 // Force the web host to use port 8080 on all interfaces
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
@@ -87,92 +94,8 @@ app.MapControllers();
 // MAP SIGNALR HUB:
 app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
 
-// Ensure CAT multiplexer connects to the serial port at startup
-using (var scope = app.Services.CreateScope())
-{
-    var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
-    var multiplexer = scope.ServiceProvider.GetRequiredService<CatMultiplexerService>();
-    var radioStateService = scope.ServiceProvider.GetRequiredService<RadioStateService>();
-    var statePersistence = scope.ServiceProvider.GetRequiredService<RadioStatePersistenceService>();
-    var logger = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>();
-    
-    var settings = settingsService.GetSettingsAsync().GetAwaiter().GetResult();
-    
-    // CONNECT TO RADIO FIRST
-    multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate).GetAwaiter().GetResult();
 
-    // Enable Auto Information mode and query initial state
-    multiplexer.EnableAutoInformationAsync().GetAwaiter().GetResult();
 
-    // Wait for initial data (consider replacing with a more robust check)
-    System.Threading.Thread.Sleep(1500);
-
-    // Now initialize the radio
-    multiplexer.InitializeRadioAsync().GetAwaiter().GetResult();
-
-    logger.LogInformation("✓ Radio connected, initialized, and Auto Information streaming enabled");
-    
-    // NOW check if we got valid data from radio, otherwise use persisted state
-    var persistedState = statePersistence.Load();
-    
-    long initialFreqA = radioStateService.FrequencyA > 0 ? radioStateService.FrequencyA : persistedState.FrequencyA;
-    long initialFreqB = radioStateService.FrequencyB > 0 ? radioStateService.FrequencyB : persistedState.FrequencyB;
-    
-    string bandA = "20m";
-    string bandB = "20m";
-    
-    // If reactive state already populated from radio query, just determine bands
-    if (radioStateService.FrequencyA > 0)
-    {
-        bandA = GetBandFromFrequency(radioStateService.FrequencyA);
-        radioStateService.SetBand("A", bandA);
-        logger.LogInformation("Receiver A: {Freq} Hz, Band {Band}, Mode {Mode}", 
-            radioStateService.FrequencyA, bandA, radioStateService.ModeA);
-    }
-    else if (persistedState.FrequencyA > 0)
-    {
-        // Fallback to persisted state if radio query failed
-        radioStateService.FrequencyA = persistedState.FrequencyA;
-        radioStateService.ModeA = persistedState.ModeA ?? "USB";
-        radioStateService.AntennaA = persistedState.AntennaA ?? "1";
-        bandA = !string.IsNullOrEmpty(persistedState.BandA) 
-            ? persistedState.BandA 
-            : GetBandFromFrequency(persistedState.FrequencyA);
-        radioStateService.SetBand("A", bandA);
-        logger.LogInformation("Receiver A (from file): {Freq} Hz, Band {Band}", 
-            persistedState.FrequencyA, bandA);
-    }
-    
-    if (radioStateService.FrequencyB > 0)
-    {
-        bandB = GetBandFromFrequency(radioStateService.FrequencyB);
-        radioStateService.SetBand("B", bandB);
-        logger.LogInformation("Receiver B: {Freq} Hz, Band {Band}, Mode {Mode}", 
-            radioStateService.FrequencyB, bandB, radioStateService.ModeB);
-    }
-    else if (persistedState.FrequencyB > 0)
-    {
-        // Fallback to persisted state if radio query failed
-        radioStateService.FrequencyB = persistedState.FrequencyB;
-        radioStateService.ModeB = persistedState.ModeB ?? "USB";
-        radioStateService.AntennaB = persistedState.AntennaB ?? "1";
-        bandB = !string.IsNullOrEmpty(persistedState.BandB) 
-            ? persistedState.BandB 
-            : GetBandFromFrequency(persistedState.FrequencyB);
-        radioStateService.SetBand("B", bandB);
-        logger.LogInformation("Receiver B (from file): {Freq} Hz, Band {Band}", 
-            persistedState.FrequencyB, bandB);
-    }
-    
-    /*
-    var debugFile = Path.Combine(AppContext.BaseDirectory, "startup_debug.txt");
-    System.IO.File.AppendAllText(debugFile, 
-        $"{DateTime.Now:HH:mm:ss} - Receiver A: {radioStateService.FrequencyA} Hz, Band: {bandA}, Mode: {radioStateService.ModeA}\n");
-    System.IO.File.AppendAllText(debugFile, 
-        $"{DateTime.Now:HH:mm:ss} - Receiver B: {radioStateService.FrequencyB} Hz, Band: {bandB}, Mode: {radioStateService.ModeB}\n");
-    System.IO.File.AppendAllText(debugFile, 
-        $"{DateTime.Now:HH:mm:ss} - Persisted BandA: '{persistedState.BandA}', BandB: '{persistedState.BandB}'\n\n");
-    */
-}
+app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
 
 app.Run();

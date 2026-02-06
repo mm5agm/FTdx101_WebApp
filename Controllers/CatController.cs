@@ -104,6 +104,12 @@ namespace FTdx101_WebApp.Controllers
             });
         }
 
+        [HttpGet("status/init")]
+        public IActionResult GetInitStatus()
+        {
+            return Ok(new { status = AppStatus.InitializationStatus });
+        }
+
         [HttpPost("frequency/a")]
         public async Task<IActionResult> SetFrequencyA([FromBody] FrequencyRequest request)
         {
@@ -186,14 +192,16 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"FA{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
+                // Query the radio for the actual frequency after the band change
+                var actualFreq = await _catClient.QueryFrequencyAAsync("WebUI", CancellationToken.None);
                 _radioState.BandA = request.Band;
-                _radioState.FrequencyA = freq;
+                _radioState.FrequencyA = actualFreq;
                 _statePersistence.Save(_radioState);
 
                 _radioStateService.SetBand("A", request.Band);
 
-                _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, freq);
-                return Ok(new { message = $"Band {request.Band} selected" });
+                _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, actualFreq);
+                return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
             }
             catch (Exception ex)
             {
@@ -217,24 +225,21 @@ namespace FTdx101_WebApp.Controllers
                 await EnsureConnectedAsync();
 
                 if (!BandFreqs.TryGetValue(request.Band, out var freq))
-                {
-                    _logger.LogWarning("SetBandB: Invalid band '{Band}' requested", request.Band);
                     return BadRequest(new { error = "Invalid band" });
-                }
-
-                _logger.LogInformation("[DEBUG] SetBandB: Band={Band}, Freq={Freq}", request.Band, freq);
 
                 var command = $"FB{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
+                // Query the radio for the actual frequency after the band change
+                var actualFreq = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
                 _radioState.BandB = request.Band;
-                _radioState.FrequencyB = freq;
+                _radioState.FrequencyB = actualFreq;
                 _statePersistence.Save(_radioState);
 
                 _radioStateService.SetBand("B", request.Band);
 
-                _logger.LogInformation("Set Receiver B band to {Band} (freq {Freq})", request.Band, freq);
-                return Ok(new { message = $"Band {request.Band} selected" });
+                _logger.LogInformation("Set Receiver B band to {Band} (freq {Freq})", request.Band, actualFreq);
+                return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
             }
             catch (Exception ex)
             {
@@ -422,7 +427,7 @@ namespace FTdx101_WebApp.Controllers
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
         public class FrequencyRequest { public long FrequencyHz { get; set; } }
         public class PowerRequest
-        {
+        { public string Power { get; set; }
             public int Watts { get; set; }
         }
     }

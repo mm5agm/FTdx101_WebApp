@@ -52,9 +52,26 @@ namespace FTdx101_WebApp.Services
 
         // Frequencies
         private long _frequencyA;
-        public long FrequencyA { get => _frequencyA; set => SetField(ref _frequencyA, value); }
+        public long FrequencyA
+        {
+            get => _frequencyA;
+            set
+            {
+                SetField(ref _frequencyA, value);
+                UpdateBandFromFrequency();
+            }
+        }
+
         private long _frequencyB;
-        public long FrequencyB { get; set; }
+        public long FrequencyB
+        {
+            get => _frequencyB;
+            set
+            {
+                SetField(ref _frequencyB, value);
+                UpdateBandFromFrequency();
+            }
+        }
 
         // VFO/Receiver
         private string? _fr;

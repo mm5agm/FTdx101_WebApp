@@ -91,5 +91,32 @@ namespace FTdx101_WebApp.Services
         public Task<string> ReadModeSubAsync() => Task.FromResult(string.Empty);
         public Task<bool> SetModeSubAsync(string mode) => Task.FromResult(true);
         public Task<bool> ReadTransmitStatusAsync() => Task.FromResult(false);
+        public async Task<long> QueryFrequencyAAsync(string clientId, CancellationToken cancellationToken = default)
+        {
+            // Send "FA;" to the serial port and parse the response
+            await SendCommandAsync("FA;", clientId, cancellationToken);
+            var response = await _catMessageBuffer.WaitForResponseAsync("FA", cancellationToken);
+            if (!string.IsNullOrEmpty(response) && response.StartsWith("FA"))
+            {
+                var freqStr = response.Substring(2, 9);
+                if (long.TryParse(freqStr, out var freq))
+                    return freq;
+            }
+            return 0;
+        }
+
+        public async Task<long> QueryFrequencyBAsync(string clientId, CancellationToken cancellationToken = default)
+        {
+            // Send "FB;" to the serial port and parse the response
+            await SendCommandAsync("FB;", clientId, cancellationToken);
+            var response = await _catMessageBuffer.WaitForResponseAsync("FB", cancellationToken);
+            if (!string.IsNullOrEmpty(response) && response.StartsWith("FB"))
+            {
+                var freqStr = response.Substring(2, 9);
+                if (long.TryParse(freqStr, out var freq))
+                    return freq;
+            }
+            return 0;
+        }
     }
 }

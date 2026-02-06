@@ -23,6 +23,7 @@ namespace FTdx101_WebApp.Services
         private bool _autoInformationEnabled = false;
 
         private readonly ConcurrentDictionary<string, TaskCompletionSource<string>> _pendingResponses = new();
+        private TaskCompletionSource<bool>? _initializationCompletionSource;
 
         public bool IsConnected => _serialPort?.IsOpen ?? false;
 
@@ -35,22 +36,30 @@ namespace FTdx101_WebApp.Services
             _messageBuffer = messageBuffer;
             _messageDispatcher = messageDispatcher;
 
-            // Hook up message received event
             _messageBuffer.MessageReceived += OnMessageReceived;
+            _messageDispatcher.OnInitializationComplete = SignalInitializationComplete;
         }
 
         private void OnMessageReceived(object? sender, CatMessageReceivedEventArgs e)
         {
             var message = e.Message.Trim();
-            var prefix = message.Substring(0, 2); // e.g., "FA", "FB", etc.
+            _logger.LogInformation("[CatMultiplexerService] OnMessageReceived: {Message}", message);
+
+            var prefix = message.Substring(0, 2);
+
+            // Always dispatch DT messages to CatMessageDispatcher
+            if (prefix == "DT")
+            {
+                _logger.LogWarning("[CatMultiplexerService] >>> Dispatching DT message to CatMessageDispatcher: {Message}", message);
+                _messageDispatcher.DispatchMessage(message);
+            }
 
             if (_pendingResponses.TryRemove(prefix, out var tcs))
             {
                 tcs.TrySetResult(message.TrimEnd(';'));
             }
-            else
+            else if (prefix != "DT") // Avoid double-dispatch for DT
             {
-                // Unsolicited or broadcast message, dispatch as usual
                 _messageDispatcher.DispatchMessage(message);
             }
         }
@@ -473,16 +482,32 @@ namespace FTdx101_WebApp.Services
 
         public async Task InitializeRadioAsync()
         {
-            await SendCommandAsync("AI1;","Initialization", CancellationToken.None);
+            _initializationCompletionSource = new TaskCompletionSource<bool>();
+            await SendCommandAsync("AI1;", "Initialization", CancellationToken.None);
             foreach (var cmd in CatCommands.InitializationCommands)
             {
                 await SendCommandAsync(cmd, "Initialization", CancellationToken.None);
             }
-            await SendCommandAsync("DT0;","Initialization", CancellationToken.None);
+            await SendCommandAsync("DT0;", "Initialization", CancellationToken.None);
+            await _initializationCompletionSource.Task; // Wait for DT0 response
         } 
         public async Task ShutdownRadioAsync()
         {
             // Implementation (if needed) or leave empty
+        }
+
+        public void SignalInitializationComplete()
+        {
+            _logger.LogWarning("[CatMultiplexerService] >>> SignalInitializationComplete called");
+            if (_initializationCompletionSource != null)
+            {
+                _logger.LogWarning("[CatMultiplexerService] >>> Setting _initializationCompletionSource result to true");
+                _initializationCompletionSource.TrySetResult(true);
+            }
+            else
+            {
+                _logger.LogWarning("[CatMultiplexerService] >>> _initializationCompletionSource is null, cannot set result");
+            }
         }
     }
 }

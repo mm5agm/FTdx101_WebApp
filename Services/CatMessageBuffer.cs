@@ -56,6 +56,10 @@ namespace FTdx101_WebApp.Services
                     {
                         _logger.LogWarning("[received] {Message}", message.Trim());
                     }
+                    if (message.StartsWith("DT"))
+                    {
+                        _logger.LogWarning("[CatMessageBuffer] >>> DT message received: {Message}", message);
+                    }
                     OnMessageReceived(message);
                 }
             }
@@ -69,6 +73,31 @@ namespace FTdx101_WebApp.Services
         public void Clear()
         {
             _buffer.Clear();
+        }
+
+        public async Task<string> WaitForResponseAsync(string prefix, CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource<string>();
+            void Handler(object? sender, CatMessageReceivedEventArgs e)
+            {
+                if (e.Message.StartsWith(prefix))
+                {
+                    tcs.TrySetResult(e.Message);
+                }
+            }
+
+            MessageReceived += Handler;
+            try
+            {
+                using (cancellationToken.Register(() => tcs.TrySetCanceled()))
+                {
+                    return await tcs.Task.ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                MessageReceived -= Handler;
+            }
         }
     }
 

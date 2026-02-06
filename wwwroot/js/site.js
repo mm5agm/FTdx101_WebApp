@@ -4,28 +4,44 @@
 // Write your JavaScript code.
 // --- Frequency digit interaction logic ---
 
-// Global state objects
-var selectedIdx = {};
-var editing = {};
-var localFreq = {};
-var lastBackendFreq = {};
+// Unified global state object
+const state = {
+    selectedIdx: { A: null, B: null },
+    editing: { A: false, B: false },
+    localFreq: { A: null, B: null },
+    lastBackendFreq: { A: null, B: null }
+};
 
-// Dummy helpers (replace with your real implementations)
-function updateFrequencyDisplay(receiver, freq) {
-    // Example: update the frequency display in the DOM
-    // You should implement this to match your UI
-    // document.getElementById('freq' + receiver).textContent = freq;
+// Frequency display renderer
+function updateFrequencyDisplay(receiver, freqHz) {
+    const display = document.getElementById('freq' + receiver);
+    if (!display) {
+        console.warn(`Frequency display element not found: freq${receiver}`);
+        return;
+    }
+    let selIdx = state.selectedIdx[receiver];
+    let freqToShow = (!state.editing[receiver] || state.localFreq[receiver] === null)
+        ? state.lastBackendFreq[receiver]
+        : state.localFreq[receiver];
+    display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
 }
-function setFrequency(receiver, freq) {
-    // Example: send the new frequency to the backend
-    // You should implement this to match your backend API
-}
-function changeSelectedDigit(receiver, delta) {
-    // Example: change the selected digit by delta (+1 or -1)
-    // You should implement this to match your UI logic
-}
-function isTouchDevice() {
-    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+function renderFrequencyDigits(freq, selIdx) {
+    if (!freq || isNaN(freq) || freq < 1000) {
+        return '<span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
+    }
+    let s = freq.toString().padStart(8, "0");
+    let html = "";
+    let digitIdx = 0;
+    for (let i = 0; i < 8; i++) {
+        if (i === 2 || i === 5) {
+            html += '<span class="digit">.</span>';
+        }
+        let selected = (selIdx === digitIdx) ? " selected" : "";
+        html += `<span class="digit${selected}" tabindex="0">${s[i]}</span>`;
+        digitIdx++;
+    }
+    return html;
 }
 
 // Main interaction initializer
@@ -38,14 +54,12 @@ function initializeDigitInteraction(receiver) {
     if (display._initialized) return;
     display._initialized = true;
 
-    // Digit selection: pointerdown for both mouse and touch, prevent text selection
     display.addEventListener('pointerdown', function (e) {
         let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
         let idx = -1;
         if (e.target.classList.contains('digit') && e.target.textContent !== '.') {
             idx = digits.indexOf(e.target);
         } else {
-            // If not clicking a digit, select the nearest digit to the pointer
             let x = e.clientX;
             let minDist = Infinity;
             digits.forEach((d, i) => {
@@ -60,19 +74,18 @@ function initializeDigitInteraction(receiver) {
         }
         if (idx !== -1) {
             digits.forEach(d => d.classList.remove('selected'));
-            selectedIdx[receiver] = idx;
+            state.selectedIdx[receiver] = idx;
             digits[idx].classList.add('selected');
-            editing[receiver] = true;
-            localFreq[receiver] = parseInt(digits.map(d => d.textContent).join(''));
-            updateFrequencyDisplay(receiver, localFreq[receiver]);
+            state.editing[receiver] = true;
+            state.localFreq[receiver] = parseInt(digits.map(d => d.textContent).join(''));
+            updateFrequencyDisplay(receiver, state.localFreq[receiver]);
         }
-        e.preventDefault(); // Prevent text selection and long-press menu
+        e.preventDefault();
     });
 
-    // Mouse wheel to change digit (desktop)
     display.addEventListener('wheel', function (e) {
         let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
-        let idx = selectedIdx[receiver];
+        let idx = state.selectedIdx[receiver];
         if (idx === null || !digits[idx]) return;
         let freqArr = digits.map(d => parseInt(d.textContent));
         let carry = e.deltaY < 0 ? 1 : -1;
@@ -94,7 +107,7 @@ function initializeDigitInteraction(receiver) {
         }
         let newFreq = parseInt(freqArr.join(''));
         newFreq = Math.max(30000, Math.min(75000000, newFreq));
-        localFreq[receiver] = newFreq;
+        state.localFreq[receiver] = newFreq;
         updateFrequencyDisplay(receiver, newFreq);
         clearTimeout(display._debounceTimer);
         display._debounceTimer = setTimeout(() => {
@@ -103,7 +116,6 @@ function initializeDigitInteraction(receiver) {
         e.preventDefault();
     }, { passive: false });
 
-    // Tablet up/down controls
     if (isTouchDevice() && controls) {
         if (upBtn) {
             upBtn.onclick = function (e) {
@@ -119,25 +131,91 @@ function initializeDigitInteraction(receiver) {
         }
     }
 
-    // Mouseleave: exit editing mode and update from backend
     display.addEventListener('mouseleave', function () {
-        if (editing[receiver]) {
-            selectedIdx[receiver] = null;
-            editing[receiver] = false;
-            localFreq[receiver] = null;
-            updateFrequencyDisplay(receiver, lastBackendFreq[receiver]);
+        if (state.editing[receiver]) {
+            state.selectedIdx[receiver] = null;
+            state.editing[receiver] = false;
+            state.localFreq[receiver] = null;
+            updateFrequencyDisplay(receiver, state.lastBackendFreq[receiver]);
         }
     });
 
-    // Touch: exit editing on click-away
     document.addEventListener('pointerdown', function (e) {
         if (!display.contains(e.target) && (!controls || !controls.contains(e.target))) {
-            if (editing[receiver]) {
-                selectedIdx[receiver] = null;
-                editing[receiver] = false;
-                localFreq[receiver] = null;
-                updateFrequencyDisplay(receiver, lastBackendFreq[receiver]);
+            if (state.editing[receiver]) {
+                state.selectedIdx[receiver] = null;
+                state.editing[receiver] = false;
+                state.localFreq[receiver] = null;
+                updateFrequencyDisplay(receiver, state.lastBackendFreq[receiver]);
             }
         }
     });
 }
+
+async function setBand(receiver, band) {
+    try {
+        const response = await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ band })
+        });
+        if (!response.ok) {
+            console.error('Failed to set band:', await response.text());
+        } else {
+            await fetchRadioStatus();
+        }
+    } catch (error) {
+        console.error('Error setting band:', error);
+    }
+}
+
+async function fetchRadioStatus() {
+    try {
+        const response = await fetch('/api/cat/status');
+        if (!response.ok) return;
+        const data = await response.json();
+
+        state.lastBackendFreq.A = data.vfoA.frequency;
+        state.lastBackendFreq.B = data.vfoB.frequency;
+
+        console.log('Fetched frequencies:', state.lastBackendFreq.A, state.lastBackendFreq.B);
+
+        updateFrequencyDisplay('A', state.lastBackendFreq.A);
+        updateFrequencyDisplay('B', state.lastBackendFreq.B);
+    } catch (error) {
+        console.error('Error fetching radio status:', error);
+    }
+}
+
+// Initialization status polling and overlay logic
+async function pollInitStatus() {
+    try {
+        const response = await fetch('/api/status/init');
+        if (!response.ok) return;
+        const data = await response.json();
+        const overlay = document.getElementById('initOverlay');
+        const statusText = document.getElementById('initStatusText');
+        if (!overlay || !statusText) return;
+
+        statusText.innerText = data.status;
+
+        if (data.status === "complete") {
+            overlay.style.display = "none";
+        } else if (data.status === "error") {
+            statusText.innerText = "Radio initialization failed. Please check connection and restart.";
+            overlay.style.display = "block";
+        } else {
+            overlay.style.display = "block";
+        }
+
+        if (data.status !== "complete") {
+            setTimeout(pollInitStatus, 1000); // poll again in 1s
+        }
+    } catch (error) {
+        console.error('Error polling init status:', error);
+        setTimeout(pollInitStatus, 2000);
+    }
+}
+
+// Start polling on page load
+window.addEventListener('DOMContentLoaded', pollInitStatus);

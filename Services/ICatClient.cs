@@ -20,6 +20,7 @@ namespace FTdx101_WebApp.Services
         Task<string> ReadModeAsync();
         Task<string> ReadModeMainAsync();
         Task<bool> SetModeMainAsync(string mode);
+        Task<long> QueryFrequencyAAsync(string clientId, CancellationToken cancellationToken = default);
 
         // VFO-B (Sub) Methods
         Task<long> ReadFrequencyBAsync();
@@ -27,6 +28,7 @@ namespace FTdx101_WebApp.Services
         Task<int> ReadSMeterSubAsync();
         Task<string> ReadModeSubAsync();
         Task<bool> SetModeSubAsync(string mode);
+        Task<long> QueryFrequencyBAsync(string clientId, CancellationToken cancellationToken = default);
 
         // Common Methods
         Task<bool> ReadTransmitStatusAsync();
