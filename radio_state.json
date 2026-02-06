@@ -1,7 +1,7 @@
 {
-  "frequencyA": 0,
-  "bandA": "",
-  "modeA": "USB",
+  "frequencyA": 28074000,
+  "bandA": "10m",
+  "modeA": "",
   "antennaA": "",
   "frequencyB": 0,
   "bandB": "",

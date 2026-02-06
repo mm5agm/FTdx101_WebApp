@@ -218,4 +218,10 @@ async function pollInitStatus() {
 }
 
 // Start polling on page load
-window.addEventListener('DOMContentLoaded', pollInitStatus);
+window.addEventListener('DOMContentLoaded', () => {
+    pollInitStatus();
+    fetchRadioStatus().then(() => {
+        updateFrequencyDisplay('A', state.lastBackendFreq.A);
+        updateFrequencyDisplay('B', state.lastBackendFreq.B);
+    });
+});
