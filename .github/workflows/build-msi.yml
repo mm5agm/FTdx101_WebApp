@@ -1,0 +1,59 @@
+name: Build MSI Installers
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install WiX Toolset 3.14
+        shell: pwsh
+        run: |
+          iwr -useb https://github.com/wixtoolset/wix/releases/download/v3.14.0/wix314.exe -OutFile wix.exe
+          Start-Process .\wix.exe -ArgumentList "/install","/quiet","/norestart" -Wait
+
+      - name: Add WiX to PATH
+        shell: pwsh
+        run: |
+          echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build WebApp (Release)
+        shell: pwsh
+        run: |
+          dotnet restore
+          dotnet publish -c Release -o publish
+
+      - name: Compile WiX (FD installer)
+        shell: pwsh
+        run: |
+          candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Features_FD.wsx installer/wix/Service_FD.wsx -ext WixUtilExtension -o wixobj_fd/
+
+      - name: Link WiX (FD MSI)
+        shell: pwsh
+        run: |
+          light.exe wixobj_fd/*.wixobj -ext WixUtilExtension -o output/FTdx101_FD.msi
+
+      - name: Compile WiX (SC installer)
+        shell: pwsh
+        run: |
+          candle.exe installer/wix/Product_SC.wxs installer/wix/Directory.wxs installer/wix/Features_SC.wsx installer/wix/Service_SC.wsx -ext WixUtilExtension -o wixobj_sc/
+
+      - name: Link WiX (SC MSI)
+        shell: pwsh
+        run: |
+          light.exe wixobj_sc/*.wixobj -ext WixUtilExtension -o output/FTdx101_SC.msi
+
+      - name: Upload MSI files to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            output/FTdx101_FD.msi
+            output/FTdx101_SC.msi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
