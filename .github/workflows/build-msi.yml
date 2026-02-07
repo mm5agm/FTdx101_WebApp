@@ -1,8 +1,9 @@
 name: Build MSI Installers
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build-msi:
@@ -49,9 +50,11 @@ jobs:
         run: |
           light.exe wixobj_sc/*.wixobj -ext WixUtilExtension -o output/FTdx101_SC.msi
 
-      - name: Upload MSI files to Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           files: |
             output/FTdx101_FD.msi
             output/FTdx101_SC.msi
