@@ -226,10 +226,10 @@ namespace FTdx101_WebApp.Services
 
         // SMeterA and SMeterB (string? or int? depending on your design)
         private int? _sMeterA;
-        public int? SMeterA { get => _sMeterA; set => SetField(ref _sMeterA, value); }
+        public int? SMeterA { get; set; }
 
         private int? _sMeterB;
-        public int? SMeterB { get => _sMeterB; set => SetField(ref _sMeterB, value); }
+        public int? SMeterB { get; set; }
 
         // AntennaA and AntennaB (string? or int? depending on your design)
         private string? _antennaA;

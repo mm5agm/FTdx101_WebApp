@@ -94,15 +94,22 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("status")]
         public async Task<IActionResult> GetStatus()
         {
-            // If frequencies are zero, query the radio
             if (_radioStateService.FrequencyA < 100 || _radioStateService.FrequencyB < 100)
             {
-                await EnsureConnectedAsync(); // This will update the frequencies
+                await EnsureConnectedAsync();
             }
 
             return Ok(new {
-                vfoA = new { frequency = _radioStateService.FrequencyA, band = _radioStateService.BandA },
-                vfoB = new { frequency = _radioStateService.FrequencyB, band = _radioStateService.BandB }
+                vfoA = new {
+                    frequency = _radioStateService.FrequencyA,
+                    band = _radioStateService.BandA,
+                    sMeter = _radioStateService.SMeterA ?? 0 // <-- This must be present
+                },
+                vfoB = new {
+                    frequency = _radioStateService.FrequencyB,
+                    band = _radioStateService.BandB,
+                    sMeter = _radioStateService.SMeterB ?? 0 // <-- This must be present
+                }
             });
         }
 

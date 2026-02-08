@@ -585,8 +585,10 @@
 
                 if (receiver === 'A' && gaugeA) {
                     gaugeA.value = value;
+                    gaugeA.draw();
                 } else if (receiver === 'B' && gaugeB) {
                     gaugeB.value = value;
+                    gaugeB.draw();
                 }
             }
 
