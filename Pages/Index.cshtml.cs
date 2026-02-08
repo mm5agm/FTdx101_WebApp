@@ -18,6 +18,8 @@ namespace FTdx101_WebApp.Pages
 
         public void OnGet()
         {
+            // Ensure bands are updated based on current frequencies
+            _radioStateService.UpdateBandFromFrequency();
             SelectedBandA = _radioStateService.BandA ?? "20m";
             SelectedBandB = _radioStateService.BandB ?? "20m";
         }

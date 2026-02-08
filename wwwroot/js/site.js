@@ -307,6 +307,7 @@ window.addEventListener('DOMContentLoaded', () => {
         updateFrequencyDisplay('B', state.lastBackendFreq.B);
         initializeDigitInteraction('A');
         initializeDigitInteraction('B');
+        updateBandButtonsFromBackend(); // <-- Add this line
     });
 });
 
@@ -317,3 +318,25 @@ window.radioControl = {
     setPower: window.setPower,
     updatePowerDisplay: window.updatePowerDisplay
 };
+
+async function updateBandButtonsFromBackend() {
+    try {
+        const response = await fetch('/api/cat/status');
+        if (!response.ok) return;
+        const data = await response.json();
+        // Update band A
+        if (data.vfoA && data.vfoA.band) {
+            document.querySelectorAll('input[name="band-A"]').forEach(radio => {
+                radio.checked = (radio.value.toLowerCase() === data.vfoA.band.toLowerCase());
+            });
+        }
+        // Update band B
+        if (data.vfoB && data.vfoB.band) {
+            document.querySelectorAll('input[name="band-B"]').forEach(radio => {
+                radio.checked = (radio.value.toLowerCase() === data.vfoB.band.toLowerCase());
+            });
+        }
+    } catch (error) {
+        console.error('Error updating band buttons:', error);
+    }
+}

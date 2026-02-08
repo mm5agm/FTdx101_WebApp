@@ -507,7 +507,7 @@
                         body: JSON.stringify({ watts: parseInt(watts) })
                     });
                     if (!response.ok) {
-                        console.error('Failed to set power:', await response.text());
+    console.error('Failed to set power:', await response.text());
                     } else {
                         console.log(`Power set successfully: ${receiver} -> ${watts}W`);
                     }

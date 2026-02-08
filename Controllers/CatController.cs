@@ -61,6 +61,9 @@ namespace FTdx101_WebApp.Controllers
             var freqB = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
             _radioStateService.FrequencyA = freqA;
             _radioStateService.FrequencyB = freqB;
+
+            // Force band update after setting frequencies
+            _radioStateService.UpdateBandFromFrequency();
         }
 
         private async Task RestoreRadioStateAsync()
@@ -98,8 +101,8 @@ namespace FTdx101_WebApp.Controllers
             }
 
             return Ok(new {
-                vfoA = new { frequency = _radioStateService.FrequencyA },
-                vfoB = new { frequency = _radioStateService.FrequencyB }
+                vfoA = new { frequency = _radioStateService.FrequencyA, band = _radioStateService.BandA },
+                vfoB = new { frequency = _radioStateService.FrequencyB, band = _radioStateService.BandB }
             });
         }
 

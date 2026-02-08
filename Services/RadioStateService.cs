@@ -264,13 +264,12 @@ namespace FTdx101_WebApp.Services
             BandA = GetBandFromFrequency(FrequencyA);
             BandB = GetBandFromFrequency(FrequencyB);
         }
-        private string GetBandFromFrequency(long freq)
+        public string GetBandFromFrequency(long freq)
         {
             // Frequency in Hz
             if (freq >= 1800000 && freq < 2000000) return "160m";
             if (freq >= 3500000 && freq < 4000000) return "80m";
-            if (freq >= 5351500 && freq <= 5366500) return "60m";  // UK allocation
-            //  if (freq >= 5330500 && freq <= 5403500) return "60m"; // 60m channels (US allocation)
+            if (freq >= 5351500 && freq <= 5366500) return "60m";
             if (freq >= 7000000 && freq < 7300000) return "40m";
             if (freq >= 10100000 && freq < 10150000) return "30m";
             if (freq >= 14000000 && freq < 14350000) return "20m";
@@ -279,13 +278,7 @@ namespace FTdx101_WebApp.Services
             if (freq >= 24890000 && freq < 24990000) return "12m";
             if (freq >= 28000000 && freq < 29700000) return "10m";
             if (freq >= 50000000 && freq < 54000000) return "6m";
-            if (freq >= 144000000 && freq < 148000000) return "2m";
-            if (freq >= 222000000 && freq < 225000000) return "1.25m";
-            if (freq >= 420000000 && freq < 450000000) return "70cm";
-            if (freq >= 902000000 && freq < 928000000) return "33cm";
-            if (freq >= 1240000000 && freq < 1300000000) return "23cm";
-            // Add more VHF/UHF/microwave bands as needed
-
+            if (freq >= 70000000 && freq < 70500000) return "4m"; // <-- Add this line for 70 MHz (4m band)
             return "Unknown";
         }
 
