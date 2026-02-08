@@ -40,7 +40,7 @@
                     <!-- Controls below -->
                     <div>
                         <label>Frequency:</label>
-                        <span id="freqA" class="fw-bold frequency-display digit-display">@Model.RadioState.FrequencyA</span>
+                        <span id="freqA" class="fw-bold frequency-display digit-display"></span>
                     </div>
                     <div class="mb-3">
                         <label>Bands (A):</label>
@@ -764,9 +764,7 @@
         })();
 
         // SignalR integration for live updates
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/radioHub")
-            .build();
+       
 
         connection.on("RadioStateUpdate", function (update) {
             if (update.property && update.value !== undefined) {

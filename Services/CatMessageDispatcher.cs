@@ -26,7 +26,8 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public void DispatchMessage(string message)
         {
-            _logger.LogInformation("[CatMessageDispatcher] DispatchMessage called with: {Message}", message);
+            // Only log received messages
+            _logger.LogInformation("[CatMessageDispatcher] Received: {Message}", message);
 
             if (string.IsNullOrEmpty(message) || message.Length < 3)
                 return;
@@ -52,39 +53,23 @@ namespace FTdx101_WebApp.Services
                     case "DT":
                         HandleInitialization(message);
                         break;
-                    default:
-                        _logger.LogDebug("[CatMessageDispatcher] Unhandled command: {Command} - {Message}", command, message);
-                        break;
+                    // No debug logging for unhandled commands
                 }
             }
             catch (Exception ex)
             {
+                // Optionally keep error logging
                 _logger.LogError(ex, "[CatMessageDispatcher] Error dispatching message: {Message}", message);
             }
         }
 
         private void HandleInitialization(string message)
         {
-            _logger.LogWarning("[CatMessageDispatcher] >>> HandleInitialization called with: {Message}", message);
-
-            if (message.StartsWith("DT") && message.EndsWith(";"))
+            // No extra logging here unless you want to keep error logs
+            if (message.StartsWith("DT"))
             {
                 initialization_complete = true;
-                _logger.LogWarning("[CatMessageDispatcher] >>> Initialization complete: DT response received ({Message})", message);
-
-                if (OnInitializationComplete != null)
-                {
-                    _logger.LogWarning("[CatMessageDispatcher] >>> OnInitializationComplete callback is set, invoking...");
-                    OnInitializationComplete.Invoke();
-                }
-                else
-                {
-                    _logger.LogWarning("[CatMessageDispatcher] >>> OnInitializationComplete callback is NOT set.");
-                }
-            }
-            else if (message.Length >= 3)
-            {
-                _logger.LogWarning("[CatMessageDispatcher] >>> Initialization message received: {Message}", message);
+                OnInitializationComplete?.Invoke();
             }
         }
     }

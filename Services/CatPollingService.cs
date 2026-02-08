@@ -9,17 +9,20 @@ namespace FTdx101_WebApp.Services
         private readonly ISettingsService _settingsService;
         private readonly ILogger<CatPollingService> _logger;
         private readonly TimeSpan _pollingInterval = TimeSpan.FromMilliseconds(500);
+        private readonly RadioStateService _radioStateService;
 
         public CatPollingService(
             ICatClient catClient,
             IRigStateService rigStateService,
             ISettingsService settingsService,
-            ILogger<CatPollingService> logger)
+            ILogger<CatPollingService> logger,
+            RadioStateService radioStateService)
         {
             _catClient = catClient;
             _rigStateService = rigStateService;
             _settingsService = settingsService;
             _logger = logger;
+            _radioStateService = radioStateService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -47,6 +50,13 @@ namespace FTdx101_WebApp.Services
                     };
 
                     _rigStateService.UpdateState(rigState);
+
+                    var freqA = await _catClient.ReadFrequencyAAsync();
+                    var freqB = await _catClient.ReadFrequencyBAsync();
+                    _logger.LogInformation("Polled frequencies: A={FreqA}, B={FreqB}", freqA, freqB);
+
+                    _radioStateService.FrequencyA = freqA;
+                    _radioStateService.FrequencyB = freqB;
                 }
                 catch (Exception ex)
                 {

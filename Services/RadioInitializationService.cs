@@ -37,14 +37,28 @@ namespace FTdx101_WebApp.Services
                 AppStatus.InitializationStatus = "Connecting to radio...";
                 logger.LogInformation("[RadioInitializationService] InitializationStatus set to 'Connecting to radio...'");
                 await _hubContext.Clients.All.SendAsync("InitializationStatus", "Connecting to radio...");
-                multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate).GetAwaiter().GetResult();
+                await multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate);
+
+                // Send AI0 to stop auto information
+                await multiplexer.SendCommand("AI0;", false);
+
+                // Query VFO A to check radio responsiveness with timeout
+                logger.LogInformation("[RadioInitializationService] Sending FA; to check radio responsiveness...");
+                var faResponse = await multiplexer.SendCommandAsync("FA;", "InitialValues", stoppingToken);
+                logger.LogInformation("[RadioInitializationService] FA; response: {Response}", faResponse);
+
+                if (string.IsNullOrWhiteSpace(faResponse) || !faResponse.StartsWith("FA"))
+                {
+                    logger?.LogError("[RadioInitializationService] No valid response from radio to FA; command after COM port connection.");
+                    throw new Exception("No valid response from radio to FA; command after COM port connection.");
+                }
 
                 AppStatus.InitializationStatus = "Initializing radio...";
                 logger.LogInformation("[RadioInitializationService] InitializationStatus set to 'Initializing radio...'");
                 await _hubContext.Clients.All.SendAsync("InitializationStatus", "Initializing radio...");
 
                 logger.LogInformation("[RadioInitializationService] Calling InitializeRadioAsync...");
-                multiplexer.InitializeRadioAsync().GetAwaiter().GetResult();
+                await multiplexer.InitializeRadioAsync();
                 logger.LogInformation("[RadioInitializationService] InitializeRadioAsync completed");
 
                 logger.LogInformation("[RadioInitializationService] ✓ Radio connected, initialized, and Auto Information streaming enabled");
@@ -57,6 +71,7 @@ namespace FTdx101_WebApp.Services
                 AppStatus.InitializationStatus = "error";
                 logger?.LogError(ex, "[RadioInitializationService] Radio initialization failed");
                 await _hubContext.Clients.All.SendAsync("InitializationStatus", "error");
+                await _hubContext.Clients.All.SendAsync("ShowSettingsPage");
             }
         }
     }

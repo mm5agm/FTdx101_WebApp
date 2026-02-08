@@ -99,3 +99,11 @@ app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
 app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
 
 app.Run();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var dispatcher = services.GetRequiredService<CatMessageDispatcher>();
+    var multiplexer = services.GetRequiredService<CatMultiplexerService>();
+    dispatcher.OnInitializationComplete = multiplexer.SignalInitializationComplete;
+}

@@ -95,17 +95,17 @@ namespace FTdx101_WebApp.Services
 
         public static long ParseFrequency(string response)
         {
-            if ((response.StartsWith("FA") || response.StartsWith("FB")))
+            if ((response.StartsWith("FA") || response.StartsWith("FB")) && response.Length >= 11)
             {
                 int semicolonIndex = response.IndexOf(';');
                 if (semicolonIndex > 2)
                 {
-                    string freqStr = response.Substring(2, semicolonIndex - 2);
-                    if (long.TryParse(freqStr, out long freq))
+                    var freqStr = response.Substring(2, semicolonIndex - 2);
+                    if (long.TryParse(freqStr, out var freq))
                         return freq;
                 }
             }
-            return 0;
+            return 0L;
         }
 
         public static string FormatMode(string mode, bool isSubVfo = false)

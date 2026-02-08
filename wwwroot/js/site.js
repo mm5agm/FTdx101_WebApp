@@ -152,8 +152,11 @@ function initializeDigitInteraction(receiver) {
     });
 }
 
-async function setBand(receiver, band) {
+window.setBand = async function(receiver, band) {
     try {
+        console.log(`Setting ${receiver} band to ${band}`);
+        if (window.highlightButtons) highlightButtons(receiver, band, state.lastMode ? state.lastMode[receiver] : undefined, state.lastAntenna ? state.lastAntenna[receiver] : undefined);
+        if (state.lastBand) state.lastBand[receiver] = band;
         const response = await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -162,12 +165,61 @@ async function setBand(receiver, band) {
         if (!response.ok) {
             console.error('Failed to set band:', await response.text());
         } else {
-            await fetchRadioStatus();
+            console.log(`Band set successfully: ${receiver} -> ${band}`);
         }
     } catch (error) {
         console.error('Error setting band:', error);
     }
-}
+};
+
+window.setMode = async function(receiver, mode) {
+    try {
+        console.log(`Setting ${receiver} mode to ${mode}`);
+        if (window.highlightButtons) highlightButtons(receiver, state.lastBand ? state.lastBand[receiver] : undefined, mode, state.lastAntenna ? state.lastAntenna[receiver] : undefined);
+        if (state.lastMode) state.lastMode[receiver] = mode;
+        const response = await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode })
+        });
+        if (!response.ok) {
+            console.error('Failed to set mode:', await response.text());
+        } else {
+            console.log(`Mode set successfully: ${receiver} -> ${mode}`);
+        }
+    } catch (error) {
+        console.error('Error setting mode:', error);
+    }
+};
+
+window.setAntenna = async function(receiver, antenna) {
+    if (window.pausePolling) pausePolling();
+    try {
+        console.log(`Setting ${receiver} antenna to ${antenna}`);
+        if (window.highlightButtons) highlightButtons(receiver, state.lastBand ? state.lastBand[receiver] : undefined, state.lastMode ? state.lastMode[receiver] : undefined, antenna);
+        if (state.lastAntenna) state.lastAntenna[receiver] = antenna;
+        const response = await fetch(`/api/cat/antenna/${receiver.toLowerCase()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ antenna })
+        });
+        if (!response.ok) {
+            console.error('Failed to set antenna:', await response.text());
+        } else {
+            console.log(`Antenna set successfully: ${receiver} -> ${antenna}`);
+        }
+    } catch (error) {
+        console.error('Error setting antenna:', error);
+    }
+};
+
+window.setPower = function() {
+    console.warn("setPower not implemented");
+};
+
+window.updatePowerDisplay = function() {
+    console.warn("updatePowerDisplay not implemented");
+};
 
 async function fetchRadioStatus() {
     try {
@@ -187,6 +239,17 @@ async function fetchRadioStatus() {
     }
 }
 
+// SignalR connection for backend events
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/radioHub")
+    .build();
+
+connection.on("ShowSettingsPage", () => {
+    window.location.href = "/Settings";
+});
+
+connection.start();
+
 // Initialization status polling and overlay logic
 async function pollInitStatus() {
     try {
@@ -204,6 +267,8 @@ async function pollInitStatus() {
         } else if (data.status === "error") {
             statusText.innerText = "Radio initialization failed. Please check connection and restart.";
             overlay.style.display = "block";
+            console.log("Redirecting to /Settings due to error status"); // Add this line
+            window.location.href = "/Settings";
         } else {
             overlay.style.display = "block";
         }
@@ -217,11 +282,26 @@ async function pollInitStatus() {
     }
 }
 
+// Touch device detection
+function isTouchDevice() {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
 // Start polling on page load
 window.addEventListener('DOMContentLoaded', () => {
     pollInitStatus();
     fetchRadioStatus().then(() => {
         updateFrequencyDisplay('A', state.lastBackendFreq.A);
         updateFrequencyDisplay('B', state.lastBackendFreq.B);
+        initializeDigitInteraction('A');
+        initializeDigitInteraction('B');
     });
 });
+
+window.radioControl = {
+    setBand: window.setBand,
+    setMode: window.setMode,
+    setAntenna: window.setAntenna,
+    setPower: window.setPower,
+    updatePowerDisplay: window.updatePowerDisplay
+};

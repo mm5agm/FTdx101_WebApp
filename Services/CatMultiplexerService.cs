@@ -188,36 +188,25 @@ namespace FTdx101_WebApp.Services
             _logger.LogInformation("✓ Initial state queried");
         }
 
-        public async Task<string> SendCommandAsync(string command, string clientId, CancellationToken cancellationToken = default)
+        public async Task<string?> SendCommandAsync(string command, string clientId, CancellationToken cancellationToken = default)
         {
             var prefix = command.Substring(0, 2);
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             _pendingResponses[prefix] = tcs;
+            await SendToSerialPortAsync(command, cancellationToken);
 
-            var requestId = Interlocked.Increment(ref _nextRequestId);
-            var request = new CatRequest
+            var timeoutTask = Task.Delay(500, cancellationToken); // Reduced timeout
+            var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
+
+            _pendingResponses.TryRemove(prefix, out _);
+
+            if (completedTask == tcs.Task)
             {
-                RequestId = requestId,
-                ClientId = clientId,
-                Command = command,
-                CompletionSource = new TaskCompletionSource<string>(),
-                Timestamp = DateTime.UtcNow
-            };
-
-            _commandQueue.Enqueue(request);
-            _logger.LogDebug("[{ClientId}] Queued command #{RequestId}: {Command}", clientId, requestId, command.TrimEnd(';'));
-
-            // Wait for response with timeout
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(2));
-            try
-            {
-                return await tcs.Task.WaitAsync(timeoutCts.Token);
+                return await tcs.Task;
             }
-            catch (OperationCanceledException)
+            else
             {
-                _pendingResponses.TryRemove(prefix, out _);
-                return string.Empty;
+                return null;
             }
         }
 
@@ -508,6 +497,18 @@ namespace FTdx101_WebApp.Services
             {
                 _logger.LogWarning("[CatMultiplexerService] >>> _initializationCompletionSource is null, cannot set result");
             }
+        }
+
+        private async Task SendToSerialPortAsync(string command, CancellationToken cancellationToken)
+        {
+            if (_serialPort?.IsOpen != true)
+                throw new InvalidOperationException("Serial port is not open.");
+
+            var fullCommand = command.EndsWith(";") ? command : command + ";";
+            var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
+
+            _serialPort.Write(commandBytes, 0, commandBytes.Length);
+            await Task.Delay(50, cancellationToken); // Small delay to allow radio to process
         }
     }
 }

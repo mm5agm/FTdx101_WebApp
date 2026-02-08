@@ -35,6 +35,7 @@ namespace FTdx101_WebApp.Services
             try
             {
                 var data = _serialPort.ReadExisting();
+                _logger.LogWarning("RAW SERIAL: {Data}", data); // <--- Add this line
                 _catMessageBuffer.AppendData(data);
             }
             catch (Exception ex)
@@ -66,26 +67,54 @@ namespace FTdx101_WebApp.Services
         }
 
         // Legacy overload for internal use
-        public Task<string> SendCommandAsync(string command, CancellationToken cancellationToken = default)
+        public async Task<string> SendCommandAsync(string command, CancellationToken cancellationToken = default)
         {
             if (_serialPort == null || !_serialPort.IsOpen)
                 throw new InvalidOperationException("Serial port is not open.");
 
+            // Optionally clear any previous buffer for this command prefix
+            // If you have a ClearForCommand method, uncomment the next line:
+            // _catMessageBuffer.ClearForCommand(command.Substring(0, 2));
+
             _serialPort.WriteLine(command);
-            // Implement response reading logic as needed
-            return Task.FromResult(string.Empty);
+
+            // Wait for the response matching the command prefix (e.g., "FA" or "FB")
+            var prefix = command.Substring(0, 2);
+            var response = await _catMessageBuffer.WaitForResponseAsync(prefix, cancellationToken);
+
+            return response ?? string.Empty;
         }
 
         // Implement the rest of the ICatClient interface as needed...
         public Task<long> ReadFrequencyAsync() => Task.FromResult(0L);
-        public Task<long> ReadFrequencyAAsync() => Task.FromResult(0L);
+        public async Task<long> ReadFrequencyAAsync()
+        {
+            // Send "FA;" to the radio and wait for the response
+            var response = await SendCommandAsync("FA;", CancellationToken.None);
+            if (!string.IsNullOrEmpty(response) && response.StartsWith("FA"))
+            {
+                return CatCommands.ParseFrequency(response);
+            }
+            return 0L;
+        }
+
         public Task<bool> SetFrequencyAAsync(long frequencyHz) => Task.FromResult(true);
         public Task<int> ReadSMeterAsync() => Task.FromResult(0);
         public Task<int> ReadSMeterMainAsync() => Task.FromResult(0);
         public Task<string> ReadModeAsync() => Task.FromResult(string.Empty);
         public Task<string> ReadModeMainAsync() => Task.FromResult(string.Empty);
         public Task<bool> SetModeMainAsync(string mode) => Task.FromResult(true);
-        public Task<long> ReadFrequencyBAsync() => Task.FromResult(0L);
+        public async Task<long> ReadFrequencyBAsync()
+        {
+            // Send "FB;" to the radio and wait for the response
+            var response = await SendCommandAsync("FB;", CancellationToken.None);
+            if (!string.IsNullOrEmpty(response) && response.StartsWith("FB"))
+            {
+                return CatCommands.ParseFrequency(response);
+            }
+            return 0L;
+        }
+
         public Task<bool> SetFrequencyBAsync(long frequencyHz) => Task.FromResult(true);
         public Task<int> ReadSMeterSubAsync() => Task.FromResult(0);
         public Task<string> ReadModeSubAsync() => Task.FromResult(string.Empty);
@@ -119,4 +148,5 @@ namespace FTdx101_WebApp.Services
             return 0;
         }
     }
+  
 }
