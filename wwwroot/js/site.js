@@ -27,7 +27,8 @@ function updateFrequencyDisplay(receiver, freqHz) {
 }
 
 function renderFrequencyDigits(freq, selIdx) {
-    if (!freq || isNaN(freq) || freq < 1000) {
+    // Show dashes for frequencies less than 100 Hz
+    if (!freq || isNaN(freq) || freq < 100) {
         return '<span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
     }
     let s = freq.toString().padStart(8, "0");
@@ -246,6 +247,17 @@ const connection = new signalR.HubConnectionBuilder()
 
 connection.on("ShowSettingsPage", () => {
     window.location.href = "/Settings";
+});
+
+connection.on("RadioStateUpdate", function (update) {
+    if (update.property === "FrequencyA") {
+        state.lastBackendFreq.A = update.value;
+        updateFrequencyDisplay('A', update.value);
+    }
+    if (update.property === "FrequencyB") {
+        state.lastBackendFreq.B = update.value;
+        updateFrequencyDisplay('B', update.value);
+    }
 });
 
 connection.start();

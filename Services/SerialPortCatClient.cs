@@ -35,7 +35,11 @@ namespace FTdx101_WebApp.Services
             try
             {
                 var data = _serialPort.ReadExisting();
-                _logger.LogWarning("RAW SERIAL: {Data}", data); // <--- Add this line
+                // Only log responses starting with FA or FB
+                if (data.StartsWith("FA") || data.StartsWith("FB"))
+                {
+                    _logger.LogWarning("RAW SERIAL (FA/FB): {Data}", data);
+                }
                 _catMessageBuffer.AppendData(data);
             }
             catch (Exception ex)
@@ -89,10 +93,10 @@ namespace FTdx101_WebApp.Services
         public Task<long> ReadFrequencyAsync() => Task.FromResult(0L);
         public async Task<long> ReadFrequencyAAsync()
         {
-            // Send "FA;" to the radio and wait for the response
             var response = await SendCommandAsync("FA;", CancellationToken.None);
             if (!string.IsNullOrEmpty(response) && response.StartsWith("FA"))
             {
+                _logger.LogWarning("Frequency response (A): {Response}", response);
                 return CatCommands.ParseFrequency(response);
             }
             return 0L;
@@ -106,10 +110,10 @@ namespace FTdx101_WebApp.Services
         public Task<bool> SetModeMainAsync(string mode) => Task.FromResult(true);
         public async Task<long> ReadFrequencyBAsync()
         {
-            // Send "FB;" to the radio and wait for the response
             var response = await SendCommandAsync("FB;", CancellationToken.None);
             if (!string.IsNullOrEmpty(response) && response.StartsWith("FB"))
             {
+                _logger.LogWarning("Frequency response (B): {Response}", response);
                 return CatCommands.ParseFrequency(response);
             }
             return 0L;

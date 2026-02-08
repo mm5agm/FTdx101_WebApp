@@ -26,8 +26,11 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public void DispatchMessage(string message)
         {
-            // Only log received messages
-            _logger.LogInformation("[CatMessageDispatcher] Received: {Message}", message);
+            // Suppress logging RM messages
+            if (!message.StartsWith("RM"))
+            {
+                _logger.LogInformation("[CatMessageDispatcher] Received: {Message}", message);
+            }
 
             if (string.IsNullOrEmpty(message) || message.Length < 3)
                 return;

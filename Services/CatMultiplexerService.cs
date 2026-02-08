@@ -43,7 +43,11 @@ namespace FTdx101_WebApp.Services
         private void OnMessageReceived(object? sender, CatMessageReceivedEventArgs e)
         {
             var message = e.Message.Trim();
-            _logger.LogInformation("[CatMultiplexerService] OnMessageReceived: {Message}", message);
+            // Suppress logging RM messages
+            if (!message.StartsWith("RM"))
+            {
+                _logger.LogInformation("[CatMultiplexerService] OnMessageReceived: {Message}", message);
+            }
 
             var prefix = message.Substring(0, 2);
 

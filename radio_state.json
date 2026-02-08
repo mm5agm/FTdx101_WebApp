@@ -1,8 +1,8 @@
 {
-  "frequencyA": 0,
-  "bandA": "",
+  "frequencyA": 24915000,
+  "bandA": "12m",
   "modeA": "",
-  "antennaA": "2",
+  "antennaA": "",
   "frequencyB": 0,
   "bandB": "",
   "modeB": "",

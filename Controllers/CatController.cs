@@ -55,6 +55,12 @@ namespace FTdx101_WebApp.Controllers
                 await RestoreRadioStateAsync();
                 _restored = true;
             }
+
+            // Always query and update initial frequencies after connection/restore
+            var freqA = await _catClient.QueryFrequencyAAsync("WebUI", CancellationToken.None);
+            var freqB = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
+            _radioStateService.FrequencyA = freqA;
+            _radioStateService.FrequencyB = freqB;
         }
 
         private async Task RestoreRadioStateAsync()
@@ -83,24 +89,17 @@ namespace FTdx101_WebApp.Controllers
         }
 
         [HttpGet("status")]
-        public IActionResult GetStatus()
+        public async Task<IActionResult> GetStatus()
         {
-            var state = _radioStateService.GetState();
-            return Ok(new
+            // If frequencies are zero, query the radio
+            if (_radioStateService.FrequencyA < 100 || _radioStateService.FrequencyB < 100)
             {
-                vfoA = new
-                {
-                    frequency = state.FrequencyA,
-                    sMeter = _radioStateService.SMeterA,
-                    // ... other properties ...
-                },
-                vfoB = new
-                {
-                    frequency = state.FrequencyB,
-                    sMeter = _radioStateService.SMeterB,
-                    // ... other properties ...
-                }
-                // ... other state as needed ...
+                await EnsureConnectedAsync(); // This will update the frequencies
+            }
+
+            return Ok(new {
+                vfoA = new { frequency = _radioStateService.FrequencyA },
+                vfoB = new { frequency = _radioStateService.FrequencyB }
             });
         }
 
@@ -199,6 +198,7 @@ namespace FTdx101_WebApp.Controllers
                 _statePersistence.Save(_radioState);
 
                 _radioStateService.SetBand("A", request.Band);
+                _radioStateService.FrequencyA = actualFreq; // <-- Add this line
 
                 _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, actualFreq);
                 return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
@@ -237,6 +237,7 @@ namespace FTdx101_WebApp.Controllers
                 _statePersistence.Save(_radioState);
 
                 _radioStateService.SetBand("B", request.Band);
+                _radioStateService.FrequencyB = actualFreq; // <-- Add this line
 
                 _logger.LogInformation("Set Receiver B band to {Band} (freq {Freq})", request.Band, actualFreq);
                 return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
