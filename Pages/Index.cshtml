@@ -51,16 +51,16 @@
                         <label>Power: <span id="powerValueA" class="fw-bold">0W</span></label>
                         <input type="range" class="form-range power-slider"
                                id="powerSliderA"
-                               min="0"
+                               min="5"
                                max="200"
                                step="5"
                                value="100"
                                oninput="window.radioControl.updatePowerDisplay('A', this.value)"
                                onchange="window.radioControl.setPower('A', this.value)">
                         <div class="d-flex justify-content-between small text-muted">
-                            <span>0W</span>
+                            <span>5W</span>
                             <span>100W</span>
-                            <span id="powerMaxLabelA">200W</span>
+                            <span id="powerMaxLabelA">@Model.RadioState.MaxPower W</span>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -138,16 +138,16 @@
                         <label>Power: <span id="powerValueB" class="fw-bold">0W</span></label>
                         <input type="range" class="form-range power-slider"
                                id="powerSliderB"
-                               min="0"
+                               min="5"
                                max="200"
                                step="5"
                                value="100"
                                oninput="window.radioControl.updatePowerDisplay('B', this.value)"
                                onchange="window.radioControl.setPower('B', this.value)">
                         <div class="d-flex justify-content-between small text-muted">
-                            <span>0W</span>
+                            <span>5W</span>
                             <span>100W</span>
-                            <span id="powerMaxLabelB">200W</span>
+                            <span id="powerMaxLabelB">@Model.RadioState.MaxPower W</span>
                         </div>
                     </div>
                     <div class="mb-3">

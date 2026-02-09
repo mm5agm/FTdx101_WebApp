@@ -241,6 +241,10 @@ namespace FTdx101_WebApp.Services
         // Power (int? or double? depending on your design)
         private int? _power;
         public int? Power { get => _power; set => SetField(ref _power, value); }
+        public int MaxPower => RadioModel == "FTdx101MP" ? 200 : 100;
+        public int PowerA { get; set; } = 100;
+        public int PowerB { get; set; } = 100;
+        public string RadioModel { get; set; } = "FTdx101MP"; // Or load from settings
 
         // IsTransmitting (bool? or bool)
         private bool _isTransmitting;

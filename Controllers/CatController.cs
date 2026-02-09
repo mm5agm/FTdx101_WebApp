@@ -393,15 +393,12 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
 
-                // Get radio model from settings to determine max power
                 var settings = await _settingsService.GetSettingsAsync();
                 int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
 
-                // Validate power range
-                if (request.Watts < 0 || request.Watts > maxPower)
-                    return BadRequest(new { error = $"Power out of range (0-{maxPower}W for {settings.RadioModel})" });
+                if (request.Watts < 5 || request.Watts > maxPower)
+                    return BadRequest(new { error = $"Power out of range (5-{maxPower}W for {settings.RadioModel})" });
 
-                // Format: PC000-PC200 (pad to 3 digits)
                 var command = $"PC{request.Watts:D3};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
@@ -438,7 +435,7 @@ namespace FTdx101_WebApp.Controllers
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
         public class FrequencyRequest { public long FrequencyHz { get; set; } }
         public class PowerRequest
-        { public string Power { get; set; }
+        {
             public int Watts { get; set; }
         }
     }

@@ -214,8 +214,37 @@ window.setAntenna = async function(receiver, antenna) {
     }
 };
 
-window.setPower = function() {
-    console.warn("setPower not implemented");
+function updatePowerSliderMax(maxPower) {
+    const sliderA = document.getElementById('powerSliderA');
+    const sliderB = document.getElementById('powerSliderB');
+    const labelMaxA = document.getElementById('powerMaxLabelA');
+    const labelMaxB = document.getElementById('powerMaxLabelB');
+
+    if (sliderA) sliderA.max = maxPower;
+    if (sliderB) sliderB.max = maxPower;
+    if (labelMaxA) labelMaxA.textContent = maxPower + 'W';
+    if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
+}
+
+async function setPower(receiver, watts) {
+    const maxPower = state.radioModel === 'FTdx101MP' ? 200 : 100;
+    const power = Math.max(5, Math.min(parseInt(watts), maxPower));
+    try {
+        console.log(`Setting ${receiver} power to ${power}W`);
+        const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Watts: power }) // Only Watts, not Power
+        });
+        if (!response.ok) {
+            console.error('Failed to set power:', await response.text());
+        } else {
+            console.log(`Power set successfully: ${receiver} -> ${power}W`);
+        }
+        updatePowerDisplay(receiver, power);
+    } catch (error) {
+        console.error('Error setting power:', error);
+    }
 };
 
 window.updatePowerDisplay = function() {
