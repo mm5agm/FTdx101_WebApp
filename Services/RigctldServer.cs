@@ -93,7 +93,11 @@ namespace FTdx101_WebApp.Services
 
         private async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
         {
-            var clientId = $"rigctld-{client.Client.RemoteEndPoint}";
+            var remoteEndPoint = client.Client.RemoteEndPoint;
+            var clientEndpoint = remoteEndPoint != null ? remoteEndPoint.ToString() : "unknown";
+            var clientId = remoteEndPoint != null
+                ? $"rigctld-{remoteEndPoint}"
+                : "rigctld-unknown";
             var stream = client.GetStream();
             var buffer = new byte[1024];
 
@@ -195,7 +199,7 @@ namespace FTdx101_WebApp.Services
         private async Task<string> GetFrequencyAsync(string clientId)
         {
             var response = await _multiplexer.SendCommandAsync("FA", clientId);
-            var freq = CatCommands.ParseFrequency(response);
+            var freq = CatCommands.ParseFrequency(response ?? string.Empty);
             return freq > 0 ? freq.ToString() : "RPRT -1";
         }
 
@@ -216,7 +220,7 @@ namespace FTdx101_WebApp.Services
         private async Task<string> GetModeAsync(string clientId)
         {
             var response = await _multiplexer.SendCommandAsync("MD0", clientId);
-            var mode = CatCommands.ParseMode(response);
+            var mode = CatCommands.ParseMode(response ?? string.Empty);
             var bandwidth = 0; // FT-dx101 manages bandwidth automatically
 
             // Convert to Hamlib mode names
@@ -330,7 +334,8 @@ namespace FTdx101_WebApp.Services
         private async Task<string> GetSignalStrengthAsync(string clientId)
         {
             var response = await _multiplexer.SendCommandAsync("SM0", clientId);
-            var sMeter = CatCommands.ParseSMeter(response);
+            var sMeter = CatCommands.ParseSMeter(response ?? string.Empty);
+
             var dbm = (sMeter / 255.0) * 60 - 60;
             return $"{dbm:F0}";
         }

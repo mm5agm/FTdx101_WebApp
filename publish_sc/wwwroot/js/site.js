@@ -141,3 +141,11 @@ function initializeDigitInteraction(receiver) {
         }
     });
 }
+
+// On SignalR or polling update:
+function updateVfoA(data) {
+    document.getElementById('powerA').textContent = data.power;
+    document.getElementById('modeA').textContent = data.mode;
+    document.getElementById('antennaA').textContent = data.antenna;
+    // etc.
+}

@@ -72,6 +72,7 @@ namespace FTdx101_WebApp.Services
             if (message.StartsWith("DT"))
             {
                 initialization_complete = true;
+                _stateService.CompleteInitialization(); // <-- Add this line
                 OnInitializationComplete?.Invoke();
             }
         }

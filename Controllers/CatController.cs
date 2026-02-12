@@ -16,7 +16,6 @@ namespace FTdx101_WebApp.Controllers
         private readonly RadioStatePersistenceService _statePersistence;
         private static readonly SemaphoreSlim _requestSemaphore = new(1, 1);
         private static bool _restored = false;
-        private RadioState _radioState;
 
         // Static band frequency mapping (apply this at the top of your class)
         private static readonly Dictionary<string, long> BandFreqs = new(StringComparer.OrdinalIgnoreCase)
@@ -39,7 +38,6 @@ namespace FTdx101_WebApp.Controllers
             _logger = logger;
             _radioStateService = radioStateService;
             _statePersistence = statePersistence;
-            _radioState = _statePersistence.Load();
         }
 
         private async Task EnsureConnectedAsync()
@@ -68,7 +66,7 @@ namespace FTdx101_WebApp.Controllers
 
         private async Task RestoreRadioStateAsync()
         {
-            var state = _statePersistence.Load();
+            var state = _radioStateService.InitialState; // Use the state loaded at startup
             if (state.FrequencyA > 0)
                 await _catClient.SendCommandAsync($"FA{state.FrequencyA:D9};", "WebUI", CancellationToken.None);
             if (!string.IsNullOrEmpty(state.ModeA))
@@ -81,6 +79,14 @@ namespace FTdx101_WebApp.Controllers
                 await _catClient.SetModeSubAsync(state.ModeB);
             if (!string.IsNullOrEmpty(state.AntennaB))
                 await _catClient.SendCommandAsync($"AN1{state.AntennaB};", "WebUI", CancellationToken.None);
+
+            // Restore power and other properties to in-memory state if present
+            _radioStateService.PowerA = state.PowerA;
+            _radioStateService.PowerB = state.PowerB;
+            _radioStateService.ModeA = state.ModeA;
+            _radioStateService.ModeB = state.ModeB;
+            _radioStateService.AntennaA = state.AntennaA;
+            _radioStateService.AntennaB = state.AntennaB;
         }
 
         private async Task<string> GetMainVfoAsync()
@@ -99,16 +105,25 @@ namespace FTdx101_WebApp.Controllers
                 await EnsureConnectedAsync();
             }
 
-            return Ok(new {
-                vfoA = new {
+            return Ok(new
+            {
+                vfoA = new
+                {
                     frequency = _radioStateService.FrequencyA,
                     band = _radioStateService.BandA,
-                    sMeter = _radioStateService.SMeterA ?? 0 // <-- This must be present
+                    sMeter = _radioStateService.SMeterA ?? 0,
+                    power = _radioStateService.PowerA,
+                    mode = _radioStateService.ModeA ?? "",
+                    antenna = _radioStateService.AntennaA ?? ""
                 },
-                vfoB = new {
+                vfoB = new
+                {
                     frequency = _radioStateService.FrequencyB,
                     band = _radioStateService.BandB,
-                    sMeter = _radioStateService.SMeterB ?? 0 // <-- This must be present
+                    sMeter = _radioStateService.SMeterB ?? 0,
+                    power = _radioStateService.PowerB,
+                    mode = _radioStateService.ModeB ?? "",
+                    antenna = _radioStateService.AntennaB ?? ""
                 }
             });
         }
@@ -135,8 +150,7 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"FA{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
-                _radioState.FrequencyA = freq;
-                _statePersistence.Save(_radioState);
+                _radioStateService.FrequencyA = freq;
 
                 _logger.LogInformation("Set Receiver A frequency to {Freq}", freq);
                 return Ok(new { message = $"Frequency {freq} Hz set for Receiver A" });
@@ -168,8 +182,7 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"FB{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
-                _radioState.FrequencyB = freq;
-                _statePersistence.Save(_radioState);
+                _radioStateService.FrequencyB = freq;
 
                 _logger.LogInformation("Set Receiver B frequency to {Freq}", freq);
                 return Ok(new { message = $"Frequency {freq} Hz set for Receiver B" });
@@ -203,12 +216,9 @@ namespace FTdx101_WebApp.Controllers
 
                 // Query the radio for the actual frequency after the band change
                 var actualFreq = await _catClient.QueryFrequencyAAsync("WebUI", CancellationToken.None);
-                _radioState.BandA = request.Band;
-                _radioState.FrequencyA = actualFreq;
-                _statePersistence.Save(_radioState);
 
                 _radioStateService.SetBand("A", request.Band);
-                _radioStateService.FrequencyA = actualFreq; // <-- Add this line
+                _radioStateService.FrequencyA = actualFreq;
 
                 _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, actualFreq);
                 return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
@@ -242,12 +252,9 @@ namespace FTdx101_WebApp.Controllers
 
                 // Query the radio for the actual frequency after the band change
                 var actualFreq = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
-                _radioState.BandB = request.Band;
-                _radioState.FrequencyB = actualFreq;
-                _statePersistence.Save(_radioState);
 
                 _radioStateService.SetBand("B", request.Band);
-                _radioStateService.FrequencyB = actualFreq; // <-- Add this line
+                _radioStateService.FrequencyB = actualFreq;
 
                 _logger.LogInformation("Set Receiver B band to {Band} (freq {Freq})", request.Band, actualFreq);
                 return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
@@ -277,10 +284,8 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"AN0{request.Antenna};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
-                _radioState.AntennaA = request.Antenna;
-                _statePersistence.Save(_radioState);
+                _radioStateService.AntennaA = request.Antenna;
 
-                _radioStateService.SetAntenna("A", request.Antenna);
                 _logger.LogInformation("Set Main antenna to {Antenna}", request.Antenna);
                 return Ok(new { message = $"Antenna {request.Antenna} selected" });
             }
@@ -309,10 +314,8 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"AN1{request.Antenna};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
-                _radioState.AntennaB = request.Antenna;
-                _statePersistence.Save(_radioState);
+                _radioStateService.AntennaB = request.Antenna;
 
-                _radioStateService.SetAntenna("B", request.Antenna);
                 _logger.LogInformation("Set Sub antenna to {Antenna}", request.Antenna);
                 return Ok(new { message = $"Antenna {request.Antenna} selected" });
             }
@@ -338,8 +341,7 @@ namespace FTdx101_WebApp.Controllers
                 await EnsureConnectedAsync();
                 await _catClient.SetModeMainAsync(request.Mode);
 
-                _radioState.ModeA = request.Mode;
-                _statePersistence.Save(_radioState);
+                _radioStateService.ModeA = request.Mode;
 
                 _logger.LogInformation("Set Receiver A mode to {Mode}", request.Mode);
                 return Ok(new { message = $"Mode {request.Mode} selected" });
@@ -366,8 +368,7 @@ namespace FTdx101_WebApp.Controllers
                 await EnsureConnectedAsync();
                 await _catClient.SetModeSubAsync(request.Mode);
 
-                _radioState.ModeB = request.Mode;
-                _statePersistence.Save(_radioState);
+                _radioStateService.ModeB = request.Mode;
 
                 _logger.LogInformation("Set Receiver B mode to {Mode}", request.Mode);
                 return Ok(new { message = $"Mode {request.Mode} selected" });
@@ -401,6 +402,15 @@ namespace FTdx101_WebApp.Controllers
 
                 var command = $"PC{request.Watts:D3};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
+
+                if (receiver.ToUpper() == "A")
+                {
+                    _radioStateService.PowerA = request.Watts;
+                }
+                else if (receiver.ToUpper() == "B")
+                {
+                    _radioStateService.PowerB = request.Watts;
+                }
 
                 _logger.LogInformation("Set power to {Power}W on {RadioModel}", request.Watts, settings.RadioModel);
                 return Ok(new { message = $"Power set to {request.Watts}W", maxPower = maxPower });

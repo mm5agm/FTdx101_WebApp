@@ -1,7 +1,8 @@
+using FTdx101_WebApp.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Microsoft.AspNetCore.SignalR;
-using FTdx101_WebApp.Hubs;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FTdx101_WebApp.Services
 {
@@ -9,22 +10,64 @@ namespace FTdx101_WebApp.Services
     {
         private readonly ILogger<RadioStateService> _logger;
         private readonly IHubContext<RadioHub>? _hubContext;
+        private readonly RadioStatePersistenceService _statePersistence;
 
-        public RadioStateService(ILogger<RadioStateService> logger, IHubContext<RadioHub>? hubContext = null)
+        public bool IsInitialized { get; set; } = false;
+
+        private RadioState _initialState;
+
+        public RadioStateService(
+            ILogger<RadioStateService> logger,
+            RadioStatePersistenceService statePersistence,
+            IHubContext<RadioHub>? hubContext = null)
         {
             _logger = logger;
+            _statePersistence = statePersistence;
             _hubContext = hubContext;
+            _initialState = _statePersistence.Load();
+
+            // ADD THIS LOG:
+            _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}",
+                _initialState.ModeA, _initialState.ModeB, _initialState.PowerA, _initialState.PowerB, _initialState.AntennaA, _initialState.AntennaB);
+
+            // Initialize properties from _initialState
+            FrequencyA = _initialState.FrequencyA;
+            FrequencyB = _initialState.FrequencyB;
+            BandA = _initialState.BandA;
+            BandB = _initialState.BandB;
+            ModeA = _initialState.ModeA ?? "";
+            ModeB = _initialState.ModeB ?? "";
+            AntennaA = _initialState.AntennaA ?? "";
+            AntennaB = _initialState.AntennaB ?? "";
+            PowerA = _initialState.PowerA;
+            PowerB = _initialState.PowerB;
         }
 
-        // Helper for property change and SignalR broadcast
+        public RadioState InitialState => _initialState;
+
         private void SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (!EqualityComparer<T>.Default.Equals(field, value))
             {
+                _logger.LogInformation("Setting {Property} to {Value}", propertyName, value);
                 field = value;
                 OnPropertyChanged(propertyName);
                 BroadcastUpdate(propertyName!, value!);
+
+                // Only save after initialization is complete
+                if (IsInitialized)
+                {
+                    _statePersistence.Save(this.ToRadioState());
+                }
             }
+        }
+
+        // Call this after DT0; is received
+        public void CompleteInitialization()
+        {
+            IsInitialized = true;
+            ReloadFromPersistence(); // Load the latest persisted state into memory
+            // Do NOT call Save() here!
         }
 
         private void BroadcastUpdate(string property, object value)
@@ -34,23 +77,19 @@ namespace FTdx101_WebApp.Services
 
         // --- Properties for all CAT commands in GetInitialValues() ---
 
-        // ID
         private string _id = "";
         public string Id { get => _id; set => SetField(ref _id, value); }
 
-        // AGC
         private int? _agcMain;
         public int? AGCMain { get => _agcMain; set => SetField(ref _agcMain, value); }
         private int? _agcSub;
         public int? AGCSub { get => _agcSub; set => SetField(ref _agcSub, value); }
 
-        // RF Gain
         private int? _rfMain;
         public int? RFMain { get => _rfMain; set => SetField(ref _rfMain, value); }
         private int? _rfSub;
         public int? RFSub { get => _rfSub; set => SetField(ref _rfSub, value); }
 
-        // Frequencies
         private long _frequencyA;
         public long FrequencyA
         {
@@ -73,19 +112,16 @@ namespace FTdx101_WebApp.Services
             }
         }
 
-        // VFO/Receiver
         private string? _fr;
         public string? FR { get => _fr; set => SetField(ref _fr, value); }
         private string? _ft;
         public string? FT { get => _ft; set => SetField(ref _ft, value); }
 
-        // SSB Meter
         private string? _ss04;
         public string? SS04 { get => _ss04; set => SetField(ref _ss04, value); }
         private string? _ss14;
         public string? SS14 { get => _ss14; set => SetField(ref _ss14, value); }
 
-        // AO, MG, PL, PR0, PR1, VS, KP, PC, RL0, RL1, NR0, NR1, NB0, NB1, NL0
         private string? _ao;
         public string? AO { get => _ao; set => SetField(ref _ao, value); }
         private string? _mg;
@@ -121,82 +157,6 @@ namespace FTdx101_WebApp.Services
         private string? _nl0;
         public string? NL0 { get => _nl0; set => SetField(ref _nl0, value); }
 
-        // Contour/Notch/CTCSS/Other
-        public string? CO00 { get; set; }
-        public string? CO10 { get; set; }
-        public string? CO01 { get; set; }
-        public string? CO11 { get; set; }
-        public string? CO02 { get; set; }
-        public string? CO12 { get; set; }
-        public string? CO03 { get; set; }
-        public string? CO13 { get; set; }
-        public string? CN00 { get; set; }
-        public string? CN10 { get; set; }
-        public string? CT0 { get; set; }
-        public string? CT1 { get; set; }
-
-        // EX, SH, IS, AC, BP, GT, AN, PA, RF, CS, ML, BI, MS, KS, SS05, SS15, SS06, SS16, VT0, VX, VG, AV, CF, BC, KR, RA, SY, VD, DT0
-        public string? EX030203 { get; set; }
-        public string? EX030202 { get; set; }
-        public string? EX030102 { get; set; }
-        public string? EX030103 { get; set; }
-        public string? EX040105 { get; set; }
-        public string? EX030201 { get; set; }
-        public string? EX010111 { get; set; }
-        public string? EX010112 { get; set; }
-        public string? EX030405 { get; set; }
-        public string? EX010211 { get; set; }
-        public string? EX010310 { get; set; }
-        public string? EX010413 { get; set; }
-        public string? EX010213 { get; set; }
-        public string? EX010312 { get; set; }
-        public string? EX010414 { get; set; }
-        public string? EX0403021 { get; set; }
-        public string? SH0 { get; set; }
-        public string? SH1 { get; set; }
-        public string? IS0 { get; set; }
-        public string? IS1 { get; set; }
-        public string? AC { get; set; }
-        public string? BP00 { get; set; }
-        public string? BP01 { get; set; }
-        public string? BP10 { get; set; }
-        public string? BP11 { get; set; }
-        public string? GT0 { get; set; }
-        public string? GT1 { get; set; }
-        public string? AN0 { get; set; }
-        public string? AN1 { get; set; }
-        public string? PA0 { get; set; }
-        public string? PA1 { get; set; }
-        public string? RF0 { get; set; }
-        public string? RF1 { get; set; }
-        public string? CS { get; set; }
-        public string? ML0 { get; set; }
-        public string? ML1 { get; set; }
-        public string? BI { get; set; }
-        public string? MS { get; set; }
-        public string? KS { get; set; }
-        public string? SS05 { get; set; }
-        public string? SS15 { get; set; }
-        public string? SS06 { get; set; }
-        public string? SS16 { get; set; }
-        public string? VT0 { get; set; }
-        public string? VX { get; set; }
-        public string? VG { get; set; }
-        public string? AV { get; set; }
-        public string? CF000 { get; set; }
-        public string? CF100 { get; set; }
-        public string? CF001 { get; set; }
-        public string? CF101 { get; set; }
-        public string? BC0 { get; set; }
-        public string? BC1 { get; set; }
-        public string? KR { get; set; }
-        public string? RA0 { get; set; }
-        public string? RA1 { get; set; }
-        public string? SY { get; set; }
-        public string? VD { get; set; }
-        public string? DT0 { get; set; }
-
-        // Band tracking (non-reactive for now)
         public string BandA { get; private set; } = "20m";
         public string BandB { get; private set; } = "20m";
         public Dictionary<string, object> Controls { get; } = new();
@@ -212,41 +172,45 @@ namespace FTdx101_WebApp.Services
         public void SetAntenna(string receiver, string antenna)
         {
             if (receiver == "A")
-                AN0 = antenna;
+                AntennaA = antenna;
             else if (receiver == "B")
-                AN1 = antenna;
+                AntennaB = antenna;
         }
 
-        // ModeA and ModeB (string? or your enum type)
-        private string? _modeA;
+        private int _powerA;
+        public int PowerA { get => _powerA; set => SetField(ref _powerA, value); }
+
+        private int _powerB;
+        public int PowerB { get => _powerB; set => SetField(ref _powerB, value); }
+
+        private string? _modeA = "";
         public string? ModeA { get => _modeA; set => SetField(ref _modeA, value); }
 
-        private string? _modeB;
+        private string? _modeB = "";
         public string? ModeB { get => _modeB; set => SetField(ref _modeB, value); }
 
-        // SMeterA and SMeterB (string? or int? depending on your design)
-        private int? _sMeterA;
-        public int? SMeterA { get; set; }
-
-        private int? _sMeterB;
-        public int? SMeterB { get; set; }
-
-        // AntennaA and AntennaB (string? or int? depending on your design)
-        private string? _antennaA;
+        private string? _antennaA = "";
         public string? AntennaA { get => _antennaA; set => SetField(ref _antennaA, value); }
 
-        private string? _antennaB;
+        private string? _antennaB = "";
         public string? AntennaB { get => _antennaB; set => SetField(ref _antennaB, value); }
 
-        // Power (int? or double? depending on your design)
+        private int? _sMeterA;
+        public int? SMeterA { get => _sMeterA; set => SetField(ref _sMeterA, value); }
+
+        private int? _sMeterB;
+        public int? SMeterB { get => _sMeterB; set => SetField(ref _sMeterB, value); }
+
         private int? _power;
         public int? Power { get => _power; set => SetField(ref _power, value); }
-        public int MaxPower => RadioModel == "FTdx101MP" ? 200 : 100;
-        public int PowerA { get; set; } = 100;
-        public int PowerB { get; set; } = 100;
-        public string RadioModel { get; set; } = "FTdx101MP"; // Or load from settings
 
-        // IsTransmitting (bool? or bool)
+        private int? _maxPower;
+        public int? MaxPower
+        {
+            get => _maxPower;
+            set => SetField(ref _maxPower, value);
+        }
+
         private bool _isTransmitting;
         public bool IsTransmitting { get => _isTransmitting; set => SetField(ref _isTransmitting, value); }
 
@@ -262,7 +226,6 @@ namespace FTdx101_WebApp.Services
             };
         }
 
-        // Band tracking update
         public void UpdateBandFromFrequency()
         {
             BandA = GetBandFromFrequency(FrequencyA);
@@ -270,7 +233,6 @@ namespace FTdx101_WebApp.Services
         }
         public string GetBandFromFrequency(long freq)
         {
-            // Frequency in Hz
             if (freq >= 1800000 && freq < 2000000) return "160m";
             if (freq >= 3500000 && freq < 4000000) return "80m";
             if (freq >= 5351500 && freq <= 5366500) return "60m";
@@ -282,11 +244,10 @@ namespace FTdx101_WebApp.Services
             if (freq >= 24890000 && freq < 24990000) return "12m";
             if (freq >= 28000000 && freq < 29700000) return "10m";
             if (freq >= 50000000 && freq < 54000000) return "6m";
-            if (freq >= 70000000 && freq < 70500000) return "4m"; // <-- Add this line for 70 MHz (4m band)
+            if (freq >= 70000000 && freq < 70500000) return "4m";
             return "Unknown";
         }
 
-        // INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
@@ -296,9 +257,40 @@ namespace FTdx101_WebApp.Services
         public void UpdateFrequencyB(long freq)
         {
             _frequencyB = freq;
-            // Add any notification or persistence logic if needed
         }
 
-        
+        public void ReloadFromPersistence()
+        {
+            var reloaded = _statePersistence.Load();
+            _logger.LogInformation("Reloading from persistence: ModeA={ModeA}, AntennaA={AntennaA}, PowerA={PowerA}", reloaded.ModeA, reloaded.AntennaA, reloaded.PowerA);
+
+            FrequencyA = reloaded.FrequencyA;
+            FrequencyB = reloaded.FrequencyB;
+            BandA = reloaded.BandA;
+            BandB = reloaded.BandB;
+            ModeA = reloaded.ModeA ?? "";
+            ModeB = reloaded.ModeB ?? "";
+            AntennaA = reloaded.AntennaA ?? "";
+            AntennaB = reloaded.AntennaB ?? "";
+            PowerA = reloaded.PowerA;
+            PowerB = reloaded.PowerB;
+        }
+
+        public RadioState ToRadioState()
+        {
+            return new RadioState
+            {
+                FrequencyA = this.FrequencyA,
+                FrequencyB = this.FrequencyB,
+                BandA = this.BandA,
+                BandB = this.BandB,
+                ModeA = this.ModeA,
+                ModeB = this.ModeB,
+                AntennaA = this.AntennaA,
+                AntennaB = this.AntennaB,
+                PowerA = this.PowerA,
+                PowerB = this.PowerB,
+            };
+        }
     }
 }

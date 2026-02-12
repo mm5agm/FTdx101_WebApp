@@ -28,38 +28,56 @@ namespace FTdx101_WebApp.Services
                 var statePersistence = scope.ServiceProvider.GetRequiredService<RadioStatePersistenceService>();
                 logger = scope.ServiceProvider.GetRequiredService<ILogger<RadioInitializationService>>();
 
-                AppStatus.InitializationStatus = "initializing";
-                logger.LogInformation("[RadioInitializationService] InitializationStatus set to 'initializing'");
-                await _hubContext.Clients.All.SendAsync("InitializationStatus", "Initializing radio, please wait...");
-
                 var settings = await settingsService.GetSettingsAsync();
 
-                AppStatus.InitializationStatus = "Connecting to radio...";
-                logger.LogInformation("[RadioInitializationService] InitializationStatus set to 'Connecting to radio...'");
-                await _hubContext.Clients.All.SendAsync("InitializationStatus", "Connecting to radio...");
+                // 1. Connect and stop auto information
                 await multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate);
+                await multiplexer.DisableAutoInformationAsync();
 
-                // Send AI0 to stop auto information
-                await multiplexer.SendCommand("AI0;", false);
+                // 2. Load persisted state from .json
+                var persistedState = statePersistence.Load();
+                logger.LogInformation("[RadioInitializationService] Persisted values before initialization: " +
+                    "ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}",
+                    persistedState.ModeA, persistedState.ModeB, persistedState.PowerA, persistedState.PowerB, persistedState.AntennaA, persistedState.AntennaB);
 
-                // Query VFO A to check radio responsiveness with timeout
-                logger.LogInformation("[RadioInitializationService] Sending FA; to check radio responsiveness...");
-                var faResponse = await multiplexer.SendCommandAsync("FA;", "InitialValues", stoppingToken);
-                logger.LogInformation("[RadioInitializationService] FA; response: {Response}", faResponse);
-
-                if (string.IsNullOrWhiteSpace(faResponse) || !faResponse.StartsWith("FA"))
+                // 3. Send only non-empty/non-zero values to the radio
+                if (!string.IsNullOrEmpty(persistedState.ModeA))
                 {
-                    logger?.LogError("[RadioInitializationService] No valid response from radio to FA; command after COM port connection.");
-                    throw new Exception("No valid response from radio to FA; command after COM port connection.");
+                    logger.LogInformation("About to send ModeA={ModeA} to radio", persistedState.ModeA);
+                    await multiplexer.SendCommandAsync(CatCommands.FormatMode(persistedState.ModeA, false), "Initialization", stoppingToken);
+                    radioStateService.ModeA = persistedState.ModeA;
+                }
+                if (!string.IsNullOrEmpty(persistedState.ModeB))
+                {
+                    await multiplexer.SendCommandAsync(CatCommands.FormatMode(persistedState.ModeB, true), "Initialization", stoppingToken);
+                    radioStateService.ModeB = persistedState.ModeB;
+                }
+                if (persistedState.PowerA > 0)
+                {
+                    await multiplexer.SendCommandAsync($"PC{persistedState.PowerA};", "Initialization", stoppingToken);
+                    radioStateService.PowerA = persistedState.PowerA;
+                }
+                if (persistedState.PowerB > 0)
+                {
+                    await multiplexer.SendCommandAsync($"PC{persistedState.PowerB};", "Initialization", stoppingToken);
+                    radioStateService.PowerB = persistedState.PowerB;
+                }
+                if (!string.IsNullOrEmpty(persistedState.AntennaA))
+                {
+                    await multiplexer.SendCommandAsync($"AN0{persistedState.AntennaA};", "Initialization", stoppingToken);
+                    radioStateService.AntennaA = persistedState.AntennaA;
+                }
+                if (!string.IsNullOrEmpty(persistedState.AntennaB))
+                {
+                    await multiplexer.SendCommandAsync($"AN1{persistedState.AntennaB};", "Initialization", stoppingToken);
+                    radioStateService.AntennaB = persistedState.AntennaB;
                 }
 
-                AppStatus.InitializationStatus = "Initializing radio...";
-                logger.LogInformation("[RadioInitializationService] InitializationStatus set to 'Initializing radio...'");
-                await _hubContext.Clients.All.SendAsync("InitializationStatus", "Initializing radio...");
+                // 4. Set IsInitialized = true to allow future property changes to be persisted
+                radioStateService.IsInitialized = true;
 
-                logger.LogInformation("[RadioInitializationService] Calling InitializeRadioAsync...");
-                await multiplexer.InitializeRadioAsync();
-                logger.LogInformation("[RadioInitializationService] InitializeRadioAsync completed");
+                // 5. Enable auto information
+                await multiplexer.EnableAutoInformationAsync();
 
                 logger.LogInformation("[RadioInitializationService] ✓ Radio connected, initialized, and Auto Information streaming enabled");
                 AppStatus.InitializationStatus = "complete";

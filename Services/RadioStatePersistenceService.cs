@@ -1,34 +1,50 @@
 using System.IO;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
 
 namespace FTdx101_WebApp.Services
 {
     public class RadioStatePersistenceService
     {
-        private readonly string _filePath = "radio_state.json";
+        private readonly string _filePath;
         private readonly ILogger<RadioStatePersistenceService> _logger;
+        private static readonly object _fileLock = new();
 
-        public RadioStatePersistenceService(ILogger<RadioStatePersistenceService> logger)
+        public RadioStatePersistenceService(
+            ILogger<RadioStatePersistenceService> logger,
+            IWebHostEnvironment env)
         {
             _logger = logger;
+            // Always use the app root for radio_state.json
+            _filePath = Path.Combine(env.ContentRootPath, "radio_state.json");
         }
 
         public RadioState Load()
         {
             try
             {
-                if (!File.Exists(_filePath))
+                lock (_fileLock)
                 {
-                    _logger.LogInformation("Radio state file not found. Creating default state.");
-                    var defaultState = CreateDefaultState();
-                    Save(defaultState);
-                    return defaultState;
-                }
+                    if (!File.Exists(_filePath))
+                    {
+                        _logger.LogInformation("Radio state file not found. Creating default state.");
+                        var defaultState = CreateDefaultState();
+                        Save(defaultState);
+                        return defaultState;
+                    }
 
-                var json = File.ReadAllText(_filePath);
-                var state = JsonSerializer.Deserialize<RadioState>(json) ?? CreateDefaultState();
-                _logger.LogInformation("Radio state loaded from {FilePath}", _filePath);
-                return state;
+                    var json = File.ReadAllText(_filePath);
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = null // Use PascalCase (default)
+                    };
+                    var state = JsonSerializer.Deserialize<RadioState>(json, options) ?? CreateDefaultState();
+                    _logger.LogInformation("Radio state loaded from {FilePath}", _filePath);
+                    _logger.LogInformation("Loaded state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}",
+                        state.ModeA, state.ModeB, state.PowerA, state.PowerB, state.AntennaA, state.AntennaB);
+                    return state;
+                }
             }
             catch (Exception ex)
             {
@@ -41,15 +57,18 @@ namespace FTdx101_WebApp.Services
         {
             try
             {
-                var options = new JsonSerializerOptions
+                lock (_fileLock)
                 {
-                    WriteIndented = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        PropertyNamingPolicy = null // Use PascalCase (default)
+                    };
 
-                var json = JsonSerializer.Serialize(state, options);
-                File.WriteAllText(_filePath, json);
-                _logger.LogDebug("Radio state saved to {FilePath}", _filePath);
+                    var json = JsonSerializer.Serialize(state, options);
+                    File.WriteAllText(_filePath, json);
+                    _logger.LogDebug("Radio state saved to {FilePath}", _filePath);
+                }
             }
             catch (Exception ex)
             {
