@@ -82,10 +82,9 @@ namespace FTdx101_WebApp.Controllers
 
             // Restore power and other properties to in-memory state if present
             _radioStateService.PowerA = state.PowerA;
-            _radioStateService.PowerB = state.PowerB;
             _radioStateService.ModeA = state.ModeA;
-            _radioStateService.ModeB = state.ModeB;
             _radioStateService.AntennaA = state.AntennaA;
+            _radioStateService.ModeB = state.ModeB;
             _radioStateService.AntennaB = state.AntennaB;
         }
 
@@ -121,7 +120,6 @@ namespace FTdx101_WebApp.Controllers
                     frequency = _radioStateService.FrequencyB,
                     band = _radioStateService.BandB,
                     sMeter = _radioStateService.SMeterB ?? 0,
-                    power = _radioStateService.PowerB,
                     mode = _radioStateService.ModeB ?? "",
                     antenna = _radioStateService.AntennaB ?? ""
                 }
@@ -406,10 +404,6 @@ namespace FTdx101_WebApp.Controllers
                 if (receiver.ToUpper() == "A")
                 {
                     _radioStateService.PowerA = request.Watts;
-                }
-                else if (receiver.ToUpper() == "B")
-                {
-                    _radioStateService.PowerB = request.Watts;
                 }
 
                 _logger.LogInformation("Set power to {Power}W on {RadioModel}", request.Watts, settings.RadioModel);

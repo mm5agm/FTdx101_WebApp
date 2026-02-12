@@ -134,22 +134,7 @@
                         @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER B -->
-                    <div class="mb-3">
-                        <label>Power: <span id="powerValueB" class="fw-bold">0W</span></label>
-                        <input type="range" class="form-range power-slider"
-                               id="powerSliderB"
-                               min="5"
-                               max="200"
-                               step="5"
-                               value="100"
-                               oninput="window.radioControl.updatePowerDisplay('B', this.value)"
-                               onchange="window.radioControl.setPower('B', this.value)">
-                        <div class="d-flex justify-content-between small text-muted">
-                            <span>5W</span>
-                            <span>100W</span>
-                            <span id="powerMaxLabelB">@Model.RadioState.MaxPower W</span>
-                        </div>
-                    </div>
+                    
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">

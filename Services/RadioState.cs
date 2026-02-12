@@ -54,7 +54,7 @@ namespace FTdx101_WebApp.Services
         /// <summary>
         /// Receiver B power level (0-100)
         /// </summary>
-        public int PowerB { get; set; } = 0;
+        public int PowerB { get; set; }
 
         /// <summary>
         /// Additional controls and settings (for future expansion)

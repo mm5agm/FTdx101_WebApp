@@ -27,8 +27,8 @@ namespace FTdx101_WebApp.Services
             _initialState = _statePersistence.Load();
 
             // ADD THIS LOG:
-            _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}",
-                _initialState.ModeA, _initialState.ModeB, _initialState.PowerA, _initialState.PowerB, _initialState.AntennaA, _initialState.AntennaB);
+            _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, AntennaA={AntennaA}, AntennaB={AntennaB}",
+                _initialState.ModeA, _initialState.ModeB, _initialState.PowerA, _initialState.AntennaA, _initialState.AntennaB);
 
             // Initialize properties from _initialState
             FrequencyA = _initialState.FrequencyA;
@@ -40,8 +40,7 @@ namespace FTdx101_WebApp.Services
             AntennaA = _initialState.AntennaA ?? "";
             AntennaB = _initialState.AntennaB ?? "";
             PowerA = _initialState.PowerA;
-            PowerB = _initialState.PowerB;
-        }
+                   }
 
         public RadioState InitialState => _initialState;
 
@@ -180,8 +179,7 @@ namespace FTdx101_WebApp.Services
         private int _powerA;
         public int PowerA { get => _powerA; set => SetField(ref _powerA, value); }
 
-        private int _powerB;
-        public int PowerB { get => _powerB; set => SetField(ref _powerB, value); }
+      
 
         private string? _modeA = "";
         public string? ModeA { get => _modeA; set => SetField(ref _modeA, value); }
@@ -273,7 +271,7 @@ namespace FTdx101_WebApp.Services
             AntennaA = reloaded.AntennaA ?? "";
             AntennaB = reloaded.AntennaB ?? "";
             PowerA = reloaded.PowerA;
-            PowerB = reloaded.PowerB;
+       
         }
 
         public RadioState ToRadioState()
@@ -289,8 +287,7 @@ namespace FTdx101_WebApp.Services
                 AntennaA = this.AntennaA,
                 AntennaB = this.AntennaB,
                 PowerA = this.PowerA,
-                PowerB = this.PowerB,
-            };
+                          };
         }
     }
 }

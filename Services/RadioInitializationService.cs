@@ -57,11 +57,6 @@ namespace FTdx101_WebApp.Services
                     await multiplexer.SendCommandAsync($"PC{persistedState.PowerA};", "Initialization", stoppingToken);
                     radioStateService.PowerA = persistedState.PowerA;
                 }
-                if (persistedState.PowerB > 0)
-                {
-                    await multiplexer.SendCommandAsync($"PC{persistedState.PowerB};", "Initialization", stoppingToken);
-                    radioStateService.PowerB = persistedState.PowerB;
-                }
                 if (!string.IsNullOrEmpty(persistedState.AntennaA))
                 {
                     await multiplexer.SendCommandAsync($"AN0{persistedState.AntennaA};", "Initialization", stoppingToken);
