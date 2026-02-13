@@ -280,14 +280,14 @@ namespace FTdx101_WebApp.Services
             {
                 FrequencyA = this.FrequencyA,
                 FrequencyB = this.FrequencyB,
-                BandA = this.BandA,
-                BandB = this.BandB,
-                ModeA = this.ModeA,
-                ModeB = this.ModeB,
-                AntennaA = this.AntennaA,
-                AntennaB = this.AntennaB,
+                BandA = this.BandA ?? string.Empty,
+                BandB = this.BandB ?? string.Empty,
+                ModeA = this.ModeA ?? string.Empty,
+                ModeB = this.ModeB ?? string.Empty,
+                AntennaA = this.AntennaA ?? string.Empty,
+                AntennaB = this.AntennaB ?? string.Empty,
                 PowerA = this.PowerA,
-                          };
+            };
         }
     }
 }

@@ -19,8 +19,6 @@ namespace FTdx101_WebApp.Services
             _logger = logger;
         }
 
-        private bool initialization_complete = false;
-
         /// <summary>
         /// Process a complete CAT message and update state
         /// </summary>
@@ -68,12 +66,11 @@ namespace FTdx101_WebApp.Services
 
         private void HandleInitialization(string message)
         {
-            // No extra logging here unless you want to keep error logs
-            if (message.StartsWith("DT"))
+            // Only signal initialization complete for DT0; message
+            if (message.StartsWith("DT0;"))
             {
-                initialization_complete = true;
-                _stateService.CompleteInitialization(); // <-- Add this line
-                OnInitializationComplete?.Invoke();
+                _stateService.CompleteInitialization(); // Optionally update radio state
+                OnInitializationComplete?.Invoke();     // Notify any listeners
             }
         }
     }

@@ -12,7 +12,16 @@ I also use this application on my tablet, which provides a portable control pane
 - **Dual Receiver Support:** Independent control and display for VFO A and VFO B.
 - **Live S-Meter ** Real-time analog-style meters. Power and ALC to come if requested
 - **Auto Information Mode (AI1;):** The app enables the radio’s Auto Information mode, so the radio streams status updates (frequency, mode, S-meter, etc.) automatically to the web app for low-latency, real-time updates.
-- **TCP Integration:** The app acts as a TCP server (rigctld-compatible), allowing external applications (WSJT-X, Log4OM, JTAlert, etc.) to connect over TCP. The web app is the only process that opens the radio's serial port.
+- **TCP Integration (rigctld-compatible):**  
+  The web app exposes a TCP rigctld-compatible CAT server. Applications such as
+  Log4OM, GridTracker, and other Hamlib-based tools can connect over TCP.  
+  The web app is the only process that opens the radio’s serial port.
+
+- **WSJT-X Integration (UDP):**  
+  WSJT-X does not use rigctld over TCP. Instead, it communicates via UDP
+  broadcasts and directed UDP commands. The web app listens for WSJT-X status
+  messages and can respond to CAT control commands (frequency, mode, PTT, etc.)
+  using the WSJT-X UDP protocol.
 - **No Virtual COM Ports Needed:** Eliminates the need for third-party serial port sharing utilities.
 - **Tablet and Touch Friendly:** Optimized for use on tablets and touch devices.
 

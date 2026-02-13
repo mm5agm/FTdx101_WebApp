@@ -36,10 +36,11 @@ namespace FTdx101_WebApp.Services
 
         public void Dispose() { }
 
-        public Task<string> SendCommandAsync(string command, string clientId, CancellationToken cancellationToken = default)
+        public async Task<string> SendCommandAsync(string command, string clientId, CancellationToken cancellationToken = default)
         {
             _logger.LogWarning("[sent] {Command}", command.Trim());
-            return _multiplexer.SendCommandAsync(command, clientId, cancellationToken);
+            var result = await _multiplexer.SendCommandAsync(command, clientId, cancellationToken);
+            return result ?? string.Empty; // Guarantees non-null return
         }
 
         // Overload for legacy code (optional)
