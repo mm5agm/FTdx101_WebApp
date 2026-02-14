@@ -4,7 +4,8 @@
     ViewData["Title"] = "FT-dx101 Series Control";
 }
 
-<link rel="stylesheet" href="~/css/site.css" />
+<!-- Cache-busted CSS reference -->
+<link rel="stylesheet" href="~/css/site.css?v=20260214" />
 
 <!-- Overlay for initialization status -->
 <div id="initOverlay" class="init-overlay">
@@ -40,7 +41,13 @@
                     <!-- Controls below -->
                     <div>
                         <label>Frequency:</label>
-                        <span id="freqA" class="fw-bold frequency-display digit-display"></span>
+                        <div class="d-flex align-items-center">
+                            <span id="freqA" class="fw-bold frequency-display digit-display"></span>
+                            <div id="freqA-controls" class="ms-2" style="display:none;">
+                                <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
+                                <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label>Bands (A):</label>
@@ -99,7 +106,6 @@
                             }
                         </div>
                     </div>
-                   
                 </div>
             </div>
         </div>
@@ -127,7 +133,13 @@
                     <!-- Controls below -->
                     <div>
                         <label>Frequency:</label>
-                        <span id="freqB" class="fw-bold frequency-display digit-display"></span>
+                        <div class="d-flex align-items-center">
+                            <span id="freqB" class="fw-bold frequency-display digit-display"></span>
+                            <div id="freqB-controls" class="ms-2" style="display:none;">
+                                <button id="freqB-up" class="btn btn-secondary btn-sm">▲</button>
+                                <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label>Bands (B):</label>
@@ -171,13 +183,14 @@
                             }
                         </div>
                     </div>
-                 
                 </div>
             </div>
         </div>
     </div>
 </div>
 @section Scripts {
+    <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
+    <script src="~/js/site.js?v=20260214"></script>
     <script>
         (function() {
             'use strict';
@@ -799,5 +812,15 @@
         }
 
         pollInitStatus();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                var aControls = document.getElementById('freqA-controls');
+                var bControls = document.getElementById('freqB-controls');
+                if (aControls) aControls.style.display = '';
+                if (bControls) bControls.style.display = '';
+            }
+        });
     </script>
 }

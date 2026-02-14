@@ -1,7 +1,6 @@
 ﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
 // for details on configuring this project to bundle and minify static web assets.
 
-// Write your JavaScript code.
 // --- Frequency digit interaction logic ---
 
 // Unified global state object
@@ -153,7 +152,7 @@ function initializeDigitInteraction(receiver) {
     });
 }
 
-window.setBand = async function(receiver, band) {
+window.setBand = async function (receiver, band) {
     try {
         console.log(`Setting ${receiver} band to ${band}`);
         if (window.highlightButtons) highlightButtons(receiver, band, state.lastMode ? state.lastMode[receiver] : undefined, state.lastAntenna ? state.lastAntenna[receiver] : undefined);
@@ -173,7 +172,7 @@ window.setBand = async function(receiver, band) {
     }
 };
 
-window.setMode = async function(receiver, mode) {
+window.setMode = async function (receiver, mode) {
     try {
         console.log(`Setting ${receiver} mode to ${mode}`);
         if (window.highlightButtons) highlightButtons(receiver, state.lastBand ? state.lastBand[receiver] : undefined, mode, state.lastAntenna ? state.lastAntenna[receiver] : undefined);
@@ -193,7 +192,7 @@ window.setMode = async function(receiver, mode) {
     }
 };
 
-window.setAntenna = async function(receiver, antenna) {
+window.setAntenna = async function (receiver, antenna) {
     if (window.pausePolling) pausePolling();
     try {
         console.log(`Setting ${receiver} antenna to ${antenna}`);
@@ -247,7 +246,7 @@ async function setPower(receiver, watts) {
     }
 };
 
-window.updatePowerDisplay = function() {
+window.updatePowerDisplay = function () {
     console.warn("updatePowerDisplay not implemented");
 };
 
@@ -308,7 +307,7 @@ async function pollInitStatus() {
         } else if (data.status === "error") {
             statusText.innerText = "Radio initialization failed. Please check connection and restart.";
             overlay.style.display = "block";
-            console.log("Redirecting to /Settings due to error status"); // Add this line
+            console.log("Redirecting to /Settings due to error status");
             window.location.href = "/Settings";
         } else {
             overlay.style.display = "block";
@@ -327,18 +326,6 @@ async function pollInitStatus() {
 function isTouchDevice() {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
-
-// Start polling on page load
-window.addEventListener('DOMContentLoaded', () => {
-    pollInitStatus();
-    fetchRadioStatus().then(() => {
-        updateFrequencyDisplay('A', state.lastBackendFreq.A);
-        updateFrequencyDisplay('B', state.lastBackendFreq.B);
-        initializeDigitInteraction('A');
-        initializeDigitInteraction('B');
-        updateBandButtonsFromBackend(); // <-- Add this line
-    });
-});
 
 window.radioControl = {
     setBand: window.setBand,
@@ -368,4 +355,38 @@ async function updateBandButtonsFromBackend() {
     } catch (error) {
         console.error('Error updating band buttons:', error);
     }
+}
+
+// Start polling and UI initialization on page load
+window.addEventListener('DOMContentLoaded', () => {
+    pollInitStatus();
+    fetchRadioStatus().then(() => {
+        updateFrequencyDisplay('A', state.lastBackendFreq.A);
+        updateFrequencyDisplay('B', state.lastBackendFreq.B);
+        initializeDigitInteraction('A');
+        initializeDigitInteraction('B');
+        updateBandButtonsFromBackend();
+    });
+});
+
+function changeSelectedDigit(receiver, delta) {
+    const display = document.getElementById('freq' + receiver);
+    let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
+    let idx = state.selectedIdx[receiver];
+    if (idx === null || !digits[idx]) return;
+    let freqArr = digits.map(d => parseInt(d.textContent));
+    let newVal = freqArr[idx] + delta;
+    if (newVal > 9) newVal = 0;
+    if (newVal < 0) newVal = 9;
+    freqArr[idx] = newVal;
+    let newFreq = parseInt(freqArr.join(''));
+    newFreq = Math.max(30000, Math.min(75000000, newFreq));
+    state.localFreq[receiver] = newFreq;
+    updateFrequencyDisplay(receiver, newFreq);
+    // Optionally send the new frequency to the backend
+    const displayElem = document.getElementById('freq' + receiver);
+    clearTimeout(displayElem._debounceTimer);
+    displayElem._debounceTimer = setTimeout(() => {
+        setFrequency(receiver, newFreq);
+    }, 200);
 }
