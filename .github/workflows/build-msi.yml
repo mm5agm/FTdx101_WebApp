@@ -16,8 +16,12 @@ jobs:
       - name: Install WiX Toolset 3.14
         shell: pwsh
         run: |
-          iwr -useb https://github.com/wixtoolset/wix/releases/download/v3.14.0/wix314.exe -OutFile wix.exe
-          Start-Process .\wix.exe -ArgumentList "/install","/quiet","/norestart" -Wait
+          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix/releases/download/v3.14.0/wix314.exe" -OutFile "wix.exe"
+          Start-Process -FilePath "$PWD\wix.exe" -ArgumentList "/install","/quiet","/norestart" -Wait -NoNewWindow
+          if (!(Test-Path 'C:\Program Files (x86)\WiX Toolset v3.14\bin\candle.exe')) {
+            Write-Error "WiX Toolset installation failed."
+            exit 1
+          }
 
       - name: Add WiX to PATH
         shell: pwsh
