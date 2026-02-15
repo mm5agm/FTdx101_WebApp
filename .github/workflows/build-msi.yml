@@ -27,9 +27,17 @@ jobs:
           dotnet restore
           dotnet publish -c Release -o publish
 
+      - name: Create output directories
+        shell: pwsh
+        run: |
+          mkdir wixobj_fd
+          mkdir wixobj_sc
+          mkdir output
+
       - name: Compile WiX (FD installer)
         shell: pwsh
         run: |
+          $VerbosePreference = "Continue"
           candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Service_FD.wxs -ext WixUtilExtension -o wixobj_fd/
 
       - name: Link WiX (FD MSI)
