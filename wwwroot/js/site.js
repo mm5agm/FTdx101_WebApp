@@ -112,6 +112,9 @@ function initializeDigitInteraction(receiver) {
         clearTimeout(display._debounceTimer);
         display._debounceTimer = setTimeout(() => {
             setFrequency(receiver, newFreq);
+            state.localFreq[receiver] = null;
+            state.editing[receiver] = false;
+            updateFrequencyDisplay(receiver, state.lastBackendFreq[receiver]);
         }, 200);
         e.preventDefault();
     }, { passive: false });

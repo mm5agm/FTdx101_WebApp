@@ -1,13 +1,13 @@
 {
-  "FrequencyA": 18110000,
-  "FrequencyB": 14074000,
-  "BandA": "17m",
-  "BandB": "20m",
+  "FrequencyA": 14074003,
+  "FrequencyB": 5357097,
+  "BandA": "20m",
+  "BandB": "60m",
   "ModeA": "USB",
   "ModeB": "USB",
   "AntennaA": "2",
   "AntennaB": "2",
-  "PowerA": 35,
+  "PowerA": 20,
   "PowerB": 0,
   "Controls": {}
 }
