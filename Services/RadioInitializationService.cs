@@ -1,5 +1,9 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using FTdx101_WebApp.Hubs;
 
@@ -33,6 +37,20 @@ namespace FTdx101_WebApp.Services
                 // 1. Connect and stop auto information
                 await multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate);
                 await multiplexer.DisableAutoInformationAsync();
+
+                // 1a. Verify radio is responding to CAT commands (FA;)
+                logger.LogInformation("[RadioInitializationService] Verifying radio response to FA; command...");
+                var faResponse = await multiplexer.SendCommandAsync("FA;", "Initialization", stoppingToken);
+                if (string.IsNullOrWhiteSpace(faResponse) || !faResponse.StartsWith("FA"))
+                {
+                    throw new Exception("No response from radio to FA; command. Initialization failed.");
+                }
+                logger.LogInformation("[RadioInitializationService] Radio responded to FA;: {Response}", faResponse);
+
+                // 1b. Restore full initialization sequence (send all CAT commands)
+                logger.LogInformation("[RadioInitializationService] Sending full initialization command sequence (GetInitialValues)...");
+                await multiplexer.GetInitialValues();
+                logger.LogInformation("[RadioInitializationService] Full initialization command sequence sent.");
 
                 // 2. Load persisted state from .json
                 var persistedState = statePersistence.Load();
