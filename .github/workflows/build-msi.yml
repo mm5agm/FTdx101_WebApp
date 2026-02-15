@@ -33,7 +33,7 @@ jobs:
       - name: Compile WiX (FD installer)
         shell: pwsh
         run: |
-          candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Features_FD.wsx installer/wix/Service_FD.wsx -ext WixUtilExtension -o wixobj_fd/
+          candle.exe installer/wix/Product_FD.wxs installer/wix/Directory.wxs installer/wix/Features_FD.wxs installer/wix/Service_FD.wxs -ext WixUtilExtension -o wixobj_fd/
 
       - name: Link WiX (FD MSI)
         shell: pwsh
@@ -43,7 +43,7 @@ jobs:
       - name: Compile WiX (SC installer)
         shell: pwsh
         run: |
-          candle.exe installer/wix/Product_SC.wxs installer/wix/Directory.wxs installer/wix/Features_SC.wsx installer/wix/Service_SC.wsx -ext WixUtilExtension -o wixobj_sc/
+          candle.exe installer/wix/Product_SC.wxs installer/wix/Directory.wxs installer/wix/Features_SC.wxs installer/wix/Service_SC.wxs -ext WixUtilExtension -o wixobj_sc/
 
       - name: Link WiX (SC MSI)
         shell: pwsh
