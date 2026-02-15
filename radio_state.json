@@ -7,7 +7,7 @@
   "ModeB": "USB",
   "AntennaA": "2",
   "AntennaB": "2",
-  "PowerA": 20,
+  "PowerA": 40,
   "PowerB": 0,
   "Controls": {}
 }
