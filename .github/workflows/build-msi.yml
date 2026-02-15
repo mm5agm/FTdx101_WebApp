@@ -1,4 +1,3 @@
-.github/workflows/build-msi.yml
 name: Build MSI Installers
 
 on:
