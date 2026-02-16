@@ -276,9 +276,9 @@ const connection = new signalR.HubConnectionBuilder()
     .withUrl("/radioHub")
     .build();
 
-connection.on("ShowSettingsPage", () => {
-    window.location.href = "/Settings";
-});
+connection.on("ShowSettingsPage", function () {
+         window.location.href = "/Settings";
+     });
 
 connection.on("RadioStateUpdate", function (update) {
     if (update.property === "FrequencyA") {

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using FTdx101_WebApp.Services;
 using Microsoft.AspNetCore.SignalR;
 using FTdx101_WebApp.Hubs; // Adjust namespace as needed
+using System.Diagnostics;
 
 // ADD THIS HELPER METHOD AT THE TOP
 static string GetBandFromFrequency(long frequencyHz)
@@ -68,6 +69,8 @@ builder.Services.AddRazorPages();
 // Force the web host to use port 8080 on all interfaces
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
+builder.Services.AddSingleton<BrowserLauncher>();
+
 var app = builder.Build();
 // Test: Manually trigger a [received] log
 var buffer = app.Services.GetRequiredService<CatMessageBuffer>();
@@ -107,3 +110,4 @@ using (var scope = app.Services.CreateScope())
     var multiplexer = services.GetRequiredService<CatMultiplexerService>();
     dispatcher.OnInitializationComplete = multiplexer.SignalInitializationComplete;
 }
+
