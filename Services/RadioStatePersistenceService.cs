@@ -16,8 +16,11 @@ namespace FTdx101_WebApp.Services
             IWebHostEnvironment env)
         {
             _logger = logger;
-            // Always use the app root for radio_state.json
-            _filePath = Path.Combine(env.ContentRootPath, "radio_state.json");
+
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var stateDir = Path.Combine(appDataPath, "MM5AGM", "FTdx101 WebApp");
+            Directory.CreateDirectory(stateDir);
+            _filePath = Path.Combine(stateDir, "radio_state.json");
         }
 
         public RadioState Load()
