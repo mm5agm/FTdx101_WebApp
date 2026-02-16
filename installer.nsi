@@ -16,6 +16,7 @@ Section "Install"
   SetOutPath "$INSTDIR"
   File /r "publish\*.*"
   CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\FTdx101_WebApp.exe"
+  CreateShortCut "$SMPROGRAMS\${APPNAME}.lnk" "$INSTDIR\FTdx101_WebApp.exe"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
  ; ExecShell "open" "http://localhost:8080"
 
@@ -30,6 +31,7 @@ SectionEnd
 
 Section "Uninstall"
   Delete "$DESKTOP\${APPNAME}.lnk"
+  Delete "$SMPROGRAMS\${APPNAME}.lnk"
   RMDir /r "$INSTDIR"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
 SectionEnd

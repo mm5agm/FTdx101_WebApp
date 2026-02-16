@@ -71,6 +71,10 @@ builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 builder.Services.AddSingleton<BrowserLauncher>();
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 var app = builder.Build();
 // Test: Manually trigger a [received] log
 var buffer = app.Services.GetRequiredService<CatMessageBuffer>();

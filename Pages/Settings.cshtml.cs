@@ -11,19 +11,24 @@ namespace FTdx101_WebApp.Pages
     {
         private readonly ISettingsService _settingsService;
         private readonly ILogger<SettingsModel> _logger;
+        private readonly RadioInitializationService _radioInitializationService;
 
         [BindProperty]
         public ApplicationSettings Settings { get; set; } = new();
 
         [TempData]
-        public string? StatusMessage { get; set; }
+        public string? StatusMessage { get; set; } = string.Empty;
 
         public List<string> NetworkAddresses { get; set; } = new();
 
-        public SettingsModel(ISettingsService settingsService, ILogger<SettingsModel> logger)
+        public SettingsModel(
+            ISettingsService settingsService,
+            ILogger<SettingsModel> logger,
+            RadioInitializationService radioInitializationService)
         {
             _settingsService = settingsService;
             _logger = logger;
+            _radioInitializationService = radioInitializationService;
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -53,6 +58,12 @@ namespace FTdx101_WebApp.Pages
             try
             {
                 await _settingsService.SaveSettingsAsync(Settings);
+
+                // Reset initialization status so app will try again
+                FTdx101_WebApp.Services.AppStatus.InitializationStatus = null;
+
+                // Automatic retry: trigger radio initialization
+                await _radioInitializationService.InitializeRadioAsync();
 
                 var accessInfo = Settings.WebAddress == "0.0.0.0"
                     ? "all network interfaces"

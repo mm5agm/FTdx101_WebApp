@@ -42,8 +42,13 @@ namespace FTdx101_WebApp.Pages
 
         public RadioStateViewModel State { get; set; } = new RadioStateViewModel();
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
         {
+            if (FTdx101_WebApp.Services.AppStatus.InitializationStatus == "error")
+            {
+                return RedirectToPage("/Settings");
+            }
+
             // VFO A (keep as is)
             State.vfoA.frequency = _radioStateService.FrequencyA;
             State.vfoA.band = _radioStateService.BandA;
@@ -56,10 +61,10 @@ namespace FTdx101_WebApp.Pages
             State.vfoB.frequency = _radioStateService.FrequencyB;
             State.vfoB.band = _radioStateService.BandB;
             State.vfoB.sMeter = _radioStateService.SMeterB ?? 0;
-            // REMOVE THIS LINE:
-            // State.vfoB.power = _radioStateService.PowerB;
             State.vfoB.mode = _radioStateService.ModeB ?? "";
             State.vfoB.antenna = _radioStateService.AntennaB ?? "";
+
+            return Page(); // <-- Add this line
         }
     }
 }

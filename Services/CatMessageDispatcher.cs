@@ -51,6 +51,19 @@ namespace FTdx101_WebApp.Services
             {
                 switch (command)
                 {
+                    case "FA":
+                        // Example: FA01420000;
+                        if (long.TryParse(message.Substring(2).TrimEnd(';'), out var freqA))
+                        {
+                            _stateService.FrequencyA = freqA;
+                        }
+                        break;
+                    case "FB":
+                        if (long.TryParse(message.Substring(2).TrimEnd(';'), out var freqB))
+                        {
+                            _stateService.FrequencyB = freqB;
+                        }
+                        break;
                     case "DT":
                         HandleInitialization(message);
                         break;
