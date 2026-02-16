@@ -6,6 +6,7 @@
 I wrote this application because I can't see the FTdx101MP controls without using a magnifying glass. As a ham who uses WSJT-X, JTAlert, and Log4OM, there are many controls on the radio that I simply never touch. This web-based interface gives me a clean, large, easy-to-read control panel for the functions I actually use day-to-day.
 
 I also use this application on my tablet, which provides a portable control panel in the shack. The large buttons and readable display work great on touchscreens, though the digit-by-digit frequency tuning feature (click digit + mouse wheel) hasn't been implemented for touch devices yet.
+## Important - You need .NET10 to run this application. Download it from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0 and install it before running.
 
 ## 🚀 Key Features
 - **Large, Accessible UI:** Clean, readable controls for frequency, band, mode, and antenna selection.
@@ -17,7 +18,7 @@ I also use this application on my tablet, which provides a portable control pane
   Log4OM, GridTracker, and other Hamlib-based tools can connect over TCP.  
   The web app is the only process that opens the radio’s serial port.
 
-- **WSJT-X Integration (UDP):**  
+- **WSJT-X Integration (UDP):**  ## On wish list.
   WSJT-X does not use rigctld over TCP. Instead, it communicates via UDP
   broadcasts and directed UDP commands. The web app listens for WSJT-X status
   messages and can respond to CAT control commands (frequency, mode, PTT, etc.)
@@ -52,7 +53,7 @@ This architecture change in transformed the app from sluggish polling to buttery
 
 - **Frequency Control:** Large, readable frequency display with interactive tuning
 - **Band Selection:** Quick access to all amateur bands (160m - 4m)
-- **Mode Selection:** LSB, USB, CW, FM, AM, DATA-USB, RTTY-USB, C4FM
+- **Mode Selection:** LSB, USB, CW, FM, AM, DATA-USB, RTTY-USB
 - **Antenna Switching:** Select between ANT 1, 2, or 3
 - **Power Control:** Adjustable power output (0-200W for FT-dx101MP)
 - **S-Meter Display:** Real-time analogue meter showing signal strength
@@ -75,6 +76,9 @@ If there's interest in this program, I'm open to suggestions for additional cont
 - Clarifier/RIT controls
 - Split operation
 - Memory management
+
+
+My next focus will be on integrating WSJT-X UDP control and status monitoring. 
 
 Suggestions are welcome!  
 Open an issue or discussion with your ideas.
@@ -103,14 +107,7 @@ Open an issue or discussion with your ideas.
 ## 📦 Download
 
 **Releases can be found at the [Releases Section](https://github.com/mm5agm/FTdx101_WebApp/releases).**  
-The latest builds include both self-contained and framework-dependent packages.  
-If you already gave .NET 10 a try, the framework-dependent version is smaller.
-
-•	FTdx101WebApp_sc.zip Self-contained build: This package includes the application and all required .NET 10 runtime files.  
-No separate .NET installation is needed—just extract and run on any supported Windows x64 system.  
-
-•	FTdx101WebApp_fd.zip Framework-dependent build: This package contains only the application files.  
-Requires .NET 10 runtime to be installed on the target system. The download is smaller, but you must have the correct .NET runtime already present.  
+The latest builds have only framework-dependent packages.  You will need to download .NET 10 separately if you don't have it already.
 
 You can get .NET 10 from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 ---
@@ -134,9 +131,7 @@ You can get .NET 10 from the official Microsoft website: https://dotnet.microsof
 
 ## 🙏 Acknowledgements
 
-- Martin Bradford G8MAB for suggesting Auto Information mode (AI1;).
-- The ham radio and open source communities for feedback and support.
-
+- Martin Bradford G8MAB for suggestions including  Auto Information mode (AI1;).
 ---
 
 73 de MM5AGM 📻

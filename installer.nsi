@@ -17,7 +17,7 @@ Section "Install"
   File /r "publish\*.*"
   CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\FTdx101_WebApp.exe"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
-  ExecShell "open" "http://localhost:8080"
+ ; ExecShell "open" "http://localhost:8080"
 
   ; Add uninstall information to Windows Apps & Features
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME} ${VERSION}"
