@@ -281,6 +281,14 @@ connection.on("ShowSettingsPage", function () {
      });
 
 connection.on("RadioStateUpdate", function (update) {
+    if (update.property === "ModeA") {
+        // Update the mode display for VFO A
+        document.getElementById("modeDisplayA").innerText = update.value;
+    }
+    if (update.property === "ModeB") {
+        // Update the mode display for VFO B
+        document.getElementById("modeDisplayB").innerText = update.value;
+    }
     if (update.property === "FrequencyA") {
         state.lastBackendFreq.A = update.value;
         updateFrequencyDisplay('A', update.value);

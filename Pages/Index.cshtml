@@ -87,6 +87,7 @@
                                 </div>
                             }
                         </div>
+                        <span id="modeDisplayA"></span>
                     </div>
                     <div class="mb-3">
                         <label>Antenna:</label>
@@ -146,7 +147,6 @@
                         @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER B -->
-                    
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">
@@ -164,6 +164,7 @@
                                 </div>
                             }
                         </div>
+                        <span id="modeDisplayB"></span>
                     </div>
                     <div class="mb-3">
                         <label>Antenna:</label>

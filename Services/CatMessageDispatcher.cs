@@ -67,6 +67,40 @@ namespace FTdx101_WebApp.Services
                     case "DT":
                         HandleInitialization(message);
                         break;
+                    case "MD":
+                        // Example: MD01; (VFO A, LSB), MD12; (VFO B, USB)
+                        if (message.Length >= 5)
+                        {
+                            var vfo = message[2]; // '0' for A, '1' for B
+                            var modeCode = message[3];
+                            string? mode = modeCode switch
+                            {
+                                '1' => "LSB",
+                                '2' => "USB",
+                                '3' => "CW-U",
+                                '4' => "FM",
+                                '5' => "AM",
+                                '6' => "RTTY-L",
+                                '7' => "CW-L",
+                                '8' => "DATA-L",
+                                '9' => "RTTY-U",
+                                'A' => "DATA-FM",
+                                'B' => "FM-N",
+                                'C' => "DATA-U",
+                                'D' => "AM-N",
+                                'E' => "PSK",
+                                'F' => "DATA-FM-N",
+                                _ => null
+                            };
+                            if (mode != null)
+                            {
+                                if (vfo == '0')
+                                    _stateService.ModeA = mode;
+                                else if (vfo == '1')
+                                    _stateService.ModeB = mode;
+                            }
+                        }
+                        break;
                     // No debug logging for unhandled commands
                 }
             }
