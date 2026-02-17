@@ -6,6 +6,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FTdx101_WebApp.Hubs;
+using System.Diagnostics; // Place at the top of the file if not already present
 
 namespace FTdx101_WebApp.Services
 {
@@ -109,8 +110,12 @@ namespace FTdx101_WebApp.Services
                 logger.LogInformation("[RadioInitializationService] InitializationStatus set to complete");
                 await _hubContext.Clients.All.SendAsync("InitializationStatus", "complete");
 
-                // On success, open main page
-                _browserLauncher.OpenOnce("http://localhost:8080");
+                // On success, open main page only in Production and not under debugger
+                if (!Debugger.IsAttached && 
+                    string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                {
+                    _browserLauncher.OpenOnce("http://localhost:8080");
+                }
             }
             catch (Exception ex)
             {
@@ -119,8 +124,12 @@ namespace FTdx101_WebApp.Services
                 await _hubContext.Clients.All.SendAsync("InitializationStatus", "error");
                 await _hubContext.Clients.All.SendAsync("ShowSettingsPage");
 
-                // On failure, open settings page
-                _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                // On failure, open settings page only in Production and not under debugger
+                if (!Debugger.IsAttached &&
+                    string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                {
+                    _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                }
             }
         }
 

@@ -58,7 +58,8 @@ builder.Services.AddHostedService<SMeterPollingService>();
 builder.Services.AddSingleton<IRadioStateService, RadioStateService>();
 
 // Register the radio initialization service
-builder.Services.AddHostedService<RadioInitializationService>();
+builder.Services.AddSingleton<RadioInitializationService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<RadioInitializationService>());
 
 // ADD SIGNALR:
 builder.Services.AddSignalR();
