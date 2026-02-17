@@ -2,6 +2,10 @@
 @model FTdx101_WebApp.Pages.IndexModel
 @{
     ViewData["Title"] = "FT-dx101 Series Control";
+    var allModes = new[] {
+        "LSB", "USB", "CW-U", "CW-L", "FM", "FM-N", "AM", "AM-N", "RTTY-L", "RTTY-U",
+        "DATA-L", "DATA-U", "DATA-FM", "DATA-FM-N", "PSK"
+    };
 }
 
 <!-- Cache-busted CSS reference -->
@@ -73,7 +77,7 @@
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">
-                            @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "DATA-USB", "RTTY-USB" })
+                            @foreach (var mode in new[] { "LSB", "USB", "CW-U", "CW-L", "FM", "FM-N", "AM", "AM-N", "RTTY-L", "RTTY-U", "DATA-L", "DATA-U", "DATA-FM", "DATA-FM-N", "PSK" })
                             {
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input"
@@ -150,7 +154,7 @@
                     <div class="mb-3">
                         <label>Mode:</label>
                         <div class="d-flex flex-wrap gap-2">
-                            @foreach (var mode in new[] { "LSB", "USB", "CW", "FM", "DATA-USB", "RTTY-USB" })
+                            @foreach (var mode in allModes)
                             {
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input"

@@ -175,15 +175,36 @@ window.setBand = async function (receiver, band) {
     }
 };
 
+const modeToCatCode = {
+    "LSB": "1",
+    "USB": "2",
+    "CW-U": "3",
+    "FM": "4",
+    "AM": "5",
+    "RTTY-L": "6",
+    "CW-L": "7",
+    "DATA-L": "8",
+    "RTTY-U": "9",
+    "DATA-FM": "A",
+    "FM-N": "B",
+    "DATA-U": "C",
+    "AM-N": "D",
+    "PSK": "E",
+    "DATA-FM-N": "F"
+};
+
 window.setMode = async function (receiver, mode) {
     try {
-        console.log(`Setting ${receiver} mode to ${mode}`);
-        if (window.highlightButtons) highlightButtons(receiver, state.lastBand ? state.lastBand[receiver] : undefined, mode, state.lastAntenna ? state.lastAntenna[receiver] : undefined);
-        if (state.lastMode) state.lastMode[receiver] = mode;
+        const catCode = modeToCatCode[mode];
+        if (!catCode) {
+            console.error("Unknown mode:", mode);
+            return;
+        }
+        console.log(`Setting ${receiver} mode to ${mode} (CAT code ${catCode})`);
         const response = await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode })
+            body: JSON.stringify({ mode: catCode }) // <-- must be catCode, not mode
         });
         if (!response.ok) {
             console.error('Failed to set mode:', await response.text());

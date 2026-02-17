@@ -26,6 +26,25 @@ namespace FTdx101_WebApp.Controllers
             { "10m", 28074000 }, { "6m", 50313000 }, { "4m", 70100000 }
         };
 
+        private static readonly Dictionary<string, string> CatCodeToMode = new()
+        {
+            { "1", "LSB" },
+            { "2", "USB" },
+            { "3", "CW-U" },
+            { "4", "FM" },
+            { "5", "AM" },
+            { "6", "RTTY-L" },
+            { "7", "CW-L" },
+            { "8", "DATA-L" },
+            { "9", "RTTY-U" },
+            { "A", "DATA-FM" },
+            { "B", "FM-N" },
+            { "C", "DATA-U" },
+            { "D", "AM-N" },
+            { "E", "PSK" },
+            { "F", "DATA-FM-N" }
+        };
+
         public CatController(
             ICatClient catClient,
             ISettingsService settingsService,
@@ -328,8 +347,8 @@ namespace FTdx101_WebApp.Controllers
             }
         }
 
-        [HttpPost("mode/a")]
-        public async Task<IActionResult> SetModeA([FromBody] ModeRequest request)
+        [HttpPost("mode/{receiver}")]
+        public async Task<IActionResult> SetMode(string receiver, [FromBody] ModeRequest request)
         {
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
@@ -337,43 +356,29 @@ namespace FTdx101_WebApp.Controllers
             try
             {
                 await EnsureConnectedAsync();
-                await _catClient.SetModeMainAsync(request.Mode);
+                string displayMode = CatCodeToMode.TryGetValue(request.Mode, out var modeName) ? modeName : request.Mode;
 
-                _radioStateService.ModeA = request.Mode;
+                if (receiver.ToUpper() == "A")
+                {
+                    await _catClient.SendCommandAsync($"MD0{request.Mode};", "User");
+                    _radioStateService.ModeA = displayMode;
+                }
+                else if (receiver.ToUpper() == "B")
+                {
+                    await _catClient.SendCommandAsync($"MD1{request.Mode};", "User");
+                    _radioStateService.ModeB = displayMode;
+                }
+                else
+                {
+                    return BadRequest(new { error = "Invalid receiver specified" });
+                }
 
-                _logger.LogInformation("Set Receiver A mode to {Mode}", request.Mode);
-                return Ok(new { message = $"Mode {request.Mode} selected" });
+                _logger.LogInformation("Sending CAT command: MD0{Mode}; for Receiver {Receiver}", request.Mode, receiver);
+                return Ok(new { message = $"Mode {displayMode} selected for Receiver {receiver}" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting Receiver A mode");
-                return StatusCode(500, new { error = "Failed to set mode" });
-            }
-            finally
-            {
-                _requestSemaphore.Release();
-            }
-        }
-
-        [HttpPost("mode/b")]
-        public async Task<IActionResult> SetModeB([FromBody] ModeRequest request)
-        {
-            if (!await _requestSemaphore.WaitAsync(2000))
-                return StatusCode(503, new { error = "Radio busy" });
-
-            try
-            {
-                await EnsureConnectedAsync();
-                await _catClient.SetModeSubAsync(request.Mode);
-
-                _radioStateService.ModeB = request.Mode;
-
-                _logger.LogInformation("Set Receiver B mode to {Mode}", request.Mode);
-                return Ok(new { message = $"Mode {request.Mode} selected" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error setting Receiver B mode");
+                _logger.LogError(ex, "Error setting Receiver {Receiver} mode", receiver);
                 return StatusCode(500, new { error = "Failed to set mode" });
             }
             finally
