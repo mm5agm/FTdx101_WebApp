@@ -314,6 +314,23 @@ connection.on("RadioStateUpdate", function (update) {
         state.lastBackendFreq.B = update.value;
         updateFrequencyDisplay('B', update.value);
     }
+    if (update.property === "PowerA") {
+        updatePowerDisplay("A", update.value);
+        const sliderA = document.getElementById('powerSliderA');
+        if (sliderA) sliderA.value = update.value;
+    }
+    if (update.property === "PowerB") {
+        updatePowerDisplay("B", update.value);
+        const sliderB = document.getElementById('powerSliderB');
+        if (sliderB) sliderB.value = update.value;
+    }
+    // If you use a generic "Power" property:
+    if (update.property === "Power") {
+        // Update both, or whichever is appropriate for your app
+        updatePowerDisplay("A", update.value);
+        const sliderA = document.getElementById('powerSliderA');
+        if (sliderA) sliderA.value = update.value;
+    }
 });
 
 connection.start();
@@ -718,6 +735,12 @@ function changeSelectedDigit(receiver, delta) {
         if (display) {
             display.textContent = watts + 'W';
         }
+        const slider = document.getElementById('powerSlider' + receiver);
+        if (slider) {
+            slider.value = watts;
+        }
+        // Optionally update state
+        if (state.lastPower) state.lastPower[receiver] = watts;
     }
 
     async function setPower(receiver, watts) {

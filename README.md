@@ -6,12 +6,30 @@
 I wrote this application because I can't see the FTdx101MP controls without using a magnifying glass. As a ham who uses WSJT-X, JTAlert, and Log4OM, there are many controls on the radio that I simply never touch. This web-based interface gives me a clean, large, easy-to-read control panel for the functions I actually use day-to-day.
 
 I also use this application on my tablet, which provides a portable control panel in the shack. The large buttons and readable display work great on touchscreens, though the digit-by-digit frequency tuning feature (click digit + mouse wheel) hasn't been implemented for touch devices yet.
+
 ## Important - You need .NET10 to run this application. Download it from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0 and install it before running.
 
+## ⚠️ Limitations
+
+- **Windows Only:** Serial port implementation currently requires Windows due to .NET 10 SerialPort limitations.
+- **Touch Frequency Tuning:** Digit-by-digit frequency tuning not yet implemented for touch devices.
+- **Single Radio:** Designed for controlling one radio at a time.
+- **Linux:** Won't be implemented by me due to serial port implementation issues in .NET 10.
+- **No Memory Management:** Per-band memory and memory channel management are not yet implemented.
+- **No WSJT-X UDP Integration:** WSJT-X UDP control and status monitoring are on the roadmap but not yet available.
+- **No Filter Controls:** Filter width and shift controls are not currently implemented.
+- **No Antenna Update in the APP.** If the user changes the antenna selection on the radio, the app will not reflect this change.
 ## 🚀 Key Features
+- **CAT Control:** Full control over frequency, mode, band, and antenna selection via the radio's CAT interface.
+- **Radio changes reflected in real time:** Thanks to the use of Auto Information mode, apart from antenna changes, changes made on the radio (frequency, mode, band, etc.) are immediately reflected in the web app with minimal latency.
+- **Band Selection:** Quick access to all amateur bands from 160m to 4m. Note Bands are UK-centric and may not reflect all international band plans.
+- **Power Control:** Adjust the radio's power output directly from the web interface.
+- **Real-Time S-Meter:** Live updates of signal strength with an analog-style meter.
+- **Reactive State Management:** Real-time updates for all radio parameters with minimal latency.
+- **Built-in CAT Multiplexer:** The web app is the only process that opens the radio’s serial port, eliminating conflicts with other applications.
+- **Real-Time Control:** Almost Instant updates for frequency, mode, band, and antenna changes.
 - **Large, Accessible UI:** Clean, readable controls for frequency, band, mode, and antenna selection.
 - **Dual Receiver Support:** Independent control and display for VFO A and VFO B.
-- **Live S-Meter ** Real-time analog-style meters. Power and ALC to come if requested
 - **Auto Information Mode (AI1;):** The app enables the radio’s Auto Information mode, so the radio streams status updates (frequency, mode, S-meter, etc.) automatically to the web app for low-latency, real-time updates.
 - **TCP Integration (rigctld-compatible):**  
   The web app exposes a TCP rigctld-compatible CAT server. Applications such as
@@ -53,7 +71,7 @@ This architecture change in transformed the app from sluggish polling to buttery
 
 - **Frequency Control:** Large, readable frequency display with interactive tuning
 - **Band Selection:** Quick access to all amateur bands (160m - 4m)
-- **Mode Selection:** LSB, USB, CW, FM, AM, DATA-USB, RTTY-USB
+- **Mode Selection:** All modes available but this makes the screen cluttered, so I may implement a mode filter in the future.
 - **Antenna Switching:** Select between ANT 1, 2, or 3
 - **Power Control:** Adjustable power output (0-200W for FT-dx101MP)
 - **S-Meter Display:** Real-time analogue meter showing signal strength
