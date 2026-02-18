@@ -1,9 +1,43 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿// FTdx101 Web App - site.js
+// =============================================================================
+// This file has two main sections:
+//
+//  1. A small block of globals (lines ~1-400) that were written early in the
+//     project: the outer `state`, outer `fetchRadioStatus`, outer SignalR
+//     handler, and the outer pollInitStatus / DOMContentLoaded wiring.
+//
+//  2. An IIFE (Immediately Invoked Function Expression) block that contains the
+//     full, authoritative implementation: its own inner `state`, all the real
+//     polling logic, highlightButtons, gauge init, etc.
+//
+// The outer globals are kept because the Razor pages call window.setBand,
+// window.setMode, window.setAntenna, and window.radioControl directly via
+// inline onchange="..." attributes, and the IIFE overwrites window.radioControl
+// at the end with the real implementations.
+//
+// THE BUG THAT WAS FIXED:
+// When the radio itself changed mode (e.g. the user turned the MODE knob on
+// the front panel), the backend sent a SignalR "RadioStateUpdate" with
+// property="ModeA" / "ModeB".  The handler only updated the modeDisplayA/B
+// <span> element (the text label under the buttons), but never set .checked
+// on the corresponding <input type="radio"> button.  So the text changed but
+// the selected button did not move.
+//
+// Fix is in the first SignalR handler (~line 300) and the second one
+// (~line 1017): both now call updateModeRadioButton() which sets .checked
+// on the matching input[name="modeA/B"] element.
+// =============================================================================
 
-// --- Frequency digit interaction logic ---
+// ---------------------------------------------------------------------------
+// OUTER GLOBALS
+// These exist because the Razor page's inline onchange handlers fire before
+// the IIFE runs, so window.setBand / setMode / setAntenna must be defined
+// at global scope.  The IIFE later replaces window.radioControl with its
+// own (better) versions.
+// ---------------------------------------------------------------------------
 
-// Unified global state object
+// Outer state - used only by the outer helpers below.
+// The IIFE has its own richer state object that drives the real UI.
 const state = {
     selectedIdx: { A: null, B: null },
     editing: { A: false, B: false },
@@ -11,7 +45,7 @@ const state = {
     lastBackendFreq: { A: null, B: null }
 };
 
-// Frequency display renderer
+// Frequency display renderer (outer version, used by outer updateFrequencyDisplay)
 function updateFrequencyDisplay(receiver, freqHz) {
     const display = document.getElementById('freq' + receiver);
     if (!display) {
@@ -26,7 +60,7 @@ function updateFrequencyDisplay(receiver, freqHz) {
 }
 
 function renderFrequencyDigits(freq, selIdx) {
-    // Show dashes for frequencies less than 100 Hz
+    // Show dashes if no valid frequency yet
     if (!freq || isNaN(freq) || freq < 100) {
         return '<span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
     }
@@ -44,7 +78,7 @@ function renderFrequencyDigits(freq, selIdx) {
     return html;
 }
 
-// Main interaction initializer
+// Outer digit interaction initializer (touch/pointer support)
 function initializeDigitInteraction(receiver) {
     const display = document.getElementById('freq' + receiver);
     const controls = document.getElementById('freq' + receiver + '-controls');
@@ -155,6 +189,7 @@ function initializeDigitInteraction(receiver) {
     });
 }
 
+// Outer band setter - called from Razor inline onchange on band buttons
 window.setBand = async function (receiver, band) {
     try {
         console.log(`Setting ${receiver} band to ${band}`);
@@ -175,6 +210,7 @@ window.setBand = async function (receiver, band) {
     }
 };
 
+// Mode name -> CAT protocol code mapping (used by both outer and IIFE setMode)
 const modeToCatCode = {
     "LSB": "1",
     "USB": "2",
@@ -193,6 +229,7 @@ const modeToCatCode = {
     "DATA-FM-N": "F"
 };
 
+// Outer mode setter - called from Razor inline onchange on mode radio buttons
 window.setMode = async function (receiver, mode) {
     const catCode = modeToCatCode[mode];
     if (!catCode) {
@@ -212,6 +249,7 @@ window.setMode = async function (receiver, mode) {
     }
 };
 
+// Outer antenna setter - called from Razor inline onchange on antenna buttons
 window.setAntenna = async function (receiver, antenna) {
     if (window.pausePolling) pausePolling();
     try {
@@ -233,6 +271,7 @@ window.setAntenna = async function (receiver, antenna) {
     }
 };
 
+// Outer power slider max updater
 function updatePowerSliderMax(maxPower) {
     const sliderA = document.getElementById('powerSliderA');
     const sliderB = document.getElementById('powerSliderB');
@@ -245,6 +284,7 @@ function updatePowerSliderMax(maxPower) {
     if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
 }
 
+// Outer power setter (stub - real version is inside the IIFE)
 async function setPower(receiver, watts) {
     const maxPower = state.radioModel === 'FTdx101MP' ? 200 : 100;
     const power = Math.max(5, Math.min(parseInt(watts), maxPower));
@@ -253,7 +293,7 @@ async function setPower(receiver, watts) {
         const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ Watts: power }) // Only Watts, not Power
+            body: JSON.stringify({ Watts: power })
         });
         if (!response.ok) {
             console.error('Failed to set power:', await response.text());
@@ -264,12 +304,15 @@ async function setPower(receiver, watts) {
     } catch (error) {
         console.error('Error setting power:', error);
     }
-};
+}
 
+// Placeholder - replaced by the IIFE's real implementation once it runs
 window.updatePowerDisplay = function () {
     console.warn("updatePowerDisplay not implemented");
 };
 
+// Outer fetchRadioStatus - minimal version, only updates frequencies.
+// The IIFE's version does the full job (S-meter, band, mode, antenna, power).
 async function fetchRadioStatus() {
     try {
         const response = await fetch('/api/cat/status');
@@ -288,24 +331,64 @@ async function fetchRadioStatus() {
     }
 }
 
-// SignalR connection for backend events
+// ---------------------------------------------------------------------------
+// SignalR connection - shared by both the outer handler below and the
+// second handler at the bottom of the file (after the IIFE).
+// ---------------------------------------------------------------------------
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("/radioHub")
     .build();
 
+// Redirect to Settings page if the backend signals an init failure
 connection.on("ShowSettingsPage", function () {
-         window.location.href = "/Settings";
-     });
+    window.location.href = "/Settings";
+});
 
+// ---------------------------------------------------------------------------
+// BUG FIX: updateModeRadioButton
+// ---------------------------------------------------------------------------
+// When the radio's mode changes (e.g. user turns the front-panel MODE knob),
+// the backend dispatches a SignalR "RadioStateUpdate" with property="ModeA"
+// or "ModeB" and value="USB" (or whatever the new mode string is).
+//
+// Previously both SignalR handlers only updated the <span id="modeDisplayA">
+// text label beneath the buttons.  They never touched the actual
+// <input type="radio" name="modeA" value="USB"> elements, so the buttons
+// showed the old selection even though the text had changed.
+//
+// This helper finds the correct radio input and sets .checked = true, which
+// is all that's needed to move the visual selection.
+// ---------------------------------------------------------------------------
+function updateModeRadioButton(receiver, mode) {
+    // Selects e.g. input[name="modeA"][value="USB"]
+    const radioBtn = document.querySelector(`input[name="mode${receiver}"][value="${mode}"]`);
+    if (radioBtn) {
+        radioBtn.checked = true;
+    } else {
+        // Mode string from the radio may not exactly match a button value
+        // (e.g. the radio sends "CW-U" but buttons use "CW-U" - should be fine,
+        // but log a warning if nothing matches so it's easy to diagnose)
+        console.warn(`updateModeRadioButton: no button found for mode${receiver} = "${mode}"`);
+    }
+}
+
+// First SignalR RadioStateUpdate handler (outer scope).
+// Handles ModeA/B, FrequencyA/B, PowerA/B updates pushed from the backend.
 connection.on("RadioStateUpdate", function (update) {
+    // --- MODE CHANGE (THE BUG FIX) ---
+    // Update both the text label AND the radio button checked state.
     if (update.property === "ModeA") {
-        // Update the mode display for VFO A
-        document.getElementById("modeDisplayA").innerText = update.value;
+        const span = document.getElementById("modeDisplayA");
+        if (span) span.innerText = update.value;
+        updateModeRadioButton('A', update.value); // <-- FIX: was missing
     }
     if (update.property === "ModeB") {
-        // Update the mode display for VFO B
-        document.getElementById("modeDisplayB").innerText = update.value;
+        const span = document.getElementById("modeDisplayB");
+        if (span) span.innerText = update.value;
+        updateModeRadioButton('B', update.value); // <-- FIX: was missing
     }
+
+    // --- FREQUENCY CHANGE ---
     if (update.property === "FrequencyA") {
         state.lastBackendFreq.A = update.value;
         updateFrequencyDisplay('A', update.value);
@@ -314,6 +397,8 @@ connection.on("RadioStateUpdate", function (update) {
         state.lastBackendFreq.B = update.value;
         updateFrequencyDisplay('B', update.value);
     }
+
+    // --- POWER CHANGE ---
     if (update.property === "PowerA") {
         updatePowerDisplay("A", update.value);
         const sliderA = document.getElementById('powerSliderA');
@@ -324,18 +409,24 @@ connection.on("RadioStateUpdate", function (update) {
         const sliderB = document.getElementById('powerSliderB');
         if (sliderB) sliderB.value = update.value;
     }
-    // If you use a generic "Power" property:
+    // Generic "Power" fallback (maps to receiver A)
     if (update.property === "Power") {
-        // Update both, or whichever is appropriate for your app
         updatePowerDisplay("A", update.value);
         const sliderA = document.getElementById('powerSliderA');
         if (sliderA) sliderA.value = update.value;
     }
 });
 
+// Start the SignalR connection (errors logged to console only)
 connection.start();
 
-// Initialization status polling and overlay logic
+// ---------------------------------------------------------------------------
+// Initialization overlay polling
+// Polls /api/status/init every second until status is "complete" or "error".
+// Defined here (outer scope) so it runs immediately on page load, and also
+// redefined identically inside the IIFE scope for the second pollInitStatus()
+// call at the bottom of the file.
+// ---------------------------------------------------------------------------
 async function pollInitStatus() {
     try {
         const response = await fetch('/api/status/init');
@@ -359,7 +450,7 @@ async function pollInitStatus() {
         }
 
         if (data.status !== "complete") {
-            setTimeout(pollInitStatus, 1000); // poll again in 1s
+            setTimeout(pollInitStatus, 1000);
         }
     } catch (error) {
         console.error('Error polling init status:', error);
@@ -367,11 +458,12 @@ async function pollInitStatus() {
     }
 }
 
-// Touch device detection
+// Touch device detection helper
 function isTouchDevice() {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
+// Interim radioControl - overwritten by the IIFE below once it executes
 window.radioControl = {
     setBand: window.setBand,
     setMode: window.setMode,
@@ -380,18 +472,17 @@ window.radioControl = {
     updatePowerDisplay: window.updatePowerDisplay
 };
 
+// Fetch and apply band button state from the backend on page load
 async function updateBandButtonsFromBackend() {
     try {
         const response = await fetch('/api/cat/status');
         if (!response.ok) return;
         const data = await response.json();
-        // Update band A
         if (data.vfoA && data.vfoA.band) {
             document.querySelectorAll('input[name="band-A"]').forEach(radio => {
                 radio.checked = (radio.value.toLowerCase() === data.vfoA.band.toLowerCase());
             });
         }
-        // Update band B
         if (data.vfoB && data.vfoB.band) {
             document.querySelectorAll('input[name="band-B"]').forEach(radio => {
                 radio.checked = (radio.value.toLowerCase() === data.vfoB.band.toLowerCase());
@@ -402,7 +493,7 @@ async function updateBandButtonsFromBackend() {
     }
 }
 
-// Start polling and UI initialization on page load
+// Outer DOMContentLoaded - initial UI wiring
 window.addEventListener('DOMContentLoaded', () => {
     pollInitStatus();
     fetchRadioStatus().then(() => {
@@ -414,6 +505,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Touch up/down button handler for mobile frequency editing
 function changeSelectedDigit(receiver, delta) {
     const display = document.getElementById('freq' + receiver);
     let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
@@ -428,21 +520,30 @@ function changeSelectedDigit(receiver, delta) {
     newFreq = Math.max(30000, Math.min(75000000, newFreq));
     state.localFreq[receiver] = newFreq;
     updateFrequencyDisplay(receiver, newFreq);
-    // Optionally send the new frequency to the backend
     const displayElem = document.getElementById('freq' + receiver);
     clearTimeout(displayElem._debounceTimer);
     displayElem._debounceTimer = setTimeout(() => {
         setFrequency(receiver, newFreq);
     }, 200);
 }
+
+// ===========================================================================
+// IIFE - Full authoritative implementation
+// ===========================================================================
+// Everything inside this block is the "real" app logic. It defines its own
+// inner state, all the polling/display/gauge functions, and at the end
+// overwrites window.radioControl so Razor inline handlers call these
+// better-implemented versions.
+// ===========================================================================
 (function () {
     'use strict';
 
     console.log('=== FTdx101 Control Interface Starting ===');
 
-    // Gauge instances
+    // Gauge instances (canvas-gauge RadialGauge)
     let gaugeA, gaugeB;
 
+    // Full inner state object - this is the authoritative state for the app
     const state = {
         editing: { A: false, B: false },
         editingPower: { A: false, B: false },
@@ -485,19 +586,31 @@ function changeSelectedDigit(receiver, delta) {
             return;
         }
         let selIdx = state.selectedIdx[receiver];
-        let freqToShow = (state.editing[receiver] && state.localFreq[receiver] !== null) ? state.localFreq[receiver] : freqHz;
+        let freqToShow = (state.editing[receiver] && state.localFreq[receiver] !== null)
+            ? state.localFreq[receiver]
+            : freqHz;
         display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
     }
 
+    // Update band, mode, and antenna radio/toggle buttons to reflect current state.
+    // NOTE: The Razor page renders mode buttons as <input type="radio" name="modeA" value="USB">
+    // and band/antenna buttons similarly.  We update .checked directly.
     function highlightButtons(receiver, band, mode, antenna) {
-        document.querySelectorAll(`.band-btn[data-receiver="${receiver}"]`).forEach(btn => {
-            btn.classList.toggle('active', btn.getAttribute('data-value') === band);
+        // Band buttons (rendered by _BandButtonsPartial as input[name="band-A/B"])
+        document.querySelectorAll(`input[name="band-${receiver}"]`).forEach(btn => {
+            btn.checked = (btn.value === band);
         });
-        document.querySelectorAll(`.mode-btn[data-receiver="${receiver}"]`).forEach(btn => {
-            btn.classList.toggle('active', btn.getAttribute('data-value') === mode);
+
+        // Mode buttons - update the radio input checked state
+        // This is the same logic as updateModeRadioButton() in the outer scope,
+        // duplicated here so the inner polling loop also keeps buttons in sync.
+        document.querySelectorAll(`input[name="mode${receiver}"]`).forEach(btn => {
+            btn.checked = (btn.value === mode);
         });
-        document.querySelectorAll(`.antenna-btn[data-receiver="${receiver}"]`).forEach(btn => {
-            btn.classList.toggle('active', btn.getAttribute('data-value') === antenna);
+
+        // Antenna buttons
+        document.querySelectorAll(`input[name="antenna${receiver}"]`).forEach(btn => {
+            btn.checked = (btn.value === antenna);
         });
     }
 
@@ -668,6 +781,7 @@ function changeSelectedDigit(receiver, delta) {
         }
     }
 
+    // Full status poll - updates frequencies, S-meter, band/mode/antenna buttons, and power
     async function fetchRadioStatus() {
         if (state.operationInProgress) {
             console.log('Skipping poll - operation in progress');
@@ -705,6 +819,7 @@ function changeSelectedDigit(receiver, delta) {
                 updatePowerSlider('B', data.vfoB.power);
             }
 
+            // Stop showing local frequency once backend confirms our sent value
             if (state.editing.A && state.lastSentFreq.A !== null && state.localFreq.A === null && data.vfoA.frequency === state.lastSentFreq.A) {
                 state.editing.A = false;
                 state.selectedIdx.A = null;
@@ -722,6 +837,8 @@ function changeSelectedDigit(receiver, delta) {
 
             updateSMeter('A', data.vfoA.sMeter);
             updateSMeter('B', data.vfoB.sMeter);
+
+            // highlightButtons now updates the radio inputs directly (see function above)
             highlightButtons('A', data.vfoA.band, data.vfoA.mode, data.vfoA.antenna);
             highlightButtons('B', data.vfoB.band, data.vfoB.mode, data.vfoB.antenna);
         } catch (error) {
@@ -729,7 +846,7 @@ function changeSelectedDigit(receiver, delta) {
         }
     }
 
-    // Power control functions
+    // Power display helpers
     function updatePowerDisplay(receiver, watts) {
         const display = document.getElementById('powerValue' + receiver);
         if (display) {
@@ -739,7 +856,6 @@ function changeSelectedDigit(receiver, delta) {
         if (slider) {
             slider.value = watts;
         }
-        // Optionally update state
         if (state.lastPower) state.lastPower[receiver] = watts;
     }
 
@@ -765,7 +881,7 @@ function changeSelectedDigit(receiver, delta) {
 
     function updatePowerSlider(receiver, watts) {
         if (state.editingPower && state.editingPower[receiver]) {
-            return; // Don't update while user is editing
+            return; // Don't update while user is dragging the slider
         }
         const slider = document.getElementById('powerSlider' + receiver);
         if (slider) {
@@ -786,7 +902,7 @@ function changeSelectedDigit(receiver, delta) {
         if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
     }
 
-    // S-Meter rendering (simplified for brevity)
+    // S-Meter label interpolation
     function sMeterLabel(val) {
         const points = [
             { label: "S0", value: 0 },
@@ -838,11 +954,59 @@ function changeSelectedDigit(receiver, delta) {
         }
     }
 
-    // S-Meter Gauge Initialization
+    // Shared gauge config - avoids repeating the same big options object twice
+    function makeGaugeConfig(canvasId) {
+        return {
+            renderTo: canvasId,
+            width: 560,
+            height: 180,
+            units: "",
+            minValue: 0,
+            maxValue: 255,
+            startAngle: 90,
+            ticksAngle: 180,
+            valueBox: false,
+            majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+            minorTicks: 0,
+            strokeTicks: false,
+            tickSide: "out",
+            needleSide: "center",
+            highlights: [
+                { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
+                { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
+            ],
+            colorPlate: "#ffffff",
+            borderShadowWidth: 0,
+            borders: false,
+            needleShadow: false,
+            colorMajorTicks: "#555555",
+            colorMinorTicks: "transparent",
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorBarProgress: "#198754",
+            colorBarProgressEnd: "#198754",
+            colorBar: "#dddddd",
+            barShadow: 0,
+            barWidth: 10,
+            barStrokeWidth: 0,
+            needleType: "arrow",
+            needleWidth: 3,
+            needleCircleSize: 7,
+            needleCircleOuter: false,
+            needleCircleInner: true,
+            colorNeedleCircleInner: "#dc3545",
+            colorNeedleCircleInnerEnd: "#dc3545",
+            animationDuration: 400,
+            animationRule: "linear",
+            value: 0
+        };
+    }
+
     function initializeGauges() {
         const gaugeWidth = 560;
         const gaugeHeight = 180;
 
+        // Overlay readable S-unit labels on top of the canvas gauge
         function createGaugeLabels(canvasId, labels) {
             const canvas = document.getElementById(canvasId);
             if (!canvas || canvas.nextElementSibling?.classList.contains('gauge-labels-overlay')) {
@@ -851,10 +1015,7 @@ function changeSelectedDigit(receiver, delta) {
 
             const wrapper = document.createElement('div');
             wrapper.className = 'gauge-wrapper';
-            wrapper.style.position = 'relative';
-            wrapper.style.display = 'inline-block';
-            wrapper.style.width = gaugeWidth + 'px';
-            wrapper.style.height = gaugeHeight + 'px';
+            wrapper.style.cssText = `position:relative;display:inline-block;width:${gaugeWidth}px;height:${gaugeHeight}px`;
 
             const labelsDiv = document.createElement('div');
             labelsDiv.className = 'gauge-labels-overlay';
@@ -862,12 +1023,10 @@ function changeSelectedDigit(receiver, delta) {
             const centerX = gaugeWidth / 2;
             const centerY = gaugeHeight - 85;
             const radius = gaugeWidth * 0.17;
-            const startAngle = 180;
-            const endAngle = 0;
-            const angleStep = (startAngle - endAngle) / (labels.length - 1);
+            const angleStep = 180 / (labels.length - 1);
 
             labels.forEach((label, index) => {
-                const angle = startAngle - (angleStep * index);
+                const angle = 180 - (angleStep * index);
                 const radians = (angle * Math.PI) / 180;
                 const x = centerX + radius * Math.cos(radians);
                 const y = centerY - radius * Math.sin(radians);
@@ -885,123 +1044,38 @@ function changeSelectedDigit(receiver, delta) {
             wrapper.appendChild(labelsDiv);
         }
 
-        gaugeA = new RadialGauge({
-            renderTo: 'sMeterCanvasA',
-            width: gaugeWidth,
-            height: gaugeHeight,
-            units: "",
-            minValue: 0,
-            maxValue: 255,
-            startAngle: 90,
-            ticksAngle: 180,
-            valueBox: false,
-            majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
-            minorTicks: 0,
-            strokeTicks: false,
-            tickSide: "out",
-            needleSide: "center",
-            highlights: [
-                { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
-                { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
-            ],
-            colorPlate: "#ffffff",
-            borderShadowWidth: 0,
-            borders: false,
-            needleShadow: false,
-            colorMajorTicks: "#555555",
-            colorMinorTicks: "transparent",
-            colorNumbers: "transparent",
-            fontNumbersSize: 0,
-            colorBarProgress: "#198754",
-            colorBarProgressEnd: "#198754",
-            colorBar: "#dddddd",
-            barShadow: 0,
-            barWidth: 10,
-            barStrokeWidth: 0,
-            needleType: "arrow",
-            needleWidth: 3,
-            needleCircleSize: 7,
-            needleCircleOuter: false,
-            needleCircleInner: true,
-            colorNeedleCircleInner: "#dc3545",
-            colorNeedleCircleInnerEnd: "#dc3545",
-            animationDuration: 400,
-            animationRule: "linear",
-            value: 0
-        });
+        gaugeA = new RadialGauge(makeGaugeConfig('sMeterCanvasA'));
         gaugeA.draw();
+
+        gaugeB = new RadialGauge(makeGaugeConfig('sMeterCanvasB'));
+        gaugeB.draw();
 
         const labels = ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"];
         createGaugeLabels('sMeterCanvasA', labels);
-
-        gaugeB = new RadialGauge({
-            renderTo: 'sMeterCanvasB',
-            width: gaugeWidth,
-            height: gaugeHeight,
-            units: "",
-            minValue: 0,
-            maxValue: 255,
-            startAngle: 90,
-            ticksAngle: 180,
-            valueBox: false,
-            majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
-            minorTicks: 0,
-            strokeTicks: false,
-            tickSide: "out",
-            needleSide: "center",
-            highlights: [
-                { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
-                { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
-            ],
-            colorPlate: "#ffffff",
-            borderShadowWidth: 0,
-            borders: false,
-            needleShadow: false,
-            colorMajorTicks: "#555555",
-            colorMinorTicks: "transparent",
-            colorNumbers: "transparent",
-            fontNumbersSize: 0,
-            colorBarProgress: "#198754",
-            colorBarProgressEnd: "#198754",
-            colorBar: "#dddddd",
-            barShadow: 0,
-            barWidth: 10,
-            barStrokeWidth: 0,
-            needleType: "arrow",
-            needleWidth: 3,
-            needleCircleSize: 7,
-            needleCircleOuter: false,
-            needleCircleInner: true,
-            colorNeedleCircleInner: "#dc3545",
-            colorNeedleCircleInnerEnd: "#dc3545",
-            animationDuration: 400,
-            animationRule: "linear",
-            value: 0
-        });
-        gaugeB.draw();
-
         createGaugeLabels('sMeterCanvasB', labels);
     }
 
-    // Call initialization
+    // Kick everything off
     initializeGauges();
     initializeDigitInteraction('A');
     initializeDigitInteraction('B');
     fetchRadioStatus();
     state.pollingInterval = setInterval(fetchRadioStatus, 500);
 
+    // Overwrite the interim window.radioControl with the real implementations
     window.radioControl = {
         setFrequency,
         setBand,
         setMode,
         setAntenna,
+        // Wrap updatePowerDisplay so we flag editingPower while the user is dragging
         updatePowerDisplay: (receiver, value) => {
             state.editingPower[receiver] = true;
             updatePowerDisplay(receiver, value);
         },
         setPower: async (receiver, value) => {
             state.editingPower[receiver] = true;
-            setPower(receiver, value);
+            await setPower(receiver, value);
             clearTimeout(state.editingPowerTimeout);
             state.editingPowerTimeout = setTimeout(() => {
                 state.editingPower[receiver] = false;
@@ -1009,11 +1083,16 @@ function changeSelectedDigit(receiver, delta) {
             }, 1000);
         }
     };
+
 })();
 
-// SignalR integration for live updates
-
-
+// ===========================================================================
+// Second SignalR RadioStateUpdate handler (post-IIFE)
+// ===========================================================================
+// This handler is registered after the IIFE so it runs alongside the first
+// one at the top of the file.  It handles FrequencyA/B updates for the inner
+// state, and also applies the mode button fix via updateModeRadioButton().
+// ===========================================================================
 connection.on("RadioStateUpdate", function (update) {
     if (update.property && update.value !== undefined) {
         if (update.property === "FrequencyA") {
@@ -1022,7 +1101,16 @@ connection.on("RadioStateUpdate", function (update) {
         if (update.property === "FrequencyB") {
             updateFrequencyDisplay('B', update.value);
         }
-        // Add more property handlers as needed
+        // --- MODE CHANGE (THE BUG FIX - second handler) ---
+        // The first handler (top of file) already covers ModeA/B,
+        // but we include it here too in case handler registration order
+        // ever changes, so the fix is robust.
+        if (update.property === "ModeA") {
+            updateModeRadioButton('A', update.value);
+        }
+        if (update.property === "ModeB") {
+            updateModeRadioButton('B', update.value);
+        }
     }
 });
 
@@ -1030,6 +1118,7 @@ connection.start().catch(function (err) {
     return console.error(err.toString());
 });
 
+// Second pollInitStatus definition for the bottom-of-file call
 async function pollInitStatus() {
     try {
         const response = await fetch('/api/status/init');
@@ -1051,13 +1140,15 @@ async function pollInitStatus() {
         }
 
         if (data.status !== "complete") {
-            setTimeout(pollInitStatus, 1000); // poll again in 1s
+            setTimeout(pollInitStatus, 1000);
         }
     } catch (error) {
         console.error('Error polling init status:', error);
         setTimeout(pollInitStatus, 2000);
     }
 }
+
+// Show touch frequency controls on mobile
 document.addEventListener('DOMContentLoaded', function () {
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
         var aControls = document.getElementById('freqA-controls');
@@ -1066,4 +1157,5 @@ document.addEventListener('DOMContentLoaded', function () {
         if (bControls) bControls.style.display = '';
     }
 });
+
 pollInitStatus();
