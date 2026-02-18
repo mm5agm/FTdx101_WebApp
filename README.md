@@ -26,15 +26,15 @@ I also use this application on my tablet, which provides a portable control pane
 - **Power Control:** Adjust the radio's power output directly from the web interface.
 - **Real-Time S-Meter:** Live updates of signal strength with an analog-style meter.
 - **Reactive State Management:** Real-time updates for all radio parameters with minimal latency.
-- **Built-in CAT Multiplexer:** The web app is the only process that opens the radio’s serial port, eliminating conflicts with other applications.
+- **Built-in CAT Multiplexer:** The web app is the only process that opens the radio's serial port, eliminating conflicts with other applications.
 - **Real-Time Control:** Almost Instant updates for frequency, mode, band, and antenna changes.
 - **Large, Accessible UI:** Clean, readable controls for frequency, band, mode, and antenna selection.
 - **Dual Receiver Support:** Independent control and display for VFO A and VFO B.
-- **Auto Information Mode (AI1;):** The app enables the radio’s Auto Information mode, so the radio streams status updates (frequency, mode, S-meter, etc.) automatically to the web app for low-latency, real-time updates.
+- **Auto Information Mode (AI1;):** The app enables the radio's Auto Information mode, so the radio streams status updates (frequency, mode, S-meter, etc.) automatically to the web app for low-latency, real-time updates.
 - **TCP Integration (rigctld-compatible):**  
   The web app exposes a TCP rigctld-compatible CAT server. Applications such as
   Log4OM, GridTracker, and other Hamlib-based tools can connect over TCP.  
-  The web app is the only process that opens the radio’s serial port.
+  The web app is the only process that opens the radio's serial port.
 
 - **WSJT-X Integration (UDP):**  ## On wish list.
   WSJT-X does not use rigctld over TCP. Instead, it communicates via UDP
@@ -122,34 +122,42 @@ Open an issue or discussion with your ideas.
 
 ---
 
-## 📦 Download
+## ⚙️ Configuration Files
 
-**Releases can be found at the [Releases Section](https://github.com/mm5agm/FTdx101_WebApp/releases).**  
-The latest builds have only framework-dependent packages.  You will need to download .NET 10 separately if you don't have it already.
+The application uses two JSON files to persist settings between sessions.
 
-You can get .NET 10 from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
----
+### `radio_state.json` — Radio State
+Stores your last-used frequency, band, mode, antenna, and power settings.
 
-## 💡 Known Limitations
+**Location:**
 
-- **Windows Only:** Serial port implementation currently requires Windows due to .NET 10 SerialPort limitations
-- **Touch Frequency Tuning:** Digit-by-digit frequency tuning (mouse wheel) not yet implemented for touch devices
-- **Single Radio:** Designed for controlling one radio at a time
-- **Linux:** Linux builds are currently not functional due to serial port implementation issues in .NET 10. This is a known limitation and will not be addressed in future versions.
+e.g. `C:\Users\<you>\AppData\Roaming\MM5AGM\FTdx101 WebApp\radio_state.json`
 
----
+The file is created automatically on first run. You can edit it manually while the application is **not running**.
 
-## 📞 Support & Community
+**Example contents:**
+```json
+{
+  "LastFrequency": "144300000",
+  "LastMode": "FM",
+  "LastBand": "2m",
+  "LastPower": 50,
+  "LastAntenna": "ANT 1"
+}
 
-- **GitHub Issues:** Report bugs or request features
-- **Groups.io:** Join the discussion at ft101dx-webapp
-- **License:** MIT (see LICENSE file)
+```
 
----
+## ⚠️ .NET 10 x86 (32-bit) Runtime Required
 
-## 🙏 Acknowledgements
+This application is built as a **32-bit (x86)** application so it can integrate with 32-bit ham radio programs such as Log4OM, JTAlert, and WSJT-X.
 
-- Martin Bradford G8MAB for suggestions including  Auto Information mode (AI1;).
----
+You **must** install the **.NET 10 x86 Runtime** before running — the 64-bit runtime will not work.
 
-73 de MM5AGM 📻
+### How to install the correct runtime:
+1. Go to [https://dotnet.microsoft.com/en-us/download/dotnet/10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+2. Scroll down to **".NET Runtime 10.x.x"**
+3. Under the **Windows** column, click **x86** — not x64
+4. Run the downloaded installer
+5. Then run the FTdx101 WebApp installer
+
+> **Why x86?** Many popular ham radio applications (Log4OM, WSJT-X, JTAlert, older logging software) are 32-bit programs. A 32-bit web app can share process space and communicate more reliably with these tools. The app runs perfectly on both 32-bit and 64-bit versions of Windows 10/11.
