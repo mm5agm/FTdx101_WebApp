@@ -38,9 +38,9 @@ I also use this application on my tablet, which provides a portable control pane
 
 - **WSJT-X Integration (UDP):**  ## On wish list.
   WSJT-X does not use rigctld over TCP. Instead, it communicates via UDP
-  broadcasts and directed UDP commands. The web app listens for WSJT-X status
-  messages and can respond to CAT control commands (frequency, mode, PTT, etc.)
-  using the WSJT-X UDP protocol.
+  broadcasts and directed UDP commands. The web app will eventually listen for WSJT-X status
+  messages and will respond to CAT control commands (frequency, mode, PTT, etc.)
+  using the WSJT-X UDP protocol. This is my next to do.
 - **No Virtual COM Ports Needed:** Eliminates the need for third-party serial port sharing utilities.
 - **Tablet and Touch Friendly:** Optimized for use on tablets and touch devices.
 

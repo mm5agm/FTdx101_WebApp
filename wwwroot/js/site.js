@@ -347,28 +347,23 @@ connection.on("ShowSettingsPage", function () {
 // ---------------------------------------------------------------------------
 // BUG FIX: updateModeRadioButton
 // ---------------------------------------------------------------------------
-// When the radio's mode changes (e.g. user turns the front-panel MODE knob),
-// the backend dispatches a SignalR "RadioStateUpdate" with property="ModeA"
-// or "ModeB" and value="USB" (or whatever the new mode string is).
-//
-// Previously both SignalR handlers only updated the <span id="modeDisplayA">
-// text label beneath the buttons.  They never touched the actual
-// <input type="radio" name="modeA" value="USB"> elements, so the buttons
-// showed the old selection even though the text had changed.
-//
-// This helper finds the correct radio input and sets .checked = true, which
-// is all that's needed to move the visual selection.
+// Uses querySelectorAll to iterate ALL buttons in the group and explicitly
+// set each one's checked state — consistent with how highlightButtons works.
+// Simply setting .checked = true on a single button can fail to uncheck the
+// previously-selected button in some browser/CSS edge cases.
 // ---------------------------------------------------------------------------
 function updateModeRadioButton(receiver, mode) {
-    // Selects e.g. input[name="modeA"][value="USB"]
-    const radioBtn = document.querySelector(`input[name="mode${receiver}"][value="${mode}"]`);
-    if (radioBtn) {
-        radioBtn.checked = true;
-    } else {
-        // Mode string from the radio may not exactly match a button value
-        // (e.g. the radio sends "CW-U" but buttons use "CW-U" - should be fine,
-        // but log a warning if nothing matches so it's easy to diagnose)
+    let found = false;
+    document.querySelectorAll(`input[name="mode${receiver}"]`).forEach(btn => {
+        btn.checked = (btn.value === mode);
+        if (btn.value === mode) found = true;
+    });
+    if (!found) {
         console.warn(`updateModeRadioButton: no button found for mode${receiver} = "${mode}"`);
+        // Dump available values to help diagnose mismatches
+        const available = Array.from(document.querySelectorAll(`input[name="mode${receiver}"]`))
+            .map(b => b.value);
+        console.warn(`Available mode${receiver} values:`, available);
     }
 }
 
@@ -463,7 +458,7 @@ function isTouchDevice() {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
-// Interim radioControl - overwritten by the IIFE below once it executes
+// Interim radioControl - overwritten by the Iife below once it executes
 window.radioControl = {
     setBand: window.setBand,
     setMode: window.setMode,
@@ -1089,10 +1084,6 @@ function changeSelectedDigit(receiver, delta) {
 // ===========================================================================
 // Second SignalR RadioStateUpdate handler (post-IIFE)
 // ===========================================================================
-// This handler is registered after the IIFE so it runs alongside the first
-// one at the top of the file.  It handles FrequencyA/B updates for the inner
-// state, and also applies the mode button fix via updateModeRadioButton().
-// ===========================================================================
 connection.on("RadioStateUpdate", function (update) {
     if (update.property && update.value !== undefined) {
         if (update.property === "FrequencyA") {
@@ -1101,10 +1092,8 @@ connection.on("RadioStateUpdate", function (update) {
         if (update.property === "FrequencyB") {
             updateFrequencyDisplay('B', update.value);
         }
-        // --- MODE CHANGE (THE BUG FIX - second handler) ---
-        // The first handler (top of file) already covers ModeA/B,
-        // but we include it here too in case handler registration order
-        // ever changes, so the fix is robust.
+        // Mode button updates — modeDisplayA/B spans are already handled
+        // by the first handler at the top of the file.
         if (update.property === "ModeA") {
             updateModeRadioButton('A', update.value);
         }
@@ -1118,7 +1107,13 @@ connection.start().catch(function (err) {
     return console.error(err.toString());
 });
 
-// Second pollInitStatus definition for the bottom-of-file call
+// ---------------------------------------------------------------------------
+// Initialization overlay polling
+// Polls /api/status/init every second until status is "complete" or "error".
+// Defined here (outer scope) so it runs immediately on page load, and also
+// redefined identically inside the IIFE scope for the second pollInitStatus()
+// call at the bottom of the file.
+// ---------------------------------------------------------------------------
 async function pollInitStatus() {
     try {
         const response = await fetch('/api/status/init');
