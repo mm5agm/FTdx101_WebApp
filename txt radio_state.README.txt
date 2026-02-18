@@ -5,7 +5,11 @@ FTdx101 Radio State Configuration
 This file explains the radio_state.json file that stores your radio settings.
 
 FILE LOCATION:
-The radio_state.json file is located in the same folder as the FTdx101_WebApp.exe
+  radio_state.json  →  %APPDATA%\MM5AGM\FTdx101 WebApp\radio_state.json
+                       (C:\Users\<you>\AppData\Roaming\MM5AGM\FTdx101 WebApp\)
+
+  appsettings.user.json  →  same folder as FTdx101_WebApp.exe
+                             (serial port, baud rate - configured via Settings page)
 
 EDITING THE FILE:
 You can manually edit this file when the application is NOT running.

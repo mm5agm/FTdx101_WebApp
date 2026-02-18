@@ -243,3 +243,39 @@ body {
 
 pre, code { tab-size: 4; }
 
+/* ==========================================================================
+   Radio button visibility fix - mode, antenna, and band selectors
+   Bootstrap's .form-check-input radio circles are faint by default because
+   they use a light grey border (#adb5bd) and a thin 1px stroke.
+   These rules give all radio inputs a larger circle with a dark, clear border
+   to match the visibility of the native band-button circles.
+   ========================================================================== */
+
+/* Larger circle with a clearly visible dark border */
+.form-check-input[type="radio"],
+.band-radio-group input[type="radio"] {
+    width: 1.15rem;
+    height: 1.15rem;
+    border: 2px solid #495057; /* dark grey - clearly visible on white */
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* When checked, colour the dot to match the receiver panel colour */
+.border-primary .form-check-input[type="radio"],
+.border-primary .band-radio-group input[type="radio"] {
+    accent-color: #0d6efd; /* blue for Receiver A */
+}
+
+.border-success .form-check-input[type="radio"],
+.border-success .band-radio-group input[type="radio"] {
+    accent-color: #198754; /* green for Receiver B */
+}
+
+/* Labels are clickable */
+.form-check-label,
+.band-radio-group label {
+    cursor: pointer;
+    user-select: none;
+}
+
