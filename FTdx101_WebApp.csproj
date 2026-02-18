@@ -15,6 +15,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\RigState.cs" />
+    <Compile Remove="Pages\Ports..cshtml.cs" />
+    <Compile Remove="Pages\Shared\_BandButtonsPartial.cshtml.cs" />
+    <Compile Remove="Services\CatPollingService.cs" />
+    <Compile Remove="Services\IRigStateService.cs" />
+    <Compile Remove="Services\RigStateService.cs" />
+    <Compile Remove="Services\SerialPortCatClient.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="layout-old.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="System.IO.Ports" Version="10.0.1" />
