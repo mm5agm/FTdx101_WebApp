@@ -1,0 +1,29 @@
+name: Build and Release Installer
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install NSIS
+        run: choco install nsis --yes
+
+      - name: Run build-installer.ps1
+        run: .\build-installer.ps1
+
+      - name: Upload installer to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: FTdx101_WebApp_Setup.exe
