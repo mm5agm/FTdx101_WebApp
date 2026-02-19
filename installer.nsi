@@ -1,6 +1,6 @@
 !define APPNAME "FTdx101 WebApp"
 !define COMPANY "MM5AGM"
-!define VERSION "0.5.0"
+!define VERSION "0.5.1"
 !define INSTALLDIR "$PROGRAMFILES32\${COMPANY}\${APPNAME}"
 !define DOTNET_URL "https://dotnet.microsoft.com/en-us/download/dotnet/10.0"
 
@@ -14,15 +14,29 @@ Page directory
 Page instfiles
 
 Function .onInit
-    ; --- Method 1: run x86 dotnet.exe and read the version ---
-    nsExec::ExecToStack '"$PROGRAMFILES32\dotnet\dotnet.exe" --version'
-    Pop $0
-    Pop $1
-    StrCmp $0 "0" 0 try_filesystem
-    StrCpy $2 $1 3
-    StrCmp $2 "10." dotnet_ok try_filesystem
+    ; --- Method 1: registry check (most reliable) ---
+    ; On 64-bit Windows the x86 registry hive lives under WOW6432Node.
+    ; The key is written by the x86 ASP.NET Core runtime installer and holds
+    ; the highest installed 10.x.y version as the default value.
+    SetRegView 32
+    ReadRegStr $0 HKLM \
+        "SOFTWARE\dotnet\Setup\InstalledVersions\x86\sharedfx\Microsoft.AspNetCore.App" \
+        "Version"
+    SetRegView lastused
+    StrCmp $0 "" try_exe 0        ; empty = not found, fall through
+    StrCpy $2 $0 3
+    StrCmp $2 "10." dotnet_ok try_exe
 
-    ; --- Method 2: filesystem check for any 10.x.y runtime directory ---
+    ; --- Method 2: run x86 dotnet.exe and read the version ---
+    try_exe:
+        nsExec::ExecToStack '"$PROGRAMFILES32\dotnet\dotnet.exe" --version'
+        Pop $0
+        Pop $1
+        StrCmp $0 "0" 0 try_filesystem
+        StrCpy $2 $1 3
+        StrCmp $2 "10." dotnet_ok try_filesystem
+
+    ; --- Method 3: filesystem check for any 10.x.y runtime directory ---
     try_filesystem:
         FindFirst $0 $1 "$PROGRAMFILES32\dotnet\shared\Microsoft.AspNetCore.App\10*"
         FindClose $0
@@ -46,7 +60,7 @@ FunctionEnd
 
 Section "Install"
     SetOutPath "$INSTDIR"
-    File /r /x "publish" "publish\*.*"
+    File /r "publish\*.*"
 
     CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\FTdx101_WebApp.exe"
     CreateDirectory "$SMPROGRAMS\${COMPANY}"
@@ -60,6 +74,7 @@ Section "Install"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\FTdx101_WebApp.exe"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "${COMPANY}"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${VERSION}"
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "EstimatedSize" 65000
 SectionEnd
 
 Section "Uninstall"
