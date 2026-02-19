@@ -98,6 +98,17 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# Normalise the output filename - NSIS may have written a versioned name
+$found = Get-ChildItem -Filter "*Setup*.exe" | Select-Object -First 1
+if (-not $found) {
+    Write-Host "ERROR: No *Setup*.exe found after NSIS ran" -ForegroundColor Red
+    exit 1
+}
+if ($found.Name -ne "FTdx101_WebApp_Setup.exe") {
+    Rename-Item $found.FullName "FTdx101_WebApp_Setup.exe"
+    Write-Host "  Renamed $($found.Name) -> FTdx101_WebApp_Setup.exe" -ForegroundColor Gray
+}
+
 # ---------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------
