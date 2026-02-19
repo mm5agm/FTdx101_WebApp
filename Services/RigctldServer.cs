@@ -17,7 +17,6 @@ namespace FTdx101_WebApp.Services
         private const int RigctldPort = 4532;
 
         // State for advanced commands
-        private string _currentVfo = "VFOA";
         private bool _splitEnabled = false;
         private long _splitFrequency = 0;
         private int _ritOffset = 0;
@@ -255,7 +254,7 @@ namespace FTdx101_WebApp.Services
         private async Task<string> GetPttAsync(string clientId)
         {
             var response = await _multiplexer.SendCommandAsync("TX", clientId);
-            return response.Contains("TX1") ? "1" : "0";
+            return response?.Contains("TX1") == true ? "1" : "0";
         }
 
         private async Task<string> SetPttAsync(string ptt, string clientId)

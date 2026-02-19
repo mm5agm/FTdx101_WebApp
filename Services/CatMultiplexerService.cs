@@ -15,7 +15,6 @@ namespace FTdx101_WebApp.Services
         private readonly ConcurrentQueue<CatRequest> _commandQueue = new();
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private Task? _processingTask;
-        private int _nextRequestId = 0;
 
         // NEW: Auto-Information support
         private readonly CatMessageBuffer _messageBuffer;

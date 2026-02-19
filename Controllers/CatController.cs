@@ -66,21 +66,18 @@ namespace FTdx101_WebApp.Controllers
                 var settings = await _settingsService.GetSettingsAsync();
                 await _catClient.ConnectAsync(settings.SerialPort, settings.BaudRate);
             }
-            // Restore state only once per app run
+            // Restore state and query actual frequencies only once per app run
             if (!_restored)
             {
                 await RestoreRadioStateAsync();
                 _restored = true;
+
+                var freqA = await _catClient.QueryFrequencyAAsync("WebUI", CancellationToken.None);
+                var freqB = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
+                if (freqA > 0) _radioStateService.FrequencyA = freqA;
+                if (freqB > 0) _radioStateService.FrequencyB = freqB;
+                _radioStateService.UpdateBandFromFrequency();
             }
-
-            // Always query and update initial frequencies after connection/restore
-            var freqA = await _catClient.QueryFrequencyAAsync("WebUI", CancellationToken.None);
-            var freqB = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
-            _radioStateService.FrequencyA = freqA;
-            _radioStateService.FrequencyB = freqB;
-
-            // Force band update after setting frequencies
-            _radioStateService.UpdateBandFromFrequency();
         }
 
         private async Task RestoreRadioStateAsync()
@@ -373,7 +370,7 @@ namespace FTdx101_WebApp.Controllers
                     return BadRequest(new { error = "Invalid receiver specified" });
                 }
 
-                _logger.LogInformation("Sending CAT command: MD0{Mode}; for Receiver {Receiver}", request.Mode, receiver);
+                _logger.LogInformation("Sending CAT command: MD{Vfo}{Mode}; for Receiver {Receiver}", receiver.ToUpper() == "A" ? "0" : "1", request.Mode, receiver);
                 return Ok(new { message = $"Mode {displayMode} selected for Receiver {receiver}" });
             }
             catch (Exception ex)

@@ -111,19 +111,21 @@ namespace FTdx101_WebApp.Services
         {
             var modeCode = mode.ToUpper() switch
             {
-                "LSB" => "1",
-                "USB" => "2",
-                "CW" => "3",
-                "FM" => "4",
-                "AM" => "5",
-                "RTTY-LSB" => "6",
-                "CW-R" => "7",
-                "DATA-LSB" => "8",
-                "RTTY-USB" => "9",
-                "DATA-FM" => "A",
-                "FM-N" => "B",
-                "DATA-USB" => "C",
-                "AM-N" => "D",
+                "LSB"      => "1",
+                "USB"      => "2",
+                "CW-U"     => "3",
+                "FM"       => "4",
+                "AM"       => "5",
+                "RTTY-L"   => "6",
+                "CW-L"     => "7",
+                "DATA-L"   => "8",
+                "RTTY-U"   => "9",
+                "DATA-FM"  => "A",
+                "FM-N"     => "B",
+                "DATA-U"   => "C",
+                "AM-N"     => "D",
+                "PSK"      => "E",
+                "DATA-FM-N" => "F",
                 _ => "2" // Default to USB
             };
             return $"MD{(isSubVfo ? "1" : "0")}{modeCode};";
@@ -138,17 +140,19 @@ namespace FTdx101_WebApp.Services
                 {
                     "1" => "LSB",
                     "2" => "USB",
-                    "3" => "CW",
+                    "3" => "CW-U",
                     "4" => "FM",
                     "5" => "AM",
-                    "6" => "RTTY-LSB",
-                    "7" => "CW-R",
-                    "8" => "DATA-LSB",
-                    "9" => "RTTY-USB",
+                    "6" => "RTTY-L",
+                    "7" => "CW-L",
+                    "8" => "DATA-L",
+                    "9" => "RTTY-U",
                     "A" => "DATA-FM",
                     "B" => "FM-N",
-                    "C" => "DATA-USB",
+                    "C" => "DATA-U",
                     "D" => "AM-N",
+                    "E" => "PSK",
+                    "F" => "DATA-FM-N",
                     _ => "UNKNOWN"
                 };
             }

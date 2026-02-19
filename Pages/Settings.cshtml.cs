@@ -60,7 +60,7 @@ namespace FTdx101_WebApp.Pages
                 await _settingsService.SaveSettingsAsync(Settings);
 
                 // Reset initialization status so app will try again
-                FTdx101_WebApp.Services.AppStatus.InitializationStatus = null;
+                FTdx101_WebApp.Services.AppStatus.InitializationStatus = "initializing";
 
                 // Automatic retry: trigger radio initialization
                 await _radioInitializationService.InitializeRadioAsync();

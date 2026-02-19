@@ -6,27 +6,6 @@ using Microsoft.AspNetCore.SignalR;
 using FTdx101_WebApp.Hubs; // Adjust namespace as needed
 using System.Diagnostics;
 
-// ADD THIS HELPER METHOD AT THE TOP
-static string GetBandFromFrequency(long frequencyHz)
-{
-    return frequencyHz switch
-    {
-        >= 1800000 and <= 2000000 => "160m",
-        >= 3500000 and <= 4000000 => "80m",
-        >= 5330500 and <= 5403500 => "60m",
-        >= 7000000 and <= 7300000 => "40m",
-        >= 10100000 and <= 10150000 => "30m",
-        >= 14000000 and <= 14350000 => "20m",
-        >= 18068000 and <= 18168000 => "17m",
-        >= 21000000 and <= 21450000 => "15m",
-        >= 24890000 and <= 24990000 => "12m",
-        >= 28000000 and <= 29700000 => "10m",
-        >= 50000000 and <= 54000000 => "6m",
-        >= 70000000 and <= 71000000 => "4m",
-        _ => "20m" // Default
-    };
-}
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Register RadioStateService and CatMessageBuffer as singletons
@@ -54,8 +33,8 @@ builder.Services.AddSingleton<ISettingsService, SettingsService>();
 // Add after existing service registrations
 builder.Services.AddHostedService<SMeterPollingService>();
 
-// Register the radio state service
-builder.Services.AddSingleton<IRadioStateService, RadioStateService>();
+// Register the radio state service — reuse the same singleton instance as RadioStateService
+builder.Services.AddSingleton<IRadioStateService>(sp => sp.GetRequiredService<RadioStateService>());
 
 // Register the radio initialization service
 builder.Services.AddSingleton<RadioInitializationService>();
@@ -77,9 +56,6 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 var app = builder.Build();
-// Test: Manually trigger a [received] log
-var buffer = app.Services.GetRequiredService<CatMessageBuffer>();
-// buffer.AppendData("FA0142000;"); // This should log [received] FA0142000;
 
 if (app.Environment.IsDevelopment())
 {
@@ -106,13 +82,13 @@ app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
 
 app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
 
-app.Run();
-
-using (var scope = app.Services.CreateScope())
+// Open browser automatically when app starts
+var browserLauncher = app.Services.GetRequiredService<BrowserLauncher>();
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStarted.Register(() =>
 {
-    var services = scope.ServiceProvider;
-    var dispatcher = services.GetRequiredService<CatMessageDispatcher>();
-    var multiplexer = services.GetRequiredService<CatMultiplexerService>();
-    dispatcher.OnInitializationComplete = multiplexer.SignalInitializationComplete;
-}
+    browserLauncher.OpenOnce("http://localhost:8080");
+});
+
+app.Run();
 

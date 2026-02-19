@@ -412,15 +412,12 @@ connection.on("RadioStateUpdate", function (update) {
     }
 });
 
-// Start the SignalR connection (errors logged to console only)
-connection.start();
+// SignalR connection is started once below (after the IIFE) with a .catch() error handler.
 
 // ---------------------------------------------------------------------------
 // Initialization overlay polling
 // Polls /api/status/init every second until status is "complete" or "error".
-// Defined here (outer scope) so it runs immediately on page load, and also
-// redefined identically inside the IIFE scope for the second pollInitStatus()
-// call at the bottom of the file.
+// On error, redirects to /Settings. This is the single authoritative definition.
 // ---------------------------------------------------------------------------
 async function pollInitStatus() {
     try {
@@ -700,6 +697,7 @@ function changeSelectedDigit(receiver, delta) {
     }
 
     async function setBand(receiver, band) {
+        pausePolling();
         try {
             console.log(`Setting ${receiver} band to ${band}`);
             highlightButtons(receiver, band, state.lastMode[receiver], state.lastAntenna[receiver]);
@@ -716,6 +714,8 @@ function changeSelectedDigit(receiver, delta) {
             }
         } catch (error) {
             console.error('Error setting band:', error);
+        } finally {
+            resumePolling();
         }
     }
 
@@ -1106,42 +1106,6 @@ connection.on("RadioStateUpdate", function (update) {
 connection.start().catch(function (err) {
     return console.error(err.toString());
 });
-
-// ---------------------------------------------------------------------------
-// Initialization overlay polling
-// Polls /api/status/init every second until status is "complete" or "error".
-// Defined here (outer scope) so it runs immediately on page load, and also
-// redefined identically inside the IIFE scope for the second pollInitStatus()
-// call at the bottom of the file.
-// ---------------------------------------------------------------------------
-async function pollInitStatus() {
-    try {
-        const response = await fetch('/api/status/init');
-        if (!response.ok) return;
-        const data = await response.json();
-        const overlay = document.getElementById('initOverlay');
-        const statusText = document.getElementById('initStatusText');
-        if (!overlay || !statusText) return;
-
-        statusText.innerText = data.status;
-
-        if (data.status === "complete") {
-            overlay.style.display = "none";
-        } else if (data.status === "error") {
-            statusText.innerText = "Radio initialization failed. Please check connection and restart.";
-            overlay.style.display = "block";
-        } else {
-            overlay.style.display = "block";
-        }
-
-        if (data.status !== "complete") {
-            setTimeout(pollInitStatus, 1000);
-        }
-    } catch (error) {
-        console.error('Error polling init status:', error);
-        setTimeout(pollInitStatus, 2000);
-    }
-}
 
 // Show touch frequency controls on mobile
 document.addEventListener('DOMContentLoaded', function () {
