@@ -51,30 +51,29 @@ jobs:
           if (-not $makensis) { $makensis = "C:\Program Files (x86)\NSIS\makensis.exe" }
           if (!(Test-Path $makensis)) { Write-Error "makensis.exe not found at $makensis"; exit 1 }
           Write-Host "Using NSIS at: $makensis"
-          $outFile = "$env:GITHUB_WORKSPACE\FTdx101_WebApp_Setup.exe"
-          Write-Host "Output path: $outFile"
-          & $makensis "/DOUTFILE=$outFile" installer.nsi
+          & $makensis installer.nsi
           if ($LASTEXITCODE -ne 0) { Write-Error "NSIS failed (exit $LASTEXITCODE)"; exit 1 }
-          Write-Host "=== Files in workspace root after NSIS ==="
-          Get-ChildItem -Filter "*.exe" | Select-Object Name, Length
+          # Find whatever Setup exe NSIS produced and normalise the name
+          $found = Get-ChildItem -Filter "*Setup*.exe" | Select-Object -First 1
+          if (!$found) { Write-Error "No *Setup*.exe found after NSIS ran"; exit 1 }
+          Write-Host "NSIS produced: $($found.FullName)"
+          if ($found.Name -ne "FTdx101_WebApp_Setup.exe") {
+            Rename-Item $found.FullName "FTdx101_WebApp_Setup.exe"
+            Write-Host "Renamed to FTdx101_WebApp_Setup.exe"
+          }
         shell: pwsh
 
       - name: Verify installer was created
         run: |
-          Write-Host "Working dir: $PWD"
-          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
-          Write-Host "=== Searching entire workspace for *.exe ==="
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object FullName, Length
-          $outFile = "$env:GITHUB_WORKSPACE\FTdx101_WebApp_Setup.exe"
-          if (!(Test-Path $outFile)) {
-            Write-Error "FTdx101_WebApp_Setup.exe was NOT found at: $outFile"
+          if (!(Test-Path "FTdx101_WebApp_Setup.exe")) {
+            Write-Error "FTdx101_WebApp_Setup.exe not found after build"
             exit 1
           }
-          Write-Host "Found: $outFile ($('{0:N0}' -f (Get-Item $outFile).Length) bytes)"
+          Write-Host "OK: $('{0:N0}' -f (Get-Item FTdx101_WebApp_Setup.exe).Length) bytes"
         shell: pwsh
 
       - name: Upload installer to release
-        run: gh release upload "${{ inputs.tag || github.ref_name }}" "$env:GITHUB_WORKSPACE\FTdx101_WebApp_Setup.exe" --clobber
+        run: gh release upload "${{ inputs.tag || github.ref_name }}" FTdx101_WebApp_Setup.exe --clobber
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
