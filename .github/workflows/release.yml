@@ -3,6 +3,7 @@ name: Build and Release Installer
 on:
   release:
     types: [created]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,9 +22,11 @@ jobs:
 
       - name: Install NSIS
         run: choco install nsis --yes
+        shell: pwsh
 
       - name: Run build-installer.ps1
-        run: .\build-installer.ps1
+        run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; .\build-installer.ps1
+        shell: pwsh
 
       - name: Upload installer to release
         uses: softprops/action-gh-release@v2
