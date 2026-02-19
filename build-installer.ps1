@@ -10,7 +10,18 @@
 
 $Version    = "0.5.1"
 $PublishDir = "publish"
-$NsisMake   = "C:\Program Files (x86)\NSIS\makensis.exe"
+
+# Support both local install path and Chocolatey/CI path
+$NsisMake = @(
+    "C:\Program Files (x86)\NSIS\makensis.exe",
+    "C:\ProgramData\chocolatey\bin\makensis.exe",
+    (Get-Command makensis.exe -ErrorAction SilentlyContinue)?.Source
+) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+
+if (-not $NsisMake) {
+    Write-Host "ERROR: makensis.exe not found. Install NSIS from https://nsis.sourceforge.io" -ForegroundColor Red
+    exit 1
+}
 
 Write-Host ""
 Write-Host "=== FTdx101 WebApp - Build Installer v$Version ===" -ForegroundColor Cyan
@@ -69,6 +80,7 @@ foreach ($pattern in $itemsToRemove) {
 # ---------------------------------------------------------------------------
 Write-Host ""
 Write-Host "Step 3: Building NSIS installer..." -ForegroundColor Yellow
+Write-Host "  Using: $NsisMake" -ForegroundColor Gray
 
 if (-not (Test-Path $NsisMake)) {
     Write-Host ""
@@ -91,5 +103,5 @@ if ($LASTEXITCODE -ne 0) {
 # ---------------------------------------------------------------------------
 Write-Host ""
 Write-Host "=== Done! ===" -ForegroundColor Green
-Write-Host "  Installer: FTdx101_WebApp_Setup_$Version.exe" -ForegroundColor Green
+Write-Host "  Installer: FTdx101_WebApp_Setup.exe" -ForegroundColor Green
 Write-Host ""

@@ -32,8 +32,19 @@ jobs:
         run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; .\build-installer.ps1
         shell: pwsh
 
+      - name: Verify installer was created
+        run: |
+          if (!(Test-Path "FTdx101_WebApp_Setup.exe")) {
+            Write-Error "FTdx101_WebApp_Setup.exe was NOT created - build failed"
+            exit 1
+          }
+          Write-Host "Found: FTdx101_WebApp_Setup.exe ($('{0:N0}' -f (Get-Item FTdx101_WebApp_Setup.exe).Length) bytes)"
+        shell: pwsh
+
       - name: Upload installer to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
           files: FTdx101_WebApp_Setup.exe
+          fail_on_unmatched_files: true
+          make_latest: false
