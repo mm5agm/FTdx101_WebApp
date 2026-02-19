@@ -42,9 +42,7 @@ jobs:
         shell: pwsh
 
       - name: Upload installer to release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          files: FTdx101_WebApp_Setup.exe
-          fail_on_unmatched_files: true
-          make_latest: false
+        run: gh release upload "${{ inputs.tag || github.ref_name }}" FTdx101_WebApp_Setup.exe --clobber
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
