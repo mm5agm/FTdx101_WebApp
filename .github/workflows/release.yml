@@ -28,8 +28,30 @@ jobs:
         run: choco install nsis --yes
         shell: pwsh
 
-      - name: Run build-installer.ps1
-        run: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; .\build-installer.ps1
+      - name: Publish app
+        run: |
+          dotnet publish FTdx101_WebApp.csproj `
+            --configuration Release `
+            --runtime win-x86 `
+            --self-contained false `
+            --output publish
+        shell: pwsh
+
+      - name: List publish output
+        run: |
+          Write-Host "=== publish\ ==="
+          if (Test-Path publish) { Get-ChildItem publish -Name } else { Write-Host "publish dir missing!" }
+          Write-Host "=== root ==="
+          Get-ChildItem -Name
+        shell: pwsh
+
+      - name: Build NSIS installer
+        run: |
+          $makensis = Get-Command makensis.exe -ErrorAction SilentlyContinue
+          if (-not $makensis) { $makensis = @{Source="C:\Program Files (x86)\NSIS\makensis.exe"} }
+          Write-Host "Using NSIS at: $($makensis.Source)"
+          & $makensis.Source installer.nsi
+          if ($LASTEXITCODE -ne 0) { Write-Error "NSIS failed (exit $LASTEXITCODE)"; exit 1 }
         shell: pwsh
 
       - name: Verify installer was created
