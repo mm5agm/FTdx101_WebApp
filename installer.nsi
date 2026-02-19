@@ -60,7 +60,17 @@ FunctionEnd
 
 Section "Install"
     SetOutPath "$INSTDIR"
-    File /r "publish\*.*"
+
+    ; Exclude files that must not be shipped or must not overwrite user data.
+    ; The build-installer.ps1 script removes these before NSIS runs;
+    ; the /x flags here are a belt-and-braces safety net.
+    File /r \
+        /x "*.pdb" \
+        /x "libman.json" \
+        /x "web.config" \
+        /x "radio_state.json" \
+        /x "appsettings.user.json" \
+        "publish\*"
 
     CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\FTdx101_WebApp.exe"
     CreateDirectory "$SMPROGRAMS\${COMPANY}"
