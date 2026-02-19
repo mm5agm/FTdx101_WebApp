@@ -88,6 +88,10 @@ Section "Install"
 SectionEnd
 
 Section "Uninstall"
+    ; Stop the app if it is running before deleting files
+    ExecWait 'taskkill /F /IM FTdx101_WebApp.exe'
+    Sleep 1500
+
     Delete "$DESKTOP\${APPNAME}.lnk"
     Delete "$SMPROGRAMS\${COMPANY}\${APPNAME}.lnk"
     RMDir "$SMPROGRAMS\${COMPANY}"
