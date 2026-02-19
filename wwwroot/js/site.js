@@ -842,6 +842,14 @@ function changeSelectedDigit(receiver, delta) {
     }
 
     // Power display helpers
+    function updateSliderFill(slider) {
+        const min = parseFloat(slider.min) || 0;
+        const max = parseFloat(slider.max) || 100;
+        const val = parseFloat(slider.value) || 0;
+        const pct = ((val - min) / (max - min)) * 100;
+        slider.style.setProperty('--fill-pct', pct + '%');
+    }
+
     function updatePowerDisplay(receiver, watts) {
         const display = document.getElementById('powerValue' + receiver);
         if (display) {
@@ -850,6 +858,7 @@ function changeSelectedDigit(receiver, delta) {
         const slider = document.getElementById('powerSlider' + receiver);
         if (slider) {
             slider.value = watts;
+            updateSliderFill(slider);
         }
         if (state.lastPower) state.lastPower[receiver] = watts;
     }
@@ -878,10 +887,6 @@ function changeSelectedDigit(receiver, delta) {
         if (state.editingPower && state.editingPower[receiver]) {
             return; // Don't update while user is dragging the slider
         }
-        const slider = document.getElementById('powerSlider' + receiver);
-        if (slider) {
-            slider.value = watts;
-        }
         updatePowerDisplay(receiver, watts);
     }
 
@@ -891,8 +896,8 @@ function changeSelectedDigit(receiver, delta) {
         const labelMaxA = document.getElementById('powerMaxLabelA');
         const labelMaxB = document.getElementById('powerMaxLabelB');
 
-        if (sliderA) sliderA.max = maxPower;
-        if (sliderB) sliderB.max = maxPower;
+        if (sliderA) { sliderA.max = maxPower; updateSliderFill(sliderA); }
+        if (sliderB) { sliderB.max = maxPower; updateSliderFill(sliderB); }
         if (labelMaxA) labelMaxA.textContent = maxPower + 'W';
         if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
     }
@@ -1054,6 +1059,7 @@ function changeSelectedDigit(receiver, delta) {
     initializeGauges();
     initializeDigitInteraction('A');
     initializeDigitInteraction('B');
+    ['A', 'B'].forEach(r => { const s = document.getElementById('powerSlider' + r); if (s) updateSliderFill(s); });
     fetchRadioStatus();
     state.pollingInterval = setInterval(fetchRadioStatus, 500);
 
