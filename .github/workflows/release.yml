@@ -61,15 +61,20 @@ jobs:
 
       - name: Verify installer was created
         run: |
-          if (!(Test-Path "FTdx101_WebApp_Setup.exe")) {
-            Write-Error "FTdx101_WebApp_Setup.exe was NOT created - build failed"
+          Write-Host "Working dir: $PWD"
+          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
+          Write-Host "=== Searching entire workspace for *.exe ==="
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object FullName, Length
+          $outFile = "$env:GITHUB_WORKSPACE\FTdx101_WebApp_Setup.exe"
+          if (!(Test-Path $outFile)) {
+            Write-Error "FTdx101_WebApp_Setup.exe was NOT found at: $outFile"
             exit 1
           }
-          Write-Host "Found: FTdx101_WebApp_Setup.exe ($('{0:N0}' -f (Get-Item FTdx101_WebApp_Setup.exe).Length) bytes)"
+          Write-Host "Found: $outFile ($('{0:N0}' -f (Get-Item $outFile).Length) bytes)"
         shell: pwsh
 
       - name: Upload installer to release
-        run: gh release upload "${{ inputs.tag || github.ref_name }}" FTdx101_WebApp_Setup.exe --clobber
+        run: gh release upload "${{ inputs.tag || github.ref_name }}" "$env:GITHUB_WORKSPACE\FTdx101_WebApp_Setup.exe" --clobber
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
