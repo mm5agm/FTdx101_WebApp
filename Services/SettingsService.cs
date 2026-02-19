@@ -12,7 +12,11 @@ namespace FTdx101_WebApp.Services
 
         public SettingsService(IWebHostEnvironment environment, ILogger<SettingsService> logger)
         {
-            _settingsFilePath = Path.Combine(environment.ContentRootPath, "appsettings.user.json");
+            var appData = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MM5AGM", "FTdx101 WebApp");
+            Directory.CreateDirectory(appData);
+            _settingsFilePath = Path.Combine(appData, "appsettings.user.json");
             _logger = logger;
             _logger.LogInformation("SettingsService initialized. File path: {Path}", _settingsFilePath);
         }
