@@ -50,6 +50,7 @@ builder.Services.AddRazorPages();
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 builder.Services.AddSingleton<BrowserLauncher>();
+builder.Services.AddHostedService<SystemTrayService>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();

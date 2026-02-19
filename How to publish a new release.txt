@@ -1,0 +1,6 @@
+How to publish a new release
+Now your release workflow is:
+1.	Go to your repo on GitHub → Releases → Draft a new release
+2.	Create a new tag (e.g. v0.5.1), fill in the title/notes → Publish release
+3.	The action automatically runs build-installer.ps1, produces FTdx101_WebApp_Setup.exe, and attaches it to the release
+The file will appear under Assets on the release page — users just click to download it. No local build needed on your end.

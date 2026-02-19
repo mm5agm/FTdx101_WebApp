@@ -8,7 +8,7 @@
 #   https://nsis.sourceforge.io
 # =============================================================================
 
-$Version    = "0.5.1"
+$Version    = "0.5.2"
 $PublishDir = "publish"
 
 # Support both local install path and Chocolatey/CI path
