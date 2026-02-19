@@ -47,11 +47,16 @@ jobs:
 
       - name: Build NSIS installer
         run: |
-          $makensis = Get-Command makensis.exe -ErrorAction SilentlyContinue
-          if (-not $makensis) { $makensis = @{Source="C:\Program Files (x86)\NSIS\makensis.exe"} }
-          Write-Host "Using NSIS at: $($makensis.Source)"
-          & $makensis.Source installer.nsi
+          $makensis = (Get-Command makensis.exe -ErrorAction SilentlyContinue)?.Source
+          if (-not $makensis) { $makensis = "C:\Program Files (x86)\NSIS\makensis.exe" }
+          if (!(Test-Path $makensis)) { Write-Error "makensis.exe not found at $makensis"; exit 1 }
+          Write-Host "Using NSIS at: $makensis"
+          $outFile = "$env:GITHUB_WORKSPACE\FTdx101_WebApp_Setup.exe"
+          Write-Host "Output path: $outFile"
+          & $makensis "/DOUTFILE=$outFile" installer.nsi
           if ($LASTEXITCODE -ne 0) { Write-Error "NSIS failed (exit $LASTEXITCODE)"; exit 1 }
+          Write-Host "=== Files in workspace root after NSIS ==="
+          Get-ChildItem -Filter "*.exe" | Select-Object Name, Length
         shell: pwsh
 
       - name: Verify installer was created

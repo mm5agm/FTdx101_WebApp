@@ -5,7 +5,11 @@
 !define DOTNET_URL "https://dotnet.microsoft.com/en-us/download/dotnet/10.0"
 
 Name "${APPNAME} ${VERSION}"
-OutFile "FTdx101_WebApp_Setup_${VERSION}.exe"
+!ifdef OUTFILE
+OutFile "${OUTFILE}"
+!else
+OutFile "FTdx101_WebApp_Setup.exe"
+!endif
 InstallDir "${INSTALLDIR}"
 
 RequestExecutionLevel admin
