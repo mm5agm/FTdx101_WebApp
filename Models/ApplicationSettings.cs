@@ -8,6 +8,9 @@ namespace FTdx101_WebApp.Models
         public string WebAddress { get; set; } = "0.0.0.0"; // Bind to all interfaces
         public string RadioModel { get; set; } = "FTdx101MP"; // MP = dual receiver, D = single receiver
 
+        // External Applications
+        public string WsjtxCommandLine { get; set; } = @"C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp";
+
         // Last Radio State (persisted between sessions)
         public RadioState LastRadioState { get; set; } = new();
     }

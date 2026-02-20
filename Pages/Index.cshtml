@@ -20,6 +20,15 @@
 </div>
 
 <div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-auto">
+            <button id="wsjtxBtn" class="btn btn-secondary btn-lg"
+                    onclick="launchWsjtx()" title="Launch WSJT-X">
+                WSJT-X
+                <span id="wsjtxTxBadge" class="badge bg-danger ms-1" style="display:none;">TX</span>
+            </button>
+        </div>
+    </div>
     <div class="row g-3 flex-wrap">
         <!-- Receiver A Panel -->
         <div class="col-lg-6 col-12">
@@ -196,4 +205,51 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script src="~/js/site.js?v=20260214"></script>
+    <script>
+        async function launchWsjtx() {
+            try {
+                const response = await fetch('/api/wsjtx/launch', { method: 'POST' });
+                if (!response.ok) {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to launch WSJT-X');
+                }
+            } catch (e) {
+                alert('Error launching WSJT-X: ' + e.message);
+            }
+        }
+
+        async function updateWsjtxStatus() {
+            try {
+                const response = await fetch('/api/wsjtx/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    const btn = document.getElementById('wsjtxBtn');
+                    const txBadge = document.getElementById('wsjtxTxBadge');
+
+                    // Green = UDP connected (WSJT-X talking to us)
+                    // Yellow = process running but no UDP yet
+                    // Grey = not running
+                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning');
+                    if (data.connected) {
+                        btn.classList.add('btn-success');
+                        btn.title = 'WSJT-X connected' + (data.mode ? ' \u2014 ' + data.mode : '');
+                    } else if (data.running) {
+                        btn.classList.add('btn-warning');
+                        btn.title = 'WSJT-X running \u2014 waiting for UDP data';
+                    } else {
+                        btn.classList.add('btn-secondary');
+                        btn.title = 'Launch WSJT-X';
+                    }
+
+                    // Red TX badge when transmitting
+                    if (txBadge) {
+                        txBadge.style.display = data.transmitting ? 'inline' : 'none';
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        updateWsjtxStatus();
+        setInterval(updateWsjtxStatus, 5000);
+    </script>
 }

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Globalization;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -107,16 +108,25 @@ namespace FTdx101_WebApp.Services
                     var bytesRead = await stream.ReadAsync(buffer, cancellationToken);
                     if (bytesRead == 0) break;
 
-                    var command = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    _logger.LogDebug("[{ClientId}] Received: {Command}", clientId, command);
+                    // Split on newlines — Hamlib may pipeline multiple commands in one TCP write
+                    var data = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                    var commands = data.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-                    var response = await ProcessRigctldCommandAsync(command, clientId);
-
-                    if (!string.IsNullOrEmpty(response))
+                    foreach (var rawCmd in commands)
                     {
-                        var responseBytes = Encoding.ASCII.GetBytes(response + "\n");
-                        await stream.WriteAsync(responseBytes, cancellationToken);
-                        _logger.LogDebug("[{ClientId}] Sent: {Response}", clientId, response.TrimEnd());
+                        var command = rawCmd.Trim();
+                        if (string.IsNullOrEmpty(command)) continue;
+
+                        _logger.LogDebug("[{ClientId}] Received: {Command}", clientId, command);
+
+                        var response = await ProcessRigctldCommandAsync(command, clientId);
+
+                        if (!string.IsNullOrEmpty(response))
+                        {
+                            var responseBytes = Encoding.ASCII.GetBytes(response + "\n");
+                            await stream.WriteAsync(responseBytes, cancellationToken);
+                            _logger.LogDebug("[{ClientId}] Sent: {Response}", clientId, response.TrimEnd());
+                        }
                     }
                 }
             }
@@ -137,60 +147,79 @@ namespace FTdx101_WebApp.Services
 
         private async Task<string> ProcessRigctldCommandAsync(string command, string clientId)
         {
-            // Gracefully handle Hamlib meta-commands (backslash)
-            if (command.StartsWith("\\")) return "";
+            // Strip leading backslash — Hamlib long-form commands are prefixed with \
+            if (command.StartsWith("\\"))
+                command = command[1..];
 
             var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 0) return "RPRT 0"; // OK
+            if (parts.Length == 0) return "RPRT 0";
 
-            switch (parts[0].ToLower())
+            var cmd = parts[0];
+
+            // Short-form commands (single character) are CASE-SENSITIVE:
+            //   lowercase = get (f, m, t, …)   uppercase = set (F, M, T, …)
+            // Long-form commands (get_freq, set_freq, …) are case-insensitive.
+            if (cmd.Length == 1)
             {
-                // Frequency
-                case "f": return await GetFrequencyAsync(clientId);
-                case "F": return parts.Length > 1 ? await SetFrequencyAsync(parts[1], clientId) : "RPRT -1";
-                // Mode
-                case "m": return await GetModeAsync(clientId);
-                case "M": return parts.Length > 1 ? await SetModeAsync(parts[1], parts.Length > 2 ? parts[2] : null, clientId) : "RPRT -1";
-                // VFO
-                case "v": return "VFOA"; // Always report VFOA
-                case "V": return SetVfo(parts[1]); // Always ignore VFO selection
-                // PTT
-                case "t": return await GetPttAsync(clientId);
-                case "T": return parts.Length > 1 ? await SetPttAsync(parts[1], clientId) : "RPRT -1";
-                // Level (S-meter, AF, RF, SQL, NR, NB, AGC, etc.)
-                case "l": return parts.Length > 1 ? await GetLevelAsync(parts[1], clientId) : "RPRT -1";
-                case "L": return parts.Length > 2 ? SetLevel(parts[1], parts[2]) : "RPRT -1";
-                // Split
-                case "x": return GetSplit();
-                case "X": return parts.Length > 1 ? SetSplit(parts[1]) : "RPRT -1";
-                // Split frequency
-                case "z": return GetSplitFrequency();
-                case "Z": return parts.Length > 1 ? SetSplitFrequency(parts[1]) : "RPRT -1";
-                // RIT/XIT
-                case "r": return GetRit();
-                case "R": return parts.Length > 1 ? SetRit(parts[1]) : "RPRT -1";
-                case "c": return GetXit();
-                case "C": return parts.Length > 1 ? SetXit(parts[1]) : "RPRT -1";
-                // Info
-                case "get_info": return GetInfo();
-                // Band change support (use BSxx; command)
-                case "set_band": return parts.Length > 1 ? await SetBandAsync(parts[1], clientId) : "RPRT -1";
-                // Power, attenuator, preamp, AGC, etc. (stubs)
-                case "get_powerstat": return "1"; // Always on
-                case "chk_vfo": return "RPRT 0";
-                case "dump_state": return ""; // For Hamlib meta-command
-                // Memory, band, filter, etc. (stubs)
-                case "get_mem": return "RPRT -1";
-                case "set_mem": return "RPRT -1";
-                case "get_band": return "RPRT -1";
-                case "get_filter": return "RPRT -1";
-                case "set_filter": return "RPRT -1";
-                // Quit
-                case "q":
-                case "quit": return "RPRT 0";
-                // Add more Hamlib commands as needed
-                default: return "RPRT -1";
+                return cmd switch
+                {
+                    "f" => await GetFrequencyAsync(clientId),
+                    "F" => parts.Length > 1 ? await SetFrequencyAsync(parts[1], clientId) : "RPRT -1",
+                    "m" => await GetModeAsync(clientId),
+                    "M" => parts.Length > 1 ? await SetModeAsync(parts[1], parts.Length > 2 ? parts[2] : null, clientId) : "RPRT -1",
+                    "v" => "VFOA",
+                    "V" => parts.Length > 1 ? SetVfo(parts[1]) : "RPRT -1",
+                    "t" => await GetPttAsync(clientId),
+                    "T" => parts.Length > 1 ? await SetPttAsync(parts[1], clientId) : "RPRT -1",
+                    "l" => parts.Length > 1 ? await GetLevelAsync(parts[1], clientId) : "RPRT -1",
+                    "L" => parts.Length > 2 ? SetLevel(parts[1], parts[2]) : "RPRT -1",
+                    "x" => GetSplit(),
+                    "X" => parts.Length > 1 ? SetSplit(parts[1]) : "RPRT -1",
+                    "z" => GetSplitFrequency(),
+                    "Z" => parts.Length > 1 ? SetSplitFrequency(parts[1]) : "RPRT -1",
+                    "r" => GetRit(),
+                    "R" => parts.Length > 1 ? SetRit(parts[1]) : "RPRT -1",
+                    "c" => GetXit(),
+                    "C" => parts.Length > 1 ? SetXit(parts[1]) : "RPRT -1",
+                    "q" => "RPRT 0",
+                    _ => "RPRT -1"
+                };
             }
+
+            // Long-form commands — case-insensitive
+            return cmd.ToLowerInvariant() switch
+            {
+                "get_freq"      => await GetFrequencyAsync(clientId),
+                "set_freq"      => parts.Length > 1 ? await SetFrequencyAsync(parts[1], clientId) : "RPRT -1",
+                "get_mode"      => await GetModeAsync(clientId),
+                "set_mode"      => parts.Length > 1 ? await SetModeAsync(parts[1], parts.Length > 2 ? parts[2] : null, clientId) : "RPRT -1",
+                "get_vfo"       => "VFOA",
+                "set_vfo"       => parts.Length > 1 ? SetVfo(parts[1]) : "RPRT -1",
+                "get_ptt"       => await GetPttAsync(clientId),
+                "set_ptt"       => parts.Length > 1 ? await SetPttAsync(parts[1], clientId) : "RPRT -1",
+                "get_level"     => parts.Length > 1 ? await GetLevelAsync(parts[1], clientId) : "RPRT -1",
+                "set_level"     => parts.Length > 2 ? SetLevel(parts[1], parts[2]) : "RPRT -1",
+                "get_split_vfo" => GetSplit(),
+                "set_split_vfo" => parts.Length > 1 ? SetSplit(parts[1]) : "RPRT -1",
+                "get_split_freq"=> GetSplitFrequency(),
+                "set_split_freq"=> parts.Length > 1 ? SetSplitFrequency(parts[1]) : "RPRT -1",
+                "get_rit"       => GetRit(),
+                "set_rit"       => parts.Length > 1 ? SetRit(parts[1]) : "RPRT -1",
+                "get_xit"       => GetXit(),
+                "set_xit"       => parts.Length > 1 ? SetXit(parts[1]) : "RPRT -1",
+                "get_info"      => GetInfo(),
+                "set_band"      => parts.Length > 1 ? await SetBandAsync(parts[1], clientId) : "RPRT -1",
+                "get_powerstat" => "1",
+                "chk_vfo"       => "CHKVFO 0",
+                "dump_state"    => GetDumpState(),
+                "get_mem"       => "RPRT -1",
+                "set_mem"       => "RPRT -1",
+                "get_band"      => "RPRT -1",
+                "get_filter"    => "RPRT -1",
+                "set_filter"    => "RPRT -1",
+                "quit"          => "RPRT 0",
+                _               => "RPRT -1"
+            };
         }
 
         // --- Command Implementations and Stubs ---
@@ -204,16 +233,17 @@ namespace FTdx101_WebApp.Services
 
         private async Task<string> SetFrequencyAsync(string freqStr, string clientId)
         {
-            if (long.TryParse(freqStr, out var freq))
-            {
-                if (freq < MinFrequency || freq > MaxFrequency)
-                    return "RPRT -1 // E_RANGE: Value out of valid range for this rig.";
-                // Always send to VFO A
-                var command = CatCommands.FormatFrequencyA(freq);
-                await _multiplexer.SendCommandAsync(command, clientId);
-                return "RPRT 0";
-            }
-            return "RPRT -1 // E_NOTIMPL: Invalid frequency format.";
+            // Hamlib sends frequencies as decimals: e.g. "10136055.000000"
+            if (!double.TryParse(freqStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var freqDouble))
+                return "RPRT -1";
+
+            var freq = (long)Math.Round(freqDouble);
+            if (freq < MinFrequency || freq > MaxFrequency)
+                return "RPRT -1";
+
+            var command = CatCommands.FormatFrequencyA(freq);
+            await _multiplexer.SendCommandAsync(command, clientId);
+            return "RPRT 0";
         }
 
         private async Task<string> GetModeAsync(string clientId)
@@ -343,6 +373,37 @@ namespace FTdx101_WebApp.Services
         {
             // Example info string for FTdx101MP (Hamlib expects: "mfg;model;version;serial;id")
             return "Yaesu;FTDX101MP;1.0.0;000000;3115";
+        }
+
+        private static string GetDumpState()
+        {
+            // Minimal Hamlib dump_state response.
+            // Hamlib parses this to understand rig capabilities before sending Test CAT commands.
+            // Format: protocol_version, rig_model, freq_ranges (HF→10m), then terminating zeros.
+            return string.Join("\n",
+                "0",            // ITU region
+                "2",            // protocol version
+                "1800000.000000 30000000.000000 0x1ff -1 -1 0x10000003 0x3",  // HF RX range
+                "50000000.000000 54000000.000000 0x1ff -1 -1 0x10000003 0x3", // 6m RX range
+                "0 0 0 0 0 0 0",  // end of RX ranges
+                "1800000.000000 30000000.000000 0x1ff 5 200 0x10000003 0x3",  // HF TX range
+                "50000000.000000 54000000.000000 0x1ff 5 100 0x10000003 0x3", // 6m TX range
+                "0 0 0 0 0 0 0",  // end of TX ranges
+                "0 0",          // end of tuning steps
+                "0 0",          // end of filters
+                "0",            // max RIT
+                "0",            // max XIT
+                "0",            // max IF-shift
+                "0",            // announces
+                "0",            // preamp list
+                "0",            // attenuator list
+                "0x00000003",   // has_get_func
+                "0x00000003",   // has_set_func
+                "0x000fffff",   // has_get_level
+                "0x000fffff",   // has_set_level
+                "0",            // has_get_parm
+                "0"             // has_set_parm
+            );
         }
 
         // --- Band change support using BSxx; command ---

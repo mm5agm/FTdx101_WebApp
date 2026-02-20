@@ -154,6 +154,26 @@
                 </div>
                 <div class="row mt-4">
                     <div class="col-12">
+                        <h5 class="mb-3">External Applications</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Settings.WsjtxCommandLine" class="form-label">WSJT-X Command Line</label>
+                            <input asp-for="Settings.WsjtxCommandLine" class="form-control font-monospace"
+                                   placeholder="C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp" />
+                            <div class="form-text">
+                                Full path to the WSJT-X executable, optionally followed by arguments.<br />
+                                <strong>Examples:</strong><br />
+                                <code>C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp</code><br />
+                                <code>"C:\Program Files\WSJT-X\bin\wsjtx.exe" --rig-name=MyRig</code>
+                                <span class="d-block mt-1">Wrap the path in quotes if it contains spaces.</span>
+                            </div>
+                            <span asp-validation-for="Settings.WsjtxCommandLine" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="bi bi-save"></i> Save Settings
                         </button>
