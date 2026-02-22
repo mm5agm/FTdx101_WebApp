@@ -983,12 +983,7 @@ function changeSelectedDigit(receiver, delta) {
     }
 
     function updateSMeter(receiver, value) {
-        const valueSpan = document.getElementById('sMeterValue' + receiver);
-        const rawSpan = document.getElementById('sMeterRaw' + receiver);
-
-        if (valueSpan) valueSpan.textContent = sMeterLabel(value);
-        if (rawSpan) rawSpan.textContent = `[${value}]`;
-
+        // Update only the analog gauge (text badges removed from UI)
         if (receiver === 'A' && gaugeA) {
             gaugeA.value = value;
             gaugeA.draw();
@@ -1075,6 +1070,65 @@ function changeSelectedDigit(receiver, delta) {
         }
     }
 
+    // Update ALC bar meter (0-255 raw value)
+    function updateALCMeter(value) {
+        const percentage = Math.round((value / 255) * 100);
+        const valueSpan = document.getElementById('alcValue');
+        const progressBar = document.getElementById('alcBar');
+
+        if (valueSpan) valueSpan.textContent = `${percentage}%`;
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+            progressBar.setAttribute('aria-valuenow', percentage);
+
+            // Color coding: green < 70%, yellow < 90%, red >= 90%
+            progressBar.className = 'progress-bar';
+            if (percentage < 70) {
+                progressBar.classList.add('bg-success');
+            } else if (percentage < 90) {
+                progressBar.classList.add('bg-warning');
+            } else {
+                progressBar.classList.add('bg-danger');
+            }
+        }
+    }
+
+    // Update IDD bar meter (0-255 raw value, display as amps)
+    function updateIDDMeter(value) {
+        // Assuming 255 = ~2.0A max (adjust based on FTdx101 specs)
+        const amps = (value / 255) * 2.0;
+        const percentage = Math.round((value / 255) * 100);
+        const valueSpan = document.getElementById('iddValue');
+        const progressBar = document.getElementById('iddBar');
+
+        if (valueSpan) valueSpan.textContent = `${amps.toFixed(2)}A`;
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+            progressBar.setAttribute('aria-valuenow', percentage);
+        }
+    }
+
+    // Update MIC bar meter (0-255 raw value)
+    function updateMICMeter(value) {
+        const percentage = Math.round((value / 255) * 100);
+        const valueSpan = document.getElementById('micValue');
+        const progressBar = document.getElementById('micBar');
+
+        if (valueSpan) valueSpan.textContent = `${percentage}%`;
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+            progressBar.setAttribute('aria-valuenow', percentage);
+
+            // Color coding: green < 80%, warning >= 80%
+            progressBar.className = 'progress-bar';
+            if (percentage < 80) {
+                progressBar.classList.add('bg-success');
+            } else {
+                progressBar.classList.add('bg-warning');
+            }
+        }
+    }
+
     // Unified gauge configuration - supports S-Meter, Power, and SWR
     function makeGaugeConfig(canvasId, type = 'smeter', options = {}) {
         const configs = {
@@ -1116,8 +1170,8 @@ function changeSelectedDigit(receiver, delta) {
 
         return {
             renderTo: canvasId,
-            width: options.width || 560,
-            height: options.height || 180,
+            width: options.width || 420,    // Reduced from 560 (25% smaller)
+            height: options.height || 135,  // Reduced from 180 (25% smaller)
             units: "",
             minValue: config.minValue,
             maxValue: config.maxValue,
@@ -1159,8 +1213,8 @@ function changeSelectedDigit(receiver, delta) {
     }
 
     function initializeGauges() {
-        const gaugeWidth = 560;
-        const gaugeHeight = 180;
+        const gaugeWidth = 420;   // Updated from 560 (25% smaller)
+        const gaugeHeight = 135;  // Updated from 180 (25% smaller)
 
         // Overlay readable labels on top of the canvas gauge
         function createGaugeLabels(canvasId, labels) {
@@ -1171,13 +1225,15 @@ function changeSelectedDigit(receiver, delta) {
 
             const wrapper = document.createElement('div');
             wrapper.className = 'gauge-wrapper';
-            wrapper.style.cssText = `position:relative;display:inline-block;width:${gaugeWidth}px;height:${gaugeHeight}px`;
+            // Apply left transform only to S-meter canvases
+            const translateX = (canvasId === 'sMeterCanvasA' || canvasId === 'sMeterCanvasB') ? ';transform:translateX(-120px)' : '';
+            wrapper.style.cssText = `position:relative;display:block;width:${gaugeWidth}px;height:${gaugeHeight}px;margin-left:0${translateX}`;
 
             const labelsDiv = document.createElement('div');
             labelsDiv.className = 'gauge-labels-overlay';
 
             const centerX = gaugeWidth / 2;
-            const centerY = gaugeHeight - 85;
+            const centerY = gaugeHeight - 64;  // Adjusted from 85 (75% of original)
             const radius = gaugeWidth * 0.17;
             const angleStep = 180 / (labels.length - 1);
 
@@ -1261,6 +1317,9 @@ function changeSelectedDigit(receiver, delta) {
     // Expose meter update functions globally for SignalR
     window.updatePowerMeter = updatePowerMeter;
     window.updateSWRMeter = updateSWRMeter;
+    window.updateALCMeter = updateALCMeter;
+    window.updateIDDMeter = updateIDDMeter;
+    window.updateMICMeter = updateMICMeter;
 
 })();
 

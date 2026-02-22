@@ -118,16 +118,31 @@ body {
         padding: 2px 4px;
     }
 
-/* Analog S-Meter Container - Transparent with no border */
+/* Analog S-Meter Container - Transparent with no border, left-aligned */
 .analog-meter-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: block;  /* Changed from flex to block */
     background: transparent;
     border: none;
-    padding: 10px;
-    margin: 10px 0;
+    padding: 0 !important;
+    margin: 10px 0 10px -1.5rem !important;  /* Increased negative left margin to -1.5rem (24px) */
     position: relative;
+}
+
+/* The gauge-wrapper is created by JavaScript and wraps the canvas */
+.gauge-wrapper {
+    display: block;  /* Already set by JS, but enforce it */
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure gauge labels overlay is also positioned correctly */
+.gauge-labels-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
     .analog-meter-container canvas {

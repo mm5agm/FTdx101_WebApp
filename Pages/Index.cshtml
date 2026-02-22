@@ -39,15 +39,11 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <!-- S-Meter at top -->
+                    <!-- S-Meter at top, left-aligned -->
                     <div class="mb-3">
                         <label>S-Meter:</label>
                         <div class="analog-meter-container">
                             <canvas id="sMeterCanvasA"></canvas>
-                        </div>
-                        <div class="text-center mt-1">
-                            <span id="sMeterValueA" class="badge bg-secondary">S0</span>
-                            <span id="sMeterRawA" class="text-muted ms-2 small">[0]</span>
                         </div>
                         <div class="text-center mt-2">
                             <span id="txIndicatorA" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
@@ -137,15 +133,11 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <!-- S-Meter at top -->
+                    <!-- S-Meter at top, left-aligned -->
                     <div class="mb-3">
                         <label>S-Meter:</label>
                         <div class="analog-meter-container">
                             <canvas id="sMeterCanvasB"></canvas>
-                        </div>
-                        <div class="text-center mt-1">
-                            <span id="sMeterValueB" class="badge bg-secondary">S0</span>
-                            <span id="sMeterRawB" class="text-muted ms-2 small">[0]</span>
                         </div>
                         <div class="text-center mt-2">
                             <span id="txIndicatorB" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
@@ -248,10 +240,58 @@
             </div>
         </div>
     </div>
+
+    <!-- Compact Bar Meters Row (ALC, IDD, MIC) -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white py-2">
+                    <h5 class="mb-0">Additional Meters</h5>
+                </div>
+                <div class="card-body py-3">
+                    <!-- ALC Meter -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="mb-0 fw-bold">ALC (Automatic Level Control):</label>
+                            <span id="alcValue" class="badge bg-info">0%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="alcBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- IDD Meter -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="mb-0 fw-bold">IDD (Final Amplifier Bias Current):</label>
+                            <span id="iddValue" class="badge bg-info">0.0A</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="iddBar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- MIC Meter -->
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="mb-0 fw-bold">MIC (Microphone Gain):</label>
+                            <span id="micValue" class="badge bg-info">0%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="micBar" class="progress-bar bg-warning" role="progressbar" style="width: 0%"
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-    <script src="~/js/site.js?v=20260222d"></script>
+    <script src="~/js/site.js?v=20260222m"></script>
     <script>
         async function launchWsjtx() {
             try {
