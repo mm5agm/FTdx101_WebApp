@@ -199,6 +199,12 @@ namespace FTdx101_WebApp.Services
         private int? _sMeterB;
         public int? SMeterB { get => _sMeterB; set => SetField(ref _sMeterB, value); }
 
+        private int? _powerMeter;
+        public int? PowerMeter { get => _powerMeter; set => SetField(ref _powerMeter, value); }
+
+        private int? _swrMeter;
+        public int? SWRMeter { get => _swrMeter; set => SetField(ref _swrMeter, value); }
+
         private int? _power;
         public int? Power { get => _power; set => SetField(ref _power, value); }
 

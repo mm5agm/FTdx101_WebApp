@@ -60,10 +60,21 @@ namespace FTdx101_WebApp.Services
                 }
                 logger.LogInformation("[RadioInitializationService] Radio responded to FA;: {Response}", faResponse);
 
-                // 1b. Restore full initialization sequence (send all CAT commands)
-                logger.LogInformation("[RadioInitializationService] Sending full initialization command sequence (GetInitialValues)...");
-                await multiplexer.GetInitialValues();
-                logger.LogInformation("[RadioInitializationService] Full initialization command sequence sent.");
+                // Send initialization commands and wait for DT0 response (with timeout)
+                logger.LogInformation("[RadioInitializationService] Sending full initialization sequence and waiting for DT0...");
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, cts.Token);
+
+                try
+                {
+                    await multiplexer.InitializeRadioAsync();
+                    logger.LogInformation("[RadioInitializationService] ✓ DT0 received, initialization sequence complete.");
+                }
+                catch (OperationCanceledException) when (cts.IsCancellationRequested)
+                {
+                    logger.LogWarning("[RadioInitializationService] ⚠ Timeout waiting for DT0 response - continuing anyway");
+                }
 
                 // 2. Load persisted state from .json
                 var persistedState = statePersistence.Load();

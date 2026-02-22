@@ -201,10 +201,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Power and SWR Meters Row -->
+    <div class="row g-3 flex-wrap mt-3">
+        <!-- Power Meter -->
+        <div class="col-lg-6 col-12">
+            <div class="card border-warning h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h4>Power Output</h4>
+                </div>
+                <div class="card-body">
+                    <div class="analog-meter-container">
+                        <canvas id="powerMeterCanvas"></canvas>
+                    </div>
+                    <div class="text-center mt-1">
+                        <span id="powerMeterValue" class="badge bg-warning text-dark">0W</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SWR Meter -->
+        <div class="col-lg-6 col-12">
+            <div class="card border-danger h-100">
+                <div class="card-header bg-danger text-white">
+                    <h4>SWR</h4>
+                </div>
+                <div class="card-body">
+                    <div class="analog-meter-container">
+                        <canvas id="swrMeterCanvas"></canvas>
+                    </div>
+                    <div class="text-center mt-1">
+                        <span id="swrMeterValue" class="badge bg-danger">1.0:1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-    <script src="~/js/site.js?v=20260214"></script>
+    <script src="~/js/site.js?v=20260222"></script>
     <script>
         async function launchWsjtx() {
             try {

@@ -399,6 +399,14 @@ connection.on("RadioStateUpdate", function (update) {
         const sliderA = document.getElementById('powerSliderA');
         if (sliderA) sliderA.value = update.value;
     }
+
+    // --- METER UPDATES ---
+    if (update.property === "PowerMeter" && typeof window.updatePowerMeter === 'function') {
+        window.updatePowerMeter(update.value);
+    }
+    if (update.property === "SWRMeter" && typeof window.updateSWRMeter === 'function') {
+        window.updateSWRMeter(update.value);
+    }
     if (update.property === "PowerB") {
         updatePowerDisplay("B", update.value);
         const sliderB = document.getElementById('powerSliderB');
@@ -954,27 +962,87 @@ function changeSelectedDigit(receiver, delta) {
         }
     }
 
-    // Shared gauge config - avoids repeating the same big options object twice
-    function makeGaugeConfig(canvasId) {
+    function updatePowerMeter(value) {
+        // Convert 0-255 raw value to watts for display (assuming 200W max)
+        const watts = Math.round((value / 255) * 200);
+
+        const valueSpan = document.getElementById('powerMeterValue');
+        if (valueSpan) valueSpan.textContent = `${watts}W`;
+
+        if (window.gaugePower) {
+            window.gaugePower.value = value;
+            window.gaugePower.draw();
+        }
+    }
+
+    function updateSWRMeter(value) {
+        // Convert 0-255 raw value to SWR ratio (1.0 to 3.0)
+        const swr = 1.0 + ((value / 255) * 2.0);
+
+        const valueSpan = document.getElementById('swrMeterValue');
+        if (valueSpan) valueSpan.textContent = `${swr.toFixed(1)}:1`;
+
+        if (window.gaugeSWR) {
+            window.gaugeSWR.value = value;
+            window.gaugeSWR.draw();
+        }
+    }
+
+    // Unified gauge configuration - supports S-Meter, Power, and SWR
+    function makeGaugeConfig(canvasId, type = 'smeter', options = {}) {
+        const configs = {
+            smeter: {
+                minValue: 0,
+                maxValue: 255,
+                majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+                highlights: [
+                    { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
+                    { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
+                ],
+                labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"]
+            },
+            power: {
+                minValue: 0,
+                maxValue: 255,  // 0-255 scale from RM1 command
+                majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
+                highlights: [
+                    { from: 0, to: 192, color: "rgba(0,255,0,.25)" },    // Green: 0-75%
+                    { from: 192, to: 224, color: "rgba(255,255,0,.25)" }, // Yellow: 75-88%
+                    { from: 224, to: 255, color: "rgba(255,0,0,.25)" }    // Red: 88-100%
+                ],
+                labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
+            },
+            swr: {
+                minValue: 0,
+                maxValue: 255,  // 0-255 scale from RM2 command
+                majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
+                highlights: [
+                    { from: 0, to: 85, color: "rgba(0,255,0,.25)" },     // Green: 1.0-1.5
+                    { from: 85, to: 128, color: "rgba(255,255,0,.25)" },  // Yellow: 1.5-2.0
+                    { from: 128, to: 255, color: "rgba(255,0,0,.25)" }    // Red: 2.0-3.0+
+                ],
+                labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"]
+            }
+        };
+
+        const config = configs[type] || configs.smeter;
+
         return {
             renderTo: canvasId,
-            width: 560,
-            height: 180,
+            width: options.width || 560,
+            height: options.height || 180,
             units: "",
-            minValue: 0,
-            maxValue: 255,
+            minValue: config.minValue,
+            maxValue: config.maxValue,
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
-            majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+            majorTicks: config.majorTicks,
             minorTicks: 0,
             strokeTicks: false,
             tickSide: "out",
             needleSide: "center",
-            highlights: [
-                { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
-                { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
-            ],
+            highlights: config.highlights,
             colorPlate: "#ffffff",
             borderShadowWidth: 0,
             borders: false,
@@ -998,7 +1066,8 @@ function changeSelectedDigit(receiver, delta) {
             colorNeedleCircleInnerEnd: "#dc3545",
             animationDuration: 400,
             animationRule: "linear",
-            value: 0
+            value: 0,
+            _labels: config.labels  // Store labels for later use
         };
     }
 
@@ -1006,7 +1075,7 @@ function changeSelectedDigit(receiver, delta) {
         const gaugeWidth = 560;
         const gaugeHeight = 180;
 
-        // Overlay readable S-unit labels on top of the canvas gauge
+        // Overlay readable labels on top of the canvas gauge
         function createGaugeLabels(canvasId, labels) {
             const canvas = document.getElementById(canvasId);
             if (!canvas || canvas.nextElementSibling?.classList.contains('gauge-labels-overlay')) {
@@ -1044,15 +1113,32 @@ function changeSelectedDigit(receiver, delta) {
             wrapper.appendChild(labelsDiv);
         }
 
-        gaugeA = new RadialGauge(makeGaugeConfig('sMeterCanvasA'));
+        // Initialize S-Meters
+        const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
+        gaugeA = new RadialGauge(sMeterConfigA);
         gaugeA.draw();
+        createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
 
-        gaugeB = new RadialGauge(makeGaugeConfig('sMeterCanvasB'));
+        const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
+        gaugeB = new RadialGauge(sMeterConfigB);
         gaugeB.draw();
+        createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
 
-        const labels = ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"];
-        createGaugeLabels('sMeterCanvasA', labels);
-        createGaugeLabels('sMeterCanvasB', labels);
+        // Initialize Power Meter (if element exists)
+        if (document.getElementById('powerMeterCanvas')) {
+            const powerConfig = makeGaugeConfig('powerMeterCanvas', 'power');
+            window.gaugePower = new RadialGauge(powerConfig);
+            window.gaugePower.draw();
+            createGaugeLabels('powerMeterCanvas', powerConfig._labels);
+        }
+
+        // Initialize SWR Meter (if element exists)
+        if (document.getElementById('swrMeterCanvas')) {
+            const swrConfig = makeGaugeConfig('swrMeterCanvas', 'swr');
+            window.gaugeSWR = new RadialGauge(swrConfig);
+            window.gaugeSWR.draw();
+            createGaugeLabels('swrMeterCanvas', swrConfig._labels);
+        }
     }
 
     // Kick everything off
@@ -1084,6 +1170,10 @@ function changeSelectedDigit(receiver, delta) {
             }, 1000);
         }
     };
+
+    // Expose meter update functions globally for SignalR
+    window.updatePowerMeter = updatePowerMeter;
+    window.updateSWRMeter = updateSWRMeter;
 
 })();
 

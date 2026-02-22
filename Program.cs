@@ -87,12 +87,16 @@ app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
 
 app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
 
-// Open browser automatically when app starts
+// Open browser automatically when app starts (but not when debugging in Visual Studio)
 var browserLauncher = app.Services.GetRequiredService<BrowserLauncher>();
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 lifetime.ApplicationStarted.Register(() =>
 {
-    browserLauncher.OpenOnce("http://localhost:8080");
+    // Only launch browser if not attached to debugger (Visual Studio F5 already opens a browser)
+    if (!System.Diagnostics.Debugger.IsAttached)
+    {
+        browserLauncher.OpenOnce("http://localhost:8080");
+    }
 });
 
 app.Run();

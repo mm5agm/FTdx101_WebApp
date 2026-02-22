@@ -18,6 +18,12 @@ namespace FTdx101_WebApp.Services
         public const string SMeterMain = "SM0";
         public const string SMeterSub = "SM1";
 
+        // METER READING COMMANDS (RM)
+        public const string MeterPower = "RM1";    // Power output meter (0-255)
+        public const string MeterSWR = "RM2";      // SWR meter (0-255)
+        public const string MeterALC = "RM3";      // ALC meter (0-255)
+        public const string MeterComp = "RM4";     // Compression meter (0-255)
+
         // TRANSMIT STATUS
         public const string TransmitStatus = "TX";
 
@@ -163,7 +169,7 @@ namespace FTdx101_WebApp.Services
         {
             if (string.IsNullOrEmpty(response) || !response.StartsWith("SM"))
                 return 0;
-            
+
             int semicolonIndex = response.IndexOf(';');
             if (semicolonIndex > 0)
             {
@@ -175,6 +181,34 @@ namespace FTdx101_WebApp.Services
                 if (int.TryParse(valueStr, out int value))
                 {
                     return value;
+                }
+            }
+            return 0;
+        }
+
+        public static int ParseMeterReading(string response)
+        {
+            // Parse RM1, RM2, RM3, RM4 responses
+            // Format: RMx0000; where x is meter type and 0000 is the value (0-255)
+            if (string.IsNullOrEmpty(response) || !response.StartsWith("RM"))
+                return 0;
+
+            int semicolonIndex = response.IndexOf(';');
+            if (semicolonIndex > 0)
+            {
+                response = response.Substring(0, semicolonIndex);
+            }
+            if (response.Length >= 6)
+            {
+                string valueStr = response.Substring(2); // Skip "RM"
+                // Remove the meter type digit (1-4)
+                if (valueStr.Length > 1)
+                {
+                    valueStr = valueStr.Substring(1); // Skip meter type
+                    if (int.TryParse(valueStr, out int value))
+                    {
+                        return value;
+                    }
                 }
             }
             return 0;

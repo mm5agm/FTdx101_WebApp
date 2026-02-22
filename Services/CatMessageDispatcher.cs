@@ -120,11 +120,20 @@ namespace FTdx101_WebApp.Services
 
         private void HandleInitialization(string message)
         {
+            _logger.LogWarning("[CatMessageDispatcher] HandleInitialization called with message: {Message}", message);
+
             // Only signal initialization complete for DT0; message
-            if (message.StartsWith("DT0;"))
+            if (message.StartsWith("DT0;") || message.StartsWith("DT0"))
             {
+                _logger.LogWarning("[CatMessageDispatcher] DT0 detected! Completing initialization...");
                 _stateService.CompleteInitialization(); // Optionally update radio state
+                _logger.LogWarning("[CatMessageDispatcher] About to invoke OnInitializationComplete callback");
                 OnInitializationComplete?.Invoke();     // Notify any listeners
+                _logger.LogWarning("[CatMessageDispatcher] OnInitializationComplete callback invoked");
+            }
+            else
+            {
+                _logger.LogWarning("[CatMessageDispatcher] Message did not match DT0 pattern: {Message}", message);
             }
         }
     }

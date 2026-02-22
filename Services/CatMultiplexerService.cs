@@ -474,15 +474,35 @@ namespace FTdx101_WebApp.Services
 
         public async Task InitializeRadioAsync()
         {
+            _logger.LogWarning("[CatMultiplexerService] InitializeRadioAsync starting...");
             _initializationCompletionSource = new TaskCompletionSource<bool>();
+            _logger.LogWarning("[CatMultiplexerService] Sending AI1 command...");
             await SendCommandAsync("AI1;", "Initialization", CancellationToken.None);
+
+            _logger.LogWarning("[CatMultiplexerService] Sending {Count} initialization commands...", CatCommands.InitializationCommands.Length);
             foreach (var cmd in CatCommands.InitializationCommands)
             {
                 await SendCommandAsync(cmd, "Initialization", CancellationToken.None);
             }
+
+            _logger.LogWarning("[CatMultiplexerService] Sending DT0 command...");
             await SendCommandAsync("DT0;", "Initialization", CancellationToken.None);
-            await _initializationCompletionSource.Task; // Wait for DT0 response
-        } 
+
+            _logger.LogWarning("[CatMultiplexerService] Waiting for DT0 response (TaskCompletionSource)...");
+
+            // Add timeout to prevent hanging forever
+            var completionTask = _initializationCompletionSource.Task;
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(10));
+            var completedTask = await Task.WhenAny(completionTask, timeoutTask);
+
+            if (completedTask == timeoutTask)
+            {
+                _logger.LogError("[CatMultiplexerService] !!! TIMEOUT waiting for DT0 response after 10 seconds");
+                throw new TimeoutException("Timeout waiting for DT0 response from radio");
+            }
+
+            _logger.LogWarning("[CatMultiplexerService] ✓ DT0 response received, initialization complete");
+        }
         public async Task ShutdownRadioAsync()
         {
             // Implementation (if needed) or leave empty
