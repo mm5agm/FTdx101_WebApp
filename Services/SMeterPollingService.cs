@@ -85,11 +85,19 @@ namespace FTdx101_WebApp.Services
                             }
                         }
 
-                        // Poll power output meter (RM1)
-                        var powerResponse = await _multiplexer.SendCommandAsync("RM1;", "MeterPoll", stoppingToken);
+                        // Poll power output meter (RM5 - not RM1!)
+                        var powerResponse = await _multiplexer.SendCommandAsync("RM5;", "MeterPoll", stoppingToken);
                         if (!string.IsNullOrEmpty(powerResponse))
                         {
                             int powerMeter = CatCommands.ParseMeterReading(powerResponse);
+
+                            // Log every 10 cycles to debug power meter issues
+                            if (cycleCount % 10 == 0)
+                            {
+                                _logger.LogWarning("[MeterPoll] RM5 Response: '{Response}' -> Parsed value: {Value}", 
+                                    powerResponse, powerMeter);
+                            }
+
                             if (powerMeter >= 0)
                             {
                                 _stateService.PowerMeter = powerMeter;
@@ -97,11 +105,19 @@ namespace FTdx101_WebApp.Services
                             }
                         }
 
-                        // Poll SWR meter (RM2)
-                        var swrResponse = await _multiplexer.SendCommandAsync("RM2;", "MeterPoll", stoppingToken);
+                        // Poll SWR meter (RM6 - not RM2!)
+                        var swrResponse = await _multiplexer.SendCommandAsync("RM6;", "MeterPoll", stoppingToken);
                         if (!string.IsNullOrEmpty(swrResponse))
                         {
                             int swrMeter = CatCommands.ParseMeterReading(swrResponse);
+
+                            // Log every 10 cycles to debug SWR meter issues  
+                            if (cycleCount % 10 == 0)
+                            {
+                                _logger.LogWarning("[MeterPoll] RM6 Response: '{Response}' -> Parsed value: {Value}", 
+                                    swrResponse, swrMeter);
+                            }
+
                             if (swrMeter >= 0)
                             {
                                 _stateService.SWRMeter = swrMeter;

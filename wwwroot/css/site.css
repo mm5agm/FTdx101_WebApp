@@ -237,6 +237,17 @@ body {
     max-width: 100vw;
 }
 
+/* TX Indicator Blink Animation */
+@keyframes tx-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.tx-blink {
+    animation: tx-blink 0.8s ease-in-out infinite;
+}
+}
+
 pre, code { tab-size: 4; }
 
 /* ==========================================================================

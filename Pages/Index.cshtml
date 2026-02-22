@@ -9,7 +9,7 @@
 }
 
 <!-- Cache-busted CSS reference -->
-<link rel="stylesheet" href="~/css/site.css?v=20260218" />
+<link rel="stylesheet" href="~/css/site.css?v=20260222b" />
 
 <!-- Overlay for initialization status -->
 <div id="initOverlay" class="init-overlay">
@@ -48,6 +48,11 @@
                         <div class="text-center mt-1">
                             <span id="sMeterValueA" class="badge bg-secondary">S0</span>
                             <span id="sMeterRawA" class="text-muted ms-2 small">[0]</span>
+                        </div>
+                        <div class="text-center mt-2">
+                            <span id="txIndicatorA" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
+                                <strong>TX</strong>
+                            </span>
                         </div>
                     </div>
 
@@ -141,6 +146,11 @@
                         <div class="text-center mt-1">
                             <span id="sMeterValueB" class="badge bg-secondary">S0</span>
                             <span id="sMeterRawB" class="text-muted ms-2 small">[0]</span>
+                        </div>
+                        <div class="text-center mt-2">
+                            <span id="txIndicatorB" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
+                                <strong>TX</strong>
+                            </span>
                         </div>
                     </div>
 
@@ -241,12 +251,22 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-    <script src="~/js/site.js?v=20260222"></script>
+    <script src="~/js/site.js?v=20260222d"></script>
     <script>
         async function launchWsjtx() {
             try {
                 const response = await fetch('/api/wsjtx/launch', { method: 'POST' });
-                if (!response.ok) {
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.alreadyRunning) {
+                        console.log('WSJT-X is already running, brought window to front');
+                        // Optional: show a brief message to the user
+                        const btn = document.getElementById('wsjtxBtn');
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = 'WSJT-X Already Running';
+                        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                    }
+                } else {
                     const data = await response.json();
                     alert(data.error || 'Failed to launch WSJT-X');
                 }

@@ -19,10 +19,12 @@ namespace FTdx101_WebApp.Services
         public const string SMeterSub = "SM1";
 
         // METER READING COMMANDS (RM)
-        public const string MeterPower = "RM1";    // Power output meter (0-255)
-        public const string MeterSWR = "RM2";      // SWR meter (0-255)
-        public const string MeterALC = "RM3";      // ALC meter (0-255)
-        public const string MeterComp = "RM4";     // Compression meter (0-255)
+        public const string MeterPower = "RM5";    // Power output meter (0-255)
+        public const string MeterSWR = "RM6";      // SWR meter (0-255)
+        public const string MeterALC = "RM4";      // ALC meter (0-255)
+        public const string MeterComp = "RM3";     // Compression meter (0-255)
+        public const string MeterSMain = "RM1";    // S-meter MAIN band (0-255)
+        public const string MeterSSub = "RM2";     // S-meter SUB band (0-255)
 
         // TRANSMIT STATUS
         public const string TransmitStatus = "TX";
@@ -188,8 +190,13 @@ namespace FTdx101_WebApp.Services
 
         public static int ParseMeterReading(string response)
         {
-            // Parse RM1, RM2, RM3, RM4 responses
-            // Format: RMx0000; where x is meter type and 0000 is the value (0-255)
+            // Parse RM meter responses per FT-dx101 manual
+            // Format: RMP1P2P2P2P3P3P3; where:
+            //   P1 = meter type (1 digit: 1=S-MAIN, 2=S-SUB, 3=COMP, 4=ALC, 5=PO, 6=SWR, etc.)
+            //   P2 = left meter value (3 digits: 000-255)
+            //   P3 = right meter value (3 digits: usually 000)
+            // Example: RM5072000; means meter type 5 (power), value 072 (72 out of 255)
+
             if (string.IsNullOrEmpty(response) || !response.StartsWith("RM"))
                 return 0;
 
@@ -198,17 +205,16 @@ namespace FTdx101_WebApp.Services
             {
                 response = response.Substring(0, semicolonIndex);
             }
+
+            // Response format: RM + 1 digit meter type + 3 digit value + 3 digit right value
+            // Minimum length: RM (2) + type (1) + value (3) = 6 characters
             if (response.Length >= 6)
             {
-                string valueStr = response.Substring(2); // Skip "RM"
-                // Remove the meter type digit (1-4)
-                if (valueStr.Length > 1)
+                // Extract the 3-digit left meter value (positions 3-5, after "RM" and meter type)
+                string valueStr = response.Substring(3, 3);
+                if (int.TryParse(valueStr, out int value))
                 {
-                    valueStr = valueStr.Substring(1); // Skip meter type
-                    if (int.TryParse(valueStr, out int value))
-                    {
-                        return value;
-                    }
+                    return value;
                 }
             }
             return 0;

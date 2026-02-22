@@ -24,7 +24,8 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public void DispatchMessage(string message)
         {
-            // Suppress logging RM messages
+            // Suppress logging RM messages (meter readings poll frequently)
+            // But DO log TX messages for debugging
             if (!message.StartsWith("RM"))
             {
                 _logger.LogInformation("[CatMessageDispatcher] Received: {Message}", message);
@@ -106,6 +107,16 @@ namespace FTdx101_WebApp.Services
                         if (message.Length >= 5 && int.TryParse(message.Substring(2, 3), out var watts))
                         {
                            _stateService.PowerA = watts;
+                        }
+                        break;
+                    case "TX":
+                        // Example: TX0; (not transmitting), TX1; (transmitting)
+                        if (message.Length >= 4)
+                        {
+                            var txStatus = message[2];
+                            _stateService.IsTransmitting = (txStatus == '1' || txStatus == '2');
+                            _logger.LogInformation("[CatMessageDispatcher] TX status: {Status} (IsTransmitting={IsTransmitting})", 
+                                txStatus, _stateService.IsTransmitting);
                         }
                         break;
                     // No debug logging for unhandled commands
