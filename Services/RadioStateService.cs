@@ -156,8 +156,12 @@ namespace FTdx101_WebApp.Services
         private string? _nl0;
         public string? NL0 { get => _nl0; set => SetField(ref _nl0, value); }
 
-        public string BandA { get; private set; } = "20m";
-        public string BandB { get; private set; } = "20m";
+        private string _bandA = "20m";
+        public string BandA { get => _bandA; set => SetField(ref _bandA, value); }
+
+        private string _bandB = "20m";
+        public string BandB { get => _bandB; set => SetField(ref _bandB, value); }
+
         public Dictionary<string, object> Controls { get; } = new();
 
         public void SetBand(string receiver, string band)

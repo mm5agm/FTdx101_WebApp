@@ -289,6 +289,17 @@ function updateTxIndicators(isTransmitting) {
     const txIndicatorA = document.getElementById('txIndicatorA');
     const txIndicatorB = document.getElementById('txIndicatorB');
 
+    // Debug logging
+    console.log(`[TX Indicator] isTransmitting: ${isTransmitting}`);
+
+    // Update state for meter display logic (if IIFE state is accessible)
+    if (window.radioControl && window.radioControl._state) {
+        window.radioControl._state.isTransmitting = isTransmitting;
+        console.log(`[TX Indicator] State updated: ${window.radioControl._state.isTransmitting}`);
+    } else {
+        console.warn('[TX Indicator] radioControl._state not available yet');
+    }
+
     if (isTransmitting) {
         // Show TX indicators with red background and make them blink
         if (txIndicatorA) {
@@ -302,7 +313,7 @@ function updateTxIndicators(isTransmitting) {
             txIndicatorB.classList.add('tx-blink');
         }
     } else {
-        // Hide TX indicators
+        // Hide TX indicators and zero out power/SWR meters
         if (txIndicatorA) {
             txIndicatorA.style.display = 'none';
             txIndicatorA.classList.remove('tx-blink');
@@ -310,6 +321,14 @@ function updateTxIndicators(isTransmitting) {
         if (txIndicatorB) {
             txIndicatorB.style.display = 'none';
             txIndicatorB.classList.remove('tx-blink');
+        }
+
+        // Zero the meters when not transmitting
+        if (typeof window.updatePowerMeter === 'function') {
+            window.updatePowerMeter(0);
+        }
+        if (typeof window.updateSWRMeter === 'function') {
+            window.updateSWRMeter(0);
         }
     }
 }
@@ -606,7 +625,8 @@ function changeSelectedDigit(receiver, delta) {
         maxPower: 200,
         radioModel: 'FTdx101MP',
         pollingInterval: null,
-        operationInProgress: false
+        operationInProgress: false,
+        isTransmitting: false  // Track TX state for meter display
     };
 
     function renderFrequencyDigits(freq, selIdx) {
@@ -1008,9 +1028,26 @@ function changeSelectedDigit(receiver, delta) {
     // Smoothing buffers for meters (reduce jumpiness)
     let powerHistory = [];
     let swrHistory = [];
-    const historyLength = 3; // Average last 3 readings
+    const historyLength = 7; // Average last 7 readings for smoother display
 
     function updatePowerMeter(value) {
+        // Debug: log TX state and value
+        console.log(`[PowerMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
+
+        // Clear immediately when not transmitting OR when we get a zero while transmitting
+        // (zero during TX means tail-end of transmission, should clear the meter)
+        if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
+            powerHistory = []; // Clear history
+            const valueSpan = document.getElementById('powerMeterValue');
+            if (valueSpan) valueSpan.textContent = '0W';
+            if (window.gaugePower) {
+                window.gaugePower.value = 0;
+                window.gaugePower.draw();
+            }
+            console.log('[PowerMeter] Cleared (zero or not TX)');
+            return;
+        }
+
         // Add to history buffer
         powerHistory.push(value);
         if (powerHistory.length > historyLength) {
@@ -1020,34 +1057,44 @@ function changeSelectedDigit(receiver, delta) {
         // Calculate average
         const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
 
-        // FT-dx101 power meter empirical calibration
-        // The meter appears to be non-linear, using observed values:
-        // Raw value ~64 should show 20W (not 50W)
-        // This suggests a scaling factor of ~80W max effective range
-        // OR the meter has a non-linear response
+        // FT-dx101 power meter calibration: User reports 20W actual shows ~70 raw
+        // So: 20W / 70 = 0.286 watts per raw unit
+        // This scale is the SAME for both FTdx101D and MP (same meter, different max power)
+        const scale = 0.286;
+        const watts = Math.round(avgValue * scale);
 
-        // Empirical formula based on user observation:
-        // 20W actual ≈ raw value 64 (from testing)
-        // So: watts = (avgValue / 64) * 20 = avgValue * 0.3125
-        // More generally: watts ≈ avgValue * 0.31 (roughly 80W full scale)
-
-        const watts = Math.round(avgValue * 0.8); // Empirical scaling
-
-        // Debug logging every few updates
-        if (Math.random() < 0.1) { // Log ~10% of updates
-            console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Watts: ${watts}`);
-        }
+        console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Watts: ${watts}`);
 
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `${watts}W`;
 
         if (window.gaugePower) {
-            window.gaugePower.value = avgValue;
+            // The gauge needle position must match the watt labels, not the raw 0-255 scale
+            // So we set gauge.value = watts (which the gauge will display on its 0-255 internal scale)
+            // But the gauge maxValue is 255, so we need to use watts directly
+            window.gaugePower.value = watts;
             window.gaugePower.draw();
         }
     }
 
     function updateSWRMeter(value) {
+        // Debug: log TX state and value ALWAYS
+        console.log(`[SWRMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
+
+        // Clear immediately when not transmitting OR when we get a zero while transmitting
+        // (zero during TX means tail-end of transmission, should clear the meter)
+        if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
+            swrHistory = []; // Clear history
+            const valueSpan = document.getElementById('swrMeterValue');
+            if (valueSpan) valueSpan.textContent = '1.0:1';
+            if (window.gaugeSWR) {
+                window.gaugeSWR.value = 0;
+                window.gaugeSWR.draw();
+            }
+            console.log('[SWRMeter] Cleared (zero or not TX)');
+            return;
+        }
+
         // Add to history buffer
         swrHistory.push(value);
         if (swrHistory.length > historyLength) {
@@ -1057,27 +1104,24 @@ function changeSelectedDigit(receiver, delta) {
         // Calculate average to reduce jumpiness
         const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
 
-        // FT-dx101 SWR meter empirical calibration
-        // User reports: SWR 2.0 on Yaesu meter jumps between 1.5-2.5 in app
-        // Current formula: swr = 1.0 + (value/96)
-        // If actual SWR is 2.0, then value should be ~96
-        // But it's jumping, so let's use better scaling:
-        // Empirical: value ≈ 128 for SWR 2.0 (based on typical Yaesu scaling)
-        // Formula: SWR = 1.0 + (value / 128) * 1.0 = 1.0 + value/128
+        // FT-dx101 SWR meter calibration
+        // User reports: SWR 5:1 actual shows raw values 68-255 (avg peaks ~244)
+        // So: (5 - 1) / 244 = 0.0164, or SWR = 1.0 + (value / 61)
+        const swr = 1.0 + (avgValue / 61.0);
+        const swrClamped = Math.min(swr, 10.0); // Clamp to 10.0 max
 
-        const swr = 1.0 + (avgValue / 128.0);
-        const swrClamped = Math.min(swr, 3.0); // Clamp to 3.0 max
-
-        // Debug logging every few updates
-        if (Math.random() < 0.1) { // Log ~10% of updates
-            console.log(`[SWRMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, SWR: ${swrClamped.toFixed(1)}:1`);
-        }
+        console.log(`[SWRMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, SWR: ${swrClamped.toFixed(1)}:1`);
 
         const valueSpan = document.getElementById('swrMeterValue');
         if (valueSpan) valueSpan.textContent = `${swrClamped.toFixed(1)}:1`;
 
         if (window.gaugeSWR) {
-            window.gaugeSWR.value = avgValue;
+            // The gauge labels range from 1.0 to 3.0, and the gauge internal arc is 0-255
+            // So we need to map the SWR ratio to the gauge position:
+            // SWR 1.0 → position 0, SWR 3.0 → position 255
+            // Position = (swr - 1.0) / (3.0 - 1.0) * 255 = (swr - 1.0) * 127.5
+            const gaugePosition = (swrClamped - 1.0) * 127.5;
+            window.gaugeSWR.value = gaugePosition;
             window.gaugeSWR.draw();
         }
     }
@@ -1310,6 +1354,7 @@ function changeSelectedDigit(receiver, delta) {
         setBand,
         setMode,
         setAntenna,
+        _state: state,  // Expose state for TX indicator updates
         // Wrap updatePowerDisplay so we flag editingPower while the user is dragging
         updatePowerDisplay: (receiver, value) => {
             state.editingPower[receiver] = true;

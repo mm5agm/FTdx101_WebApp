@@ -110,10 +110,47 @@ namespace FTdx101_WebApp.Services
                     radioStateService.AntennaB = persistedState.AntennaB;
                 }
 
-                // 4. Set IsInitialized = true to allow future property changes to be persisted
+                // 4. Read actual radio state (frequencies, band, etc.) before marking initialized
+                logger.LogInformation("[RadioInitializationService] Reading actual radio state...");
+
+                // Query VFO A frequency
+                var faFreqResponse = await multiplexer.SendCommandAsync("FA;", "Initialization", stoppingToken);
+                if (!string.IsNullOrWhiteSpace(faFreqResponse) && faFreqResponse.StartsWith("FA"))
+                {
+                    var freqStr = faFreqResponse.Substring(2).TrimEnd(';');
+                    if (int.TryParse(freqStr, out int freqHz))
+                    {
+                        radioStateService.FrequencyA = freqHz;
+                        logger.LogInformation("[RadioInitializationService] VFO A frequency: {FreqHz} Hz", freqHz);
+                    }
+                }
+
+                // Query VFO B frequency  
+                var fbFreqResponse = await multiplexer.SendCommandAsync("FB;", "Initialization", stoppingToken);
+                if (!string.IsNullOrWhiteSpace(fbFreqResponse) && fbFreqResponse.StartsWith("FB"))
+                {
+                    var freqStr = fbFreqResponse.Substring(2).TrimEnd(';');
+                    if (int.TryParse(freqStr, out int freqHz))
+                    {
+                        radioStateService.FrequencyB = freqHz;
+                        logger.LogInformation("[RadioInitializationService] VFO B frequency: {FreqHz} Hz", freqHz);
+                    }
+                }
+
+                // 5. Set IsInitialized = true FIRST to allow property changes to be persisted and broadcast
                 radioStateService.IsInitialized = true;
 
-                // 5. Enable auto information
+                // Derive bands from the actual frequencies (must be AFTER IsInitialized = true)
+                var bandA = radioStateService.GetBandFromFrequency(radioStateService.FrequencyA);
+                var bandB = radioStateService.GetBandFromFrequency(radioStateService.FrequencyB);
+                logger.LogInformation("[RadioInitializationService] Calculated bands from frequencies: A={BandA} ({FreqA} Hz), B={BandB} ({FreqB} Hz)",
+                    bandA, radioStateService.FrequencyA, bandB, radioStateService.FrequencyB);
+
+                radioStateService.SetBand("A", bandA);
+                radioStateService.SetBand("B", bandB);
+                logger.LogInformation("[RadioInitializationService] Bands set: A={BandA}, B={BandB}", bandA, bandB);
+
+                // 6. Enable auto information
                 await multiplexer.EnableAutoInformationAsync();
 
                 logger.LogInformation("[RadioInitializationService] ✓ Radio connected, initialized, and Auto Information streaming enabled");
@@ -135,8 +172,12 @@ namespace FTdx101_WebApp.Services
                 await _hubContext.Clients.All.SendAsync("InitializationStatus", "error");
                 await _hubContext.Clients.All.SendAsync("ShowSettingsPage");
 
-                // On failure, open settings page (in all environments)
-                _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                // On failure, open settings page only in Production and not under debugger
+                if (!Debugger.IsAttached &&
+                    string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                {
+                    _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                }
             }
         }
 

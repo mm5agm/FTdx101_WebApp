@@ -48,6 +48,7 @@ namespace FTdx101_WebApp.Services
             int lastValidPower = 0;
             int lastValidSWR = 0;
             int cycleCount = 0;
+            int freqPollCounter = 0; // Poll frequency every 2-3 cycles to reduce CAT traffic
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             while (!stoppingToken.IsCancellationRequested)
@@ -85,43 +86,114 @@ namespace FTdx101_WebApp.Services
                             }
                         }
 
-                        // Poll power output meter (RM5 - not RM1!)
-                        var powerResponse = await _multiplexer.SendCommandAsync("RM5;", "MeterPoll", stoppingToken);
-                        if (!string.IsNullOrEmpty(powerResponse))
+                        // Poll power output meter (RM5 - not RM1!) - only when transmitting
+                        // Check TX status first (TX; command returns TX0; when receiving, TX1; when transmitting)
+                        var txResponse = await _multiplexer.SendCommandAsync("TX;", "MeterPoll", stoppingToken);
+                        bool isTransmitting = !string.IsNullOrEmpty(txResponse) && txResponse.Contains("TX1");
+
+                        // Update TX state in RadioStateService so it can broadcast to SignalR
+                        _stateService.IsTransmitting = isTransmitting;
+
+                        if (isTransmitting)
                         {
-                            int powerMeter = CatCommands.ParseMeterReading(powerResponse);
-
-                            // Log every 10 cycles to debug power meter issues
-                            if (cycleCount % 10 == 0)
+                            var powerResponse = await _multiplexer.SendCommandAsync("RM5;", "MeterPoll", stoppingToken);
+                            if (!string.IsNullOrEmpty(powerResponse))
                             {
-                                _logger.LogWarning("[MeterPoll] RM5 Response: '{Response}' -> Parsed value: {Value}", 
-                                    powerResponse, powerMeter);
-                            }
+                                int powerMeter = CatCommands.ParseMeterReading(powerResponse);
 
-                            if (powerMeter >= 0)
-                            {
-                                _stateService.PowerMeter = powerMeter;
-                                lastValidPower = powerMeter;
+                                // Log every 10 cycles to debug power meter issues
+                                if (cycleCount % 10 == 0)
+                                {
+                                    _logger.LogWarning("[MeterPoll] RM5 Response: '{Response}' -> Parsed value: {Value}", 
+                                        powerResponse, powerMeter);
+                                }
+
+                                if (powerMeter >= 0)
+                                {
+                                    _stateService.PowerMeter = powerMeter;
+                                    lastValidPower = powerMeter;
+                                }
                             }
                         }
-
-                        // Poll SWR meter (RM6 - not RM2!)
-                        var swrResponse = await _multiplexer.SendCommandAsync("RM6;", "MeterPoll", stoppingToken);
-                        if (!string.IsNullOrEmpty(swrResponse))
+                        else
                         {
-                            int swrMeter = CatCommands.ParseMeterReading(swrResponse);
+                            // Not transmitting - send zero to clear meters
+                            _stateService.PowerMeter = 0;
+                            lastValidPower = 0;
+                        }
 
-                            // Log every 10 cycles to debug SWR meter issues  
-                            if (cycleCount % 10 == 0)
+                        // Poll SWR meter (RM6 - not RM2!) - only when transmitting
+                        if (isTransmitting)
+                        {
+                            var swrResponse = await _multiplexer.SendCommandAsync("RM6;", "MeterPoll", stoppingToken);
+                            if (!string.IsNullOrEmpty(swrResponse))
                             {
-                                _logger.LogWarning("[MeterPoll] RM6 Response: '{Response}' -> Parsed value: {Value}", 
-                                    swrResponse, swrMeter);
+                                int swrMeter = CatCommands.ParseMeterReading(swrResponse);
+
+                                // Log every 10 cycles to debug SWR meter issues  
+                                if (cycleCount % 10 == 0)
+                                {
+                                    _logger.LogWarning("[MeterPoll] RM6 Response: '{Response}' -> Parsed value: {Value}", 
+                                        swrResponse, swrMeter);
+                                }
+
+                                if (swrMeter >= 0)
+                                {
+                                    _stateService.SWRMeter = swrMeter;
+                                    lastValidSWR = swrMeter;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Not transmitting - send zero to clear SWR meter
+                            _stateService.SWRMeter = 0;
+                            lastValidSWR = 0;
+                        }
+
+                        // Poll frequencies every 2-3 cycles to detect WSJT-X changes (AI doesn't report CAT changes)
+                        if (++freqPollCounter >= 3)
+                        {
+                            freqPollCounter = 0;
+
+                            var faResponse = await _multiplexer.SendCommandAsync("FA;", "MeterPoll", stoppingToken);
+                            if (!string.IsNullOrEmpty(faResponse) && faResponse.StartsWith("FA"))
+                            {
+                                var freqStr = faResponse.Substring(2).TrimEnd(';');
+                                if (int.TryParse(freqStr, out int freqHz) && freqHz != _stateService.FrequencyA)
+                                {
+                                    _logger.LogInformation("[FreqPoll] VFO A changed (likely WSJT-X): {OldFreq} Hz -> {NewFreq} Hz", 
+                                        _stateService.FrequencyA, freqHz);
+                                    _stateService.FrequencyA = freqHz;
+
+                                    // Update band too
+                                    var newBand = _stateService.GetBandFromFrequency(freqHz);
+                                    if (newBand != _stateService.BandA)
+                                    {
+                                        _stateService.BandA = newBand;
+                                        _logger.LogInformation("[FreqPoll] VFO A band updated: {Band}", newBand);
+                                    }
+                                }
                             }
 
-                            if (swrMeter >= 0)
+                            var fbResponse = await _multiplexer.SendCommandAsync("FB;", "MeterPoll", stoppingToken);
+                            if (!string.IsNullOrEmpty(fbResponse) && fbResponse.StartsWith("FB"))
                             {
-                                _stateService.SWRMeter = swrMeter;
-                                lastValidSWR = swrMeter;
+                                var freqStr = fbResponse.Substring(2).TrimEnd(';');
+                                if (int.TryParse(freqStr, out int freqHz) && freqHz != _stateService.FrequencyB)
+                                {
+                                    _logger.LogInformation("[FreqPoll] VFO B changed (likely WSJT-X): {OldFreq} Hz -> {NewFreq} Hz", 
+                                        _stateService.FrequencyB, freqHz);
+                                    _stateService.FrequencyB = freqHz;
+
+                                    // Update band too
+                                    var newBand = _stateService.GetBandFromFrequency(freqHz);
+                                    if (newBand != _stateService.BandB)
+                                    {
+                                        _stateService.BandB = newBand;
+                                        _logger.LogInformation("[FreqPoll] VFO B band updated: {Band}", newBand);
+                                    }
+                                }
                             }
                         }
 
