@@ -14,6 +14,7 @@ namespace FTdx101_WebApp.Controllers
         private readonly ILogger<CatController> _logger;
         private readonly RadioStateService _radioStateService;
         private readonly RadioStatePersistenceService _statePersistence;
+        private readonly RadioInitializationService _radioInitService;
         private static readonly SemaphoreSlim _requestSemaphore = new(1, 1);
         private static bool _restored = false;
 
@@ -50,13 +51,15 @@ namespace FTdx101_WebApp.Controllers
             ISettingsService settingsService,
             ILogger<CatController> logger,
             RadioStateService radioStateService,
-            RadioStatePersistenceService statePersistence)
+            RadioStatePersistenceService statePersistence,
+            RadioInitializationService radioInitService)
         {
             _catClient = catClient;
             _settingsService = settingsService;
             _logger = logger;
             _radioStateService = radioStateService;
             _statePersistence = statePersistence;
+            _radioInitService = radioInitService;
         }
 
         private async Task EnsureConnectedAsync()
@@ -443,6 +446,27 @@ namespace FTdx101_WebApp.Controllers
         public class PowerRequest
         {
             public int Watts { get; set; }
+        }
+
+        [HttpPost("reinitialize")]
+        public async Task<IActionResult> Reinitialize()
+        {
+            try
+            {
+                _logger.LogInformation("Manual re-initialization requested from Settings page");
+                await _radioInitService.InitializeRadioAsync();
+
+                // Update status to complete so Index page polling sees it
+                AppStatus.InitializationStatus = "complete";
+
+                return Ok(new { success = true, message = "Radio connected successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Manual re-initialization failed");
+                AppStatus.InitializationStatus = "error";
+                return Ok(new { success = false, message = ex.Message });
+            }
         }
     }
 }

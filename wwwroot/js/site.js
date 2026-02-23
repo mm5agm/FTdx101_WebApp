@@ -461,9 +461,13 @@ connection.on("RadioStateUpdate", function (update) {
 // ---------------------------------------------------------------------------
 // Initialization overlay polling
 // Polls /api/status/init every second until status is "complete" or "error".
-// On error, redirects to /Settings. This is the single authoritative definition.
+// On error, redirects to /Settings ONLY if user hasn't dismissed the overlay.
 // ---------------------------------------------------------------------------
+let initPollingStopped = false; // Allow user to dismiss and continue
+
 async function pollInitStatus() {
+    if (initPollingStopped) return; // User dismissed, stop polling
+
     try {
         const response = await fetch('/api/status/init');
         if (!response.ok) return;
@@ -476,22 +480,30 @@ async function pollInitStatus() {
 
         if (data.status === "complete") {
             overlay.style.display = "none";
+            initPollingStopped = true; // Stop polling
         } else if (data.status === "error") {
-            statusText.innerText = "Radio initialization failed. Please check connection and restart.";
+            statusText.innerHTML = "Radio initialization failed. <a href='/Settings' class='text-white'>Go to Settings</a> or <button onclick='dismissInitOverlay()' class='btn btn-sm btn-warning ms-2'>Continue Anyway</button>";
             overlay.style.display = "block";
-            console.log("Redirecting to /Settings due to error status");
-            window.location.href = "/Settings";
+            // Don't auto-redirect - let user choose
         } else {
             overlay.style.display = "block";
         }
 
-        if (data.status !== "complete") {
+        if (data.status !== "complete" && !initPollingStopped) {
             setTimeout(pollInitStatus, 1000);
         }
     } catch (error) {
         console.error('Error polling init status:', error);
-        setTimeout(pollInitStatus, 2000);
+        if (!initPollingStopped) {
+            setTimeout(pollInitStatus, 2000);
+        }
     }
+}
+
+function dismissInitOverlay() {
+    initPollingStopped = true;
+    const overlay = document.getElementById('initOverlay');
+    if (overlay) overlay.style.display = "none";
 }
 
 // Touch device detection helper

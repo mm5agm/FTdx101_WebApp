@@ -177,6 +177,9 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="bi bi-save"></i> Save Settings
                         </button>
+                        <button type="button" class="btn btn-success btn-lg ms-2" onclick="testConnection()">
+                            <i class="bi bi-plug"></i> Test Connection
+                        </button>
                         <a asp-page="/Index" class="btn btn-secondary btn-lg ms-2">
                             <i class="bi bi-x-circle"></i> Cancel
                         </a>
@@ -248,6 +251,48 @@
                 console.error('Failed to copy:', err);
                 alert('Failed to copy to clipboard');
             });
+        }
+
+        async function testConnection() {
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Testing...';
+
+            try {
+                const response = await fetch('/api/cat/reinitialize', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Connected!';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    btn.innerHTML = '<i class="bi bi-x-circle"></i> Failed';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-danger');
+                    alert(data.message || 'Connection failed. Check your settings and radio.');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('btn-danger');
+                        btn.classList.add('btn-success');
+                        btn.disabled = false;
+                    }, 3000);
+                }
+            } catch (err) {
+                btn.innerHTML = '<i class="bi bi-x-circle"></i> Error';
+                btn.classList.add('btn-danger');
+                alert('Error testing connection: ' + err.message);
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-success');
+                    btn.disabled = false;
+                }, 3000);
+            }
         }
 
     </script>

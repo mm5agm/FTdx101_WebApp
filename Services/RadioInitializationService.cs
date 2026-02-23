@@ -135,18 +135,30 @@ namespace FTdx101_WebApp.Services
                 await _hubContext.Clients.All.SendAsync("InitializationStatus", "error");
                 await _hubContext.Clients.All.SendAsync("ShowSettingsPage");
 
-                // On failure, open settings page only in Production and not under debugger
-                if (!Debugger.IsAttached &&
-                    string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
-                {
-                    _browserLauncher.OpenOnce("http://localhost:8080/Settings");
-                }
+                // On failure, open settings page (in all environments)
+                _browserLauncher.OpenOnce("http://localhost:8080/Settings");
             }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await ExecuteInitializationAsync(stoppingToken);
+            try
+            {
+                await ExecuteInitializationAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                // Prevent app crash - log the error and set status
+                Console.WriteLine($"[RadioInitializationService] Fatal error: {ex.Message}");
+                AppStatus.InitializationStatus = "error";
+
+                // Try to open Settings page even if initialization completely failed
+                try
+                {
+                    _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                }
+                catch { /* Ignore browser launch errors */ }
+            }
         }
     }
 }
