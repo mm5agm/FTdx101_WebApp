@@ -4,17 +4,19 @@
     var receiver = Model.Item2;
     var selectedBand = (Model.Item3 ?? "").Trim().ToLowerInvariant();
 }
-<div class="band-radio-grid" id="bandRadioGroup@(receiver)">
-    @foreach (var band in bands)
-    {
-        var bandValue = band.Trim().ToLowerInvariant();
-        <label class="band-radio-label">
-            <input type="radio"
-                   name="band-@receiver"
-                   value="@band"
-                   @(bandValue == selectedBand ? "checked" : "")
-                   onchange="window.radioControl.setBand('@receiver','@band', this)">
-            <span>@band</span>
-        </label>
-    }
+<div class="band-buttons-container">
+    <div class="band-radio-grid" id="bandRadioGroup@(receiver)">
+        @foreach (var band in bands)
+        {
+            var bandValue = band.Trim().ToLowerInvariant();
+            <label class="band-radio-label">
+                <input type="radio"
+                       name="band-@receiver"
+                       value="@band"
+                       data-receiver="@receiver"
+                       @(bandValue == selectedBand ? "checked" : "")>
+                <span>@band</span>
+            </label>
+        }
+    </div>
 </div>

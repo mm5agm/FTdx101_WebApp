@@ -570,6 +570,17 @@ window.addEventListener('DOMContentLoaded', () => {
         initializeDigitInteraction('B');
         updateBandButtonsFromBackend();
     });
+
+    // Event delegation for band button changes
+    document.addEventListener('change', function(e) {
+        if (e.target.type === 'radio' && e.target.name && e.target.name.startsWith('band-')) {
+            const receiver = e.target.getAttribute('data-receiver');
+            const band = e.target.value;
+            if (receiver && band && window.radioControl && window.radioControl.setBand) {
+                window.radioControl.setBand(receiver, band);
+            }
+        }
+    });
 });
 
 // Touch up/down button handler for mobile frequency editing
@@ -682,6 +693,19 @@ function changeSelectedDigit(receiver, delta) {
         });
     }
 
+    // Update ONLY mode and antenna buttons (not bands) - used by polling to avoid overwriting user's band selection
+    function updateModeAndAntennaButtons(receiver, mode, antenna) {
+        // Mode buttons
+        document.querySelectorAll(`input[name="mode${receiver}"]`).forEach(btn => {
+            btn.checked = (btn.value === mode);
+        });
+
+        // Antenna buttons
+        document.querySelectorAll(`input[name="antenna${receiver}"]`).forEach(btn => {
+            btn.checked = (btn.value === antenna);
+        });
+    }
+
     function initializeDigitInteraction(receiver) {
         const display = document.getElementById('freq' + receiver);
         if (!display) {
@@ -773,7 +797,7 @@ function changeSelectedDigit(receiver, delta) {
     }
 
     async function setBand(receiver, band) {
-        pausePolling();
+        const didPause = pausePolling();
         try {
             console.log(`Setting ${receiver} band to ${band}`);
             highlightButtons(receiver, band, state.lastMode[receiver], state.lastAntenna[receiver]);
@@ -791,7 +815,9 @@ function changeSelectedDigit(receiver, delta) {
         } catch (error) {
             console.error('Error setting band:', error);
         } finally {
-            resumePolling();
+            if (didPause) {
+                resumePolling();
+            }
         }
     }
 
@@ -815,7 +841,7 @@ function changeSelectedDigit(receiver, delta) {
     }
 
     async function setAntenna(receiver, antenna) {
-        pausePolling();
+        const didPause = pausePolling();
         try {
             console.log(`Setting ${receiver} antenna to ${antenna}`);
             highlightButtons(receiver, state.lastBand[receiver], state.lastMode[receiver], antenna);
@@ -833,7 +859,9 @@ function changeSelectedDigit(receiver, delta) {
         } catch (error) {
             console.error('Error setting antenna:', error);
         } finally {
-            resumePolling();
+            if (didPause) {
+                resumePolling();
+            }
         }
     }
 
@@ -841,7 +869,10 @@ function changeSelectedDigit(receiver, delta) {
         if (state.pollingInterval && !state.operationInProgress) {
             state.operationInProgress = true;
             console.log('Polling paused for operation');
+            return true;
         }
+        console.log('Could not pause - operation already in progress');
+        return false;
     }
 
     function resumePolling() {
@@ -909,9 +940,10 @@ function changeSelectedDigit(receiver, delta) {
             updateSMeter('A', data.vfoA.sMeter);
             updateSMeter('B', data.vfoB.sMeter);
 
-            // highlightButtons now updates the radio inputs directly (see function above)
-            highlightButtons('A', data.vfoA.band, data.vfoA.mode, data.vfoA.antenna);
-            highlightButtons('B', data.vfoB.band, data.vfoB.mode, data.vfoB.antenna);
+            // Only update mode and antenna buttons from polling, NOT bands
+            // (bands are updated by user clicks and will be updated by SignalR when we add that)
+            updateModeAndAntennaButtons('A', data.vfoA.mode, data.vfoA.antenna);
+            updateModeAndAntennaButtons('B', data.vfoB.mode, data.vfoB.antenna);
         } catch (error) {
             console.error('Error fetching radio status:', error);
         }

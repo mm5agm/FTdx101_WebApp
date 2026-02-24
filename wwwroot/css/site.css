@@ -51,6 +51,16 @@ body {
     gap: 0.4rem;
 }
 
+/* Ensure band buttons with negative margin aren't clipped */
+.flex-grow-1 {
+    overflow: visible !important;
+    position: relative;
+}
+
+.d-flex.flex-nowrap {
+    overflow: visible !important;
+}
+
 @media (min-width: 992px) {
     .receiver-card {
         width: 100%;
@@ -302,6 +312,14 @@ pre, code { tab-size: 4; }
     user-select: none;
 }
 
+/* Band buttons container - handles positioning independently */
+.band-buttons-container {
+    position: relative;
+    width: 320px;
+    min-width: 320px;
+    margin-left: -253px;
+}
+
 /* Compact band button grid layout - 4 columns x 3 rows for 12 bands */
 .band-radio-grid {
     display: grid;
@@ -309,7 +327,6 @@ pre, code { tab-size: 4; }
     gap: 0.4rem;
     max-width: 320px;
     min-width: 280px;
-    margin-left: -200px;
 }
 
 .band-radio-label {
@@ -334,6 +351,10 @@ pre, code { tab-size: 4; }
 .band-radio-label input[type="radio"] {
     margin: 0;
     cursor: pointer;
+}
+
+.band-radio-label span {
+    user-select: none;
 }
 
 .band-radio-label input[type="radio"]:checked + span {
