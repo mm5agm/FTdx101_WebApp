@@ -9,7 +9,7 @@
 }
 
 <!-- Cache-busted CSS reference -->
-<link rel="stylesheet" href="~/css/site.css?v=20260222b" />
+<link rel="stylesheet" href="~/css/site.css?v=20260222c" />
 
 <!-- Overlay for initialization status -->
 <div id="initOverlay" class="init-overlay">
@@ -41,7 +41,6 @@
                 <div class="card-body">
                     <!-- S-Meter at top, left-aligned -->
                     <div class="mb-3">
-                        <label>S-Meter:</label>
                         <div class="analog-meter-container">
                             <canvas id="sMeterCanvasA"></canvas>
                         </div>
@@ -135,7 +134,6 @@
                 <div class="card-body">
                     <!-- S-Meter at top, left-aligned -->
                     <div class="mb-3">
-                        <label>S-Meter:</label>
                         <div class="analog-meter-container">
                             <canvas id="sMeterCanvasB"></canvas>
                         </div>
@@ -291,7 +289,7 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-    <script src="~/js/site.js?v=20260222z"></script>
+    <script src="~/js/site.js?v=20260222zzzzzzz"></script>
     <script>
         async function launchWsjtx() {
             try {

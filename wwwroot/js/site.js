@@ -1310,6 +1310,15 @@ function changeSelectedDigit(receiver, delta) {
             canvas.parentNode.insertBefore(wrapper, canvas);
             wrapper.appendChild(canvas);
             wrapper.appendChild(labelsDiv);
+
+            // Add "S-Meter" label at the bottom for S-Meter gauges only
+            if (canvasId === 'sMeterCanvasA' || canvasId === 'sMeterCanvasB') {
+                const meterLabel = document.createElement('div');
+                // Positioned further right and higher up
+                meterLabel.style.cssText = 'position:absolute;bottom:40px;left:188px;font-size:14px;font-weight:normal;';
+                meterLabel.textContent = 'S-Meter';
+                wrapper.appendChild(meterLabel);
+            }
         }
 
         // Initialize S-Meters

@@ -124,7 +124,7 @@ body {
     background: transparent;
     border: none;
     padding: 0 !important;
-    margin: 10px 0 10px -1.5rem !important;  /* Increased negative left margin to -1.5rem (24px) */
+    margin: 10px 0 0 -1.5rem !important;  /* Changed bottom margin from 10px to 0 */
     position: relative;
 }
 
@@ -260,7 +260,6 @@ body {
 
 .tx-blink {
     animation: tx-blink 0.8s ease-in-out infinite;
-}
 }
 
 pre, code { tab-size: 4; }
