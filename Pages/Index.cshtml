@@ -9,7 +9,7 @@
 }
 
 <!-- Cache-busted CSS reference -->
-<link rel="stylesheet" href="~/css/site.css?v=20260222c" />
+<link rel="stylesheet" href="~/css/site.css?v=20260222d" />
 
 <!-- Overlay for initialization status -->
 <div id="initOverlay" class="init-overlay">
@@ -39,19 +39,26 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <!-- S-Meter at top, left-aligned -->
-                    <div class="mb-3">
-                        <div class="analog-meter-container">
-                            <canvas id="sMeterCanvasA"></canvas>
+                    <!-- S-Meter and Band buttons side-by-side -->
+                    <div class="d-flex flex-nowrap mb-3 gap-3 align-items-start">
+                        <!-- Left: S-Meter -->
+                        <div class="flex-shrink-0">
+                            <div class="analog-meter-container">
+                                <canvas id="sMeterCanvasA"></canvas>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span id="txIndicatorA" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
+                                    <strong>TX</strong>
+                                </span>
+                            </div>
                         </div>
-                        <div class="text-center mt-2">
-                            <span id="txIndicatorA" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
-                                <strong>TX</strong>
-                            </span>
+                        <!-- Right: Band buttons in compact 3-row grid -->
+                        <div class="flex-grow-1">
+                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
                         </div>
                     </div>
 
-                    <!-- Controls below -->
+                    <!-- Frequency and other controls below -->
                     <div>
                         <label>Frequency:</label>
                         <div class="d-flex align-items-center">
@@ -61,10 +68,6 @@
                                 <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label>Bands (A):</label>
-                        @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER A -->
                     <div class="mb-3">
@@ -132,19 +135,26 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <!-- S-Meter at top, left-aligned -->
-                    <div class="mb-3">
-                        <div class="analog-meter-container">
-                            <canvas id="sMeterCanvasB"></canvas>
+                    <!-- S-Meter and Band buttons side-by-side -->
+                    <div class="d-flex flex-nowrap mb-3 gap-3 align-items-start">
+                        <!-- Left: S-Meter -->
+                        <div class="flex-shrink-0">
+                            <div class="analog-meter-container">
+                                <canvas id="sMeterCanvasB"></canvas>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span id="txIndicatorB" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
+                                    <strong>TX</strong>
+                                </span>
+                            </div>
                         </div>
-                        <div class="text-center mt-2">
-                            <span id="txIndicatorB" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
-                                <strong>TX</strong>
-                            </span>
+                        <!-- Right: Band buttons in compact 3-row grid -->
+                        <div class="flex-grow-1">
+                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
                         </div>
                     </div>
 
-                    <!-- Controls below -->
+                    <!-- Frequency and other controls below -->
                     <div>
                         <label>Frequency:</label>
                         <div class="d-flex align-items-center">
@@ -154,10 +164,6 @@
                                 <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label>Bands (B):</label>
-                        @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER B -->
                     <div class="mb-3">
