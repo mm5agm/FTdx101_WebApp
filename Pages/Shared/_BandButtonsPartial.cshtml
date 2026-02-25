@@ -6,8 +6,9 @@
 }
 <div class="band-buttons-container">
     <div class="band-radio-grid" id="bandRadioGroup@(receiver)">
-        @foreach (var band in bands)
+        @for (int idx = 0; idx < bands.Length; idx++)
         {
+            var band = bands[idx];
             var bandValue = band.Trim().ToLowerInvariant();
             <label class="band-radio-label">
                 <input type="radio"

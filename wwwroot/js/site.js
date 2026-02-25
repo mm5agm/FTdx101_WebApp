@@ -210,27 +210,11 @@ window.setBand = async function (receiver, band) {
     }
 };
 
-// Mode name -> CAT protocol code mapping (used by both outer and IIFE setMode)
-const modeToCatCode = {
-    "LSB": "1",
-    "USB": "2",
-    "CW-U": "3",
-    "FM": "4",
-    "AM": "5",
-    "RTTY-L": "6",
-    "CW-L": "7",
-    "DATA-L": "8",
-    "RTTY-U": "9",
-    "DATA-FM": "A",
-    "FM-N": "B",
-    "DATA-U": "C",
-    "AM-N": "D",
-    "PSK": "E",
-    "DATA-FM-N": "F"
-};
-
-// Outer mode setter - called from Razor inline onchange on mode radio buttons
+// Outer mode setter - called from Razor inline onchange on mode select
 window.setMode = async function (receiver, mode) {
+    const modeToCatCode = {
+        "LSB": "1", "USB": "2", "CW-U": "3", "FM": "4", "AM": "5", "RTTY-L": "6", "CW-L": "7", "DATA-L": "8", "RTTY-U": "9", "DATA-FM": "A", "FM-N": "B", "DATA-U": "C", "AM-N": "D", "PSK": "E", "DATA-FM-N": "F"
+    };
     const catCode = modeToCatCode[mode];
     if (!catCode) {
         console.error("Unknown mode:", mode);
@@ -394,25 +378,17 @@ connection.on("ShowSettingsPage", function () {
 });
 
 // ---------------------------------------------------------------------------
-// BUG FIX: updateModeRadioButton
+// BUG FIX: updateModeSelect
 // ---------------------------------------------------------------------------
-// Uses querySelectorAll to iterate ALL buttons in the group and explicitly
-// set each one's checked state — consistent with how highlightButtons works.
-// Simply setting .checked = true on a single button can fail to uncheck the
-// previously-selected button in some browser/CSS edge cases.
+// Updates the mode dropdown select when the mode changes from the radio
+// (e.g., via SignalR update or front panel knob change).
 // ---------------------------------------------------------------------------
-function updateModeRadioButton(receiver, mode) {
-    let found = false;
-    document.querySelectorAll(`input[name="mode${receiver}"]`).forEach(btn => {
-        btn.checked = (btn.value === mode);
-        if (btn.value === mode) found = true;
-    });
-    if (!found) {
-        console.warn(`updateModeRadioButton: no button found for mode${receiver} = "${mode}"`);
-        // Dump available values to help diagnose mismatches
-        const available = Array.from(document.querySelectorAll(`input[name="mode${receiver}"]`))
-            .map(b => b.value);
-        console.warn(`Available mode${receiver} values:`, available);
+function updateModeSelect(receiver, mode) {
+    const select = document.getElementById(`modeSelect${receiver}`);
+    if (select) {
+        select.value = mode;
+    } else {
+        console.warn(`updateModeSelect: select element not found for modeSelect${receiver}`);
     }
 }
 
@@ -420,16 +396,12 @@ function updateModeRadioButton(receiver, mode) {
 // Handles ModeA/B, FrequencyA/B, PowerA/B updates pushed from the backend.
 connection.on("RadioStateUpdate", function (update) {
     // --- MODE CHANGE (THE BUG FIX) ---
-    // Update both the text label AND the radio button checked state.
+    // Update the dropdown select when mode changes from the radio.
     if (update.property === "ModeA") {
-        const span = document.getElementById("modeDisplayA");
-        if (span) span.innerText = update.value;
-        updateModeRadioButton('A', update.value); // <-- FIX: was missing
+        updateModeSelect('A', update.value);
     }
     if (update.property === "ModeB") {
-        const span = document.getElementById("modeDisplayB");
-        if (span) span.innerText = update.value;
-        updateModeRadioButton('B', update.value); // <-- FIX: was missing
+        updateModeSelect('B', update.value);
     }
 
     // --- FREQUENCY CHANGE ---
@@ -680,12 +652,11 @@ function changeSelectedDigit(receiver, delta) {
             btn.checked = (btn.value === band);
         });
 
-        // Mode buttons - update the radio input checked state
-        // This is the same logic as updateModeRadioButton() in the outer scope,
-        // duplicated here so the inner polling loop also keeps buttons in sync.
-        document.querySelectorAll(`input[name="mode${receiver}"]`).forEach(btn => {
-            btn.checked = (btn.value === mode);
-        });
+        // Mode dropdown - update the selected value
+        const modeSelect = document.getElementById(`modeSelect${receiver}`);
+        if (modeSelect && mode) {
+            modeSelect.value = mode;
+        }
 
         // Antenna buttons
         document.querySelectorAll(`input[name="antenna${receiver}"]`).forEach(btn => {
@@ -695,10 +666,11 @@ function changeSelectedDigit(receiver, delta) {
 
     // Update ONLY mode and antenna buttons (not bands) - used by polling to avoid overwriting user's band selection
     function updateModeAndAntennaButtons(receiver, mode, antenna) {
-        // Mode buttons
-        document.querySelectorAll(`input[name="mode${receiver}"]`).forEach(btn => {
-            btn.checked = (btn.value === mode);
-        });
+        // Mode dropdown
+        const modeSelect = document.getElementById(`modeSelect${receiver}`);
+        if (modeSelect && mode) {
+            modeSelect.value = mode;
+        }
 
         // Antenna buttons
         document.querySelectorAll(`input[name="antenna${receiver}"]`).forEach(btn => {
@@ -1432,13 +1404,12 @@ connection.on("RadioStateUpdate", function (update) {
         if (update.property === "FrequencyB") {
             updateFrequencyDisplay('B', update.value);
         }
-        // Mode button updates — modeDisplayA/B spans are already handled
-        // by the first handler at the top of the file.
+        // Mode dropdown updates
         if (update.property === "ModeA") {
-            updateModeRadioButton('A', update.value);
+            updateModeSelect('A', update.value);
         }
         if (update.property === "ModeB") {
-            updateModeRadioButton('B', update.value);
+            updateModeSelect('B', update.value);
         }
     }
 });

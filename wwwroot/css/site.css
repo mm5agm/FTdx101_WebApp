@@ -315,18 +315,28 @@ pre, code { tab-size: 4; }
 /* Band buttons container - handles positioning independently */
 .band-buttons-container {
     position: relative;
-    width: 320px;
-    min-width: 320px;
-    margin-left: -253px;
+    /* No fixed width or negative margin */
 }
 
-/* Compact band button grid layout - 4 columns x 3 rows for 12 bands */
+/* Mode select dropdown - constrain width to fit longest option */
+#modeSelectA,
+#modeSelectB {
+    width: auto;
+    max-width: 150px;
+    font-size: 0.9rem;
+}
+
+/* Mode select container - reduce gap to match band button spacing */
+.mode-select-container {
+    margin-left: -0.6rem;
+}
+
+/* Compact band button grid layout - 3 columns on desktop, 4 on mobile/tablet */
 .band-radio-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0.4rem;
-    max-width: 320px;
-    min-width: 280px;
+    max-width: 100%;
 }
 
 .band-radio-label {
@@ -381,5 +391,16 @@ pre, code { tab-size: 4; }
         grid-template-columns: repeat(3, 1fr);
         max-width: 100%;
     }
+}
+
+/* Maximize usable width for receiver panels */
+.container-fluid {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}
+
+/* Shift band buttons and mode selector left by width of 2 band buttons (strong shift) */
+.band-buttons-shifted {
+    margin-left: -13rem;
 }
 

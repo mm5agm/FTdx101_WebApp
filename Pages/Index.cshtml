@@ -9,7 +9,7 @@
 }
 
 <!-- Cache-busted CSS reference -->
-<link rel="stylesheet" href="~/css/site.css?v=20260222k" />
+<link rel="stylesheet" href="~/css/site.css?v=20260223b" />
 
 <!-- Overlay for initialization status -->
 <div id="initOverlay" class="init-overlay">
@@ -39,8 +39,8 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <!-- S-Meter and Band buttons side-by-side -->
-                    <div class="d-flex flex-nowrap mb-3 gap-3 align-items-start">
+                    <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
                         <!-- Left: S-Meter -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
@@ -52,9 +52,26 @@
                                 </span>
                             </div>
                         </div>
-                        <!-- Right: Band buttons in compact 3-row grid -->
-                        <div class="flex-grow-1">
+                        <!-- Middle: Band buttons in compact 3-row grid -->
+                        <div class="flex-grow-1 band-buttons-shifted">
                             @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
+                        </div>
+                        <!-- Right: Mode select -->
+                        <div class="flex-shrink-0 mode-select-container">
+                            <select class="form-select" id="modeSelectA" 
+                                    onchange="setMode('A', this.value)">
+                                @foreach (var mode in allModes)
+                                {
+                                    @if (Model.RadioState.ModeA == mode)
+                                    {
+                                        <option value="@mode" selected>@mode</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@mode">@mode</option>
+                                    }
+                                }
+                            </select>
                         </div>
                     </div>
 
@@ -87,25 +104,6 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label>Mode:</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var mode in new[] { "LSB", "USB", "CW-U", "CW-L", "FM", "FM-N", "AM", "AM-N", "RTTY-L", "RTTY-U", "DATA-L", "DATA-U", "DATA-FM", "DATA-FM-N", "PSK" })
-                            {
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input"
-                                           type="radio"
-                                           name="modeA"
-                                           id="modeA_@mode"
-                                           value="@mode"
-                                           @(Model.RadioState.ModeA == mode ? "checked" : "")
-                                           onchange="window.radioControl.setMode('A','@mode')">
-                                    <label class="form-check-label" for="modeA_@mode">@mode</label>
-                                </div>
-                            }
-                        </div>
-                        <span id="modeDisplayA"></span>
-                    </div>
-                    <div class="mb-3">
                         <label>Antenna:</label>
                         <div class="d-flex flex-wrap gap-2">
                             @foreach (var ant in new[] { "1", "2", "3" })
@@ -135,8 +133,8 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <!-- S-Meter and Band buttons side-by-side -->
-                    <div class="d-flex flex-nowrap mb-3 gap-3 align-items-start">
+                    <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
                         <!-- Left: S-Meter -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
@@ -148,9 +146,27 @@
                                 </span>
                             </div>
                         </div>
-                        <!-- Right: Band buttons in compact 3-row grid -->
-                        <div class="flex-grow-1">
+                        <!-- Middle: Band buttons in compact 3-row grid -->
+                        <div class="flex-grow-1 band-buttons-shifted">
                             @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
+                        </div>
+                        <!-- Right: Mode select -->
+                        <div class="flex-shrink-0 mode-select-container">
+                            <label for="modeSelectB" class="form-label">Mode:</label>
+                            <select class="form-select" id="modeSelectB" 
+                                    onchange="setMode('B', this.value)">
+                                @foreach (var mode in allModes)
+                                {
+                                    @if (Model.RadioState.ModeB == mode)
+                                    {
+                                        <option value="@mode" selected>@mode</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@mode">@mode</option>
+                                    }
+                                }
+                            </select>
                         </div>
                     </div>
 
@@ -164,26 +180,6 @@
                                 <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
                             </div>
                         </div>
-                    </div>
-                    <!-- POWER CONTROL FOR RECEIVER B -->
-                    <div class="mb-3">
-                        <label>Mode:</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var mode in allModes)
-                            {
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input"
-                                           type="radio"
-                                           name="modeB"
-                                           id="modeB_@mode"
-                                           value="@mode"
-                                           @(Model.RadioState.ModeB == mode ? "checked" : "")
-                                           onchange="window.radioControl.setMode('B','@mode')">
-                                    <label class="form-check-label" for="modeB_@mode">@mode</label>
-                                </div>
-                            }
-                        </div>
-                        <span id="modeDisplayB"></span>
                     </div>
                     <div class="mb-3">
                         <label>Antenna:</label>
@@ -295,7 +291,7 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-    <script src="~/js/site.js?v=20260222zzzzzzz"></script>
+<script src="~/js/site.js?v=20260223a"></script>
     <script>
         async function launchWsjtx() {
             try {
