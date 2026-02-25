@@ -329,6 +329,8 @@ pre, code { tab-size: 4; }
 /* Mode select container - reduce gap to match band button spacing */
 .mode-select-container {
     margin-left: -0.6rem;
+    position: relative;
+    z-index: 10;
 }
 
 /* Compact band button grid layout - 3 columns on desktop, 4 on mobile/tablet */
