@@ -56,9 +56,9 @@
                         <div class="flex-grow-1 band-buttons-shifted">
                             @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
                         </div>
-                        <!-- Right: Mode select -->
+                        <!-- Right: Mode and Antenna selects -->
                         <div class="flex-shrink-0 mode-select-container">
-                            <select class="form-select" id="modeSelectA" 
+                            <select class="form-select mb-1" id="modeSelectA" 
                                     onchange="setMode('A', this.value)">
                                 @foreach (var mode in allModes)
                                 {
@@ -69,6 +69,20 @@
                                     else
                                     {
                                         <option value="@mode">@mode</option>
+                                    }
+                                }
+                            </select>
+                            <select class="form-select" id="antennaSelectA" 
+                                    onchange="window.radioControl.setAntenna('A', this.value)">
+                                @foreach (var ant in new[] { "1", "2", "3" })
+                                {
+                                    @if (Model.RadioState.AntennaA == ant)
+                                    {
+                                        <option value="@ant" selected>ANT @ant</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@ant">ANT @ant</option>
                                     }
                                 }
                             </select>
@@ -103,28 +117,10 @@
                             <span id="powerMaxLabelA">@Model.RadioState.MaxPower W</span>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label>Antenna:</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var ant in new[] { "1", "2", "3" })
-                            {
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input"
-                                           type="radio"
-                                           name="antennaA"
-                                           id="antennaA_@ant"
-                                           value="@ant"
-                                           @(Model.RadioState.AntennaA == ant ? "checked" : "")
-                                           onchange="window.radioControl.setAntenna('A','@ant')">
-                                    <label class="form-check-label" for="antennaA_@ant">ANT @ant</label>
-                                </div>
-                            }
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <!-- Receiver B Panel -->
+                    <!-- Receiver B Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-success h-100 receiver-card">
                 <div class="card-header bg-success text-white">
@@ -150,9 +146,9 @@
                         <div class="flex-grow-1 band-buttons-shifted">
                             @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
                         </div>
-                        <!-- Right: Mode select -->
+                        <!-- Right: Mode and Antenna selects -->
                         <div class="flex-shrink-0 mode-select-container">
-                            <select class="form-select" id="modeSelectB" 
+                            <select class="form-select mb-1" id="modeSelectB" 
                                     onchange="setMode('B', this.value)">
                                 @foreach (var mode in allModes)
                                 {
@@ -163,6 +159,20 @@
                                     else
                                     {
                                         <option value="@mode">@mode</option>
+                                    }
+                                }
+                            </select>
+                            <select class="form-select" id="antennaSelectB" 
+                                    onchange="window.radioControl.setAntenna('B', this.value)">
+                                @foreach (var ant in new[] { "1", "2", "3" })
+                                {
+                                    @if (Model.RadioState.AntennaB == ant)
+                                    {
+                                        <option value="@ant" selected>ANT @ant</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@ant">ANT @ant</option>
                                     }
                                 }
                             </select>
@@ -180,30 +190,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label>Antenna:</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var ant in new[] { "1", "2", "3" })
-                            {
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input"
-                                           type="radio"
-                                           name="antennaB"
-                                           id="antennaB_@ant"
-                                           value="@ant"
-                                           @(Model.RadioState.AntennaB == ant ? "checked" : "")
-                                           onchange="window.radioControl.setAntenna('B','@ant')">
-                                    <label class="form-check-label" for="antennaB_@ant">ANT @ant</label>
                                 </div>
-                            }
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Power and SWR Meters Row -->
+                    <!-- Power and SWR Meters Row -->
     <div class="row g-3 flex-wrap mt-3">
         <!-- Power Meter -->
         <div class="col-lg-6 col-12">

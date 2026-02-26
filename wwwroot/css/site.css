@@ -320,17 +320,22 @@ pre, code { tab-size: 4; }
 
 /* Mode select dropdown - constrain width to fit longest option */
 #modeSelectA,
-#modeSelectB {
+#modeSelectB,
+#antennaSelectA,
+#antennaSelectB {
     width: auto;
     max-width: 150px;
     font-size: 0.9rem;
 }
 
-/* Mode select container - reduce gap to match band button spacing */
+/* Mode select container - stack mode and antenna dropdowns vertically */
 .mode-select-container {
     margin-left: -0.6rem;
     position: relative;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 /* Compact band button grid layout - 3 columns on desktop, 4 on mobile/tablet */
