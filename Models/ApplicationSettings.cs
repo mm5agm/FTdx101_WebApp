@@ -10,6 +10,8 @@ namespace FTdx101_WebApp.Models
 
         // External Applications
         public string WsjtxCommandLine { get; set; } = @"C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp";
+        public string JtalertCommandLine { get; set; } = @"C:\HamApps\JTAlert\JTAlert.exe";
+        public string Log4omCommandLine { get; set; } = @"C:\Program Files (x86)\Log4OM 2\Log4OM.exe";
 
         // Last Radio State (persisted between sessions)
         public RadioState LastRadioState { get; set; } = new();

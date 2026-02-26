@@ -9,7 +9,7 @@ namespace FTdx101_WebApp.Services
     public class RadioStateService : INotifyPropertyChanged, IRadioStateService
     {
         private readonly ILogger<RadioStateService> _logger;
-        private readonly IHubContext<RadioHub>? _hubContext;
+        private readonly IHubContext<RadioHub> _hubContext;
         private readonly RadioStatePersistenceService _statePersistence;
 
         public bool IsInitialized { get; set; } = false;
@@ -19,12 +19,14 @@ namespace FTdx101_WebApp.Services
         public RadioStateService(
             ILogger<RadioStateService> logger,
             RadioStatePersistenceService statePersistence,
-            IHubContext<RadioHub>? hubContext = null)
+            IHubContext<RadioHub> hubContext)
         {
             _logger = logger;
             _statePersistence = statePersistence;
             _hubContext = hubContext;
             _initialState = _statePersistence.Load();
+
+            _logger.LogInformation("RadioStateService constructed with IHubContext: {HubContextAvailable}", hubContext != null);
 
             // ADD THIS LOG:
             _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, AntennaA={AntennaA}, AntennaB={AntennaB}",
@@ -48,7 +50,7 @@ namespace FTdx101_WebApp.Services
         {
             if (!EqualityComparer<T>.Default.Equals(field, value))
             {
-                _logger.LogInformation("Setting {Property} to {Value}", propertyName, value);
+                _logger.LogInformation("[SetField] Setting {Property} from {OldValue} to {NewValue}", propertyName, field, value);
                 field = value;
                 OnPropertyChanged(propertyName);
                 BroadcastUpdate(propertyName!, value!);
@@ -57,6 +59,14 @@ namespace FTdx101_WebApp.Services
                 if (IsInitialized)
                 {
                     _statePersistence.Save(this.ToRadioState());
+                }
+            }
+            else
+            {
+                // Log when value doesn't change (helpful for debugging band issues)
+                if (propertyName == "BandA" || propertyName == "BandB")
+                {
+                    _logger.LogDebug("[SetField] {Property} unchanged (already {Value})", propertyName, value);
                 }
             }
         }
@@ -71,7 +81,8 @@ namespace FTdx101_WebApp.Services
 
         private void BroadcastUpdate(string property, object value)
         {
-            _hubContext?.Clients.All.SendAsync("RadioStateUpdate", new { property, value });
+            _logger.LogInformation("[BroadcastUpdate] Broadcasting {Property} = {Value}", property, value);
+            _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value });
         }
 
         // --- Properties for all CAT commands in GetInitialValues() ---
@@ -236,8 +247,14 @@ namespace FTdx101_WebApp.Services
 
         public void UpdateBandFromFrequency()
         {
-            BandA = GetBandFromFrequency(FrequencyA);
-            BandB = GetBandFromFrequency(FrequencyB);
+            var newBandA = GetBandFromFrequency(FrequencyA);
+            var newBandB = GetBandFromFrequency(FrequencyB);
+
+            _logger.LogInformation("[UpdateBandFromFrequency] FreqA={FreqA} -> BandA={OldBandA} -> {NewBandA}, FreqB={FreqB} -> BandB={OldBandB} -> {NewBandB}",
+                FrequencyA, BandA, newBandA, FrequencyB, BandB, newBandB);
+
+            BandA = newBandA;
+            BandB = newBandB;
         }
         public string GetBandFromFrequency(long freq)
         {

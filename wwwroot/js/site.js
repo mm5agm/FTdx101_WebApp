@@ -395,6 +395,8 @@ function updateModeSelect(receiver, mode) {
 // First SignalR RadioStateUpdate handler (outer scope).
 // Handles ModeA/B, FrequencyA/B, PowerA/B updates pushed from the backend.
 connection.on("RadioStateUpdate", function (update) {
+    console.log('[SignalR] Received RadioStateUpdate:', JSON.stringify(update));
+
     // --- MODE CHANGE (THE BUG FIX) ---
     // Update the dropdown select when mode changes from the radio.
     if (update.property === "ModeA") {
@@ -412,6 +414,16 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "FrequencyB") {
         state.lastBackendFreq.B = update.value;
         updateFrequencyDisplay('B', update.value);
+    }
+
+    // --- BAND CHANGE ---
+    if (update.property === "BandA") {
+        console.log(`[SignalR] Received BandA update: ${update.value}`);
+        updateBandButton('A', update.value);
+    }
+    if (update.property === "BandB") {
+        console.log(`[SignalR] Received BandB update: ${update.value}`);
+        updateBandButton('B', update.value);
     }
 
     // --- POWER CHANGE ---
@@ -530,6 +542,33 @@ async function updateBandButtonsFromBackend() {
     } catch (error) {
         console.error('Error updating band buttons:', error);
     }
+}
+
+// Update band button selection for a specific receiver (called via SignalR)
+function updateBandButton(receiver, band) {
+    console.log(`[Band] updateBandButton called: receiver=${receiver}, band=${band}`);
+    if (!band) {
+        console.warn('[Band] updateBandButton: band is null/undefined');
+        return;
+    }
+    const bandLower = band.toLowerCase();
+    const inputs = document.querySelectorAll(`input[name="band-${receiver}"]`);
+    console.log(`[Band] Found ${inputs.length} band buttons for receiver ${receiver}`);
+
+    let foundMatch = false;
+    inputs.forEach(radio => {
+        const matches = (radio.value.toLowerCase() === bandLower);
+        if (matches) {
+            foundMatch = true;
+            console.log(`[Band] Setting checked=true for ${radio.value}`);
+        }
+        radio.checked = matches;
+    });
+
+    if (!foundMatch) {
+        console.warn(`[Band] No matching band button found for band="${band}" (looked for "${bandLower}")`);
+    }
+    console.log(`[Band] Updated ${receiver} band button to: ${band}`);
 }
 
 // Outer DOMContentLoaded - initial UI wiring
@@ -879,8 +918,6 @@ function changeSelectedDigit(receiver, delta) {
 
             state.lastBackendFreq.A = data.vfoA.frequency;
             state.lastBackendFreq.B = data.vfoB.frequency;
-            state.lastBand.A = data.vfoA.band;
-            state.lastBand.B = data.vfoB.band;
             state.lastMode.A = data.vfoA.mode;
             state.lastMode.B = data.vfoB.mode;
             state.lastAntenna.A = data.vfoA.antenna;
@@ -912,8 +949,21 @@ function changeSelectedDigit(receiver, delta) {
             updateSMeter('A', data.vfoA.sMeter);
             updateSMeter('B', data.vfoB.sMeter);
 
-            // Only update mode and antenna buttons from polling, NOT bands
-            // (bands are updated by user clicks and will be updated by SignalR when we add that)
+            // Update band buttons from polling (fixes WSJT-X and radio band changes)
+            // Always log band data for debugging
+            console.log(`[Poll] Band data: A=${data.vfoA.band} (last=${state.lastBand.A}), B=${data.vfoB.band} (last=${state.lastBand.B})`);
+
+            // FORCE update band buttons every poll to test if DOM updates work
+            if (data.vfoA.band) {
+                updateBandButton('A', data.vfoA.band);
+                state.lastBand.A = data.vfoA.band;
+            }
+            if (data.vfoB.band) {
+                updateBandButton('B', data.vfoB.band);
+                state.lastBand.B = data.vfoB.band;
+            }
+
+            // Update mode and antenna buttons from polling
             updateModeAndAntennaButtons('A', data.vfoA.mode, data.vfoA.antenna);
             updateModeAndAntennaButtons('B', data.vfoB.mode, data.vfoB.antenna);
         } catch (error) {
@@ -1410,6 +1460,13 @@ connection.on("RadioStateUpdate", function (update) {
         }
         if (update.property === "ModeB") {
             updateModeSelect('B', update.value);
+        }
+        // Band button updates
+        if (update.property === "BandA") {
+            updateBandButton('A', update.value);
+        }
+        if (update.property === "BandB") {
+            updateBandButton('B', update.value);
         }
     }
 });

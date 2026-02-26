@@ -11,6 +11,7 @@ namespace FTdx101_WebApp.Services
     public class RigctldServer : BackgroundService
     {
         private readonly CatMultiplexerService _multiplexer;
+        private readonly RadioStateService _radioStateService;
         private readonly ILogger<RigctldServer> _logger;
         private TcpListener? _listener;
         private readonly List<TcpClient> _clients = new();
@@ -48,9 +49,10 @@ namespace FTdx101_WebApp.Services
             { "4m",   "11" } // Added 4m band
         };
 
-        public RigctldServer(CatMultiplexerService multiplexer, ILogger<RigctldServer> logger)
+        public RigctldServer(CatMultiplexerService multiplexer, RadioStateService radioStateService, ILogger<RigctldServer> logger)
         {
             _multiplexer = multiplexer;
+            _radioStateService = radioStateService;
             _logger = logger;
         }
 
@@ -243,6 +245,11 @@ namespace FTdx101_WebApp.Services
 
             var command = CatCommands.FormatFrequencyA(freq);
             await _multiplexer.SendCommandAsync(command, clientId);
+
+            // Update RadioStateService immediately so the UI updates via SignalR
+            _radioStateService.FrequencyA = freq;
+            _logger.LogInformation("Rigctld set_freq: {Freq} Hz (client: {ClientId})", freq, clientId);
+
             return "RPRT 0";
         }
 

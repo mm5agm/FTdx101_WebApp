@@ -8,6 +8,12 @@ using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ADD SIGNALR EARLY (before services that depend on IHubContext):
+builder.Services.AddSignalR();
+
+// Register the persistence service (no hub dependency)
+builder.Services.AddSingleton<RadioStatePersistenceService>();
+
 // Register RadioStateService and CatMessageBuffer as singletons
 builder.Services.AddSingleton<RadioStateService>();
 builder.Services.AddSingleton<CatMessageBuffer>();
@@ -20,9 +26,6 @@ builder.Services.AddSingleton<CatMultiplexerService>();
 
 // Register the main CAT client for the web app
 builder.Services.AddSingleton<ICatClient, MultiplexedCatClient>();
-
-// Register the persistence service
-builder.Services.AddSingleton<RadioStatePersistenceService>();
 
 // Register the rigctld server as a background service
 builder.Services.AddHostedService<RigctldServer>();
@@ -39,9 +42,6 @@ builder.Services.AddSingleton<IRadioStateService>(sp => sp.GetRequiredService<Ra
 // Register the radio initialization service
 builder.Services.AddSingleton<RadioInitializationService>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<RadioInitializationService>());
-
-// ADD SIGNALR:
-builder.Services.AddSignalR();
 
 // ADD THIS LINE for Razor Pages support:
 builder.Services.AddRazorPages();

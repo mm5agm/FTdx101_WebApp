@@ -129,6 +129,9 @@ namespace FTdx101_WebApp.Services
                     {
                         _logger.LogInformation("WSJT-X frequency → radio: {Freq} Hz", msg.DialFrequency);
                         await _catClient.SetFrequencyAAsync(msg.DialFrequency);
+
+                        // Update RadioStateService immediately so the UI updates via SignalR
+                        _radioStateService.FrequencyA = msg.DialFrequency;
                     }
                     break;
 

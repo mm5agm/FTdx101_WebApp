@@ -170,6 +170,27 @@
                             </div>
                             <span asp-validation-for="Settings.WsjtxCommandLine" class="text-danger"></span>
                         </div>
+                        <div class="mb-3">
+                            <label asp-for="Settings.JtalertCommandLine" class="form-label">JTAlert Command Line</label>
+                            <input asp-for="Settings.JtalertCommandLine" class="form-control font-monospace"
+                                   placeholder="C:\HamApps\JTAlert\JTAlert.exe" />
+                            <div class="form-text">
+                                Full path to the JTAlert executable.<br />
+                                <strong>Example:</strong> <code>C:\HamApps\JTAlert\JTAlert.exe</code>
+                            </div>
+                            <span asp-validation-for="Settings.JtalertCommandLine" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Settings.Log4omCommandLine" class="form-label">Log4OM Command Line</label>
+                            <input asp-for="Settings.Log4omCommandLine" class="form-control font-monospace"
+                                   placeholder="C:\Program Files (x86)\Log4OM 2\Log4OM.exe" />
+                            <div class="form-text">
+                                Full path to the Log4OM executable.<br />
+                                <strong>Example:</strong> <code>"C:\Program Files (x86)\Log4OM 2\Log4OM.exe"</code>
+                                <span class="d-block mt-1">Wrap the path in quotes if it contains spaces.</span>
+                            </div>
+                            <span asp-validation-for="Settings.Log4omCommandLine" class="text-danger"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="row mt-4">

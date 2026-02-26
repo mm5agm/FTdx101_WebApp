@@ -89,6 +89,11 @@ namespace FTdx101_WebApp.Controllers
                 await EnsureConnectedAsync();
             }
 
+            // Log what we're returning for debugging
+            _logger.LogInformation("[API Status] Returning: FreqA={FreqA}, BandA={BandA}, FreqB={FreqB}, BandB={BandB}",
+                _radioStateService.FrequencyA, _radioStateService.BandA,
+                _radioStateService.FrequencyB, _radioStateService.BandB);
+
             return Ok(new
             {
                 vfoA = new
