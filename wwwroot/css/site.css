@@ -401,8 +401,8 @@ pre, code { tab-size: 4; }
     padding-right: 8px !important;
 }
 
-/* Shift band buttons and mode selector left by width of 2 band buttons (strong shift) */
+/* Shift band buttons and mode selector left (closer to S-meter) */
 .band-buttons-shifted {
-    margin-left: -13rem;
+    margin-left: -16rem;
 }
 
