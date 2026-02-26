@@ -119,19 +119,32 @@ namespace FTdx101_WebApp.Services
                         _isTransmitting = msg.Transmitting;
                         _wsjtxMode = msg.Mode;
                     }
-                    _logger.LogDebug("WSJT-X Status: Id={Id}, Freq={Freq}, Mode={Mode}, TX={TX}",
+
+                    // Log every status message with frequency info for debugging
+                    _logger.LogDebug("WSJT-X Status: Id={Id}, DialFreq={Freq}, Mode={Mode}, TX={TX}",
                         msg.Id, msg.DialFrequency, msg.Mode, msg.Transmitting);
 
                     // Sync frequency to radio if meaningfully different (>100 Hz).
-                    // The rigctld TCP connection also handles this when WSJT-X sends F <freq>;
-                    // this path provides real-time redundancy.
-                    if (msg.DialFrequency > 0 && Math.Abs(msg.DialFrequency - _radioStateService.FrequencyA) > 100)
+                    // WSJT-X sends dial frequency changes when:
+                    // - Band is changed
+                    // - User clicks outside current passband on wide graph
+                    // - Split mode frequency changes
+                    if (msg.DialFrequency > 0)
                     {
-                        _logger.LogInformation("WSJT-X frequency → radio: {Freq} Hz", msg.DialFrequency);
-                        await _catClient.SetFrequencyAAsync(msg.DialFrequency);
+                        var currentFreq = _radioStateService.FrequencyA;
+                        var diff = Math.Abs(msg.DialFrequency - currentFreq);
 
-                        // Update RadioStateService immediately so the UI updates via SignalR
-                        _radioStateService.FrequencyA = msg.DialFrequency;
+                        if (diff > 100)
+                        {
+                            _logger.LogInformation("[WSJT-X UDP] Frequency change detected: {OldFreq} Hz → {NewFreq} Hz (diff={Diff} Hz)", 
+                                currentFreq, msg.DialFrequency, diff);
+
+                            // Send to radio
+                            await _catClient.SetFrequencyAAsync(msg.DialFrequency);
+
+                            // Update RadioStateService immediately so the UI updates via SignalR
+                            _radioStateService.FrequencyA = msg.DialFrequency;
+                        }
                     }
                     break;
 
