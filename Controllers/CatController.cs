@@ -16,7 +16,6 @@ namespace FTdx101_WebApp.Controllers
         private readonly RadioStatePersistenceService _statePersistence;
         private readonly RadioInitializationService _radioInitService;
         private static readonly SemaphoreSlim _requestSemaphore = new(1, 1);
-        private static bool _restored = false;
 
         // Static band frequency mapping (apply this at the top of your class)
         private static readonly Dictionary<string, long> BandFreqs = new(StringComparer.OrdinalIgnoreCase)
@@ -64,47 +63,14 @@ namespace FTdx101_WebApp.Controllers
 
         private async Task EnsureConnectedAsync()
         {
+            // RadioInitializationService handles connection and state restoration on startup.
+            // This method only needs to verify the connection is still active.
             if (!_catClient.IsConnected)
             {
                 var settings = await _settingsService.GetSettingsAsync();
                 await _catClient.ConnectAsync(settings.SerialPort, settings.BaudRate);
             }
-            // Restore state and query actual frequencies only once per app run
-            if (!_restored)
-            {
-                await RestoreRadioStateAsync();
-                _restored = true;
-
-                var freqA = await _catClient.QueryFrequencyAAsync("WebUI", CancellationToken.None);
-                var freqB = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
-                if (freqA > 0) _radioStateService.FrequencyA = freqA;
-                if (freqB > 0) _radioStateService.FrequencyB = freqB;
-                _radioStateService.UpdateBandFromFrequency();
-            }
-        }
-
-        private async Task RestoreRadioStateAsync()
-        {
-            var state = _radioStateService.InitialState; // Use the state loaded at startup
-            if (state.FrequencyA > 0)
-                await _catClient.SendCommandAsync($"FA{state.FrequencyA:D9};", "WebUI", CancellationToken.None);
-            if (!string.IsNullOrEmpty(state.ModeA))
-                await _catClient.SetModeMainAsync(state.ModeA);
-            if (!string.IsNullOrEmpty(state.AntennaA))
-                await _catClient.SendCommandAsync($"AN0{state.AntennaA};", "WebUI", CancellationToken.None);
-            if (state.FrequencyB > 0)
-                await _catClient.SendCommandAsync($"FB{state.FrequencyB:D9};", "WebUI", CancellationToken.None);
-            if (!string.IsNullOrEmpty(state.ModeB))
-                await _catClient.SetModeSubAsync(state.ModeB);
-            if (!string.IsNullOrEmpty(state.AntennaB))
-                await _catClient.SendCommandAsync($"AN1{state.AntennaB};", "WebUI", CancellationToken.None);
-
-            // Restore power and other properties to in-memory state if present
-            _radioStateService.PowerA = state.PowerA;
-            _radioStateService.ModeA = state.ModeA;
-            _radioStateService.AntennaA = state.AntennaA;
-            _radioStateService.ModeB = state.ModeB;
-            _radioStateService.AntennaB = state.AntennaB;
+            // No redundant restoration needed - RadioInitializationService already did it
         }
 
         private async Task<string> GetMainVfoAsync()
