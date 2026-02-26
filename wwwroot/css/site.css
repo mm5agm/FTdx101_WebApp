@@ -415,4 +415,65 @@ pre, code { tab-size: 4; }
 .power-meter-container .gauge-wrapper {
     margin-left: -200px !important;
 }
+#powerMeterValue {
+    margin-left: -110px !important;
+}
+#powerSliderA {
+    width: 260px !important;
+    height: 18px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
 
+/* WebKit (Chrome, Edge, Safari) */
+#powerSliderA::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSliderA::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0; /* Center thumb on track */
+}
+
+/* Firefox */
+#powerSliderA::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSliderA::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* IE/Edge */
+#powerSliderA::-ms-fill-lower,
+#powerSliderA::-ms-fill-upper {
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSliderA::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#powerSliderA {
+    /* Remove default styles for IE/Edge */
+    background: transparent;
+    border: none;
+}

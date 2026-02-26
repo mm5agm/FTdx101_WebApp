@@ -112,23 +112,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- POWER CONTROL FOR RECEIVER A -->
-                    <div class="mb-3">
-                        <label>Power: <span id="powerValueA" class="fw-bold">0W</span></label>
-                        <input type="range" class="form-range power-slider"
-                               id="powerSliderA"
-                               min="5"
-                               max="200"
-                               step="5"
-                               value="100"
-                               oninput="window.radioControl.updatePowerDisplay('A', this.value)"
-                               onchange="window.radioControl.setPower('A', this.value)">
-                        <div class="d-flex justify-content-between small text-muted">
-                            <span>5W</span>
-                            <span>100W</span>
-                            <span id="powerMaxLabelA">@Model.RadioState.MaxPower W</span>
-                        </div>
-                    </div>
                             </div>
                         </div>
                     </div>
@@ -227,6 +210,23 @@
                                 <canvas id="powerMeterCanvas"></canvas>
                             </div>
                             <span id="powerMeterValue" class="badge bg-warning text-dark" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100;">0W</span>
+                        </div>
+                    </div>
+                    <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
+                    <div class="mb-3 mt-3">
+                        <label>Power: <span id="powerValueA" class="fw-bold">0W</span></label>
+                        <input type="range" class="form-range power-slider"
+                               id="powerSliderA"
+                               min="5"
+                               max="200"
+                               step="5"
+                               value="100"
+                               oninput="window.radioControl.updatePowerDisplay('A', this.value)"
+                               onchange="window.radioControl.setPower('A', this.value)">
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>5W</span>
+                            <span>100W</span>
+                            <span id="powerMaxLabelA">@Model.RadioState.MaxPower W</span>
                         </div>
                     </div>
                     <!-- MIC Meter underneath -->
