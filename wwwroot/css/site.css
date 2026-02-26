@@ -411,3 +411,8 @@ pre, code { tab-size: 4; }
     margin-left: -16rem;
 }
 
+/* Move the power meter gauge closer to the SWR meter */
+.power-meter-container .gauge-wrapper {
+    margin-left: -200px !important;
+}
+
