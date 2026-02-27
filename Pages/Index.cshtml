@@ -316,7 +316,7 @@
                     // Green = UDP connected (WSJT-X talking to us)
                     // Yellow = process running but no UDP yet
                     // Grey = not running
-                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning');
+                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-danger');
                     if (data.connected) {
                         btn.classList.add('btn-success');
                         btn.title = 'WSJT-X connected' + (data.mode ? ' \u2014 ' + data.mode : '');
@@ -324,8 +324,8 @@
                         btn.classList.add('btn-warning');
                         btn.title = 'WSJT-X running \u2014 waiting for UDP data';
                     } else {
-                        btn.classList.add('btn-secondary');
-                        btn.title = 'Launch WSJT-X';
+                        btn.classList.add('btn-danger');
+                        btn.title = 'WSJT-X is not running';
                     }
 
                     // Red TX badge when transmitting
@@ -343,11 +343,14 @@
         async function launchJtalert() {
             try {
                 const response = await fetch('/api/jtalert/launch', { method: 'POST' });
+                const btn = document.getElementById('jtalertBtn');
                 if (response.ok) {
                     const data = await response.json();
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-success');
+                    btn.title = 'JTAlert is running';
                     if (data.alreadyRunning) {
                         console.log('JTAlert is already running, brought window to front');
-                        const btn = document.getElementById('jtalertBtn');
                         const originalText = btn.innerHTML;
                         btn.innerHTML = 'JTAlert Already Running';
                         setTimeout(() => { btn.innerHTML = originalText; }, 2000);
@@ -366,15 +369,16 @@
                 const response = await fetch('/api/jtalert/status');
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('[JTAlert Status Poll]', data); // Debug log
                     const btn = document.getElementById('jtalertBtn');
 
-                    btn.classList.remove('btn-secondary', 'btn-success');
+                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-danger');
                     if (data.running) {
                         btn.classList.add('btn-success');
                         btn.title = 'JTAlert is running';
                     } else {
-                        btn.classList.add('btn-secondary');
-                        btn.title = 'Launch JTAlert';
+                        btn.classList.add('btn-danger');
+                        btn.title = 'JTAlert is not running';
                     }
                 }
             } catch (e) { /* ignore */ }
@@ -387,11 +391,14 @@
         async function launchLog4om() {
             try {
                 const response = await fetch('/api/log4om/launch', { method: 'POST' });
+                const btn = document.getElementById('log4omBtn');
                 if (response.ok) {
                     const data = await response.json();
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-success');
+                    btn.title = 'Log4OM is running';
                     if (data.alreadyRunning) {
                         console.log('Log4OM is already running, brought window to front');
-                        const btn = document.getElementById('log4omBtn');
                         const originalText = btn.innerHTML;
                         btn.innerHTML = 'Log4OM Already Running';
                         setTimeout(() => { btn.innerHTML = originalText; }, 2000);
@@ -410,15 +417,16 @@
                 const response = await fetch('/api/log4om/status');
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('[Log4OM Status Poll]', data); // Debug log
                     const btn = document.getElementById('log4omBtn');
 
-                    btn.classList.remove('btn-secondary', 'btn-success');
+                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-danger');
                     if (data.running) {
                         btn.classList.add('btn-success');
                         btn.title = 'Log4OM is running';
                     } else {
-                        btn.classList.add('btn-secondary');
-                        btn.title = 'Launch Log4OM';
+                        btn.classList.add('btn-danger');
+                        btn.title = 'Log4OM is not running';
                     }
                 }
             } catch (e) { /* ignore */ }

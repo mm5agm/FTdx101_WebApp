@@ -31,7 +31,8 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("jtalert/status")]
         public IActionResult JtalertStatus()
         {
-            var running = Process.GetProcessesByName("JTAlert").Length > 0;
+            // Check for JTAlertV2 process (main JTAlert process)
+            var running = Process.GetProcessesByName("JTAlertV2").Length > 0;
             return Ok(new { running });
         }
 
@@ -48,7 +49,8 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("log4om/status")]
         public IActionResult Log4omStatus()
         {
-            var running = Process.GetProcessesByName("Log4OM").Length > 0;
+            // Check for L4ONG process (Log4OM Next Generation)
+            var running = Process.GetProcessesByName("L4ONG").Length > 0;
             return Ok(new { running });
         }
 
