@@ -1,4 +1,8 @@
-﻿![FTdx101 WebApp Screenshot](pictures/WebApp.png)
+﻿
+![FTdx101 WebApp Screenshot](pictures/WebApp.png)
+
+## Windows Smart App Control Example
+![Smart App Control Screenshot](pictures/SmartAppControl.png)
 
 # FTdx101 WebApp
 
