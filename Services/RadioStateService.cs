@@ -208,17 +208,52 @@ namespace FTdx101_WebApp.Services
         private string? _antennaB = "";
         public string? AntennaB { get => _antennaB; set => SetField(ref _antennaB, value); }
 
+
         private int? _sMeterA;
-        public int? SMeterA { get => _sMeterA; set => SetField(ref _sMeterA, value); }
+        public int? SMeterA
+        {
+            get => _sMeterA;
+            set
+            {
+                if (value == null) return;
+                int clamped = Math.Clamp(value.Value, 0, 255);
+                // Spike filtering removed for full responsiveness
+                SetField(ref _sMeterA, clamped);
+            }
+        }
 
         private int? _sMeterB;
-        public int? SMeterB { get => _sMeterB; set => SetField(ref _sMeterB, value); }
+        public int? SMeterB
+        {
+            get => _sMeterB;
+            set
+            {
+                if (value == null) return;
+                int clamped = Math.Clamp(value.Value, 0, 255);
+                // Spike filtering removed for full responsiveness
+                SetField(ref _sMeterB, clamped);
+            }
+        }
 
         private int? _powerMeter;
         public int? PowerMeter { get => _powerMeter; set => SetField(ref _powerMeter, value); }
 
         private int? _swrMeter;
-        public int? SWRMeter { get => _swrMeter; set => SetField(ref _swrMeter, value); }
+        public int? SWRMeter
+        {
+            get => _swrMeter;
+            set
+            {
+                if (value == null) return;
+                int clamped = Math.Clamp(value.Value, 0, 255);
+                if (_swrMeter.HasValue && clamped != 0 && Math.Abs(clamped - _swrMeter.Value) > 50)
+                {
+                    _logger.LogWarning("[SWRMeter] Ignored spike: {Old} -> {New}", _swrMeter, clamped);
+                    return;
+                }
+                SetField(ref _swrMeter, clamped);
+            }
+        }
 
         private int? _power;
         public int? Power { get => _power; set => SetField(ref _power, value); }
