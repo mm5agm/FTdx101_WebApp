@@ -1,12 +1,10 @@
 name: Build and Release Installer
 
 on:
-  release:
-    types: [created]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to upload to (e.g. v0.5.1)'
+        description: 'Release tag to create/upload to (e.g. v0.5.1)'
         required: true
 
 jobs:
@@ -53,7 +51,6 @@ jobs:
           Write-Host "Using NSIS at: $makensis"
           & $makensis installer.nsi
           if ($LASTEXITCODE -ne 0) { Write-Error "NSIS failed (exit $LASTEXITCODE)"; exit 1 }
-          # Find whatever Setup exe NSIS produced and normalise the name
           $found = Get-ChildItem -Filter "*Setup*.exe" | Select-Object -First 1
           if (!$found) { Write-Error "No *Setup*.exe found after NSIS ran"; exit 1 }
           Write-Host "NSIS produced: $($found.FullName)"
@@ -72,31 +69,10 @@ jobs:
           Write-Host "OK: $('{0:N0}' -f (Get-Item FTdx101_WebApp_Setup.exe).Length) bytes"
         shell: pwsh
 
-      - name: Set release tag variable
-        id: set_tag
+      - name: Create or update GitHub Release and upload asset
         run: |
-          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-            echo "tag=$env:TAG" >> $env:GITHUB_OUTPUT
-          } else {
-            $ref = $env:GITHUB_REF
-            $tag = $ref.Substring($ref.LastIndexOf('/') + 1)
-            echo "tag=$tag" >> $env:GITHUB_OUTPUT
-          }
-        env:
-          TAG: ${{ github.event.inputs.tag }}
-        shell: pwsh
-
-      - name: Create release if needed (manual run)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          gh release create "${{ steps.set_tag.outputs.tag }}" --title "${{ steps.set_tag.outputs.tag }}" --notes "Automated release" --prerelease
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-
-      - name: Upload installer to release
-        run: |
-          gh release upload "${{ steps.set_tag.outputs.tag }}" FTdx101_WebApp_Setup.exe --clobber
+          gh release create "${{ github.event.inputs.tag }}" FTdx101_WebApp_Setup.exe --title "${{ github.event.inputs.tag }}" --notes "Automated release" --prerelease --clobber || `
+          gh release upload "${{ github.event.inputs.tag }}" FTdx101_WebApp_Setup.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
