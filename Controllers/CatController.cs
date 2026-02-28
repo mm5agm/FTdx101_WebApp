@@ -103,7 +103,8 @@ namespace FTdx101_WebApp.Controllers
                     sMeter = _radioStateService.SMeterA ?? 0,
                     power = _radioStateService.PowerA,
                     mode = _radioStateService.ModeA ?? "",
-                    antenna = _radioStateService.AntennaA ?? ""
+                    antenna = _radioStateService.AntennaA ?? "",
+                    afGain = _radioStateService.AfGainA
                 },
                 vfoB = new
                 {
@@ -111,7 +112,8 @@ namespace FTdx101_WebApp.Controllers
                     band = _radioStateService.BandB,
                     sMeter = _radioStateService.SMeterB ?? 0,
                     mode = _radioStateService.ModeB ?? "",
-                    antenna = _radioStateService.AntennaB ?? ""
+                    antenna = _radioStateService.AntennaB ?? "",
+                    afGain = _radioStateService.AfGainB
                 }
             });
         }

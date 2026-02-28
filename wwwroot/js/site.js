@@ -344,25 +344,6 @@ window.updatePowerDisplay = function () {
     console.warn("updatePowerDisplay not implemented");
 };
 
-// Outer fetchRadioStatus - minimal version, only updates frequencies.
-// The IIFE's version does the full job (S-meter, band, mode, antenna, power).
-async function fetchRadioStatus() {
-    try {
-        const response = await fetch('/api/cat/status');
-        if (!response.ok) return;
-        const data = await response.json();
-
-        state.lastBackendFreq.A = data.vfoA.frequency;
-        state.lastBackendFreq.B = data.vfoB.frequency;
-
-        console.log('Fetched frequencies:', state.lastBackendFreq.A, state.lastBackendFreq.B);
-
-        updateFrequencyDisplay('A', state.lastBackendFreq.A);
-        updateFrequencyDisplay('B', state.lastBackendFreq.B);
-    } catch (error) {
-        console.error('Error fetching radio status:', error);
-    }
-}
 
 // ---------------------------------------------------------------------------
 // SignalR connection - shared by both the outer handler below and the
@@ -574,13 +555,7 @@ function updateBandButton(receiver, band) {
 // Outer DOMContentLoaded - initial UI wiring
 window.addEventListener('DOMContentLoaded', () => {
     pollInitStatus();
-    fetchRadioStatus().then(() => {
-        updateFrequencyDisplay('A', state.lastBackendFreq.A);
-        updateFrequencyDisplay('B', state.lastBackendFreq.B);
-        initializeDigitInteraction('A');
-        initializeDigitInteraction('B');
-        updateBandButtonsFromBackend();
-    });
+    updateBandButtonsFromBackend();
 
     // Event delegation for band button changes
     document.addEventListener('change', function(e) {
@@ -966,6 +941,26 @@ function changeSelectedDigit(receiver, delta) {
             // Update mode and antenna buttons from polling
             updateModeAndAntennaButtons('A', data.vfoA.mode, data.vfoA.antenna);
             updateModeAndAntennaButtons('B', data.vfoB.mode, data.vfoB.antenna);
+
+            // Set AF Gain sliders and labels from backend
+            if (data.vfoA && typeof data.vfoA.afGain === 'number') {
+                const sliderA = document.getElementById('afGainSliderA');
+                const labelA = document.getElementById('afGainValueA');
+                if (sliderA && labelA) {
+                    sliderA.value = data.vfoA.afGain;
+                    labelA.innerText = data.vfoA.afGain;
+                    updateAfGainFill('afGainSliderA');
+                }
+            }
+            if (data.vfoB && typeof data.vfoB.afGain === 'number') {
+                const sliderB = document.getElementById('afGainSliderB');
+                const labelB = document.getElementById('afGainValueB');
+                if (sliderB && labelB) {
+                    sliderB.value = data.vfoB.afGain;
+                    labelB.innerText = data.vfoB.afGain;
+                    updateAfGainFill('afGainSliderB');
+                }
+            }
         } catch (error) {
             console.error('Error fetching radio status:', error);
         }
