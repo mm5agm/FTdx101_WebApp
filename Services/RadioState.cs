@@ -57,6 +57,16 @@ namespace FTdx101_WebApp.Services
         public int PowerB { get; set; }
 
         /// <summary>
+        /// Receiver A AF Gain (0-255)
+        /// </summary>
+        public int AfGainA { get; set; } = 128;
+
+        /// <summary>
+        /// Receiver B AF Gain (0-255)
+        /// </summary>
+        public int AfGainB { get; set; } = 128;
+
+        /// <summary>
         /// Additional controls and settings (for future expansion)
         /// </summary>
         public Dictionary<string, object> Controls { get; set; } = new();

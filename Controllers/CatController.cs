@@ -410,6 +410,41 @@ namespace FTdx101_WebApp.Controllers
             return 100; // Default to 100W if can't parse
         }
 
+        [HttpPost("afgain")]
+        public async Task<IActionResult> SetAfGain([FromBody] AfGainRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                if (request == null || (request.Band != "0" && request.Band != "1"))
+                    return BadRequest(new { error = "Invalid band (must be '0' or '1')" });
+                if (!int.TryParse(request.Value, out int val) || val < 0 || val > 255)
+                    return BadRequest(new { error = "AF Gain value out of range (0-255)" });
+
+                string command = $"AG{request.Band}{val:D3};";
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
+                // Persist AF Gain value
+                if (request.Band == "0")
+                    _radioStateService.AfGainA = val;
+                else if (request.Band == "1")
+                    _radioStateService.AfGainB = val;
+                _logger.LogInformation("Set AF Gain band {Band} to {Value}", request.Band, val);
+                return Ok(new { message = $"AF Gain set to {val} for band {request.Band}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting AF Gain");
+                return StatusCode(500, new { error = "Failed to set AF Gain" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
         public class BandRequest { public string Band { get; set; } = string.Empty; }
         public class AntennaRequest { public string Antenna { get; set; } = string.Empty; }
         public class ModeRequest { public string Mode { get; set; } = string.Empty; }
@@ -417,6 +452,17 @@ namespace FTdx101_WebApp.Controllers
         public class PowerRequest
         {
             public int Watts { get; set; }
+        }
+
+        public class MicGainRequest
+        {
+            public int Value { get; set; }
+        }
+
+        public class AfGainRequest
+        {
+            public string Band { get; set; } = string.Empty;
+            public string Value { get; set; } = string.Empty;
         }
 
         [HttpPost("reinitialize")]

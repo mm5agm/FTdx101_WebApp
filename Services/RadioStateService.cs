@@ -194,7 +194,12 @@ namespace FTdx101_WebApp.Services
         private int _powerA;
         public int PowerA { get => _powerA; set => SetField(ref _powerA, value); }
 
-      
+        private int _powerB;
+        public int PowerB
+        {
+            get => _powerB;
+            set => SetField(ref _powerB, value);
+        }
 
         private string? _modeA = "";
         public string? ModeA { get => _modeA; set => SetField(ref _modeA, value); }
@@ -268,6 +273,11 @@ namespace FTdx101_WebApp.Services
         private bool _isTransmitting;
         public bool IsTransmitting { get => _isTransmitting; set => SetField(ref _isTransmitting, value); }
 
+        private int _afGainA = 128;
+        public int AfGainA { get => _afGainA; set => SetField(ref _afGainA, value); }
+        private int _afGainB = 128;
+        public int AfGainB { get => _afGainB; set => SetField(ref _afGainB, value); }
+
         public RadioState GetState()
         {
             return new RadioState
@@ -321,34 +331,37 @@ namespace FTdx101_WebApp.Services
 
         public void ReloadFromPersistence()
         {
-            var reloaded = _statePersistence.Load();
-            _logger.LogInformation("Reloading from persistence: ModeA={ModeA}, AntennaA={AntennaA}, PowerA={PowerA}", reloaded.ModeA, reloaded.AntennaA, reloaded.PowerA);
-
-            FrequencyA = reloaded.FrequencyA;
-            FrequencyB = reloaded.FrequencyB;
-            BandA = reloaded.BandA;
-            BandB = reloaded.BandB;
-            ModeA = reloaded.ModeA ?? "";
-            ModeB = reloaded.ModeB ?? "";
-            AntennaA = reloaded.AntennaA ?? "";
-            AntennaB = reloaded.AntennaB ?? "";
-            PowerA = reloaded.PowerA;
-       
+            var state = _statePersistence.Load();
+            FrequencyA = state.FrequencyA;
+            FrequencyB = state.FrequencyB;
+            BandA = state.BandA ?? string.Empty;
+            BandB = state.BandB ?? string.Empty;
+            ModeA = state.ModeA ?? string.Empty;
+            ModeB = state.ModeB ?? string.Empty;
+            AntennaA = state.AntennaA ?? string.Empty;
+            AntennaB = state.AntennaB ?? string.Empty;
+            PowerA = state.PowerA;
+            PowerB = state.PowerB;
+            AfGainA = state.AfGainA;
+            AfGainB = state.AfGainB;
         }
 
         public RadioState ToRadioState()
         {
             return new RadioState
             {
-                FrequencyA = this.FrequencyA,
-                FrequencyB = this.FrequencyB,
-                BandA = this.BandA ?? string.Empty,
-                BandB = this.BandB ?? string.Empty,
-                ModeA = this.ModeA ?? string.Empty,
-                ModeB = this.ModeB ?? string.Empty,
-                AntennaA = this.AntennaA ?? string.Empty,
-                AntennaB = this.AntennaB ?? string.Empty,
-                PowerA = this.PowerA,
+                FrequencyA = FrequencyA,
+                FrequencyB = FrequencyB,
+                BandA = BandA,
+                BandB = BandB,
+                ModeA = ModeA,
+                ModeB = ModeB,
+                AntennaA = AntennaA,
+                AntennaB = AntennaB,
+                PowerA = PowerA,
+                PowerB = PowerB,
+                AfGainA = AfGainA,
+                AfGainB = AfGainB
             };
         }
     }

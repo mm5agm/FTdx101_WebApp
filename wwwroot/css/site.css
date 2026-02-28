@@ -248,9 +248,9 @@ body {
 }
 
 /* Focus state for accessibility */
-.power-slider:focus {
-    outline: 2px solid #198754;
-    outline-offset: 2px;
+#powerSliderA:focus, .power-slider:focus, #micGainSlider:focus {
+    outline: none;
+    outline-offset: 0;
 }
 
 
@@ -476,4 +476,142 @@ pre, code { tab-size: 4; }
     /* Remove default styles for IE/Edge */
     background: transparent;
     border: none;
+}
+
+/* MIC Gain slider knob green */
+#micGainSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+#afGainSliderA::-webkit-slider-thumb,
+#afGainSliderB::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+#afGainSliderA::-moz-range-thumb,
+#afGainSliderB::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#afGainSliderA::-ms-thumb,
+#afGainSliderB::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#afGainSliderA,
+#afGainSliderB {
+    background: transparent !important;
+}
+#micGainSlider::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#micGainSlider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#micGainSlider::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#micGainSlider::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#micGainSlider::-ms-fill-lower {
+    background: #e6f4ea;
+    border-radius: 9px;
+}
+#micGainSlider::-ms-fill-upper {
+    background: #dee2e6;
+    border-radius: 9px;
+}
+#micGainSlider:focus {
+    outline: none;
+    outline-offset: 0;
+}
+#micGainSlider {
+    background: transparent;
+    border: none;
+}
+
+/* AF Gain slider: visible green knob and track, no hidden thumb */
+.afgain-slider {
+    width: 100%;
+    height: 18px;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+.afgain-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+.afgain-slider::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+.afgain-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.afgain-slider::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+.afgain-slider::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.afgain-slider:focus {
+    outline: none;
 }

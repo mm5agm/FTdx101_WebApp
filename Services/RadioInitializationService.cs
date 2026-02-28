@@ -109,6 +109,17 @@ namespace FTdx101_WebApp.Services
                     await multiplexer.SendCommandAsync($"AN1{persistedState.AntennaB};", "Initialization", stoppingToken);
                     radioStateService.AntennaB = persistedState.AntennaB;
                 }
+                // Restore AF Gain
+                if (persistedState.AfGainA >= 0 && persistedState.AfGainA <= 255)
+                {
+                    await multiplexer.SendCommandAsync($"AG0{persistedState.AfGainA:D3};", "Initialization", stoppingToken);
+                    radioStateService.AfGainA = persistedState.AfGainA;
+                }
+                if (persistedState.AfGainB >= 0 && persistedState.AfGainB <= 255)
+                {
+                    await multiplexer.SendCommandAsync($"AG1{persistedState.AfGainB:D3};", "Initialization", stoppingToken);
+                    radioStateService.AfGainB = persistedState.AfGainB;
+                }
 
                 // 4. Read actual radio state (frequencies, band, etc.) before marking initialized
                 logger.LogInformation("[RadioInitializationService] Reading actual radio state...");

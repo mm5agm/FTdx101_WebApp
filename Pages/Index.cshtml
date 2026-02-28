@@ -111,6 +111,15 @@
                                 <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
                             </div>
                         </div>
+                        <!-- AF Gain A -->
+                        <div class="mb-3 mt-2">
+                            <label>AF Gain: <span id="afGainValueA" class="fw-bold">128</span></label>
+                            <input type="range" class="form-range afgain-slider"
+                                   id="afGainSliderA"
+                                   min="0" max="255" step="1" value="128"
+                                   style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
+                                   oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
+                        </div>
                     </div>
                             </div>
                         </div>
@@ -184,6 +193,15 @@
                                 <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
                             </div>
                         </div>
+                        <!-- AF Gain B -->
+                        <div class="mb-3 mt-2">
+                            <label>AF Gain: <span id="afGainValueB" class="fw-bold">128</span></label>
+                            <input type="range" class="form-range afgain-slider"
+                                   id="afGainSliderB"
+                                   min="0" max="255" step="1" value="128"
+                                   style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
+                                   oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
+                        </div>
                     </div>
                                 </div>
                             </div>
@@ -223,20 +241,19 @@
                                value="100"
                                oninput="window.radioControl.updatePowerDisplay('A', this.value)"
                                onchange="window.radioControl.setPower('A', this.value)">
-                        <div class="d-flex justify-content-between small text-muted">
-                            <span>5W</span>
-                            <span>100W</span>
-                            <span id="powerMaxLabelA">@Model.RadioState.MaxPower W</span>
-                        </div>
                     </div>
                     <!-- MIC Meter underneath -->
-                    <div class="d-flex align-items-center gap-2 mt-2" style="max-width: 400px;">
-                        <label class="mb-0 fw-bold small text-nowrap">MIC:</label>
-                        <div class="progress flex-grow-1" style="height: 16px;">
-                            <div id="micBar" class="progress-bar bg-warning" role="progressbar" style="width: 0%"
-                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <span id="micValue" class="badge bg-info">0%</span>
+                    <div class="mb-3 mt-3">
+                        <label>MIC Gain: <span id="micGainValue" class="fw-bold">50</span></label>
+                        <input type="range" class="form-range power-slider"
+                               id="micGainSlider"
+                               min="0"
+                               max="100"
+                               step="1"
+                               value="50"
+                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
+                               oninput="document.getElementById('micGainValue').innerText = this.value"
+                               onchange="setMicGain(this.value)">
                     </div>
                 </div>
             </div>
@@ -434,5 +451,36 @@
 
         updateLog4omStatus();
         setInterval(updateLog4omStatus, 5000);
+
+        window.setAfGain = async function(receiver, val) {
+    let band = receiver === 'A' ? '0' : '1';
+    let value = String(val).padStart(3, '0');
+    try {
+        const response = await fetch('/api/cat/afgain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ band, value })
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            alert(data.error || 'Failed to set AF Gain');
+        }
+    } catch (e) {
+        alert('Error setting AF Gain: ' + e.message);
+    }
+}
+
+        function updateAfGainFill(sliderId) {
+            const slider = document.getElementById(sliderId);
+            const value = parseInt(slider.value, 10);
+            const max = parseInt(slider.max, 10);
+            const pct = (value / max) * 100;
+            slider.style.background = `linear-gradient(to right, #198754 0%, #198754 ${pct}%, #dee2e6 ${pct}%, #dee2e6 100%)`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAfGainFill('afGainSliderA');
+            updateAfGainFill('afGainSliderB');
+        });
     </script>
 }

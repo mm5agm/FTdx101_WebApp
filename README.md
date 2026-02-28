@@ -11,7 +11,7 @@ I wrote this application because I can't see the FTdx101MP controls without usin
 
 I also use this application on my tablet, which provides a portable control panel in the shack. The large buttons and readable display work great on touchscreens, though the digit-by-digit frequency tuning feature (click digit + mouse wheel) hasn't been implemented for touch devices yet.
 
-## Important - You need .NET10 to run this application. Download it from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0 and install it before running.
+## Important - You need .NET10 to run this application. Download the x86 version from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0 and install it before running.
 
 ## ⚠️ Limitations
 
