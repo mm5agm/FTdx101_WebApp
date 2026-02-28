@@ -171,6 +171,24 @@
                             <span asp-validation-for="Settings.WsjtxCommandLine" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
+                            <label asp-for="Settings.WsjtxUdpAddress" class="form-label">WSJT-X UDP Address</label>
+                            <input asp-for="Settings.WsjtxUdpAddress" class="form-control font-monospace" placeholder="127.0.0.1" />
+                            <div class="form-text">
+                                IP address where WSJT-X UDP messages are sent/received.<br />
+                                <strong>Default:</strong> 127.0.0.1 (local machine)
+                            </div>
+                            <span asp-validation-for="Settings.WsjtxUdpAddress" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Settings.WsjtxUdpPort" class="form-label">WSJT-X UDP Port</label>
+                            <input asp-for="Settings.WsjtxUdpPort" class="form-control font-monospace" type="number" min="1" max="65535" placeholder="2237" />
+                            <div class="form-text">
+                                UDP port for WSJT-X messages.<br />
+                                <strong>Default:</strong> 2237
+                            </div>
+                            <span asp-validation-for="Settings.WsjtxUdpPort" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
                             <label asp-for="Settings.JtalertCommandLine" class="form-label">JTAlert Command Line</label>
                             <input asp-for="Settings.JtalertCommandLine" class="form-control font-monospace"
                                    placeholder="C:\HamApps\JTAlert\JTAlert.exe" />

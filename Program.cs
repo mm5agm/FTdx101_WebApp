@@ -58,6 +58,14 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<WsjtxUdpService>()
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Logging.AddFilter((category, level) =>
+{
+    // Show Information and above for WsjtxUdpService
+    if (category.Contains("FTdx101_WebApp.Services.WsjtxUdpService"))
+        return level >= LogLevel.Information;
+    // Show Warning and above for everything else
+    return level >= LogLevel.Warning;
+});
 builder.Logging.AddDebug();
 
 var app = builder.Build();

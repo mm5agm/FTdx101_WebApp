@@ -230,7 +230,12 @@ namespace FTdx101_WebApp.Services
         {
             var response = await _multiplexer.SendCommandAsync("FA", clientId);
             var freq = CatCommands.ParseFrequency(response ?? string.Empty);
-            return freq > 0 ? freq.ToString() : "RPRT -1";
+            if (freq > 0)
+                return freq.ToString();
+            // Fallback: use RadioStateService if multiplexer/CAT fails
+            if (_radioStateService.FrequencyA > 0)
+                return _radioStateService.FrequencyA.ToString();
+            return "RPRT -1";
         }
 
         private async Task<string> SetFrequencyAsync(string freqStr, string clientId)

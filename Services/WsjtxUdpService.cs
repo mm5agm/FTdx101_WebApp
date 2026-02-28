@@ -13,7 +13,7 @@ namespace FTdx101_WebApp.Services
     /// </summary>
     public class WsjtxUdpService : BackgroundService
     {
-        private const int WsjtxPort = 2237;
+        // Removed hardcoded port; will use settings
         private const uint MagicNumber = 0xADBCCBDA;
         private const uint MessageTypeHeartbeat = 0;
         private const uint MessageTypeStatus = 1;
@@ -22,6 +22,7 @@ namespace FTdx101_WebApp.Services
         private readonly ICatClient _catClient;
         private readonly RadioStateService _radioStateService;
         private readonly ILogger<WsjtxUdpService> _logger;
+        private readonly ISettingsService _settingsService;
 
         private readonly object _lock = new();
         private DateTime _lastSeen = DateTime.MinValue;
@@ -37,26 +38,35 @@ namespace FTdx101_WebApp.Services
         public WsjtxUdpService(
             ICatClient catClient,
             RadioStateService radioStateService,
-            ILogger<WsjtxUdpService> logger)
+            ILogger<WsjtxUdpService> logger,
+            ISettingsService settingsService)
         {
             _catClient = catClient;
             _radioStateService = radioStateService;
             _logger = logger;
+            _settingsService = settingsService;
+            _logger.LogInformation("WsjtxUdpService constructor called. Service is being constructed.");
         }
+    // (Removed misplaced IPAddressExtensions class from here)
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("WsjtxUdpService ExecuteAsync started");
             UdpClient? udpClient = null;
             try
             {
-                udpClient = CreateUdpListener();
-                _logger.LogInformation("WSJT-X UDP listener started on port {Port}", WsjtxPort);
+                _logger.LogInformation("Loading WSJT-X UDP settings...");
+                var settings = await _settingsService.GetSettingsAsync();
+                _logger.LogInformation("Loaded settings: Address={Address}, Port={Port}", settings.WsjtxUdpAddress, settings.WsjtxUdpPort);
+                udpClient = CreateUdpListener(settings.WsjtxUdpAddress, settings.WsjtxUdpPort);
+                _logger.LogInformation("WSJT-X UDP listener started on address {Address} port {Port}", settings.WsjtxUdpAddress, settings.WsjtxUdpPort);
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     try
                     {
                         var result = await udpClient.ReceiveAsync(stoppingToken);
+                        _logger.LogInformation("[WSJT-X UDP] Packet received: {Length} bytes from {RemoteEndPoint}", result.Buffer.Length, result.RemoteEndPoint);
                         await ProcessMessageAsync(result.Buffer, stoppingToken);
                     }
                     catch (OperationCanceledException) { break; }
@@ -68,7 +78,7 @@ namespace FTdx101_WebApp.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "WSJT-X UDP service failed to start on port {Port}", WsjtxPort);
+                _logger.LogError(ex, "WSJT-X UDP service failed to start or crashed");
             }
             finally
             {
@@ -77,20 +87,28 @@ namespace FTdx101_WebApp.Services
             }
         }
 
-        private UdpClient CreateUdpListener()
+        // --- Message parsing (all synchronous — spans are safe here) ---
+
+        private UdpClient CreateUdpListener(string udpAddress, int udpPort)
         {
             var udp = new UdpClient();
             udp.ExclusiveAddressUse = false;
             udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            udp.Client.Bind(new IPEndPoint(IPAddress.Any, WsjtxPort));
-            try
+            udp.Client.Bind(new IPEndPoint(IPAddress.Any, udpPort));
+            // If multicast address, join group
+            if (IPAddress.TryParse(udpAddress, out var ip) &&
+                ip.AddressFamily == AddressFamily.InterNetwork &&
+                ip.IsMulticast())
             {
-                udp.JoinMulticastGroup(IPAddress.Parse("224.0.0.1"));
-                _logger.LogInformation("Joined WSJT-X multicast group 224.0.0.1");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not join multicast group; will receive unicast packets only");
+                try
+                {
+                    udp.JoinMulticastGroup(ip);
+                    _logger.LogInformation("Joined WSJT-X multicast group {Address}", udpAddress);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, $"Could not join multicast group {udpAddress}; will receive unicast packets only");
+                }
             }
             return udp;
         }
@@ -98,8 +116,15 @@ namespace FTdx101_WebApp.Services
         private async Task ProcessMessageAsync(byte[] data, CancellationToken ct)
         {
             // Parse synchronously (no spans across await boundaries)
+
             var msg = TryParseMessage(data);
-            if (msg == null) return;
+            if (msg == null)
+            {
+                // Log first 16 bytes of the packet for debugging
+                var hex = BitConverter.ToString(data.Take(16).ToArray());
+                _logger.LogWarning("[WSJT-X UDP] Failed to parse message. First 16 bytes: {Hex}", hex);
+                return;
+            }
 
             lock (_lock)
             {
@@ -232,6 +257,15 @@ namespace FTdx101_WebApp.Services
             var str = Encoding.UTF8.GetString(data.Slice(offset, length));
             offset += length;
             return str;
+        }
+    }
+    // Extension for multicast detection
+    public static class IPAddressExtensions
+    {
+        public static bool IsMulticast(this IPAddress address)
+        {
+            var bytes = address.GetAddressBytes();
+            return bytes.Length == 4 && bytes[0] >= 224 && bytes[0] <= 239;
         }
     }
 }

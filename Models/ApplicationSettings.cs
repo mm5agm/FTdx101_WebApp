@@ -8,10 +8,15 @@ namespace FTdx101_WebApp.Models
         public string WebAddress { get; set; } = "0.0.0.0"; // Bind to all interfaces
         public string RadioModel { get; set; } = "FTdx101MP"; // MP = dual receiver, D = single receiver
 
+
         // External Applications
         public string WsjtxCommandLine { get; set; } = @"C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp";
         public string JtalertCommandLine { get; set; } = @"C:\HamApps\JTAlert\JTAlert.exe";
         public string Log4omCommandLine { get; set; } = @"C:\Program Files (x86)\Log4OM 2\Log4OM.exe";
+
+        // WSJT-X UDP Settings
+        public string WsjtxUdpAddress { get; set; } = "127.0.0.1";
+        public int WsjtxUdpPort { get; set; } = 2237;
 
         // Last Radio State (persisted between sessions)
         public RadioState LastRadioState { get; set; } = new();
