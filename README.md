@@ -143,8 +143,8 @@ The file is created automatically on first run. You can edit it manually while t
 ```json
 {
   "LastFrequency": "144300000",
-  "LastMode": "FM",
-  "LastBand": "2m",
+  "LastMode": "USB",
+  "LastBand": "20m",
   "LastPower": 50,
   "LastAntenna": "ANT 1"
 }
