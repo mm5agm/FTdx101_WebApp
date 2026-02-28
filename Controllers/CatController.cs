@@ -17,6 +17,25 @@ namespace FTdx101_WebApp.Controllers
         private readonly RadioInitializationService _radioInitService;
         private static readonly SemaphoreSlim _requestSemaphore = new(1, 1);
 
+        [HttpPost("afgain/a")]
+        public async Task<IActionResult> SetAfGainA([FromBody] int value)
+        {
+            if (!_catClient.IsConnected)
+                await EnsureConnectedAsync();
+            _radioStateService.AfGainA = value;
+            _logger.LogInformation("Set Receiver A AF Gain to {Value}", value);
+            return Ok(new { message = $"AF Gain {value} set for Receiver A" });
+        }
+
+        [HttpPost("afgain/b")]
+        public async Task<IActionResult> SetAfGainB([FromBody] int value)
+        {
+            if (!_catClient.IsConnected)
+                await EnsureConnectedAsync();
+            _radioStateService.AfGainB = value;
+            _logger.LogInformation("Set Receiver B AF Gain to {Value}", value);
+            return Ok(new { message = $"AF Gain {value} set for Receiver B" });
+        }
         // Static band frequency mapping (apply this at the top of your class)
         private static readonly Dictionary<string, long> BandFreqs = new(StringComparer.OrdinalIgnoreCase)
         {

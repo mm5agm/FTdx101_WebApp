@@ -599,6 +599,19 @@ function changeSelectedDigit(receiver, delta) {
 // overwrites window.radioControl so Razor inline handlers call these
 // better-implemented versions.
 // ===========================================================================
+// --- AF Gain slider change handler ---
+function sendAfGain(receiver, value) {
+    fetch(`/api/cat/afgain/${receiver.toLowerCase()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(value)
+    }).then(r => {
+        if (!r.ok) {
+            r.text().then(t => console.error('Failed to set AF Gain:', t));
+        }
+    }).catch(e => console.error('Error setting AF Gain:', e));
+}
+
 (function () {
     'use strict';
 
@@ -942,25 +955,34 @@ function changeSelectedDigit(receiver, delta) {
             updateModeAndAntennaButtons('A', data.vfoA.mode, data.vfoA.antenna);
             updateModeAndAntennaButtons('B', data.vfoB.mode, data.vfoB.antenna);
 
-            // Set AF Gain sliders and labels from backend
-            if (data.vfoA && typeof data.vfoA.afGain === 'number') {
-                const sliderA = document.getElementById('afGainSliderA');
-                const labelA = document.getElementById('afGainValueA');
-                if (sliderA && labelA) {
-                    sliderA.value = data.vfoA.afGain;
-                    labelA.innerText = data.vfoA.afGain;
-                    updateAfGainFill('afGainSliderA');
-                }
+            // --- Robust AF Gain slider enable/attach ---
+            const sliderA = document.getElementById('afGainSliderA');
+            const labelA = document.getElementById('afGainValueA');
+            const sliderB = document.getElementById('afGainSliderB');
+            const labelB = document.getElementById('afGainValueB');
+            // Use backend value or fallback to 0 (handle null, undefined, NaN, or missing)
+            let afGainA = 0;
+            let afGainB = 0;
+            if (data.vfoA && typeof data.vfoA.afGain === 'number' && !isNaN(data.vfoA.afGain)) {
+                afGainA = data.vfoA.afGain;
             }
-            if (data.vfoB && typeof data.vfoB.afGain === 'number') {
-                const sliderB = document.getElementById('afGainSliderB');
-                const labelB = document.getElementById('afGainValueB');
-                if (sliderB && labelB) {
-                    sliderB.value = data.vfoB.afGain;
-                    labelB.innerText = data.vfoB.afGain;
-                    updateAfGainFill('afGainSliderB');
-                }
+            if (data.vfoB && typeof data.vfoB.afGain === 'number' && !isNaN(data.vfoB.afGain)) {
+                afGainB = data.vfoB.afGain;
             }
+            if (sliderA && labelA) {
+                sliderA.value = afGainA;
+                labelA.innerText = afGainA;
+                updateAfGainFill('afGainSliderA');
+                sliderA.disabled = false;
+            }
+            if (sliderB && labelB) {
+                sliderB.value = afGainB;
+                labelB.innerText = afGainB;
+                updateAfGainFill('afGainSliderB');
+                sliderB.disabled = false;
+            }
+            attachAfGainSliderListeners();
+
         } catch (error) {
             console.error('Error fetching radio status:', error);
         }
@@ -1395,6 +1417,32 @@ function changeSelectedDigit(receiver, delta) {
             window.gaugeSWR = new RadialGauge(swrConfig);
             window.gaugeSWR.draw();
             createGaugeLabels('swrMeterCanvas', swrConfig._labels);
+        }
+    }
+
+
+
+    // Attach AF Gain slider event listeners only once, when data is available
+    function attachAfGainSliderListeners() {
+        const sliderA = document.getElementById('afGainSliderA');
+        const sliderB = document.getElementById('afGainSliderB');
+        const labelA = document.getElementById('afGainValueA');
+        const labelB = document.getElementById('afGainValueB');
+        if (sliderA && !sliderA._afGainListenerAttached && labelA) {
+            sliderA.addEventListener('input', function () {
+                labelA.innerText = sliderA.value;
+                updateAfGainFill('afGainSliderA');
+                sendAfGain('A', parseInt(sliderA.value));
+            });
+            sliderA._afGainListenerAttached = true;
+        }
+        if (sliderB && !sliderB._afGainListenerAttached && labelB) {
+            sliderB.addEventListener('input', function () {
+                labelB.innerText = sliderB.value;
+                updateAfGainFill('afGainSliderB');
+                sendAfGain('B', parseInt(sliderB.value));
+            });
+            sliderB._afGainListenerAttached = true;
         }
     }
 
