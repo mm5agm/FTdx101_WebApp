@@ -20,7 +20,6 @@ I also use this application on my tablet, which provides a portable control pane
 - **Single Radio:** Designed for controlling one radio at a time.
 - **Linux:** Won't be implemented by me due to serial port implementation issues in .NET 10.
 - **No Memory Management:** Per-band memory and memory channel management are not yet implemented.
-- **No WSJT-X UDP Integration:** WSJT-X UDP control and status monitoring are on the roadmap but not yet available.
 - **No Filter Controls:** Filter width and shift controls are not currently implemented.
 - **No Antenna Update in the APP.** If the user changes the antenna selection on the radio, the app will not reflect this change.
 ## 🚀 Key Features
@@ -31,7 +30,7 @@ I also use this application on my tablet, which provides a portable control pane
 - **Real-Time S-Meter:** Live updates of signal strength with an analog-style meter.
 - **Reactive State Management:** Real-time updates for all radio parameters with minimal latency.
 - **Built-in CAT Multiplexer:** The web app is the only process that opens the radio's serial port, eliminating conflicts with other applications.
-- **Real-Time Control:** Almost Instant updates for frequency, mode, band, and antenna changes.
+- **Real-Time Control:** Almost instant updates for frequency, mode, band, and antenna changes.
 - **Large, Accessible UI:** Clean, readable controls for frequency, band, mode, and antenna selection.
 - **Dual Receiver Support:** Independent control and display for VFO A and VFO B.
 - **Auto Information Mode (AI1;):** The app enables the radio's Auto Information mode, so the radio streams status updates (frequency, mode, S-meter, etc.) automatically to the web app for low-latency, real-time updates.
@@ -39,12 +38,7 @@ I also use this application on my tablet, which provides a portable control pane
   The web app exposes a TCP rigctld-compatible CAT server. Applications such as
   Log4OM, GridTracker, and other Hamlib-based tools can connect over TCP.  
   The web app is the only process that opens the radio's serial port.
-
-- **WSJT-X Integration (UDP):**  ## On wish list.
-  WSJT-X does not use rigctld over TCP. Instead, it communicates via UDP
-  broadcasts and directed UDP commands. The web app will eventually listen for WSJT-X status
-  messages and will respond to CAT control commands (frequency, mode, PTT, etc.)
-  using the WSJT-X UDP protocol. This is my next to do.
+- **WSJT-X Integration (UDP):** Full support for WSJT-X UDP control and status monitoring is implemented and works with JTAlert and Log4OM.
 - **No Virtual COM Ports Needed:** Eliminates the need for third-party serial port sharing utilities.
 - **Tablet and Touch Friendly:** Optimized for use on tablets and touch devices.
 
@@ -98,9 +92,6 @@ If there's interest in this program, I'm open to suggestions for additional cont
 - Clarifier/RIT controls
 - Split operation
 - Memory management
-
-
-My next focus will be on integrating WSJT-X UDP control and status monitoring. 
 
 Suggestions are welcome!  
 Open an issue or discussion with your ideas.
