@@ -76,10 +76,14 @@ jobs:
         id: set_tag
         run: |
           if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
-            echo "::set-output name=tag::${{ github.event.inputs.tag }}"
+            echo "tag=$env:TAG" >> $env:GITHUB_OUTPUT
           } else {
-            echo "::set-output name=tag::${{ github.ref_name }}"
+            $ref = $env:GITHUB_REF
+            $tag = $ref.Substring($ref.LastIndexOf('/') + 1)
+            echo "tag=$tag" >> $env:GITHUB_OUTPUT
           }
+        env:
+          TAG: ${{ github.event.inputs.tag }}
         shell: pwsh
 
       - name: Create release if needed (manual run)
