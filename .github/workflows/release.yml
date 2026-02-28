@@ -39,7 +39,7 @@ jobs:
 
       - name: List publish output
         run: |
-          Write-Host "=== publish\ ==="
+          Write-Host "=== publish\\ ==="
           if (Test-Path publish) { Get-ChildItem publish -Name } else { Write-Host "publish dir missing!" }
           Write-Host "=== root ==="
           Get-ChildItem -Name
@@ -48,7 +48,7 @@ jobs:
       - name: Build NSIS installer
         run: |
           $makensis = (Get-Command makensis.exe -ErrorAction SilentlyContinue)?.Source
-          if (-not $makensis) { $makensis = "C:\Program Files (x86)\NSIS\makensis.exe" }
+          if (-not $makensis) { $makensis = "C:\\Program Files (x86)\\NSIS\\makensis.exe" }
           if (!(Test-Path $makensis)) { Write-Error "makensis.exe not found at $makensis"; exit 1 }
           Write-Host "Using NSIS at: $makensis"
           & $makensis installer.nsi
@@ -72,8 +72,27 @@ jobs:
           Write-Host "OK: $('{0:N0}' -f (Get-Item FTdx101_WebApp_Setup.exe).Length) bytes"
         shell: pwsh
 
-      - name: Upload installer to release
-        run: gh release upload "${{ inputs.tag || github.ref_name }}" FTdx101_WebApp_Setup.exe --clobber
+      - name: Set release tag variable
+        id: set_tag
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            echo "::set-output name=tag::${{ github.event.inputs.tag }}"
+          } else {
+            echo "::set-output name=tag::${{ github.ref_name }}"
+          }
         shell: pwsh
+
+      - name: Create release if needed (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          gh release create "${{ steps.set_tag.outputs.tag }}" --title "${{ steps.set_tag.outputs.tag }}" --notes "Automated release" --prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+
+      - name: Upload installer to release
+        run: |
+          gh release upload "${{ steps.set_tag.outputs.tag }}" FTdx101_WebApp_Setup.exe --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
