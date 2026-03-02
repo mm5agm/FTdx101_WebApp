@@ -1197,8 +1197,10 @@ function sendAfGain(receiver, value) {
         }
     }
 
-    // Update ALC bar meter (0-255 raw value)
+    // Update ALC bar meter (0-255 raw value) and ALC gauge
     function updateALCMeter(value) {
+        // Convert 0-255 raw value to 0-50V scale for display
+        const alcVolts = (value / 255) * 50;
         const percentage = Math.round((value / 255) * 100);
         const valueSpan = document.getElementById('alcValue');
         const progressBar = document.getElementById('alcBar');
@@ -1217,6 +1219,15 @@ function sendAfGain(receiver, value) {
             } else {
                 progressBar.classList.add('bg-danger');
             }
+        }
+
+        // Update ALC gauge (pass raw 0-255 value directly, gauge uses 0-255 scale)
+        const alcMeterValue = document.getElementById('alcMeterValue');
+        if (alcMeterValue) alcMeterValue.textContent = `${alcVolts.toFixed(0)}V`;
+
+        if (window.gaugeALC) {
+            window.gaugeALC.value = value;  // Raw 0-255 value
+            window.gaugeALC.draw();
         }
     }
 
@@ -1290,6 +1301,17 @@ function sendAfGain(receiver, value) {
                     { from: 128, to: 255, color: "rgba(255,0,0,.25)" }    // Red: 2.0-3.0+
                 ],
                 labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"]
+            },
+            alc: {
+                minValue: 0,
+                maxValue: 255,  // 0-255 scale (same as other gauges)
+                majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
+                highlights: [
+                    { from: 0, to: 178, color: "rgba(0,255,0,.25)" },      // Green: 0-70% (normal)
+                    { from: 178, to: 230, color: "rgba(255,255,0,.25)" },  // Yellow: 70-90% (caution)
+                    { from: 230, to: 255, color: "rgba(255,0,0,.25)" }     // Red: 90-100% (high)
+                ],
+                labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"]
             }
         };
 
@@ -1417,6 +1439,19 @@ function sendAfGain(receiver, value) {
             window.gaugeSWR = new RadialGauge(swrConfig);
             window.gaugeSWR.draw();
             createGaugeLabels('swrMeterCanvas', swrConfig._labels);
+        }
+
+        // Initialize ALC Meter (if element exists)
+        if (document.getElementById('alcMeterCanvas')) {
+            console.log('[Gauge] Initializing ALC meter...');
+            const alcConfig = makeGaugeConfig('alcMeterCanvas', 'alc');
+            console.log('[Gauge] ALC config:', alcConfig);
+            window.gaugeALC = new RadialGauge(alcConfig);
+            window.gaugeALC.draw();
+            createGaugeLabels('alcMeterCanvas', alcConfig._labels);
+            console.log('[Gauge] ALC meter initialized');
+        } else {
+            console.warn('[Gauge] alcMeterCanvas element not found!');
         }
     }
 
