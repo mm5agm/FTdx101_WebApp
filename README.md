@@ -26,8 +26,11 @@ I also use this application on my tablet, which provides a portable control pane
 - **CAT Control:** Full control over frequency, mode, band, and antenna selection via the radio's CAT interface.
 - **Radio changes reflected in real time:** Thanks to the use of Auto Information mode, apart from antenna changes, changes made on the radio (frequency, mode, band, etc.) are immediately reflected in the web app with minimal latency.
 - **Band Selection:** Quick access to all amateur bands from 160m to 4m. Note Bands are UK-centric and may not reflect all international band plans.
-- **Power Control:** Adjust the radio's power output directly from the web interface.
+- **Power Control:** Adjust the radio's power output directly from the web interface. Power setting is persisted and restored on app restart.
+- **MIC Gain Control:** Adjust microphone gain with a slider. Setting is persisted and restored on app restart.
 - **Real-Time S-Meter:** Live updates of signal strength with an analog-style meter.
+- **TX Meters:** Real-time Power, SWR, and ALC gauges during transmit.
+- **PA Monitoring:** Live IDD (drain current) display during TX and PA Voltage display with noise filtering.
 - **Reactive State Management:** Real-time updates for all radio parameters with minimal latency.
 - **Built-in CAT Multiplexer:** The web app is the only process that opens the radio's serial port, eliminating conflicts with other applications.
 - **Real-Time Control:** Almost instant updates for frequency, mode, band, and antenna changes.
@@ -71,8 +74,13 @@ This architecture change in transformed the app from sluggish polling to buttery
 - **Band Selection:** Quick access to all amateur bands (160m - 4m)
 - **Mode Selection:** All modes available but this makes the screen cluttered, so I may implement a mode filter in the future.
 - **Antenna Switching:** Select between ANT 1, 2, or 3
-- **Power Control:** Adjustable power output (0-200W for FT-dx101MP)
+- **Power Control:** Adjustable power output (0-200W for FT-dx101MP), persisted across restarts
+- **MIC Gain Control:** Adjustable microphone gain (0-100), persisted across restarts
 - **S-Meter Display:** Real-time analogue meter showing signal strength
+- **TX Meters:** Power, SWR, and ALC gauges with real-time updates during transmit
+- **PA Monitoring:** 
+  - IDD (Drain Current): Shows PA current draw during TX (typically 8-12A)
+  - PA Voltage: Shows PA supply voltage (~48V) with noise filtering
 - **Dual Receiver Support:** Independent control of both VFO A and VFO B
 - **Built-in CAT Multiplexer:** 
 - **Reactive Architecture:** Instant response to radio changes
