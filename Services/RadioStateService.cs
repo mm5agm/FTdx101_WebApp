@@ -274,6 +274,12 @@ namespace FTdx101_WebApp.Services
         private bool _isTransmitting;
         public bool IsTransmitting { get => _isTransmitting; set => SetField(ref _isTransmitting, value); }
 
+        private int? _iddMeter;
+        public int? IDDMeter { get => _iddMeter; set => SetField(ref _iddMeter, value); }
+
+        private int? _vddMeter;
+        public int? VDDMeter { get => _vddMeter; set => SetField(ref _vddMeter, value); }
+
         private int _afGainA = 128;
         public int AfGainA { get => _afGainA; set => SetField(ref _afGainA, value); }
         private int _afGainB = 128;

@@ -421,6 +421,12 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "SWRMeter" && typeof window.updateSWRMeter === 'function') {
         window.updateSWRMeter(update.value);
     }
+    if (update.property === "IDDMeter" && typeof window.updateIDDMeter === 'function') {
+        window.updateIDDMeter(update.value);
+    }
+    if (update.property === "VDDMeter" && typeof window.updatePAVoltage === 'function') {
+        window.updatePAVoltage(update.value);
+    }
 
     // --- TX INDICATOR ---
     if (update.property === "IsTransmitting") {
@@ -1231,18 +1237,56 @@ function sendAfGain(receiver, value) {
         }
     }
 
-    // Update IDD bar meter (0-255 raw value, display as amps)
+    // Update IDD display (0-255 raw value, display as amps)
     function updateIDDMeter(value) {
-        // Assuming 255 = ~2.0A max (adjust based on FTdx101 specs)
-        const amps = (value / 255) * 2.0;
-        const percentage = Math.round((value / 255) * 100);
-        const valueSpan = document.getElementById('iddValue');
-        const progressBar = document.getElementById('iddBar');
+        // Assuming 255 = ~25A max for FTdx101MP (adjust based on actual specs)
+        const amps = (value / 255) * 25.0;
+        const iddDisplay = document.getElementById('iddDisplayValue');
 
-        if (valueSpan) valueSpan.textContent = `${amps.toFixed(2)}A`;
-        if (progressBar) {
-            progressBar.style.width = `${percentage}%`;
-            progressBar.setAttribute('aria-valuenow', percentage);
+        if (iddDisplay) {
+            iddDisplay.textContent = `${amps.toFixed(1)}A`;
+            // Color coding based on current draw
+            iddDisplay.classList.remove('bg-primary', 'bg-warning', 'bg-danger', 'bg-success');
+            if (amps < 10) {
+                iddDisplay.classList.add('bg-success');
+            } else if (amps < 20) {
+                iddDisplay.classList.add('bg-primary');
+            } else {
+                iddDisplay.classList.add('bg-danger');
+            }
+        }
+    }
+
+    // Update PA Voltage display (0-255 raw value, display as volts)
+    // Filter out noisy readings - PA voltage should be stable around 48V
+    let lastValidVDD = 204; // Default to ~48V
+    function updatePAVoltage(value) {
+        // Filter out obviously wrong values (PA voltage should be 40-55V range, which is ~170-235 raw)
+        // Only accept values in reasonable range
+        const minRaw = 170;  // ~40V
+        const maxRaw = 235;  // ~55V
+
+        if (value >= minRaw && value <= maxRaw) {
+            lastValidVDD = value;
+        } else {
+            return; // Ignore noisy reading
+        }
+
+        // Assuming 255 = ~60V max for PA voltage
+        const volts = (lastValidVDD / 255) * 60.0;
+        const voltageDisplay = document.getElementById('paVoltageValue');
+
+        if (voltageDisplay) {
+            voltageDisplay.textContent = `${volts.toFixed(1)}V`;
+            // Color coding based on voltage (nominal ~50V for FTdx101)
+            voltageDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
+            if (volts < 45) {
+                voltageDisplay.classList.add('bg-warning'); // Low voltage warning
+            } else if (volts <= 55) {
+                voltageDisplay.classList.add('bg-success'); // Normal range
+            } else {
+                voltageDisplay.classList.add('bg-danger'); // High voltage
+            }
         }
     }
 
@@ -1517,6 +1561,7 @@ function sendAfGain(receiver, value) {
     window.updateSWRMeter = updateSWRMeter;
     window.updateALCMeter = updateALCMeter;
     window.updateIDDMeter = updateIDDMeter;
+    window.updatePAVoltage = updatePAVoltage;
     window.updateMICMeter = updateMICMeter;
 
 })();

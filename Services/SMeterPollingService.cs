@@ -151,6 +151,53 @@ namespace FTdx101_WebApp.Services
                             lastValidSWR = 0;
                         }
 
+                        // Poll IDD (drain current) - only when transmitting
+                        // Try RM4 first, might need adjustment based on FTdx101 specs
+                        if (isTransmitting)
+                        {
+                            var iddResponse = await _multiplexer.SendCommandAsync("RM4;", "MeterPoll", stoppingToken);
+                            if (!string.IsNullOrEmpty(iddResponse))
+                            {
+                                int iddMeter = CatCommands.ParseMeterReading(iddResponse);
+
+                                // Log every 10 cycles to debug IDD meter
+                                if (cycleCount % 10 == 0)
+                                {
+                                    _logger.LogWarning("[MeterPoll] RM4 (IDD) Response: '{Response}' -> Parsed value: {Value}", 
+                                        iddResponse, iddMeter);
+                                }
+
+                                if (iddMeter >= 0)
+                                {
+                                    _stateService.IDDMeter = iddMeter;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Not transmitting - clear IDD meter
+                            _stateService.IDDMeter = 0;
+                        }
+
+                        // Poll VDD (PA voltage) - RM8 - poll ALL THE TIME since PA voltage is always present
+                        var vddResponse = await _multiplexer.SendCommandAsync("RM8;", "MeterPoll", stoppingToken);
+                        if (!string.IsNullOrEmpty(vddResponse))
+                        {
+                            int vddMeter = CatCommands.ParseMeterReading(vddResponse);
+
+                            // Log every 10 cycles to debug VDD meter
+                            if (cycleCount % 10 == 0)
+                            {
+                                _logger.LogWarning("[MeterPoll] RM8 (VDD) Response: '{Response}' -> Parsed value: {Value}", 
+                                    vddResponse, vddMeter);
+                            }
+
+                            if (vddMeter >= 0)
+                            {
+                                _stateService.VDDMeter = vddMeter;
+                            }
+                        }
+
                         // Poll frequencies every 2-3 cycles to detect WSJT-X changes (AI doesn't report CAT changes)
                         if (++freqPollCounter >= 3)
                         {
