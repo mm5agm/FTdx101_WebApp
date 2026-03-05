@@ -36,6 +36,39 @@ namespace FTdx101_WebApp.Controllers
             _logger.LogInformation("Set Receiver B AF Gain to {Value}", value);
             return Ok(new { message = $"AF Gain {value} set for Receiver B" });
         }
+
+        [HttpPost("micgain")]
+        public async Task<IActionResult> SetMicGain([FromBody] MicGainRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                if (request.Value < 0 || request.Value > 100)
+                    return BadRequest(new { error = "MIC Gain value out of range (0-100)" });
+
+                string command = $"MG{request.Value:D3};";
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
+
+                // Persist MIC Gain value
+                _radioStateService.MicGain = request.Value;
+
+                _logger.LogInformation("Set MIC Gain to {Value}", request.Value);
+                return Ok(new { message = $"MIC Gain set to {request.Value}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting MIC Gain");
+                return StatusCode(500, new { error = "Failed to set MIC Gain" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
         // Static band frequency mapping (apply this at the top of your class)
         private static readonly Dictionary<string, long> BandFreqs = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -133,7 +166,8 @@ namespace FTdx101_WebApp.Controllers
                     mode = _radioStateService.ModeB ?? "",
                     antenna = _radioStateService.AntennaB ?? "",
                     afGain = _radioStateService.AfGainB
-                }
+                },
+                micGain = _radioStateService.MicGain
             });
         }
 

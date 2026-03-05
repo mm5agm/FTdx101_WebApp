@@ -29,8 +29,8 @@ namespace FTdx101_WebApp.Services
             _logger.LogInformation("RadioStateService constructed with IHubContext: {HubContextAvailable}", hubContext != null);
 
             // ADD THIS LOG:
-            _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, AntennaA={AntennaA}, AntennaB={AntennaB}",
-                _initialState.ModeA, _initialState.ModeB, _initialState.PowerA, _initialState.AntennaA, _initialState.AntennaB);
+            _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
+                _initialState.ModeA, _initialState.ModeB, _initialState.PowerA, _initialState.AntennaA, _initialState.AntennaB, _initialState.MicGain);
 
             // Initialize properties from _initialState
             FrequencyA = _initialState.FrequencyA;
@@ -42,7 +42,8 @@ namespace FTdx101_WebApp.Services
             AntennaA = _initialState.AntennaA ?? "";
             AntennaB = _initialState.AntennaB ?? "";
             PowerA = _initialState.PowerA;
-                   }
+            MicGain = _initialState.MicGain;
+        }
 
         public RadioState InitialState => _initialState;
 
@@ -278,6 +279,9 @@ namespace FTdx101_WebApp.Services
         private int _afGainB = 128;
         public int AfGainB { get => _afGainB; set => SetField(ref _afGainB, value); }
 
+        private int _micGain = 50;
+        public int MicGain { get => _micGain; set => SetField(ref _micGain, value); }
+
         public RadioState GetState()
         {
             return new RadioState
@@ -344,6 +348,7 @@ namespace FTdx101_WebApp.Services
             PowerB = state.PowerB;
             AfGainA = state.AfGainA;
             AfGainB = state.AfGainB;
+            MicGain = state.MicGain;
         }
 
         public RadioState ToRadioState()
@@ -361,7 +366,8 @@ namespace FTdx101_WebApp.Services
                 PowerA = PowerA,
                 PowerB = PowerB,
                 AfGainA = AfGainA,
-                AfGainB = AfGainB
+                AfGainB = AfGainB,
+                MicGain = MicGain
             };
         }
     }

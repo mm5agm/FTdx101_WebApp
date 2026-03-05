@@ -67,6 +67,11 @@ namespace FTdx101_WebApp.Services
         public int AfGainB { get; set; } = 0;
 
         /// <summary>
+        /// MIC Gain (0-100)
+        /// </summary>
+        public int MicGain { get; set; } = 50;
+
+        /// <summary>
         /// Additional controls and settings (for future expansion)
         /// </summary>
         public Dictionary<string, object> Controls { get; set; } = new();

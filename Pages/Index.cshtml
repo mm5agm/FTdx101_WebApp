@@ -477,6 +477,22 @@
     }
 }
 
+        async function setMicGain(value) {
+            try {
+                const response = await fetch('/api/cat/micgain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: parseInt(value) })
+                });
+                if (!response.ok) {
+                    const data = await response.json();
+                    console.error('Failed to set MIC Gain:', data.error);
+                }
+            } catch (e) {
+                console.error('Error setting MIC Gain:', e.message);
+            }
+        }
+
         function updateAfGainFill(sliderId) {
             const slider = document.getElementById(sliderId);
             const value = parseInt(slider.value, 10);

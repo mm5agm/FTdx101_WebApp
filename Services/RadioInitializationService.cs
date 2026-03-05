@@ -79,8 +79,8 @@ namespace FTdx101_WebApp.Services
                 // 2. Load persisted state from .json
                 var persistedState = statePersistence.Load();
                 logger.LogInformation("[RadioInitializationService] Persisted values before initialization: " +
-                    "ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}",
-                    persistedState.ModeA, persistedState.ModeB, persistedState.PowerA, persistedState.PowerB, persistedState.AntennaA, persistedState.AntennaB);
+                    "ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
+                    persistedState.ModeA, persistedState.ModeB, persistedState.PowerA, persistedState.PowerB, persistedState.AntennaA, persistedState.AntennaB, persistedState.MicGain);
 
                 // 3. Send only non-empty/non-zero values to the radio
                 if (!string.IsNullOrEmpty(persistedState.ModeA))
@@ -119,6 +119,12 @@ namespace FTdx101_WebApp.Services
                 {
                     await multiplexer.SendCommandAsync($"AG1{persistedState.AfGainB:D3};", "Initialization", stoppingToken);
                     radioStateService.AfGainB = persistedState.AfGainB;
+                }
+                // Restore MIC Gain
+                if (persistedState.MicGain >= 0 && persistedState.MicGain <= 100)
+                {
+                    await multiplexer.SendCommandAsync($"MG{persistedState.MicGain:D3};", "Initialization", stoppingToken);
+                    radioStateService.MicGain = persistedState.MicGain;
                 }
 
                 // 4. Read actual radio state (frequencies, band, etc.) before marking initialized
