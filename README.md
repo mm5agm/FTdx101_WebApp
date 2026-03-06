@@ -18,7 +18,7 @@ I also use this application on my tablet, which provides a portable control pane
 - **Windows Only:** Serial port implementation currently requires Windows due to .NET 10 SerialPort limitations.
 - **Touch Frequency Tuning:** Digit-by-digit frequency tuning not yet implemented for touch devices.
 - **Single Radio:** Designed for controlling one radio at a time.
-- **Linux:** Won't be implemented by me due to serial port implementation issues in .NET 10.
+- **Linux:** It's been reported that it runs on Linux Debian using wine although I can't test this. The user had to use https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-aspnetcore-10.0.3-windows-x86-installer to support it.
 - **No Memory Management:** Per-band memory and memory channel management are not yet implemented.
 - **No Filter Controls:** Filter width and shift controls are not currently implemented.
 - **No Antenna Update in the APP.** If the user changes the antenna selection on the radio, the app will not reflect this change.
@@ -27,7 +27,8 @@ I also use this application on my tablet, which provides a portable control pane
 - **Radio changes reflected in real time:** Thanks to the use of Auto Information mode, apart from antenna changes, changes made on the radio (frequency, mode, band, etc.) are immediately reflected in the web app with minimal latency.
 - **Band Selection:** Quick access to all amateur bands from 160m to 4m. Note Bands are UK-centric and may not reflect all international band plans.
 - **Power Control:** Adjust the radio's power output directly from the web interface. Power setting is persisted and restored on app restart.
-- **MIC Gain Control:** Adjust microphone gain with a slider. Setting is persisted and restored on app restart.
+- **MIC Gain Control:** Adjust microphone gain with a slider. Setting is persisted and restored on app restart. **Note:** In DATA modes (DATA-U, DATA-L, PSK, RTTY, etc.), this slider controls the **Data Out Gain** instead of MIC Gain - the label updates automatically to reflect this.
+- **USB Audio for Digital Modes:** This app is designed for use with **USB audio** (the radio's built-in USB sound card), not the rear DATA jack. WSJT-X and other digital mode software should be configured to use the FTdx101's USB audio device.
 - **Real-Time S-Meter:** Live updates of signal strength with an analog-style meter.
 - **TX Meters:** Real-time Power, SWR, and ALC gauges during transmit.
 - **PA Monitoring:** Live IDD (drain current) display during TX and PA Voltage display with noise filtering.
@@ -60,7 +61,7 @@ This application now leverages the FTdx101's Auto Information mode by sending th
 
 **The Problem:** Early versions polled the radio constantly for all parameters, creating serial port congestion and slow UI updates.
 
-**The Solution:**
+**The Solution: Provided by Martin G8MAB **
 - **Reactive State Service:** Radio changes stream in real-time via Auto-Information (AI) mode
 - **Smart Polling:** Only S-meters are polled (3x per second) since AI mode doesn't provide them
 - **Instant Updates:** Frequency, mode, and antenna changes propagate immediately
@@ -75,7 +76,7 @@ This architecture change in transformed the app from sluggish polling to buttery
 - **Mode Selection:** All modes available but this makes the screen cluttered, so I may implement a mode filter in the future.
 - **Antenna Switching:** Select between ANT 1, 2, or 3
 - **Power Control:** Adjustable power output (0-200W for FT-dx101MP), persisted across restarts
-- **MIC Gain Control:** Adjustable microphone gain (0-100), persisted across restarts
+- **MIC Gain Control:** Adjustable microphone gain (0-100), persisted across restarts. Label changes to "Data Out Gain" in DATA modes.
 - **S-Meter Display:** Real-time analogue meter showing signal strength
 - **TX Meters:** Power, SWR, and ALC gauges with real-time updates during transmit
 - **PA Monitoring:** 

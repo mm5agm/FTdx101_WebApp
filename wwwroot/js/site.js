@@ -373,6 +373,27 @@ function updateModeSelect(receiver, mode) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// updateMicGainLabel
+// ---------------------------------------------------------------------------
+// Updates the MIC Gain label based on the current mode.
+// In DATA modes (DATA-U, DATA-L, PSK, DATA-FM, etc.), this controls Data Out level.
+// In voice modes (SSB, AM, FM, etc.), this controls MIC Gain.
+// ---------------------------------------------------------------------------
+function updateMicGainLabel(mode) {
+    const label = document.getElementById('micGainLabel');
+    if (!label) return;
+
+    // Data modes where "MIC Gain" actually controls Data Out level
+    const dataModes = ['DATA-U', 'DATA-L', 'PSK', 'DATA-FM', 'DATA-FM-N', 'RTTY-U', 'RTTY-L'];
+
+    if (dataModes.includes(mode)) {
+        label.textContent = 'Data Out Gain';
+    } else {
+        label.textContent = 'MIC Gain';
+    }
+}
+
 // First SignalR RadioStateUpdate handler (outer scope).
 // Handles ModeA/B, FrequencyA/B, PowerA/B updates pushed from the backend.
 connection.on("RadioStateUpdate", function (update) {
@@ -382,6 +403,7 @@ connection.on("RadioStateUpdate", function (update) {
     // Update the dropdown select when mode changes from the radio.
     if (update.property === "ModeA") {
         updateModeSelect('A', update.value);
+        updateMicGainLabel(update.value);
     }
     if (update.property === "ModeB") {
         updateModeSelect('B', update.value);
@@ -960,6 +982,9 @@ function sendAfGain(receiver, value) {
             // Update mode and antenna buttons from polling
             updateModeAndAntennaButtons('A', data.vfoA.mode, data.vfoA.antenna);
             updateModeAndAntennaButtons('B', data.vfoB.mode, data.vfoB.antenna);
+
+            // Update MIC Gain / Data Out Gain label based on current mode (VFO A is main)
+            updateMicGainLabel(data.vfoA.mode);
 
             // --- Robust AF Gain slider enable/attach ---
             const sliderA = document.getElementById('afGainSliderA');

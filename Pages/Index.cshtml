@@ -249,9 +249,9 @@
                                oninput="window.radioControl.updatePowerDisplay('A', this.value)"
                                onchange="window.radioControl.setPower('A', this.value)">
                     </div>
-                    <!-- MIC Meter underneath -->
+                    <!-- MIC Gain / Data Out Level -->
                     <div class="mb-3 mt-3">
-                        <label>MIC Gain: <span id="micGainValue" class="fw-bold">50</span></label>
+                        <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">50</span></label>
                         <input type="range" class="form-range power-slider"
                                id="micGainSlider"
                                min="0"
@@ -277,7 +277,7 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-<script src="~/js/site.js?v=20260227c"></script>
+<script src="~/js/site.js?v=20260227f"></script>
     <script>
         async function launchWsjtx() {
             try {
