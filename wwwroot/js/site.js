@@ -449,6 +449,12 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "VDDMeter" && typeof window.updatePAVoltage === 'function') {
         window.updatePAVoltage(update.value);
     }
+    if (update.property === "Temperature") {
+        console.log('[SignalR] Temperature update received:', update.value);
+        if (typeof window.updatePATemperature === 'function') {
+            window.updatePATemperature(update.value);
+        }
+    }
 
     // --- TX INDICATOR ---
     if (update.property === "IsTransmitting") {
@@ -1141,7 +1147,7 @@ function sendAfGain(receiver, value) {
         if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
             powerHistory = []; // Clear history
             const valueSpan = document.getElementById('powerMeterValue');
-            if (valueSpan) valueSpan.textContent = '0W';
+            if (valueSpan) valueSpan.textContent = 'Power Out 0W';
             if (window.gaugePower) {
                 window.gaugePower.value = 0;
                 window.gaugePower.draw();
@@ -1168,7 +1174,7 @@ function sendAfGain(receiver, value) {
         console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Watts: ${watts}`);
 
         const valueSpan = document.getElementById('powerMeterValue');
-        if (valueSpan) valueSpan.textContent = `${watts}W`;
+        if (valueSpan) valueSpan.textContent = `Power Out ${watts}W`;
 
         if (window.gaugePower) {
             // The gauge needle position must match the watt labels, not the raw 0-255 scale
@@ -1188,7 +1194,7 @@ function sendAfGain(receiver, value) {
         if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
             swrHistory = []; // Clear history
             const valueSpan = document.getElementById('swrMeterValue');
-            if (valueSpan) valueSpan.textContent = '1.0:1';
+            if (valueSpan) valueSpan.textContent = 'SWR 1.0:1';
             if (window.gaugeSWR) {
                 window.gaugeSWR.value = 0;
                 window.gaugeSWR.draw();
@@ -1215,7 +1221,7 @@ function sendAfGain(receiver, value) {
         console.log(`[SWRMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, SWR: ${swrClamped.toFixed(1)}:1`);
 
         const valueSpan = document.getElementById('swrMeterValue');
-        if (valueSpan) valueSpan.textContent = `${swrClamped.toFixed(1)}:1`;
+        if (valueSpan) valueSpan.textContent = `SWR ${swrClamped.toFixed(1)}:1`;
 
         if (window.gaugeSWR) {
             // The gauge labels range from 1.0 to 3.0, and the gauge internal arc is 0-255
@@ -1254,7 +1260,7 @@ function sendAfGain(receiver, value) {
 
         // Update ALC gauge (pass raw 0-255 value directly, gauge uses 0-255 scale)
         const alcMeterValue = document.getElementById('alcMeterValue');
-        if (alcMeterValue) alcMeterValue.textContent = `${alcVolts.toFixed(0)}V`;
+        if (alcMeterValue) alcMeterValue.textContent = `ALC ${alcVolts.toFixed(0)}V`;
 
         if (window.gaugeALC) {
             window.gaugeALC.value = value;  // Raw 0-255 value
@@ -1311,6 +1317,24 @@ function sendAfGain(receiver, value) {
                 voltageDisplay.classList.add('bg-success'); // Normal range
             } else {
                 voltageDisplay.classList.add('bg-danger'); // High voltage
+            }
+        }
+    }
+
+    // Update PA Temperature display (value is directly in °C from IF command)
+    function updatePATemperature(tempC) {
+        const tempDisplay = document.getElementById('paTemperatureValue');
+
+        if (tempDisplay) {
+            tempDisplay.textContent = `${tempC}°C`;
+            // Color coding based on temperature
+            tempDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
+            if (tempC < 40) {
+                tempDisplay.classList.add('bg-success'); // Cool - normal
+            } else if (tempC < 60) {
+                tempDisplay.classList.add('bg-warning'); // Warm - caution
+            } else {
+                tempDisplay.classList.add('bg-danger'); // Hot - warning
             }
         }
     }
@@ -1587,6 +1611,7 @@ function sendAfGain(receiver, value) {
     window.updateALCMeter = updateALCMeter;
     window.updateIDDMeter = updateIDDMeter;
     window.updatePAVoltage = updatePAVoltage;
+    window.updatePATemperature = updatePATemperature;
     window.updateMICMeter = updateMICMeter;
 
 })();

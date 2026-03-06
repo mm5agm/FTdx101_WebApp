@@ -42,12 +42,12 @@
         </div>
     </div>
     <div class="row g-3 flex-wrap">
-        <!-- Receiver A Panel -->
+        <!-- VFO A Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-primary h-100 receiver-card">
                 <div class="card-header bg-primary text-white">
                     <h3>
-                        <span id="receiverAHeading">Receiver A</span>
+                        <span id="receiverAHeading">VFO A</span>
                     </h3>
                 </div>
                 <div class="card-body">
@@ -124,12 +124,12 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Receiver B Panel -->
+                    <!-- VFO B Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-success h-100 receiver-card">
                 <div class="card-header bg-success text-white">
                     <h3>
-                        <span id="receiverBHeading">Receiver B</span>
+                        <span id="receiverBHeading">VFO B</span>
                     </h3>
                 </div>
                 <div class="card-body">
@@ -220,21 +220,21 @@
                             <div class="analog-meter-container">
                                 <canvas id="swrMeterCanvas"></canvas>
                             </div>
-                            <span id="swrMeterValue" class="badge bg-danger" style="position: absolute; bottom: 35px; left: calc(50% - 15px); transform: translateX(-50%); z-index: 100;">1.0:1</span>
+                            <span id="swrMeterValue" class="badge bg-danger" style="position: absolute; bottom: 35px; left: calc(50% - 15px); transform: translateX(-50%); z-index: 100; white-space: nowrap;">SWR 1.0:1</span>
                         </div>
                         <!-- Power Meter -->
                         <div class="text-center power-meter-container" style="position: relative;">
                             <div class="analog-meter-container">
                                 <canvas id="powerMeterCanvas"></canvas>
                             </div>
-                            <span id="powerMeterValue" class="badge bg-warning text-dark" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100;">0W</span>
+                            <span id="powerMeterValue" class="badge bg-warning text-dark" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap;">Power Out 0W</span>
                         </div>
                         <!-- ALC Meter -->
-                        <div class="text-center" style="position: relative;">
+                        <div class="text-center" style="position: relative; margin-left: -10rem;">
                             <div class="analog-meter-container">
                                 <canvas id="alcMeterCanvas"></canvas>
                             </div>
-                            <span id="alcMeterValue" class="badge bg-info" style="position: absolute; bottom: 35px; left: calc(50% - 15px); transform: translateX(-50%); z-index: 100;">0V</span>
+                            <span id="alcMeterValue" class="badge bg-info" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap;">ALC 0V</span>
                         </div>
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
@@ -270,6 +270,10 @@
                     <div class="mb-2">
                         <label>PA Voltage: <span id="paVoltageValue" class="fw-bold badge bg-secondary">0.0V</span></label>
                     </div>
+                    <!-- PA Temperature Display -->
+                    <div class="mb-2">
+                        <label>PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -277,7 +281,7 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-<script src="~/js/site.js?v=20260227f"></script>
+<script src="~/js/site.js?v=20260227n"></script>
     <script>
         async function launchWsjtx() {
             try {

@@ -280,6 +280,9 @@ namespace FTdx101_WebApp.Services
         private int? _vddMeter;
         public int? VDDMeter { get => _vddMeter; set => SetField(ref _vddMeter, value); }
 
+        private int? _temperature;
+        public int? Temperature { get => _temperature; set => SetField(ref _temperature, value); }
+
         private int _afGainA = 128;
         public int AfGainA { get => _afGainA; set => SetField(ref _afGainA, value); }
         private int _afGainB = 128;

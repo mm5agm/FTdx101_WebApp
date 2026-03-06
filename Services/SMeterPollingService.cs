@@ -198,6 +198,43 @@ namespace FTdx101_WebApp.Services
                             }
                         }
 
+                        // Poll Temperature via IF; command - last 2 digits before semicolon contain temp in °C
+                        // Poll every 10 cycles (every 2 seconds) - temperature doesn't change fast
+                        if (cycleCount % 10 == 0)
+                        {
+                            var ifResponse = await _multiplexer.SendCommandAsync("IF;", "MeterPoll", stoppingToken);
+
+                            // Always log for debugging - use LogError to ensure visibility
+                            _logger.LogError("[TEMP DEBUG] IF Response: '{Response}' (Length={Len})", 
+                                ifResponse ?? "(null)", ifResponse?.Length ?? 0);
+
+                            if (!string.IsNullOrEmpty(ifResponse) && ifResponse.StartsWith("IF"))
+                            {
+                                // Temperature is at positions 57-58 (0-indexed) - the last 2 digits before the semicolon
+                                // Example: IF00014070000+00000000000000000000000000000000000030;
+                                //          The "30" is the temperature
+                                var cleanResponse = ifResponse.TrimEnd(';');
+                                _logger.LogError("[TEMP DEBUG] IF cleaned: '{Response}' - Last 4 chars: '{Last4}'", 
+                                    cleanResponse, cleanResponse.Length >= 4 ? cleanResponse.Substring(cleanResponse.Length - 4) : cleanResponse);
+
+                                if (cleanResponse.Length >= 2)
+                                {
+                                    var tempStr = cleanResponse.Substring(cleanResponse.Length - 2, 2);
+                                    _logger.LogError("[TEMP DEBUG] Temp string: '{TempStr}'", tempStr);
+
+                                    if (int.TryParse(tempStr, out int tempC) && tempC > 0 && tempC < 100)
+                                    {
+                                        _logger.LogError("[TEMP DEBUG] Temperature parsed: {TempC}°C", tempC);
+                                        _stateService.Temperature = tempC;
+                                    }
+                                    else
+                                    {
+                                        _logger.LogError("[TEMP DEBUG] Failed to parse temp: '{TempStr}' -> {TempC}", tempStr, tempC);
+                                    }
+                                }
+                            }
+                        }
+
                         // Poll frequencies every 2-3 cycles to detect WSJT-X changes (AI doesn't report CAT changes)
                         if (++freqPollCounter >= 3)
                         {
