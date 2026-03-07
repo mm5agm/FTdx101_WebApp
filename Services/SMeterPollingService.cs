@@ -198,39 +198,30 @@ namespace FTdx101_WebApp.Services
                             }
                         }
 
-                        // Poll Temperature via IF; command - last 2 digits before semicolon contain temp in °C
+                        // Poll Temperature via RM9; command
+                        // Response format: RM9XXX000 where XXX is a 3-character hex-encoded byte
+                        // Formula: temp = (decimal_value * 100) / 255
                         // Poll every 10 cycles (every 2 seconds) - temperature doesn't change fast
                         if (cycleCount % 10 == 0)
                         {
-                            var ifResponse = await _multiplexer.SendCommandAsync("IF;", "MeterPoll", stoppingToken);
+                            var rm9Response = await _multiplexer.SendCommandAsync("RM9;", "MeterPoll", stoppingToken);
 
-                            // Always log for debugging - use LogError to ensure visibility
-                            _logger.LogError("[TEMP DEBUG] IF Response: '{Response}' (Length={Len})", 
-                                ifResponse ?? "(null)", ifResponse?.Length ?? 0);
-
-                            if (!string.IsNullOrEmpty(ifResponse) && ifResponse.StartsWith("IF"))
+                            if (!string.IsNullOrEmpty(rm9Response) && rm9Response.StartsWith("RM9") && rm9Response.Length >= 6)
                             {
-                                // Temperature is at positions 57-58 (0-indexed) - the last 2 digits before the semicolon
-                                // Example: IF00014070000+00000000000000000000000000000000000030;
-                                //          The "30" is the temperature
-                                var cleanResponse = ifResponse.TrimEnd(';');
-                                _logger.LogError("[TEMP DEBUG] IF cleaned: '{Response}' - Last 4 chars: '{Last4}'", 
-                                    cleanResponse, cleanResponse.Length >= 4 ? cleanResponse.Substring(cleanResponse.Length - 4) : cleanResponse);
+                                // Extract the 3-character hex value (positions 3-5)
+                                var hexStr = rm9Response.Substring(3, 3);
 
-                                if (cleanResponse.Length >= 2)
+                                // Convert hex to decimal
+                                if (int.TryParse(hexStr, System.Globalization.NumberStyles.HexNumber, null, out int hexValue))
                                 {
-                                    var tempStr = cleanResponse.Substring(cleanResponse.Length - 2, 2);
-                                    _logger.LogError("[TEMP DEBUG] Temp string: '{TempStr}'", tempStr);
+                                    // Apply formula: temp = (decimal * 100) / 255
+                                    double tempC = (hexValue * 100.0) / 255.0;
+                                    int roundedTemp = (int)Math.Round(tempC);
 
-                                    if (int.TryParse(tempStr, out int tempC) && tempC > 0 && tempC < 100)
-                                    {
-                                        _logger.LogError("[TEMP DEBUG] Temperature parsed: {TempC}°C", tempC);
-                                        _stateService.Temperature = tempC;
-                                    }
-                                    else
-                                    {
-                                        _logger.LogError("[TEMP DEBUG] Failed to parse temp: '{TempStr}' -> {TempC}", tempStr, tempC);
-                                    }
+                                    _logger.LogDebug("[MeterPoll] RM9 Response: '{Response}' -> Hex: {Hex} -> Decimal: {Dec} -> Temp: {Temp}°C", 
+                                        rm9Response, hexStr, hexValue, roundedTemp);
+
+                                    _stateService.Temperature = roundedTemp;
                                 }
                             }
                         }

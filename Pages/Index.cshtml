@@ -40,6 +40,12 @@
                 Log4OM
             </button>
         </div>
+        <div class="col-auto ms-auto">
+            <button id="radioPowerBtn" class="btn btn-danger btn-lg"
+                    onclick="toggleRadioPower()" title="Radio Power On/Off">
+                <i class="bi bi-power"></i> POWER
+            </button>
+        </div>
     </div>
     <div class="row g-3 flex-wrap">
         <!-- VFO A Panel -->
@@ -281,7 +287,7 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-<script src="~/js/site.js?v=20260227n"></script>
+<script src="~/js/site.js?v=20260228a"></script>
     <script>
         async function launchWsjtx() {
             try {

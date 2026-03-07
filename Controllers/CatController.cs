@@ -69,6 +69,45 @@ namespace FTdx101_WebApp.Controllers
             }
         }
 
+        [HttpPost("radiopower")]
+        public async Task<IActionResult> SetRadioPower([FromBody] RadioPowerRequest request)
+        {
+            try
+            {
+                if (request.PowerOn)
+                {
+                    // Turn radio ON: PS1; -> 1.5s delay -> PS1;
+                    _logger.LogInformation("Turning radio ON...");
+                    await _catClient.SendCommandAsync("PS1;", "WebUI", CancellationToken.None);
+                    await Task.Delay(1500);
+                    await _catClient.SendCommandAsync("PS1;", "WebUI", CancellationToken.None);
+                    _radioStateService.RadioPowerOn = true;
+                    _logger.LogInformation("Radio power ON command sent");
+                    return Ok(new { message = "Radio powered ON", powerOn = true });
+                }
+                else
+                {
+                    // Turn radio OFF: PS0;
+                    _logger.LogInformation("Turning radio OFF...");
+                    await _catClient.SendCommandAsync("PS0;", "WebUI", CancellationToken.None);
+                    _radioStateService.RadioPowerOn = false;
+                    _logger.LogInformation("Radio power OFF command sent");
+                    return Ok(new { message = "Radio powered OFF", powerOn = false });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting radio power");
+                return StatusCode(500, new { error = "Failed to set radio power" });
+            }
+        }
+
+        [HttpGet("radiopower")]
+        public IActionResult GetRadioPowerStatus()
+        {
+            return Ok(new { powerOn = _radioStateService.RadioPowerOn });
+        }
+
         // Static band frequency mapping (apply this at the top of your class)
         private static readonly Dictionary<string, long> BandFreqs = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -518,6 +557,11 @@ namespace FTdx101_WebApp.Controllers
         {
             public string Band { get; set; } = string.Empty;
             public string Value { get; set; } = string.Empty;
+        }
+
+        public class RadioPowerRequest
+        {
+            public bool PowerOn { get; set; }
         }
 
         [HttpPost("reinitialize")]

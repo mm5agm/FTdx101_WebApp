@@ -344,6 +344,79 @@ window.updatePowerDisplay = function () {
     console.warn("updatePowerDisplay not implemented");
 };
 
+// ---------------------------------------------------------------------------
+// Radio Power On/Off Toggle
+// ---------------------------------------------------------------------------
+let radioPowerOn = true; // Track radio power state
+
+async function toggleRadioPower() {
+    const btn = document.getElementById('radioPowerBtn');
+    if (!btn) return;
+
+    // Disable button during operation
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> POWER';
+
+    try {
+        const newPowerState = !radioPowerOn;
+        console.log(`Toggling radio power to: ${newPowerState ? 'ON' : 'OFF'}`);
+
+        const response = await fetch('/api/cat/radiopower', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ powerOn: newPowerState })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            radioPowerOn = data.powerOn;
+            updateRadioPowerButton();
+            console.log(`Radio power ${radioPowerOn ? 'ON' : 'OFF'}`);
+        } else {
+            console.error('Failed to toggle radio power:', await response.text());
+        }
+    } catch (error) {
+        console.error('Error toggling radio power:', error);
+    } finally {
+        btn.disabled = false;
+        updateRadioPowerButton();
+    }
+}
+
+function updateRadioPowerButton() {
+    const btn = document.getElementById('radioPowerBtn');
+    if (!btn) return;
+
+    if (radioPowerOn) {
+        btn.className = 'btn btn-success btn-lg';
+        btn.innerHTML = '<i class="bi bi-power"></i> POWER';
+        btn.title = 'Radio is ON - Click to turn OFF';
+    } else {
+        btn.className = 'btn btn-danger btn-lg';
+        btn.innerHTML = '<i class="bi bi-power"></i> POWER';
+        btn.title = 'Radio is OFF - Click to turn ON';
+    }
+}
+
+// Check radio power status on page load
+async function checkRadioPowerStatus() {
+    try {
+        const response = await fetch('/api/cat/radiopower');
+        if (response.ok) {
+            const data = await response.json();
+            radioPowerOn = data.powerOn;
+            updateRadioPowerButton();
+        }
+    } catch (error) {
+        console.error('Error checking radio power status:', error);
+    }
+}
+
+// Initialize radio power button state on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkRadioPowerStatus();
+});
+
 
 // ---------------------------------------------------------------------------
 // SignalR connection - shared by both the outer handler below and the
@@ -434,6 +507,12 @@ connection.on("RadioStateUpdate", function (update) {
         updatePowerDisplay("A", update.value);
         const sliderA = document.getElementById('powerSliderA');
         if (sliderA) sliderA.value = update.value;
+    }
+
+    // --- RADIO POWER STATE ---
+    if (update.property === "RadioPowerOn") {
+        radioPowerOn = update.value;
+        updateRadioPowerButton();
     }
 
     // --- METER UPDATES ---

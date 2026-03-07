@@ -291,6 +291,9 @@ namespace FTdx101_WebApp.Services
         private int _micGain = 50;
         public int MicGain { get => _micGain; set => SetField(ref _micGain, value); }
 
+        private bool _radioPowerOn = true; // Assume on when app starts
+        public bool RadioPowerOn { get => _radioPowerOn; set => SetField(ref _radioPowerOn, value); }
+
         public RadioState GetState()
         {
             return new RadioState
