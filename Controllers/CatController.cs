@@ -83,7 +83,13 @@ namespace FTdx101_WebApp.Controllers
                     await _catClient.SendCommandAsync("PS1;", "WebUI", CancellationToken.None);
                     _radioStateService.RadioPowerOn = true;
                     _logger.LogInformation("Radio power ON command sent");
-                    return Ok(new { message = "Radio powered ON", powerOn = true });
+
+                    // Wait for radio to fully boot, then re-initialize
+                    await Task.Delay(3000); // Radio needs time to boot
+                    _logger.LogInformation("Re-initializing radio after power on...");
+                    await _radioInitService.InitializeRadioAsync();
+
+                    return Ok(new { message = "Radio powered ON and initialized", powerOn = true });
                 }
                 else
                 {
@@ -91,6 +97,7 @@ namespace FTdx101_WebApp.Controllers
                     _logger.LogInformation("Turning radio OFF...");
                     await _catClient.SendCommandAsync("PS0;", "WebUI", CancellationToken.None);
                     _radioStateService.RadioPowerOn = false;
+                    AppStatus.InitializationStatus = "radio_off";
                     _logger.LogInformation("Radio power OFF command sent");
                     return Ok(new { message = "Radio powered OFF", powerOn = false });
                 }

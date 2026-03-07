@@ -27,10 +27,11 @@ namespace FTdx101_WebApp.Services
         {
             _logger.LogInformation("Meter polling service started (S-Meter, Power, SWR)");
 
-            // Wait for radio initialization to complete
+            // Wait for radio initialization to complete (or radio to be powered on later)
             _logger.LogInformation("Waiting for radio initialization to complete...");
             while (AppStatus.InitializationStatus != "complete" && !stoppingToken.IsCancellationRequested)
             {
+                // Check every 500ms - also handles case where radio is powered on after app start
                 await Task.Delay(500, stoppingToken);
             }
 
