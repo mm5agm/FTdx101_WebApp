@@ -51,22 +51,22 @@ namespace FTdx101_WebApp.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("WsjtxUdpService ExecuteAsync started");
+            _logger.LogWarning("WsjtxUdpService ExecuteAsync started - listening for WSJT-X UDP packets");
             UdpClient? udpClient = null;
             try
             {
-                _logger.LogInformation("Loading WSJT-X UDP settings...");
+                _logger.LogWarning("Loading WSJT-X UDP settings...");
                 var settings = await _settingsService.GetSettingsAsync();
-                _logger.LogInformation("Loaded settings: Address={Address}, Port={Port}", settings.WsjtxUdpAddress, settings.WsjtxUdpPort);
+                _logger.LogWarning("WSJT-X UDP Settings: Address={Address}, Port={Port}", settings.WsjtxUdpAddress, settings.WsjtxUdpPort);
                 udpClient = CreateUdpListener(settings.WsjtxUdpAddress, settings.WsjtxUdpPort);
-                _logger.LogInformation("WSJT-X UDP listener started on address {Address} port {Port}", settings.WsjtxUdpAddress, settings.WsjtxUdpPort);
+                _logger.LogWarning("WSJT-X UDP listener ACTIVE on port {Port} (address filter: {Address})", settings.WsjtxUdpPort, settings.WsjtxUdpAddress);
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     try
                     {
                         var result = await udpClient.ReceiveAsync(stoppingToken);
-                        _logger.LogInformation("[WSJT-X UDP] Packet received: {Length} bytes from {RemoteEndPoint}", result.Buffer.Length, result.RemoteEndPoint);
+                        _logger.LogWarning("[WSJT-X UDP] Packet received: {Length} bytes from {RemoteEndPoint}", result.Buffer.Length, result.RemoteEndPoint);
                         await ProcessMessageAsync(result.Buffer, stoppingToken);
                     }
                     catch (OperationCanceledException) { break; }
@@ -95,6 +95,9 @@ namespace FTdx101_WebApp.Services
             udp.ExclusiveAddressUse = false;
             udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             udp.Client.Bind(new IPEndPoint(IPAddress.Any, udpPort));
+
+            _logger.LogWarning("UDP socket bound to port {Port} on all interfaces", udpPort);
+
             // If multicast address, join group
             if (IPAddress.TryParse(udpAddress, out var ip) &&
                 ip.AddressFamily == AddressFamily.InterNetwork &&
@@ -103,12 +106,16 @@ namespace FTdx101_WebApp.Services
                 try
                 {
                     udp.JoinMulticastGroup(ip);
-                    _logger.LogInformation("Joined WSJT-X multicast group {Address}", udpAddress);
+                    _logger.LogWarning("✓ Joined WSJT-X multicast group {Address}:{Port}", udpAddress, udpPort);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, $"Could not join multicast group {udpAddress}; will receive unicast packets only");
+                    _logger.LogError(ex, "✗ FAILED to join multicast group {Address} - check firewall settings", udpAddress);
                 }
+            }
+            else
+            {
+                _logger.LogWarning("Listening for unicast UDP on port {Port} (address {Address} is not multicast)", udpPort, udpAddress);
             }
             return udp;
         }

@@ -25,7 +25,9 @@ namespace FTdx101_WebApp.Models
         public bool ShowLog4omButton { get; set; } = true;
 
         // WSJT-X UDP Settings
-        public string WsjtxUdpAddress { get; set; } = "127.0.0.1";
+        // Default: Use the same multicast address as configured in WSJT-X
+        // Common values: 224.0.0.1, 239.255.0.1, or 127.0.0.1 for unicast
+        public string WsjtxUdpAddress { get; set; } = "239.255.0.1";
         public int WsjtxUdpPort { get; set; } = 2237;
 
         // Last Radio State (persisted between sessions)
