@@ -15,7 +15,8 @@ I also use this application on my tablet, which provides a portable control pane
 
 ## ⚠️ Limitations
 
-- **Windows Only:** Serial port implementation currently requires Windows due to .NET 10 SerialPort limitations.
+- **Windows Only? :** Serial port implementation currently requires Windows due to .NET 10 SerialPort limitations.But see Linux note below.
+- **Program is not signed.** Windows Smart App Control may block it by default. You can allow it through the warning screen (see screenshot above).
 - **Touch Frequency Tuning:** Digit-by-digit frequency tuning not yet implemented for touch devices.
 - **Single Radio:** Designed for controlling one radio at a time.
 - **Linux:** It's been reported that it runs on Linux Debian using wine although I can't test this. The user had to use https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-aspnetcore-10.0.3-windows-x86-installer to support it.
@@ -46,7 +47,7 @@ I also use this application on my tablet, which provides a portable control pane
   Log4OM, GridTracker, and other Hamlib-based tools can connect over TCP.  
   The web app is the only process that opens the radio's serial port.
 - **WSJT-X Integration (UDP):** Full support for WSJT-X UDP control and status monitoring is implemented and works with JTAlert and Log4OM. Configure the multicast address and port in Application Setup.
-- **No Virtual COM Ports Needed:** Eliminates the need for third-party serial port sharing utilities.
+- **No Virtual COM Ports Needed:** Eliminates the need for third-party serial port sharing utilities like com0com or VSPE. The web app is the single point of control for the radio's CAT interface, and it shares data with other applications via TCP and UDP. However, if you prefer using virtual COM ports, you can still use them with the web app's built-in CAT multiplexer.
 - **Tablet and Touch Friendly:** Optimized for use on tablets and touch devices.
 
 ---
@@ -149,11 +150,20 @@ The file is created automatically on first run. You can edit it manually while t
 **Example contents:**
 ```json
 {
-  "LastFrequency": "144300000",
-  "LastMode": "USB",
-  "LastBand": "20m",
-  "LastPower": 50,
-  "LastAntenna": "ANT 1"
+  "FrequencyA": 21074100,
+  "FrequencyB": 14074000,
+  "BandA": "15m",
+  "BandB": "20m",
+  "ModeA": "USB",
+  "ModeB": "USB",
+  "AntennaA": "1",
+  "AntennaB": "1",
+  "PowerA": 10,
+  "PowerB": 0,
+  "AfGainA": 19,
+  "AfGainB": 22,
+  "MicGain": 9,
+  "Controls": {}
 }
 
 ```
