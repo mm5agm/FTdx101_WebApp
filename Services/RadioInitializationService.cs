@@ -45,8 +45,39 @@ namespace FTdx101_WebApp.Services
 
                 var settings = await settingsService.GetSettingsAsync();
 
+                // Check if COM port is configured - if not, redirect to Settings
+                if (string.IsNullOrWhiteSpace(settings.SerialPort) || settings.SerialPort == "Not Set")
+                {
+                    logger.LogWarning("[RadioInitializationService] No COM port configured - redirecting to Settings");
+                    AppStatus.InitializationStatus = "error";
+                    await _hubContext.Clients.All.SendAsync("ShowSettingsPage");
+                    if (!Debugger.IsAttached &&
+                        string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                    }
+                    return;
+                }
+
                 logger.LogInformation("Attempting to connect to radio on port {SerialPort} at baud {BaudRate}", settings.SerialPort, settings.BaudRate);
-                await multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate);
+
+                try
+                {
+                    await multiplexer.ConnectAsync(settings.SerialPort, settings.BaudRate);
+                }
+                catch (Exception connEx)
+                {
+                    // COM port error (wrong port, port in use, etc.) - go to Settings
+                    logger.LogError(connEx, "[RadioInitializationService] Failed to open COM port {SerialPort} - redirecting to Settings", settings.SerialPort);
+                    AppStatus.InitializationStatus = "error";
+                    await _hubContext.Clients.All.SendAsync("ShowSettingsPage");
+                    if (!Debugger.IsAttached &&
+                        string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                    }
+                    return;
+                }
 
                 logger.LogInformation("Disabling auto information...");
                 await multiplexer.DisableAutoInformationAsync();
@@ -55,9 +86,23 @@ namespace FTdx101_WebApp.Services
                 var faResponse = await multiplexer.SendCommandAsync("FA;", "Initialization", stoppingToken);
                 if (string.IsNullOrWhiteSpace(faResponse) || !faResponse.StartsWith("FA"))
                 {
-                    logger.LogError("FA; command failed or radio did not respond.");
-                    throw new Exception("No response from radio to FA; command. Initialization failed.");
+                    // Radio not responding - likely OFF. Stay on Index page, user can turn it on.
+                    logger.LogWarning("[RadioInitializationService] Radio not responding (probably OFF). User can power on via UI.");
+                    radioStateService.RadioPowerOn = false;
+                    AppStatus.InitializationStatus = "radio_off";
+                    await _hubContext.Clients.All.SendAsync("InitializationStatus", "radio_off");
+
+                    // Open main page (not Settings) - user can turn radio on
+                    if (!Debugger.IsAttached && 
+                        string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _browserLauncher.OpenOnce("http://localhost:8080");
+                    }
+                    return;
                 }
+
+                // Radio responded - it's ON
+                radioStateService.RadioPowerOn = true;
                 logger.LogInformation("[RadioInitializationService] Radio responded to FA;: {Response}", faResponse);
 
                 // Send initialization commands and wait for DT0 response (with timeout)

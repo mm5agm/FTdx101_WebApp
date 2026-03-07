@@ -557,8 +557,9 @@ connection.on("RadioStateUpdate", function (update) {
 
 // ---------------------------------------------------------------------------
 // Initialization overlay polling
-// Polls /api/status/init every second until status is "complete" or "error".
+// Polls /api/status/init every second until status is "complete", "radio_off", or "error".
 // On error, redirects to /Settings ONLY if user hasn't dismissed the overlay.
+// On radio_off, stays on Index page so user can turn radio on via power button.
 // ---------------------------------------------------------------------------
 let initPollingStopped = false; // Allow user to dismiss and continue
 
@@ -578,15 +579,24 @@ async function pollInitStatus() {
         if (data.status === "complete") {
             overlay.style.display = "none";
             initPollingStopped = true; // Stop polling
+            radioPowerOn = true;
+            updateRadioPowerButton();
+        } else if (data.status === "radio_off") {
+            // Radio is off - hide overlay and let user turn it on via power button
+            overlay.style.display = "none";
+            initPollingStopped = true;
+            radioPowerOn = false;
+            updateRadioPowerButton();
+            console.log('[Init] Radio is OFF - user can power on via the POWER button');
         } else if (data.status === "error") {
-            statusText.innerHTML = "Radio initialization failed. <a href='/Settings' class='text-white'>Go to Settings</a> or <button onclick='dismissInitOverlay()' class='btn btn-sm btn-warning ms-2'>Continue Anyway</button>";
+            statusText.innerHTML = "COM port error. <a href='/Settings' class='text-white'>Go to Settings</a> to configure the serial port.";
             overlay.style.display = "block";
             // Don't auto-redirect - let user choose
         } else {
             overlay.style.display = "block";
         }
 
-        if (data.status !== "complete" && !initPollingStopped) {
+        if (data.status !== "complete" && data.status !== "radio_off" && !initPollingStopped) {
             setTimeout(pollInitStatus, 1000);
         }
     } catch (error) {

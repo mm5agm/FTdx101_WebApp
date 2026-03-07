@@ -193,64 +193,10 @@
                             <i class="bi bi-exclamation-triangle-fill"></i>
                             <strong>Important:</strong> Save Settings and Restart the application after changing web server settings.
                         </div>
-                    </div>
-                </div>
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <h5 class="mb-3">External Applications</h5>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label asp-for="Settings.WsjtxCommandLine" class="form-label">WSJT-X Command Line</label>
-                            <input asp-for="Settings.WsjtxCommandLine" class="form-control font-monospace"
-                                   placeholder="C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp" />
-                            <div class="form-text">
-                                Full path to the WSJT-X executable, optionally followed by arguments.<br />
-                                <strong>Examples:</strong><br />
-                                <code>C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp</code><br />
-                                <code>"C:\Program Files\WSJT-X\bin\wsjtx.exe" --rig-name=MyRig</code>
-                                <span class="d-block mt-1">Wrap the path in quotes if it contains spaces.</span>
-                            </div>
-                            <span asp-validation-for="Settings.WsjtxCommandLine" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Settings.WsjtxUdpAddress" class="form-label">WSJT-X UDP Address</label>
-                            <input asp-for="Settings.WsjtxUdpAddress" class="form-control font-monospace" placeholder="127.0.0.1" />
-                            <div class="form-text">
-                                IP address where WSJT-X UDP messages are sent/received.<br />
-                                <strong>Default:</strong> 127.0.0.1 (local machine)
-                            </div>
-                            <span asp-validation-for="Settings.WsjtxUdpAddress" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Settings.WsjtxUdpPort" class="form-label">WSJT-X UDP Port</label>
-                            <input asp-for="Settings.WsjtxUdpPort" class="form-control font-monospace" type="number" min="1" max="65535" placeholder="2237" />
-                            <div class="form-text">
-                                UDP port for WSJT-X messages.<br />
-                                <strong>Default:</strong> 2237
-                            </div>
-                            <span asp-validation-for="Settings.WsjtxUdpPort" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Settings.JtalertCommandLine" class="form-label">JTAlert Command Line</label>
-                            <input asp-for="Settings.JtalertCommandLine" class="form-control font-monospace"
-                                   placeholder="C:\HamApps\JTAlert\JTAlert.exe" />
-                            <div class="form-text">
-                                Full path to the JTAlert executable.<br />
-                                <strong>Example:</strong> <code>C:\HamApps\JTAlert\JTAlert.exe</code>
-                            </div>
-                            <span asp-validation-for="Settings.JtalertCommandLine" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Settings.Log4omCommandLine" class="form-label">Log4OM Command Line</label>
-                            <input asp-for="Settings.Log4omCommandLine" class="form-control font-monospace"
-                                   placeholder="C:\Program Files (x86)\Log4OM 2\Log4OM.exe" />
-                            <div class="form-text">
-                                Full path to the Log4OM executable.<br />
-                                <strong>Example:</strong> <code>"C:\Program Files (x86)\Log4OM 2\Log4OM.exe"</code>
-                                <span class="d-block mt-1">Wrap the path in quotes if it contains spaces.</span>
-                            </div>
-                            <span asp-validation-for="Settings.Log4omCommandLine" class="text-danger"></span>
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-app-indicator"></i>
+                            <strong>External Applications:</strong> Configure WSJT-X, JTAlert, and Log4OM on the 
+                            <a asp-page="/ApplicationSetup" class="alert-link">Application Setup</a> page.
                         </div>
                     </div>
                 </div>

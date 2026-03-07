@@ -6,42 +6,145 @@
 
 <h1>Application Setup</h1>
 
-<pre style="white-space: pre-wrap; font-family: inherit;">
-Setting up Network Settings for WSJT-X, JTAlert and Log4OM
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Message"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
-WSJT-X In the "Reporting" setting
-Tick "Enable PSK Reporting Spotting"
-UDP Server : 239.255.0.1
-UDP Server port number :  2237
-Outgoing Interfaces loopback_0
-Multicast TTL 1
-Tick Accept UDP requests, Notify on accepted UDP request, and Accepted UDP request restores window
-I prefer Dark Mode and this can be toggled On/Off in the "View" menu on the main screen. Use Dark Style.
-JTAlert - There's nothing to set up
-JTAlert does not expose any WSJT‑X UDP settings at all in the current versions.  
-There is no port field, no IP field, and no network configuration screen.
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-toggles"></i> External Application Buttons</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Configure up to 3 external application launcher buttons. You can customize the button name and command line for each.</p>
 
-This is because:
-**JTAlert no longer receives WSJT‑X data over UDP.
-It reads WSJT‑X’s log file instead.**
+        <form method="post">
+            <div class="row g-4">
+                <!-- App 1 -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><strong>Application 1</strong></span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="showApp1" asp-for="ShowApp1Button">
+                                <label class="form-check-label" for="showApp1">Show</label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label class="form-label small text-muted">Button Name:</label>
+                                <input type="text" class="form-control" asp-for="App1Name" placeholder="WSJT-X" />
+                            </div>
+                            <div>
+                                <label class="form-label small text-muted">Command Line:</label>
+                                <input type="text" class="form-control form-control-sm" asp-for="App1CommandLine" placeholder="C:\path\to\program.exe" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-WSJT‑X writes decodes → JTAlert reads the log file → JTAlert sends ADIF to Log4OM
+                <!-- App 2 -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><strong>Application 2</strong></span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="showApp2" asp-for="ShowApp2Button">
+                                <label class="form-check-label" for="showApp2">Show</label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label class="form-label small text-muted">Button Name:</label>
+                                <input type="text" class="form-control" asp-for="App2Name" placeholder="JTAlert" />
+                            </div>
+                            <div>
+                                <label class="form-label small text-muted">Command Line:</label>
+                                <input type="text" class="form-control form-control-sm" asp-for="App2CommandLine" placeholder="C:\path\to\program.exe" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-Log4OM
-Step‑by‑step: Configure Log4OM for JTAlert
-1) Open the Log4OM Settings
-In Log4OM:
+                <!-- App 3 -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><strong>Application 3</strong></span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="showApp3" asp-for="ShowApp3Button">
+                                <label class="form-check-label" for="showApp3">Show</label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label class="form-label small text-muted">Button Name:</label>
+                                <input type="text" class="form-control" asp-for="App3Name" placeholder="Log4OM" />
+                            </div>
+                            <div>
+                                <label class="form-label small text-muted">Command Line:</label>
+                                <input type="text" class="form-control form-control-sm" asp-for="App3CommandLine" placeholder="C:\path\to\program.exe" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-Settings → Program Configuration → Software Integration → Connections
+            <hr class="my-4" />
 
-This is where Log4OM listens for incoming messages.
+            <h6><i class="bi bi-broadcast"></i> WSJT-X UDP Settings</h6>
+            <p class="text-muted">Configure the UDP connection for WSJT-X integration (only applies if using WSJT-X).</p>
 
-2) Add a new inbound UDP connection
-Click Add and configure:
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">UDP Address:</label>
+                    <input type="text" class="form-control" asp-for="WsjtxUdpAddress" placeholder="127.0.0.1" />
+                    <div class="form-text">The IP address to listen for WSJT-X UDP messages (usually 127.0.0.1)</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">UDP Port:</label>
+                    <input type="number" class="form-control" asp-for="WsjtxUdpPort" min="1024" max="65535" />
+                    <div class="form-text">The UDP port number (default: 2237)</div>
+                </div>
+            </div>
 
-Type: JT_Message
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-lg"></i> Save All Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
-Port: 2236 (recommended; JTAlert defaults to this)
+<div class="card">
+    <div class="card-header">
+        <h5><i class="bi bi-info-circle"></i> Network Setup Guide</h5>
+    </div>
+    <div class="card-body">
+        <h6>WSJT-X Settings</h6>
+        <p>In the "Reporting" setting:</p>
+        <ul>
+            <li>Tick "Enable PSK Reporting Spotting"</li>
+            <li>UDP Server: 239.255.0.1</li>
+            <li>UDP Server port number: 2237</li>
+            <li>Outgoing Interfaces: loopback_0</li>
+            <li>Multicast TTL: 1</li>
+            <li>Tick: Accept UDP requests, Notify on accepted UDP request, Accepted UDP request restores window</li>
+        </ul>
 
-Enabled: ✔
-</pre>
+        <h6>JTAlert</h6>
+        <p>There is nothing to set up. JTAlert reads WSJT-X log files directly (not UDP).</p>
+
+        <h6>Log4OM</h6>
+        <p>Settings -&gt; Program Configuration -&gt; Software Integration -&gt; Connections</p>
+        <ul>
+            <li>Type: JT_Message</li>
+            <li>Port: 2236</li>
+            <li>Enabled: Yes</li>
+        </ul>
+    </div>
+</div>

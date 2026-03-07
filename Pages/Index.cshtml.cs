@@ -27,16 +27,24 @@ namespace FTdx101_WebApp.Pages
     public class IndexModel : PageModel
     {
         private readonly RadioStateService _radioStateService;
+        private readonly ISettingsService _settingsService;
 
-        public IndexModel(RadioStateService radioStateService)
+        public IndexModel(RadioStateService radioStateService, ISettingsService settingsService)
         {
             _radioStateService = radioStateService;
+            _settingsService = settingsService;
         }
 
         public string SelectedBandA { get; set; } = string.Empty;
         public string SelectedBandB { get; set; } = string.Empty;
 
-       
+        // External app button visibility and names
+        public bool ShowApp1Button { get; set; } = true;
+        public bool ShowApp2Button { get; set; } = true;
+        public bool ShowApp3Button { get; set; } = true;
+        public string App1Name { get; set; } = "WSJT-X";
+        public string App2Name { get; set; } = "JTAlert";
+        public string App3Name { get; set; } = "Log4OM";
 
         public RadioStateService RadioState => _radioStateService;
 
@@ -48,6 +56,15 @@ namespace FTdx101_WebApp.Pages
             {
                 return RedirectToPage("/Settings");
             }
+
+            // Load app button visibility and names
+            var settings = await _settingsService.GetSettingsAsync();
+            ShowApp1Button = settings.ShowWsjtxButton;
+            ShowApp2Button = settings.ShowJtalertButton;
+            ShowApp3Button = settings.ShowLog4omButton;
+            App1Name = settings.App1Name;
+            App2Name = settings.App2Name;
+            App3Name = settings.App3Name;
 
             // VFO A (keep as is)
             State.vfoA.frequency = _radioStateService.FrequencyA;
@@ -64,7 +81,7 @@ namespace FTdx101_WebApp.Pages
             State.vfoB.mode = _radioStateService.ModeB ?? "";
             State.vfoB.antenna = _radioStateService.AntennaB ?? "";
 
-            return Page(); // <-- Add this line
+            return Page();
         }
     }
 }
