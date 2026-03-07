@@ -71,8 +71,10 @@ jobs:
 
       - name: Create or update GitHub Release and upload asset
         run: |
-          gh release create "${{ github.event.inputs.tag }}" FTdx101_WebApp_Setup.exe --title "${{ github.event.inputs.tag }}" --notes "Automated release" --prerelease --clobber || `
-          gh release upload "${{ github.event.inputs.tag }}" FTdx101_WebApp_Setup.exe --clobber
+          # Try to delete existing release first (if it exists)
+          gh release delete "${{ github.event.inputs.tag }}" --yes 2>$null
+          # Create new release
+          gh release create "${{ github.event.inputs.tag }}" FTdx101_WebApp_Setup.exe --title "${{ github.event.inputs.tag }}" --notes "Automated release" --prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
