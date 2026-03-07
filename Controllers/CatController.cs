@@ -40,6 +40,8 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("micgain")]
         public async Task<IActionResult> SetMicGain([FromBody] MicGainRequest request)
         {
+            _logger.LogWarning("[MicGain API] Received request: Value={Value}", request.Value);
+
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
 
@@ -53,6 +55,7 @@ namespace FTdx101_WebApp.Controllers
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 // Persist MIC Gain value
+                _logger.LogWarning("[MicGain API] Setting _radioStateService.MicGain to {Value}", request.Value);
                 _radioStateService.MicGain = request.Value;
 
                 _logger.LogInformation("Set MIC Gain to {Value}", request.Value);
@@ -113,6 +116,44 @@ namespace FTdx101_WebApp.Controllers
         public IActionResult GetRadioPowerStatus()
         {
             return Ok(new { powerOn = _radioStateService.RadioPowerOn });
+        }
+
+        [HttpPost("tx")]
+        public async Task<IActionResult> ToggleTransmit([FromBody] TxRequest request)
+        {
+            try
+            {
+                if (request.Transmit)
+                {
+                    // Turn TX ON: TX1;
+                    _logger.LogInformation("Turning TX ON...");
+                    await _catClient.SendCommandAsync("TX1;", "WebUI", CancellationToken.None);
+                    _radioStateService.IsTransmitting = true;
+                    return Ok(new { message = "TX ON", transmitting = true });
+                }
+                else
+                {
+                    // Turn TX OFF: TX0;
+                    _logger.LogInformation("Turning TX OFF...");
+                    await _catClient.SendCommandAsync("TX0;", "WebUI", CancellationToken.None);
+                    _radioStateService.IsTransmitting = false;
+                    return Ok(new { message = "TX OFF", transmitting = false });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling TX");
+                return StatusCode(500, new { error = "Failed to toggle TX" });
+            }
+        }
+
+        [HttpGet("tx")]
+        public IActionResult GetTxStatus()
+        {
+            return Ok(new { 
+                transmitting = _radioStateService.IsTransmitting,
+                txVfo = _radioStateService.TxVfo
+            });
         }
 
         // Static band frequency mapping (apply this at the top of your class)
@@ -569,6 +610,11 @@ namespace FTdx101_WebApp.Controllers
         public class RadioPowerRequest
         {
             public bool PowerOn { get; set; }
+        }
+
+        public class TxRequest
+        {
+            public bool Transmit { get; set; }
         }
 
         [HttpPost("reinitialize")]

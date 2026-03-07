@@ -59,7 +59,12 @@ namespace FTdx101_WebApp.Services
                 // Only save after initialization is complete
                 if (IsInitialized)
                 {
+                    _logger.LogInformation("[SetField] Persisting state (IsInitialized=true, {Property}={Value})", propertyName, value);
                     _statePersistence.Save(this.ToRadioState());
+                }
+                else
+                {
+                    _logger.LogWarning("[SetField] NOT persisting {Property} (IsInitialized=false)", propertyName);
                 }
             }
             else
@@ -294,6 +299,10 @@ namespace FTdx101_WebApp.Services
         private bool _radioPowerOn = true; // Assume on when app starts
         public bool RadioPowerOn { get => _radioPowerOn; set => SetField(ref _radioPowerOn, value); }
 
+        // TX VFO: 0 = VFO A is TX, 1 = VFO B is TX
+        private int _txVfo = 0;
+        public int TxVfo { get => _txVfo; set => SetField(ref _txVfo, value); }
+
         public RadioState GetState()
         {
             return new RadioState
@@ -302,6 +311,14 @@ namespace FTdx101_WebApp.Services
                 FrequencyB = FrequencyB,
                 BandA = BandA,
                 BandB = BandB,
+                ModeA = ModeA,
+                ModeB = ModeB,
+                AntennaA = AntennaA,
+                AntennaB = AntennaB,
+                PowerA = PowerA,
+                AfGainA = AfGainA,
+                AfGainB = AfGainB,
+                MicGain = MicGain,
                 Controls = Controls
             };
         }

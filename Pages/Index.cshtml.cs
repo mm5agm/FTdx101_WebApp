@@ -46,6 +46,9 @@ namespace FTdx101_WebApp.Pages
         public string App2Name { get; set; } = "JTAlert";
         public string App3Name { get; set; } = "Log4OM";
 
+        // MIC Gain persisted value
+        public int MicGain { get; set; } = 50;
+
         public RadioStateService RadioState => _radioStateService;
 
         public RadioStateViewModel State { get; set; } = new RadioStateViewModel();
@@ -65,6 +68,9 @@ namespace FTdx101_WebApp.Pages
             App1Name = settings.App1Name;
             App2Name = settings.App2Name;
             App3Name = settings.App3Name;
+
+            // Load persisted MIC Gain
+            MicGain = _radioStateService.MicGain;
 
             // VFO A (keep as is)
             State.vfoA.frequency = _radioStateService.FrequencyA;

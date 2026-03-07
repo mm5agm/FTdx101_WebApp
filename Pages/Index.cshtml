@@ -60,10 +60,14 @@
         <!-- VFO A Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-primary h-100 receiver-card">
-                <div class="card-header bg-primary text-white">
-                    <h3>
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
                         <span id="receiverAHeading">VFO A</span>
                     </h3>
+                    <button id="txButtonA" class="btn btn-warning btn-sm" style="display:none;"
+                            onclick="toggleTx()" title="Toggle Transmit">
+                        <i class="bi bi-broadcast"></i> TX
+                    </button>
                 </div>
                 <div class="card-body">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
@@ -72,11 +76,6 @@
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
                                 <canvas id="sMeterCanvasA"></canvas>
-                            </div>
-                            <div class="text-center mt-2">
-                                <span id="txIndicatorA" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
-                                    <strong>TX</strong>
-                                </span>
                             </div>
                         </div>
                         <!-- Middle: Band buttons in compact 3-row grid -->
@@ -142,10 +141,14 @@
                     <!-- VFO B Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-success h-100 receiver-card">
-                <div class="card-header bg-success text-white">
-                    <h3>
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
                         <span id="receiverBHeading">VFO B</span>
                     </h3>
+                    <button id="txButtonB" class="btn btn-warning btn-sm" style="display:none;"
+                            onclick="toggleTx()" title="Toggle Transmit">
+                        <i class="bi bi-broadcast"></i> TX
+                    </button>
                 </div>
                 <div class="card-body">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
@@ -154,11 +157,6 @@
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
                                 <canvas id="sMeterCanvasB"></canvas>
-                            </div>
-                            <div class="text-center mt-2">
-                                <span id="txIndicatorB" class="badge bg-secondary" style="display:none; font-size: 1.2em; padding: 8px 16px;">
-                                    <strong>TX</strong>
-                                </span>
                             </div>
                         </div>
                         <!-- Middle: Band buttons in compact 3-row grid -->
@@ -266,16 +264,16 @@
                     </div>
                     <!-- MIC Gain / Data Out Level -->
                     <div class="mb-3 mt-3">
-                        <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">50</span></label>
+                        <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
                         <input type="range" class="form-range power-slider"
                                id="micGainSlider"
                                min="0"
                                max="100"
                                step="1"
-                               value="50"
+                               value="@Model.MicGain"
                                style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
-                               oninput="document.getElementById('micGainValue').innerText = this.value"
-                               onchange="setMicGain(this.value)">
+                               oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
+                               onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
                     </div>
                     <!-- IDD (Drain Current) Display -->
                     <div class="mb-2 mt-3">
@@ -296,7 +294,7 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-<script src="~/js/site.js?v=20260228b"></script>
+<script src="~/js/site.js?v=20260228c"></script>
     <script>
         async function launchWsjtx() {
             try {
@@ -469,15 +467,19 @@
 }
 
         async function setMicGain(value) {
+            console.log('[setMicGain] Called with value:', value);
             try {
                 const response = await fetch('/api/cat/micgain', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ value: parseInt(value) })
                 });
+                console.log('[setMicGain] API response status:', response.status);
                 if (!response.ok) {
                     const data = await response.json();
                     console.error('Failed to set MIC Gain:', data.error);
+                } else {
+                    console.log('[setMicGain] Successfully set MIC Gain to', value);
                 }
             } catch (e) {
                 console.error('Error setting MIC Gain:', e.message);

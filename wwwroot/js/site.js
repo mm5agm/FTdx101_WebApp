@@ -268,11 +268,8 @@ function updatePowerSliderMax(maxPower) {
     if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
 }
 
-// TX Indicator updater
+// TX state updater - updates TX button and meters
 function updateTxIndicators(isTransmitting) {
-    const txIndicatorA = document.getElementById('txIndicatorA');
-    const txIndicatorB = document.getElementById('txIndicatorB');
-
     // Debug logging
     console.log(`[TX Indicator] isTransmitting: ${isTransmitting}`);
 
@@ -284,29 +281,7 @@ function updateTxIndicators(isTransmitting) {
         console.warn('[TX Indicator] radioControl._state not available yet');
     }
 
-    if (isTransmitting) {
-        // Show TX indicators with red background and make them blink
-        if (txIndicatorA) {
-            txIndicatorA.style.display = 'inline-block';
-            txIndicatorA.className = 'badge bg-danger';
-            txIndicatorA.classList.add('tx-blink');
-        }
-        if (txIndicatorB) {
-            txIndicatorB.style.display = 'inline-block';
-            txIndicatorB.className = 'badge bg-danger';
-            txIndicatorB.classList.add('tx-blink');
-        }
-    } else {
-        // Hide TX indicators and zero out power/SWR meters
-        if (txIndicatorA) {
-            txIndicatorA.style.display = 'none';
-            txIndicatorA.classList.remove('tx-blink');
-        }
-        if (txIndicatorB) {
-            txIndicatorB.style.display = 'none';
-            txIndicatorB.classList.remove('tx-blink');
-        }
-
+    if (!isTransmitting) {
         // Zero the meters when not transmitting
         if (typeof window.updatePowerMeter === 'function') {
             window.updatePowerMeter(0);
@@ -415,8 +390,75 @@ async function checkRadioPowerStatus() {
 // Initialize radio power button state on page load
 document.addEventListener('DOMContentLoaded', function() {
     checkRadioPowerStatus();
+    checkTxStatus();
 });
 
+// ---------------------------------------------------------------------------
+// TX Button Toggle
+// ---------------------------------------------------------------------------
+let isTransmitting = false;
+let txVfo = 0; // 0 = VFO A, 1 = VFO B
+
+async function toggleTx() {
+    const newTxState = !isTransmitting;
+    console.log(`Toggling TX to: ${newTxState ? 'ON' : 'OFF'}`);
+
+    try {
+        const response = await fetch('/api/cat/tx', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transmit: newTxState })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            isTransmitting = data.transmitting;
+            updateTxButton();
+            console.log(`TX ${isTransmitting ? 'ON' : 'OFF'}`);
+        } else {
+            console.error('Failed to toggle TX:', await response.text());
+        }
+    } catch (error) {
+        console.error('Error toggling TX:', error);
+    }
+}
+
+function updateTxButton() {
+    const btnA = document.getElementById('txButtonA');
+    const btnB = document.getElementById('txButtonB');
+
+    // Show only on TX VFO
+    if (btnA) btnA.style.display = (txVfo === 0) ? 'inline-block' : 'none';
+    if (btnB) btnB.style.display = (txVfo === 1) ? 'inline-block' : 'none';
+
+    // Update button state
+    const activeBtn = (txVfo === 0) ? btnA : btnB;
+    if (activeBtn) {
+        if (isTransmitting) {
+            activeBtn.className = 'btn btn-danger btn-sm';
+            activeBtn.innerHTML = '<i class="bi bi-broadcast"></i> TX ON';
+            activeBtn.title = 'Click to stop transmitting';
+        } else {
+            activeBtn.className = 'btn btn-warning btn-sm';
+            activeBtn.innerHTML = '<i class="bi bi-broadcast"></i> TX';
+            activeBtn.title = 'Click to transmit';
+        }
+    }
+}
+
+async function checkTxStatus() {
+    try {
+        const response = await fetch('/api/cat/tx');
+        if (response.ok) {
+            const data = await response.json();
+            isTransmitting = data.transmitting;
+            txVfo = data.txVfo;
+            updateTxButton();
+        }
+    } catch (error) {
+        console.error('Error checking TX status:', error);
+    }
+}
 
 // ---------------------------------------------------------------------------
 // SignalR connection - shared by both the outer handler below and the
@@ -515,6 +557,17 @@ connection.on("RadioStateUpdate", function (update) {
         updateRadioPowerButton();
     }
 
+    // --- TX STATE ---
+    if (update.property === "IsTransmitting") {
+        isTransmitting = update.value;
+        updateTxButton();
+        updateTxIndicators(update.value);
+    }
+    if (update.property === "TxVfo") {
+        txVfo = update.value;
+        updateTxButton();
+    }
+
     // --- METER UPDATES ---
     if (update.property === "PowerMeter" && typeof window.updatePowerMeter === 'function') {
         window.updatePowerMeter(update.value);
@@ -533,11 +586,6 @@ connection.on("RadioStateUpdate", function (update) {
         if (typeof window.updatePATemperature === 'function') {
             window.updatePATemperature(update.value);
         }
-    }
-
-    // --- TX INDICATOR ---
-    if (update.property === "IsTransmitting") {
-        updateTxIndicators(update.value);
     }
 
     if (update.property === "PowerB") {

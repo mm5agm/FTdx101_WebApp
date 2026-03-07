@@ -24,6 +24,8 @@ I also use this application on my tablet, which provides a portable control pane
 - **No Antenna Update in the APP.** If the user changes the antenna selection on the radio, the app will not reflect this change.
 ## 🚀 Key Features
 - **CAT Control:** Full control over frequency, mode, band, and antenna selection via the radio's CAT interface.
+- **Radio Power On/Off:** Power button to turn the radio on or off directly from the web interface. Start the app with the radio off and power it on when ready.
+- **TX Button:** Transmit button in the VFO header - click to transmit, click again to receive. Automatically updates when WSJT-X triggers TX.
 - **Radio changes reflected in real time:** Thanks to the use of Auto Information mode, apart from antenna changes, changes made on the radio (frequency, mode, band, etc.) are immediately reflected in the web app with minimal latency.
 - **Band Selection:** Quick access to all amateur bands from 160m to 4m. Note Bands are UK-centric and may not reflect all international band plans.
 - **Power Control:** Adjust the radio's power output directly from the web interface. Power setting is persisted and restored on app restart.
@@ -31,7 +33,8 @@ I also use this application on my tablet, which provides a portable control pane
 - **USB Audio for Digital Modes:** This app is designed for use with **USB audio** (the radio's built-in USB sound card), not the rear DATA jack. WSJT-X and other digital mode software should be configured to use the FTdx101's USB audio device.
 - **Real-Time S-Meter:** Live updates of signal strength with an analog-style meter.
 - **TX Meters:** Real-time Power, SWR, and ALC gauges during transmit.
-- **PA Monitoring:** Live IDD (drain current) display during TX and PA Voltage display with noise filtering.
+- **PA Monitoring:** Live IDD (drain current) display during TX, PA Voltage display, and PA Temperature monitoring.
+- **Configurable External Apps:** Launch up to 3 external applications (e.g., WSJT-X, JTAlert, Log4OM) with customizable button names and command lines. Apps can be shown or hidden via the Application Setup page.
 - **Reactive State Management:** Real-time updates for all radio parameters with minimal latency.
 - **Built-in CAT Multiplexer:** The web app is the only process that opens the radio's serial port, eliminating conflicts with other applications.
 - **Real-Time Control:** Almost instant updates for frequency, mode, band, and antenna changes.
@@ -42,7 +45,7 @@ I also use this application on my tablet, which provides a portable control pane
   The web app exposes a TCP rigctld-compatible CAT server. Applications such as
   Log4OM, GridTracker, and other Hamlib-based tools can connect over TCP.  
   The web app is the only process that opens the radio's serial port.
-- **WSJT-X Integration (UDP):** Full support for WSJT-X UDP control and status monitoring is implemented and works with JTAlert and Log4OM.
+- **WSJT-X Integration (UDP):** Full support for WSJT-X UDP control and status monitoring is implemented and works with JTAlert and Log4OM. Configure the multicast address and port in Application Setup.
 - **No Virtual COM Ports Needed:** Eliminates the need for third-party serial port sharing utilities.
 - **Tablet and Touch Friendly:** Optimized for use on tablets and touch devices.
 
@@ -79,11 +82,15 @@ This architecture change in transformed the app from sluggish polling to buttery
 - **MIC Gain Control:** Adjustable microphone gain (0-100), persisted across restarts. Label changes to "Data Out Gain" in DATA modes.
 - **S-Meter Display:** Real-time analogue meter showing signal strength
 - **TX Meters:** Power, SWR, and ALC gauges with real-time updates during transmit
+- **Radio Power Control:** Power the radio on/off from the web interface (green = ON, red = OFF)
+- **TX Button:** Toggle transmit from the VFO header - shows on the TX VFO only (yellow = standby, red = transmitting)
 - **PA Monitoring:** 
   - IDD (Drain Current): Shows PA current draw during TX (typically 8-12A)
   - PA Voltage: Shows PA supply voltage (~48V) with noise filtering
+  - PA Temperature: Live temperature reading from the PA unit
+- **Configurable External Apps:** Up to 3 application launcher buttons with custom names and command lines
 - **Dual Receiver Support:** Independent control of both VFO A and VFO B
-- **Built-in CAT Multiplexer:** 
+- **Built-in CAT Multiplexer:** Share radio control with WSJT-X, Log4OM, and other apps
 - **Reactive Architecture:** Instant response to radio changes
 - **Tablet Compatible:** Works on tablets and touch devices
 

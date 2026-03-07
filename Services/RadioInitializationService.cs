@@ -199,6 +199,18 @@ namespace FTdx101_WebApp.Services
                     }
                 }
 
+                // Query TX VFO (FT0 = VFO A is TX, FT1 = VFO B is TX)
+                var ftResponse = await multiplexer.SendCommandAsync("FT;", "Initialization", stoppingToken);
+                if (!string.IsNullOrWhiteSpace(ftResponse) && ftResponse.StartsWith("FT"))
+                {
+                    var txVfoStr = ftResponse.Substring(2).TrimEnd(';');
+                    if (int.TryParse(txVfoStr, out int txVfo))
+                    {
+                        radioStateService.TxVfo = txVfo;
+                        logger.LogInformation("[RadioInitializationService] TX VFO: {TxVfo} ({VfoName})", txVfo, txVfo == 0 ? "VFO A" : "VFO B");
+                    }
+                }
+
                 // 5. Set IsInitialized = true FIRST to allow property changes to be persisted and broadcast
                 radioStateService.IsInitialized = true;
 
