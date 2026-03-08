@@ -56,6 +56,9 @@ builder.Services.AddHostedService<SystemTrayService>();
 builder.Services.AddSingleton<WsjtxUdpService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<WsjtxUdpService>());
 
+// Register process status cache service for efficient process lookups
+builder.Services.AddSingleton<ProcessStatusCacheService>();
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddFilter((category, level) =>

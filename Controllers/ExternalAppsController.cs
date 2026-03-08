@@ -11,17 +11,19 @@ namespace FTdx101_WebApp.Controllers
     {
         private readonly ISettingsService _settingsService;
         private readonly ILogger<ExternalAppsController> _logger;
+        private readonly ProcessStatusCacheService _processStatusCache;
 
-        public ExternalAppsController(ISettingsService settingsService, ILogger<ExternalAppsController> logger)
+        public ExternalAppsController(ISettingsService settingsService, ILogger<ExternalAppsController> logger, ProcessStatusCacheService processStatusCache)
         {
             _settingsService = settingsService;
             _logger = logger;
+            _processStatusCache = processStatusCache;
         }
 
         [HttpPost("jtalert/launch")]
         public async Task<IActionResult> LaunchJtalert()
         {
-            return await LaunchExternalApp("JTAlert", "JTAlert", async () =>
+            return await LaunchExternalApp("JTAlert", "JTAlertV2", async () =>
             {
                 var settings = await _settingsService.GetSettingsAsync();
                 return settings.JtalertCommandLine;
@@ -31,8 +33,8 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("jtalert/status")]
         public IActionResult JtalertStatus()
         {
-            // Check for JTAlertV2 process (main JTAlert process)
-            var running = Process.GetProcessesByName("JTAlertV2").Length > 0;
+            // Check for JTAlertV2 process (main JTAlert process) - uses cached status
+            var running = _processStatusCache.IsProcessRunning("JTAlertV2");
             return Ok(new { running });
         }
 
@@ -49,8 +51,8 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("log4om/status")]
         public IActionResult Log4omStatus()
         {
-            // Check for L4ONG process (Log4OM Next Generation)
-            var running = Process.GetProcessesByName("L4ONG").Length > 0;
+            // Check for L4ONG process (Log4OM Next Generation) - uses cached status
+            var running = _processStatusCache.IsProcessRunning("L4ONG");
             return Ok(new { running });
         }
 
@@ -136,6 +138,9 @@ namespace FTdx101_WebApp.Controllers
                         }
                     });
                 }
+
+                // Invalidate cache so status check picks up the newly launched process
+                _processStatusCache.InvalidateCache(processName);
 
                 return Ok(new { launched = true, alreadyRunning = false });
             }

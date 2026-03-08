@@ -39,12 +39,14 @@ namespace FTdx101_WebApp.Controllers
         private readonly ISettingsService _settingsService;
         private readonly ILogger<WsjtxController> _logger;
         private readonly WsjtxUdpService _udpService;
+        private readonly ProcessStatusCacheService _processStatusCache;
 
-        public WsjtxController(ISettingsService settingsService, ILogger<WsjtxController> logger, WsjtxUdpService udpService)
+        public WsjtxController(ISettingsService settingsService, ILogger<WsjtxController> logger, WsjtxUdpService udpService, ProcessStatusCacheService processStatusCache)
         {
             _settingsService = settingsService;
             _logger = logger;
             _udpService = udpService;
+            _processStatusCache = processStatusCache;
         }
 
         [HttpPost("launch")]
@@ -172,6 +174,9 @@ namespace FTdx101_WebApp.Controllers
                     });
                 }
 
+                // Invalidate cache so status check picks up the newly launched process
+                _processStatusCache.InvalidateCache("wsjtx");
+
                 return Ok(new { launched = true, alreadyRunning = false });
             }
             catch (Exception ex)
@@ -199,7 +204,8 @@ namespace FTdx101_WebApp.Controllers
         [HttpGet("status")]
         public IActionResult Status()
         {
-            var running = Process.GetProcessesByName("wsjtx").Length > 0;
+            // Use cached process status to avoid expensive GetProcessesByName call on every request
+            var running = _processStatusCache.IsProcessRunning("wsjtx");
             return Ok(new
             {
                 running,

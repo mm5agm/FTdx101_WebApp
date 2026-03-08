@@ -472,6 +472,38 @@ namespace FTdx101_WebApp.Services
             await SendCommandPause("DT0;", true);
         }
 
+        /// <summary>
+        /// Send initialization commands quickly without waiting for individual responses.
+        /// Responses are handled asynchronously via Auto Information mode.
+        /// </summary>
+        private async Task SendInitializationCommandsFastAsync(string[] commands)
+        {
+            if (_serialPort?.IsOpen != true)
+                throw new InvalidOperationException("Serial port is not open.");
+
+            const int batchSize = 10;
+            const int interCommandDelayMs = 10; // Minimal delay between commands
+            const int interBatchDelayMs = 50;   // Slightly longer pause between batches
+
+            for (int i = 0; i < commands.Length; i++)
+            {
+                var cmd = commands[i];
+                var fullCommand = cmd.EndsWith(";") ? cmd : cmd + ";";
+                var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
+
+                _serialPort.Write(commandBytes, 0, commandBytes.Length);
+
+                // Small delay between commands
+                await Task.Delay(interCommandDelayMs);
+
+                // Longer pause every batch to let the radio catch up
+                if ((i + 1) % batchSize == 0)
+                {
+                    await Task.Delay(interBatchDelayMs);
+                }
+            }
+        }
+
         public async Task InitializeRadioAsync()
         {
             _logger.LogWarning("[CatMultiplexerService] InitializeRadioAsync starting...");
@@ -479,11 +511,10 @@ namespace FTdx101_WebApp.Services
             _logger.LogWarning("[CatMultiplexerService] Sending AI1 command...");
             await SendCommandAsync("AI1;", "Initialization", CancellationToken.None);
 
-            _logger.LogWarning("[CatMultiplexerService] Sending {Count} initialization commands...", CatCommands.InitializationCommands.Length);
-            foreach (var cmd in CatCommands.InitializationCommands)
-            {
-                await SendCommandAsync(cmd, "Initialization", CancellationToken.None);
-            }
+            _logger.LogWarning("[CatMultiplexerService] Sending {Count} initialization commands (fast mode)...", CatCommands.InitializationCommands.Length);
+
+            // Use fire-and-forget for initialization commands - responses handled by Auto Information
+            await SendInitializationCommandsFastAsync(CatCommands.InitializationCommands);
 
             _logger.LogWarning("[CatMultiplexerService] Sending DT0 command...");
             await SendCommandAsync("DT0;", "Initialization", CancellationToken.None);
@@ -531,7 +562,7 @@ namespace FTdx101_WebApp.Services
             var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
 
             _serialPort.Write(commandBytes, 0, commandBytes.Length);
-            await Task.Delay(50, cancellationToken); // Small delay to allow radio to process
+            await Task.Delay(15, cancellationToken); // Reduced delay - 38400 baud is fast enough
         }
     }
 }

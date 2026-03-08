@@ -3,6 +3,7 @@
     <Platform Name="Any CPU" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="BenchmarkSuite1/BenchmarkSuite1.csproj" />
   <Project Path="FTdx101_WebApp.csproj">
     <Platform Solution="*|x86" Project="x86" />
   </Project>
