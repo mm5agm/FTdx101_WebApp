@@ -41,6 +41,8 @@ namespace FTdx101_WebApp.Services
             ModeB = _initialState.ModeB ?? "";
             AntennaA = _initialState.AntennaA ?? "";
             AntennaB = _initialState.AntennaB ?? "";
+            RoofingFilterA = _initialState.RoofingFilterA ?? "";
+            RoofingFilterB = _initialState.RoofingFilterB ?? "";
             PowerA = _initialState.PowerA;
             MicGain = _initialState.MicGain;
         }
