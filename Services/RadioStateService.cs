@@ -219,6 +219,12 @@ namespace FTdx101_WebApp.Services
         private string? _antennaB = "";
         public string? AntennaB { get => _antennaB; set => SetField(ref _antennaB, value); }
 
+        private string _roofingFilterA = "";
+        public string RoofingFilterA { get => _roofingFilterA; set => SetField(ref _roofingFilterA, value); }
+
+        private string _roofingFilterB = "";
+        public string RoofingFilterB { get => _roofingFilterB; set => SetField(ref _roofingFilterB, value); }
+
 
         private int? _sMeterA;
         public int? SMeterA
@@ -373,6 +379,8 @@ namespace FTdx101_WebApp.Services
             ModeB = state.ModeB ?? string.Empty;
             AntennaA = state.AntennaA ?? string.Empty;
             AntennaB = state.AntennaB ?? string.Empty;
+            RoofingFilterA = state.RoofingFilterA ?? string.Empty;
+            RoofingFilterB = state.RoofingFilterB ?? string.Empty;
             PowerA = state.PowerA;
             PowerB = state.PowerB;
             AfGainA = state.AfGainA;
@@ -392,6 +400,8 @@ namespace FTdx101_WebApp.Services
                 ModeB = ModeB ?? "",
                 AntennaA = AntennaA ?? "",
                 AntennaB = AntennaB ?? "",
+                RoofingFilterA = RoofingFilterA ?? "",
+                RoofingFilterB = RoofingFilterB ?? "",
                 PowerA = PowerA,
                 PowerB = PowerB,
                 AfGainA = AfGainA,

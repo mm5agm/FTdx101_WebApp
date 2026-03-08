@@ -119,6 +119,21 @@ namespace FTdx101_WebApp.Services
                                 txStatus, _stateService.IsTransmitting);
                         }
                         break;
+                    case "RF":
+                        // Example: RF06; (VFO A, 12kHz filter), RF19; (VFO B, 600Hz filter)
+                        // Response format: RF + P1 (0=Main/A, 1=Sub/B) + P3 (filter code 6-A)
+                        if (message.Length >= 4)
+                        {
+                            var vfo = message[2]; // '0' for A, '1' for B
+                            var filterCode = message[3].ToString();
+                            if (vfo == '0')
+                                _stateService.RoofingFilterA = filterCode;
+                            else if (vfo == '1')
+                                _stateService.RoofingFilterB = filterCode;
+                            _logger.LogInformation("[CatMessageDispatcher] Roofing filter VFO {Vfo}: {Filter}", 
+                                vfo == '0' ? "A" : "B", filterCode);
+                        }
+                        break;
                     // No debug logging for unhandled commands
                 }
             }

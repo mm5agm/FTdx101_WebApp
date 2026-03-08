@@ -876,6 +876,14 @@ function sendAfGain(receiver, value) {
         });
     }
 
+    // Update roofing filter dropdown
+    function updateRoofingFilterSelect(receiver, filterCode) {
+        const selectEl = document.getElementById(`roofingFilterSelect${receiver}`);
+        if (selectEl && filterCode) {
+            selectEl.value = filterCode;
+        }
+    }
+
     function initializeDigitInteraction(receiver) {
         const display = document.getElementById('freq' + receiver);
         if (!display) {
@@ -1035,6 +1043,69 @@ function sendAfGain(receiver, value) {
         }
     }
 
+    // Show Windows-style message box (auto-dismisses after 3 seconds)
+    function showMessageBox(message, title = 'Warning') {
+        const modalEl = document.getElementById('messageBoxModal');
+        const titleEl = document.getElementById('messageBoxTitle');
+        const textEl = document.getElementById('messageBoxText');
+
+        if (modalEl && titleEl && textEl) {
+            titleEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${title}`;
+            textEl.textContent = message;
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                modal.hide();
+            }, 3000);
+        } else {
+            // Fallback to alert if modal not found
+            alert(message);
+        }
+    }
+
+    async function setRoofingFilter(receiver, filter) {
+        const didPause = pausePolling();
+
+        try {
+            console.log(`Setting ${receiver} roofing filter to ${filter}`);
+            const response = await fetch(`/api/cat/roofingfilter/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filter })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error('Failed to set roofing filter:', data.error);
+                showMessageBox(`Failed to set roofing filter: ${data.error}`, 'Error');
+                return;
+            }
+
+            // Check if there's a warning (filter not installed)
+            if (data.warning) {
+                console.warn(`Roofing filter warning: ${data.message}`);
+                showMessageBox(data.message, 'Roofing Filter');
+                // Update dropdown to show actual filter
+                const selectEl = document.getElementById(`roofingFilterSelect${receiver}`);
+                if (selectEl && data.filter) {
+                    selectEl.value = data.filter;
+                }
+            } else {
+                console.log(`Roofing filter set successfully: ${receiver} -> ${data.filterName}`);
+            }
+        } catch (error) {
+            console.error('Error setting roofing filter:', error);
+            showMessageBox('Error setting roofing filter. Check console for details.', 'Error');
+        } finally {
+            if (didPause) {
+                resumePolling();
+            }
+        }
+    }
+
     function pausePolling() {
         if (state.pollingInterval && !state.operationInProgress) {
             state.operationInProgress = true;
@@ -1125,6 +1196,14 @@ function sendAfGain(receiver, value) {
             // Update mode and antenna buttons from polling
             updateModeAndAntennaButtons('A', data.vfoA.mode, data.vfoA.antenna);
             updateModeAndAntennaButtons('B', data.vfoB.mode, data.vfoB.antenna);
+
+            // Update roofing filter dropdowns
+            if (data.vfoA.roofingFilter) {
+                updateRoofingFilterSelect('A', data.vfoA.roofingFilter);
+            }
+            if (data.vfoB.roofingFilter) {
+                updateRoofingFilterSelect('B', data.vfoB.roofingFilter);
+            }
 
             // Update MIC Gain / Data Out Gain label based on current mode (VFO A is main)
             updateMicGainLabel(data.vfoA.mode);
@@ -1725,6 +1804,7 @@ function sendAfGain(receiver, value) {
         setBand,
         setMode,
         setAntenna,
+        setRoofingFilter,
         _state: state,  // Expose state for TX indicator updates
         // Wrap updatePowerDisplay so we flag editingPower while the user is dragging
         updatePowerDisplay: (receiver, value) => {
@@ -1777,6 +1857,15 @@ connection.on("RadioStateUpdate", function (update) {
         }
         if (update.property === "BandB") {
             updateBandButton('B', update.value);
+        }
+        // Roofing filter updates
+        if (update.property === "RoofingFilterA") {
+            const selectEl = document.getElementById('roofingFilterSelectA');
+            if (selectEl) selectEl.value = update.value;
+        }
+        if (update.property === "RoofingFilterB") {
+            const selectEl = document.getElementById('roofingFilterSelectB');
+            if (selectEl) selectEl.value = update.value;
         }
     }
 });

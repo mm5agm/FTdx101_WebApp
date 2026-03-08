@@ -72,6 +72,16 @@ namespace FTdx101_WebApp.Services
         public int MicGain { get; set; } = 50;
 
         /// <summary>
+        /// Receiver A roofing filter code (6=12kHz, 7=3kHz, 8=1.2kHz, 9=600Hz, A=300Hz)
+        /// </summary>
+        public string RoofingFilterA { get; set; } = "";
+
+        /// <summary>
+        /// Receiver B roofing filter code (6=12kHz, 7=3kHz, 8=1.2kHz, 9=600Hz, A=300Hz)
+        /// </summary>
+        public string RoofingFilterB { get; set; } = "";
+
+        /// <summary>
         /// Additional controls and settings (for future expansion)
         /// </summary>
         public Dictionary<string, object> Controls { get; set; } = new();

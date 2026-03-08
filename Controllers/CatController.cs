@@ -243,7 +243,8 @@ namespace FTdx101_WebApp.Controllers
                     power = _radioStateService.PowerA,
                     mode = _radioStateService.ModeA ?? "",
                     antenna = _radioStateService.AntennaA ?? "",
-                    afGain = _radioStateService.AfGainA
+                    afGain = _radioStateService.AfGainA,
+                    roofingFilter = _radioStateService.RoofingFilterA ?? ""
                 },
                 vfoB = new
                 {
@@ -252,7 +253,8 @@ namespace FTdx101_WebApp.Controllers
                     sMeter = _radioStateService.SMeterB ?? 0,
                     mode = _radioStateService.ModeB ?? "",
                     antenna = _radioStateService.AntennaB ?? "",
-                    afGain = _radioStateService.AfGainB
+                    afGain = _radioStateService.AfGainB,
+                    roofingFilter = _radioStateService.RoofingFilterB ?? ""
                 },
                 micGain = _radioStateService.MicGain
             });
@@ -460,6 +462,170 @@ namespace FTdx101_WebApp.Controllers
             }
         }
 
+        // Roofing filter display names (response code -> display name)
+        private static readonly Dictionary<string, string> RoofingFilterNames = new()
+        {
+            { "6", "12 kHz" },
+            { "7", "3 kHz" },
+            { "8", "1.2 kHz" },
+            { "9", "600 Hz" },
+            { "A", "300 Hz" }
+        };
+
+        // Roofing filter set codes (response code -> set code)
+        private static readonly Dictionary<string, string> RoofingFilterSetCodes = new()
+        {
+            { "6", "1" },  // 12 kHz
+            { "7", "2" },  // 3 kHz
+            { "8", "3" },  // 1.2 kHz (option)
+            { "9", "4" },  // 600 Hz
+            { "A", "5" }   // 300 Hz (option)
+        };
+
+        [HttpPost("roofingfilter/a")]
+        public async Task<IActionResult> SetRoofingFilterA([FromBody] RoofingFilterRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+
+            try
+            {
+                await EnsureConnectedAsync();
+
+                // Convert response code (6-A) to set code (1-5)
+                if (!RoofingFilterSetCodes.TryGetValue(request.Filter, out var setCode))
+                {
+                    return BadRequest(new { error = $"Invalid filter code: {request.Filter}" });
+                }
+
+                var command = $"RF0{setCode};";
+                _logger.LogInformation("Sending roofing filter command: {Command}", command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
+
+                // Small delay to let the radio process the command
+                await Task.Delay(100);
+
+                // Check if the filter was actually set by reading back
+                var readCommand = "RF0;";
+                var readResponse = await _catClient.SendCommandAsync(readCommand, "WebUI", CancellationToken.None);
+                _logger.LogInformation("Read back roofing filter response: {Response}", readResponse);
+
+                // Parse response - format: RF0X; where X is filter code
+                if (!string.IsNullOrEmpty(readResponse) && readResponse.Length >= 4)
+                {
+                    var actualFilter = readResponse[3].ToString();
+                    _radioStateService.RoofingFilterA = actualFilter; // Always update to actual value
+
+                    if (actualFilter != request.Filter)
+                    {
+                        // Filter doesn't exist or wasn't set
+                        var requestedName = RoofingFilterNames.GetValueOrDefault(request.Filter, request.Filter);
+                        var actualName = RoofingFilterNames.GetValueOrDefault(actualFilter, actualFilter);
+                        _logger.LogWarning("Roofing filter {Requested} not available, radio returned {Actual}", 
+                            requestedName, actualName);
+                        return Ok(new { 
+                            message = $"Filter {requestedName} not installed. Using {actualName}.",
+                            warning = true,
+                            filter = actualFilter,
+                            filterName = actualName
+                        });
+                    }
+
+                    var filterName = RoofingFilterNames.GetValueOrDefault(actualFilter, actualFilter);
+                    _logger.LogInformation("Set Main roofing filter to {Filter}", filterName);
+                    return Ok(new { message = $"Roofing filter {filterName} selected", filter = actualFilter, filterName });
+                }
+
+                // Fallback if read failed
+                _radioStateService.RoofingFilterA = request.Filter;
+                var fallbackName = RoofingFilterNames.GetValueOrDefault(request.Filter, request.Filter);
+                return Ok(new { message = $"Roofing filter {fallbackName} selected", filter = request.Filter, filterName = fallbackName });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Main roofing filter");
+                return StatusCode(500, new { error = "Failed to set roofing filter" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("roofingfilter/b")]
+        public async Task<IActionResult> SetRoofingFilterB([FromBody] RoofingFilterRequest request)
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+            {
+                return StatusCode(503, new { error = "Radio busy" });
+            }
+
+            try
+            {
+                await EnsureConnectedAsync();
+
+                // Convert response code (6-A) to set code (1-5)
+                if (!RoofingFilterSetCodes.TryGetValue(request.Filter, out var setCode))
+                {
+                    return BadRequest(new { error = $"Invalid filter code: {request.Filter}" });
+                }
+
+                var command = $"RF1{setCode};";
+                _logger.LogInformation("Sending roofing filter command: {Command}", command);
+                await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
+
+                // Small delay to let the radio process the command
+                await Task.Delay(100);
+
+                // Check if the filter was actually set by reading back
+                var readCommand = "RF1;";
+                var readResponse = await _catClient.SendCommandAsync(readCommand, "WebUI", CancellationToken.None);
+                _logger.LogInformation("Read back roofing filter response: {Response}", readResponse);
+
+                // Parse response - format: RF1X; where X is filter code
+                if (!string.IsNullOrEmpty(readResponse) && readResponse.Length >= 4)
+                {
+                    var actualFilter = readResponse[3].ToString();
+                    _radioStateService.RoofingFilterB = actualFilter; // Always update to actual value
+
+                    if (actualFilter != request.Filter)
+                    {
+                        // Filter doesn't exist or wasn't set
+                        var requestedName = RoofingFilterNames.GetValueOrDefault(request.Filter, request.Filter);
+                        var actualName = RoofingFilterNames.GetValueOrDefault(actualFilter, actualFilter);
+                        _logger.LogWarning("Roofing filter {Requested} not available, radio returned {Actual}", 
+                            requestedName, actualName);
+                        return Ok(new { 
+                            message = $"Filter {requestedName} not installed. Using {actualName}.",
+                            warning = true,
+                            filter = actualFilter,
+                            filterName = actualName
+                        });
+                    }
+
+                    var filterName = RoofingFilterNames.GetValueOrDefault(actualFilter, actualFilter);
+                    _logger.LogInformation("Set Sub roofing filter to {Filter}", filterName);
+                    return Ok(new { message = $"Roofing filter {filterName} selected", filter = actualFilter, filterName });
+                }
+
+                // Fallback if read failed
+                _radioStateService.RoofingFilterB = request.Filter;
+                var fallbackName = RoofingFilterNames.GetValueOrDefault(request.Filter, request.Filter);
+                return Ok(new { message = $"Roofing filter {fallbackName} selected", filter = request.Filter, filterName = fallbackName });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Sub roofing filter");
+                return StatusCode(500, new { error = "Failed to set roofing filter" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
         [HttpPost("mode/{receiver}")]
         public async Task<IActionResult> SetMode(string receiver, [FromBody] ModeRequest request)
         {
@@ -615,6 +781,11 @@ namespace FTdx101_WebApp.Controllers
         public class TxRequest
         {
             public bool Transmit { get; set; }
+        }
+
+        public class RoofingFilterRequest 
+        { 
+            public string Filter { get; set; } = string.Empty; 
         }
 
         [HttpPost("reinitialize")]
