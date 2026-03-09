@@ -1,5 +1,5 @@
 ﻿
-![FTdx101 WebApp Screenshot](pictures/WebApp.png)
+![FTdx101 WebApp Screenshot](pictures/DevelopScreen.png)
 
 ## Windows Smart App Control Example
 ![Smart App Control Screenshot](pictures/SmartAppControl.png)
@@ -11,7 +11,7 @@ I wrote this application because I can't see the FTdx101MP controls without usin
 
 I also use this application on my tablet, which provides a portable control panel in the shack. The large buttons and readable display work great on touchscreens, though the digit-by-digit frequency tuning feature (click digit + mouse wheel) hasn't been implemented for touch devices yet.
 
-## Important - You need .NET10 to run this application. Download the x86 version from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0 and install it as Administratorbefore running.
+## Important - You need .NET10 to run this application. Download the x86 version from the official Microsoft website: https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.3/windowsdesktop-runtime-10.0.3-win-x86.exe and install it as Administratorbefore running.
 
 > **Why x86?** I use WSJT-X V3.0.0 Improved Widescreen Plus and that is 32 bit. This app is built as x86 for better integration.
 
@@ -36,7 +36,8 @@ I also use this application on my tablet, which provides a portable control pane
 - **Dual VFO Support:** Independent control of VFO A and VFO B
 - **Band Selection:** Quick access to all bands (160m - 4m, UK-centric)
 - **Power & Gain:** Adjustable power (0-200W) and MIC Gain (switches to Data Out Gain in DATA modes) - settings persist across restarts
-
+- **Mode Selection:** USB, LSB, CW-U, CW_L, RTTY-L, RTTY-U, DATA-L, DATA-U, DATA-FM, DATA-FM-N, PSK, AM, AM-N, FM, FM-N
+- **Filter selection** (width only at present. Shift to de added)
 ### Metering
 - **S-Meter:** Real-time analog-style signal strength display
 - **TX Meters:** Live Power, SWR, and ALC gauges during transmit
@@ -46,7 +47,7 @@ I also use this application on my tablet, which provides a portable control pane
 - **Built-in CAT Multiplexer:** The app is the only process that opens the serial port - no conflicts!
 - **TCP Server (rigctld):** Log4OM, GridTracker, and Hamlib tools connect over TCP
 - **WSJT-X UDP:** Full UDP integration with WSJT-X, JTAlert, and Log4OM
-- **No Virtual COM Ports:** Eliminates need for com0com or VSPE
+- **No Virtual COM Ports:** Eliminates need for com0com or VSPE, but user can also use a virtual COM port if they prefer to communicate with other software that way.
 - **External App Launchers:** Configure up to 3 app buttons (e.g., WSJT-X, JTAlert, Log4OM)
 
 ### Real-Time Updates
@@ -62,7 +63,7 @@ If there's interest in this program, I'm open to suggestions for additional cont
 
 - Touch-friendly frequency tuning for tablets
 - Per-band memory (frequency, mode, antenna, power)
-- Filter selection (width, shift)
+
 - Noise blanker controls
 - AGC settings
 - Clarifier/RIT controls
