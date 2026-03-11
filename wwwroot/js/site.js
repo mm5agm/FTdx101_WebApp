@@ -1389,13 +1389,11 @@ function sendAfGain(receiver, value) {
 
         // FTdx101 power meter: RM5 returns percentage of max power (0-255)
         // FTdx101MP: 200W max, FTdx101D: 100W max
-        let maxPower = 100;
-        let model = "";
+        let maxPower = 200;
+        let model = "ftdx101mp";
         if (state.radioModel) {
             model = state.radioModel.toString().toLowerCase();
-            if (model === "ftdx101mp") {
-                maxPower = 200;
-            } else if (model === "ftdx101d") {
+            if (model === "ftdx101d") {
                 maxPower = 100;
             }
         }
@@ -1408,9 +1406,6 @@ function sendAfGain(receiver, value) {
         if (valueSpan) valueSpan.textContent = `Power Out ${watts}W`;
 
         if (window.gaugePower) {
-            // The gauge needle position must match the watt labels, not the raw 0-255 scale
-            // So we set gauge.value = watts (which the gauge will display on its 0-255 internal scale)
-            // But the gauge maxValue is 255, so we need to use watts directly
             window.gaugePower.value = watts;
             window.gaugePower.draw();
         }

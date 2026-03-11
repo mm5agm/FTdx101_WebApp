@@ -80,7 +80,7 @@ Suggestions welcome! Open an issue or discussion.
 |-----------|------------|
 | Backend | ASP.NET Core Razor Pages (.NET 10) |
 | Frontend | Bootstrap 5, JavaScript, HTML5 Canvas |
-| CAT | Serial port + FT-dx101 protocol |
+| CAT | Serial port + FTdx101 protocol |
 | Gauges | Canvas-Gauges library |
 | Platform | Windows (serial port requirement) |
 

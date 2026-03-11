@@ -1,8 +1,8 @@
 namespace FTdx101_WebApp.Services
 {
     /// <summary>
-    /// FT-dx101MP CAT Command Reference
-    /// Complete list of CAT commands for the Yaesu FT-dx101MP transceiver
+    /// FTdx101MP CAT Command Reference
+    /// Complete list of CAT commands for the Yaesu FTdx101MP transceiver
     /// </summary>
     public static class CatCommands
     {
@@ -190,7 +190,7 @@ namespace FTdx101_WebApp.Services
 
         public static int ParseMeterReading(string response)
         {
-            // Parse RM meter responses per FT-dx101 manual
+            // Parse RM meter responses per FTdx101 manual
             // Format: RMP1P2P2P2P3P3P3; where:
             //   P1 = meter type (1 digit: 1=S-MAIN, 2=S-SUB, 3=COMP, 4=ALC, 5=PO, 6=SWR, etc.)
             //   P2 = left meter value (3 digits: 000-255)
