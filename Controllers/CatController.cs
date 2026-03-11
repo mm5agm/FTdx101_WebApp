@@ -20,27 +20,31 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("afgain/a")]
         public async Task<IActionResult> SetAfGainA([FromBody] int value)
         {
+            _logger.LogInformation("[API] SetAfGainA called: value={Value}", value);
             if (!_catClient.IsConnected)
                 await EnsureConnectedAsync();
             _radioStateService.AfGainA = value;
             _logger.LogInformation("Set Receiver A AF Gain to {Value}", value);
+            _logger.LogInformation("[API] SetAfGainA completed: value={Value}", value);
             return Ok(new { message = $"AF Gain {value} set for Receiver A" });
         }
 
         [HttpPost("afgain/b")]
         public async Task<IActionResult> SetAfGainB([FromBody] int value)
         {
+            _logger.LogInformation("[API] SetAfGainB called: value={Value}", value);
             if (!_catClient.IsConnected)
                 await EnsureConnectedAsync();
             _radioStateService.AfGainB = value;
             _logger.LogInformation("Set Receiver B AF Gain to {Value}", value);
+            _logger.LogInformation("[API] SetAfGainB completed: value={Value}", value);
             return Ok(new { message = $"AF Gain {value} set for Receiver B" });
         }
 
         [HttpPost("micgain")]
         public async Task<IActionResult> SetMicGain([FromBody] MicGainRequest request)
         {
-            _logger.LogWarning("[MicGain API] Received request: Value={Value}", request.Value);
+            _logger.LogInformation("[API] SetMicGain called: value={Value}", request.Value);
 
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
@@ -75,33 +79,31 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("radiopower")]
         public async Task<IActionResult> SetRadioPower([FromBody] RadioPowerRequest request)
         {
+            _logger.LogInformation("[API] SetRadioPower called: powerOn={PowerOn}", request.PowerOn);
             try
             {
                 if (request.PowerOn)
                 {
-                    // Turn radio ON: PS1; -> 1.5s delay -> PS1;
                     _logger.LogInformation("Turning radio ON...");
                     await _catClient.SendCommandAsync("PS1;", "WebUI", CancellationToken.None);
                     await Task.Delay(1500);
                     await _catClient.SendCommandAsync("PS1;", "WebUI", CancellationToken.None);
                     _radioStateService.RadioPowerOn = true;
                     _logger.LogInformation("Radio power ON command sent");
-
-                    // Wait for radio to fully boot, then re-initialize
-                    await Task.Delay(3000); // Radio needs time to boot
+                    await Task.Delay(3000);
                     _logger.LogInformation("Re-initializing radio after power on...");
                     await _radioInitService.InitializeRadioAsync();
-
+                    _logger.LogInformation("[API] SetRadioPower completed: powerOn=true");
                     return Ok(new { message = "Radio powered ON and initialized", powerOn = true });
                 }
                 else
                 {
-                    // Turn radio OFF: PS0;
                     _logger.LogInformation("Turning radio OFF...");
                     await _catClient.SendCommandAsync("PS0;", "WebUI", CancellationToken.None);
                     _radioStateService.RadioPowerOn = false;
                     AppStatus.InitializationStatus = "radio_off";
                     _logger.LogInformation("Radio power OFF command sent");
+                    _logger.LogInformation("[API] SetRadioPower completed: powerOn=false");
                     return Ok(new { message = "Radio powered OFF", powerOn = false });
                 }
             }
@@ -121,22 +123,23 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("tx")]
         public async Task<IActionResult> ToggleTransmit([FromBody] TxRequest request)
         {
+            _logger.LogInformation("[API] ToggleTransmit called: transmit={Transmit}", request.Transmit);
             try
             {
                 if (request.Transmit)
                 {
-                    // Turn TX ON: TX1;
                     _logger.LogInformation("Turning TX ON...");
                     await _catClient.SendCommandAsync("TX1;", "WebUI", CancellationToken.None);
                     _radioStateService.IsTransmitting = true;
+                    _logger.LogInformation("[API] ToggleTransmit completed: transmitting=true");
                     return Ok(new { message = "TX ON", transmitting = true });
                 }
                 else
                 {
-                    // Turn TX OFF: TX0;
                     _logger.LogInformation("Turning TX OFF...");
                     await _catClient.SendCommandAsync("TX0;", "WebUI", CancellationToken.None);
                     _radioStateService.IsTransmitting = false;
+                    _logger.LogInformation("[API] ToggleTransmit completed: transmitting=false");
                     return Ok(new { message = "TX OFF", transmitting = false });
                 }
             }
@@ -229,6 +232,7 @@ namespace FTdx101_WebApp.Controllers
             }
 
             // Log what we're returning for debugging
+            _logger.LogInformation("[API] GetStatus called");
             _logger.LogInformation("[API Status] Returning: FreqA={FreqA}, BandA={BandA}, FreqB={FreqB}, BandB={BandB}",
                 _radioStateService.FrequencyA, _radioStateService.BandA,
                 _radioStateService.FrequencyB, _radioStateService.BandB);
@@ -272,6 +276,7 @@ namespace FTdx101_WebApp.Controllers
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
 
+            _logger.LogInformation("[API] SetFrequencyA called: freq={Freq}", request.FrequencyHz);
             try
             {
                 await EnsureConnectedAsync();
@@ -285,6 +290,7 @@ namespace FTdx101_WebApp.Controllers
                 _radioStateService.FrequencyA = freq;
 
                 _logger.LogInformation("Set Receiver A frequency to {Freq}", freq);
+                _logger.LogInformation("[API] SetFrequencyA completed: freq={Freq}", freq);
                 return Ok(new { message = $"Frequency {freq} Hz set for Receiver A" });
             }
             catch (Exception ex)
@@ -304,6 +310,7 @@ namespace FTdx101_WebApp.Controllers
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
 
+            _logger.LogInformation("[API] SetFrequencyB called: freq={Freq}", request.FrequencyHz);
             try
             {
                 await EnsureConnectedAsync();
@@ -317,6 +324,7 @@ namespace FTdx101_WebApp.Controllers
                 _radioStateService.FrequencyB = freq;
 
                 _logger.LogInformation("Set Receiver B frequency to {Freq}", freq);
+                _logger.LogInformation("[API] SetFrequencyB completed: freq={Freq}", freq);
                 return Ok(new { message = $"Frequency {freq} Hz set for Receiver B" });
             }
             catch (Exception ex)
@@ -336,6 +344,7 @@ namespace FTdx101_WebApp.Controllers
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
 
+            _logger.LogInformation("[API] SetBandA called: band={Band}", request.Band);
             try
             {
                 await EnsureConnectedAsync();
@@ -346,13 +355,13 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"FA{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
-                // Query the radio for the actual frequency after the band change
                 var actualFreq = await _catClient.QueryFrequencyAAsync("WebUI", CancellationToken.None);
 
                 _radioStateService.SetBand("A", request.Band);
                 _radioStateService.FrequencyA = actualFreq;
 
                 _logger.LogInformation("Set Receiver A band to {Band} (freq {Freq})", request.Band, actualFreq);
+                _logger.LogInformation("[API] SetBandA completed: band={Band}, freq={Freq}", request.Band, actualFreq);
                 return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
             }
             catch (Exception ex)
@@ -372,6 +381,7 @@ namespace FTdx101_WebApp.Controllers
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
 
+            _logger.LogInformation("[API] SetBandB called: band={Band}", request.Band);
             try
             {
                 await EnsureConnectedAsync();
@@ -382,13 +392,13 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"FB{freq:D9};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
-                // Query the radio for the actual frequency after the band change
                 var actualFreq = await _catClient.QueryFrequencyBAsync("WebUI", CancellationToken.None);
 
                 _radioStateService.SetBand("B", request.Band);
                 _radioStateService.FrequencyB = actualFreq;
 
                 _logger.LogInformation("Set Receiver B band to {Band} (freq {Freq})", request.Band, actualFreq);
+                _logger.LogInformation("[API] SetBandB completed: band={Band}, freq={Freq}", request.Band, actualFreq);
                 return Ok(new { message = $"Band {request.Band} selected", frequency = actualFreq });
             }
             catch (Exception ex)
@@ -679,18 +689,22 @@ namespace FTdx101_WebApp.Controllers
                 var settings = await _settingsService.GetSettingsAsync();
                 int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
 
+                _logger.LogInformation("[API] Received SetPower request: receiver={Receiver}, Watts={Watts}, Model={Model}", receiver, request.Watts, settings.RadioModel);
+
                 if (request.Watts < 5 || request.Watts > maxPower)
                     return BadRequest(new { error = $"Power out of range (5-{maxPower}W for {settings.RadioModel})" });
 
                 var command = $"PC{request.Watts:D3};";
+                _logger.LogInformation("[API] Sending CAT command: {Command}", command);
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
 
                 if (receiver.ToUpper() == "A")
                 {
+                    _logger.LogInformation("[API] Setting PowerA to {Watts}", request.Watts);
                     _radioStateService.PowerA = request.Watts;
                 }
 
-                _logger.LogInformation("Set power to {Power}W on {RadioModel}", request.Watts, settings.RadioModel);
+                _logger.LogInformation("[API] Power set to {Power}W on {RadioModel}", request.Watts, settings.RadioModel);
                 return Ok(new { message = $"Power set to {request.Watts}W", maxPower = maxPower });
             }
             catch (Exception ex)

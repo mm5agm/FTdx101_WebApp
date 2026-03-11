@@ -1153,12 +1153,18 @@ function sendAfGain(receiver, value) {
             state.lastAntenna.A = data.vfoA.antenna;
             state.lastAntenna.B = data.vfoB.antenna;
 
-            if (data.vfoA.power !== undefined) {
-                updatePowerSlider('A', data.vfoA.power);
+            // Show set power value (not meter reading) when not transmitting
+            if (data.vfoA.setPower !== undefined) {
+                updatePowerSlider('A', data.vfoA.setPower);
+            } else if (state.lastPower && state.lastPower.A !== undefined) {
+                updatePowerSlider('A', state.lastPower.A);
             }
-            if (data.vfoB.power !== undefined) {
-                updatePowerSlider('B', data.vfoB.power);
+            if (data.vfoB.setPower !== undefined) {
+                updatePowerSlider('B', data.vfoB.setPower);
+            } else if (state.lastPower && state.lastPower.B !== undefined) {
+                updatePowerSlider('B', state.lastPower.B);
             }
+            // TX meter (updatePowerMeter) will use RM5 during transmit only
 
             // Stop showing local frequency once backend confirms our sent value
             if (state.editing.A && state.lastSentFreq.A !== null && state.localFreq.A === null && data.vfoA.frequency === state.lastSentFreq.A) {
@@ -1270,7 +1276,7 @@ function sendAfGain(receiver, value) {
             const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ watts: parseInt(watts) })
+                body: JSON.stringify({ Watts: parseInt(watts) })
             });
             if (!response.ok) {
                 console.error('Failed to set power:', await response.text());
@@ -1381,11 +1387,20 @@ function sendAfGain(receiver, value) {
         // Calculate average
         const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
 
-        // FT-dx101 power meter calibration: User reports 20W actual shows ~70 raw
-        // So: 20W / 70 = 0.286 watts per raw unit
-        // This scale is the SAME for both FTdx101D and MP (same meter, different max power)
-        const scale = 0.286;
-        const watts = Math.round(avgValue * scale);
+        // FTdx101 power meter: RM5 returns percentage of max power (0-255)
+        // FTdx101MP: 200W max, FTdx101D: 100W max
+        let maxPower = 100;
+        let model = "";
+        if (state.radioModel) {
+            model = state.radioModel.toString().toLowerCase();
+            if (model === "ftdx101mp") {
+                maxPower = 200;
+            } else if (model === "ftdx101d") {
+                maxPower = 100;
+            }
+        }
+        console.log(`[PowerMeter] radioModel: '${state.radioModel}', normalized: '${model}', maxPower: ${maxPower}`);
+        const watts = Math.round(avgValue * maxPower / 255);
 
         console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Watts: ${watts}`);
 
@@ -1450,9 +1465,10 @@ function sendAfGain(receiver, value) {
         }
     }
 
-    // Update ALC bar meter (0-255 raw value) and ALC gauge
+    // ALC gauge (0-255 raw value)
     function updateALCMeter(value) {
-        // Convert 0-255 raw value to 0-50V scale for display
+        // FTdx101 ALC calibration: 50V corresponds to a raw value of 178
+        // So we scale the 0-255 raw value to a 0-50V range for display
         const alcVolts = (value / 255) * 50;
         const percentage = Math.round((value / 255) * 100);
         const valueSpan = document.getElementById('alcValue');
@@ -1598,7 +1614,10 @@ function sendAfGain(receiver, value) {
                     { from: 192, to: 224, color: "rgba(255,255,0,.25)" }, // Yellow: 75-88%
                     { from: 224, to: 255, color: "rgba(255,0,0,.25)" }    // Red: 88-100%
                 ],
-                labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
+                // Dynamically set labels based on radio model
+                labels: (window.radioControl && window.radioControl._state && window.radioControl._state.radioModel && window.radioControl._state.radioModel.toLowerCase() === "ftdx101d")
+                    ? ["0", "13", "25", "38", "50", "63", "75", "88", "100"]
+                    : ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
             },
             swr: {
                 minValue: 0,

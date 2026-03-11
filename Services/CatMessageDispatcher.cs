@@ -106,7 +106,8 @@ namespace FTdx101_WebApp.Services
                         // Example: PC100; (100W)
                         if (message.Length >= 5 && int.TryParse(message.Substring(2, 3), out var watts))
                         {
-                           _stateService.PowerA = watts;
+                            _logger.LogInformation("[CAT] Received PC command: watts={Watts}", watts);
+                            _stateService.PowerA = watts;
                         }
                         break;
                     case "TX":
