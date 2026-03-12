@@ -11,6 +11,18 @@ I wrote this application because I can't see the FTdx101MP controls without usin
 
 I also use this application on my tablet, which provides a portable control panel in the shack. The large buttons and readable display work great on touchscreens, though the digit-by-digit frequency tuning feature (click digit + mouse wheel) hasn't been implemented for touch devices yet.
 
+---
+
+## 🌱 Why Sponsorship Matters
+
+I’m retired and maintain this project on a limited income, funding all development tools personally. AI‑assisted coding has been invaluable for building features quickly, but it isn’t free — I’ve spent roughly **$150 USD** so far, and with only a **Copilot Pro** subscription I often hit my monthly token limit within a week. That slows down progress until the next cycle resets.
+
+If this project has helped you, please consider sponsoring it. Even small contributions make a real difference and help keep the development tools running.
+
+The project has seen **602 clones from 139 unique cloners** in the last two weeks, which shows there’s genuine interest. Community support helps me keep the momentum going.
+
+---
+
 ## Important - You need .NET10 to run this application. Download the x86 version from the official Microsoft website: https://dotnet.microsoft.com/en-us/download/dotnet/10.0 and install it before running.
 
 ## ⚠️ Limitations
