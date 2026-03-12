@@ -42,7 +42,8 @@ const state = {
     selectedIdx: { A: null, B: null },
     editing: { A: false, B: false },
     localFreq: { A: null, B: null },
-    lastBackendFreq: { A: null, B: null }
+    lastBackendFreq: { A: null, B: null },
+    radioModel: 'FTdx101MP' // Default, will be updated from backend
 };
 
 // Frequency display renderer (outer version, used by outer updateFrequencyDisplay)
@@ -257,15 +258,29 @@ window.setAntenna = async function (receiver, antenna) {
 
 // Outer power slider max updater
 function updatePowerSliderMax(maxPower) {
-    const sliderA = document.getElementById('powerSliderA');
-    const sliderB = document.getElementById('powerSliderB');
-    const labelMaxA = document.getElementById('powerMaxLabelA');
-    const labelMaxB = document.getElementById('powerMaxLabelB');
+    const slider = document.getElementById('powerSlider');
+    const labelMax = document.getElementById('powerMaxLabel');
 
-    if (sliderA) sliderA.max = maxPower;
-    if (sliderB) sliderB.max = maxPower;
-    if (labelMaxA) labelMaxA.textContent = maxPower + 'W';
-    if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
+    // Always enforce correct max for FTdx101D and FTdx101MP
+    let actualMax = 200;
+    if (window.state && window.state.radioModel) {
+        const model = window.state.radioModel.toLowerCase();
+        if (model === "ftdx101d") {
+            actualMax = 100;
+        } else if (model === "ftdx101mp") {
+            actualMax = 200;
+        } else if (typeof maxPower === "number") {
+            actualMax = maxPower;
+        }
+    } else if (typeof maxPower === "number") {
+        actualMax = maxPower;
+    }
+    // Always enforce correct max for FTdx101D
+    if (window.state && window.state.radioModel && window.state.radioModel.toLowerCase() === "ftdx101d") {
+        actualMax = 100;
+    }
+    if (slider) slider.max = actualMax;
+    if (labelMax) labelMax.textContent = actualMax + 'W';
 }
 
 // TX state updater - updates TX button and meters
@@ -294,8 +309,7 @@ function updateTxIndicators(isTransmitting) {
 
 // Outer power setter (stub - real version is inside the IIFE)
 async function setPower(receiver, watts) {
-    const maxPower = state.radioModel === 'FTdx101MP' ? 200 : 100;
-    const power = Math.max(5, Math.min(parseInt(watts), maxPower));
+    const power = parseInt(watts);
     try {
         console.log(`Setting ${receiver} power to ${power}W`);
         const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
@@ -315,8 +329,12 @@ async function setPower(receiver, watts) {
 }
 
 // Placeholder - replaced by the IIFE's real implementation once it runs
-window.updatePowerDisplay = function () {
-    console.warn("updatePowerDisplay not implemented");
+window.updatePowerDisplay = function(receiver, watts) {
+    // Find the power value display element
+    const powerValue = document.getElementById('powerValue');
+    if (powerValue) {
+        powerValue.innerText = `${watts}W`;
+    }
 };
 
 // ---------------------------------------------------------------------------
@@ -391,6 +409,28 @@ async function checkRadioPowerStatus() {
 document.addEventListener('DOMContentLoaded', function() {
     checkRadioPowerStatus();
     checkTxStatus();
+    // Fetch radio status and update slider max
+    fetch('/api/cat/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.radioModel) {
+                window.state.radioModel = data.radioModel;
+                updatePowerSliderMax();
+            }
+        });
+    // Do NOT update powerValue from slider input; only update from backend status/SignalR
+    // const slider = document.getElementById('powerSlider');
+    // if (slider) {
+    //     slider.addEventListener('input', function () {
+    //         // Use updatePowerDisplay to update value live
+    //         // Show slider value live
+    //         const display = document.getElementById('powerValue');
+    //         if (display) {
+    //             display.textContent = slider.value + 'W';
+    //         }
+    //         window.radioControl.updatePowerDisplay('A', slider.value);
+    //     });
+    // }
 });
 
 // ---------------------------------------------------------------------------
@@ -681,6 +721,12 @@ async function updateBandButtonsFromBackend() {
         const response = await fetch('/api/cat/status');
         if (!response.ok) return;
         const data = await response.json();
+        // Update global radioModel if present
+        if (data.radioModel) {
+            state.radioModel = data.radioModel;
+            // Always call updatePowerSliderMax to use latest radioModel
+            updatePowerSliderMax();
+        }
         if (data.vfoA && data.vfoA.band) {
             document.querySelectorAll('input[name="band-A"]').forEach(radio => {
                 radio.checked = (radio.value.toLowerCase() === data.vfoA.band.toLowerCase());
@@ -1138,13 +1184,25 @@ function sendAfGain(receiver, value) {
             }
             const data = await response.json();
 
-            if (data.maxPower !== undefined) {
-                state.maxPower = data.maxPower;
-                updatePowerSliderMax(data.maxPower);
-            }
             if (data.radioModel !== undefined) {
                 state.radioModel = data.radioModel;
             }
+            // Always call updatePowerSliderMax to use latest radioModel
+            if (state.radioModel) {
+                const model = state.radioModel.toLowerCase();
+                if (model === "ftdx101d") {
+                    state.maxPower = 100;
+                } else if (model === "ftdx101mp") {
+                    state.maxPower = 200;
+                } else {
+                    const maxPower = (data.maxPower !== undefined) ? data.maxPower : 200;
+                    state.maxPower = maxPower;
+                }
+            } else {
+                const maxPower = (data.maxPower !== undefined) ? data.maxPower : 200;
+                state.maxPower = maxPower;
+            }
+            updatePowerSliderMax();
 
             state.lastBackendFreq.A = data.vfoA.frequency;
             state.lastBackendFreq.B = data.vfoB.frequency;
@@ -1154,16 +1212,13 @@ function sendAfGain(receiver, value) {
             state.lastAntenna.B = data.vfoB.antenna;
 
             // Show set power value (not meter reading) when not transmitting
-            if (data.vfoA.setPower !== undefined) {
-                updatePowerSlider('A', data.vfoA.setPower);
-            } else if (state.lastPower && state.lastPower.A !== undefined) {
-                updatePowerSlider('A', state.lastPower.A);
+            let powerValue = 100;
+            if (data.vfoA && data.vfoA.power !== undefined) {
+                powerValue = data.vfoA.power;
+            } else if (state.lastPower) {
+                powerValue = state.lastPower;
             }
-            if (data.vfoB.setPower !== undefined) {
-                updatePowerSlider('B', data.vfoB.setPower);
-            } else if (state.lastPower && state.lastPower.B !== undefined) {
-                updatePowerSlider('B', state.lastPower.B);
-            }
+            updatePowerSlider(null, powerValue);
             // TX meter (updatePowerMeter) will use RM5 during transmit only
 
             // Stop showing local frequency once backend confirms our sent value
@@ -1257,21 +1312,39 @@ function sendAfGain(receiver, value) {
     }
 
     function updatePowerDisplay(receiver, watts) {
-        const display = document.getElementById('powerValue' + receiver);
-        if (display) {
-            display.textContent = watts + 'W';
+    // Only Receiver A supported for now
+    const displayA = document.getElementById('powerValueA');
+    if (displayA && watts !== undefined && watts !== null) {
+        displayA.textContent = watts + 'W';
+    }
+    const sliderA = document.getElementById('powerSliderA');
+    if (sliderA) {
+        let actualMax = 200;
+        if (window.state && window.state.radioModel) {
+            const model = window.state.radioModel.toLowerCase();
+            if (model === "ftdx101d") {
+                actualMax = 100;
+            } else if (model === "ftdx101mp") {
+                actualMax = 200;
+            }
         }
-        const slider = document.getElementById('powerSlider' + receiver);
-        if (slider) {
-            slider.value = watts;
-            updateSliderFill(slider);
+        sliderA.max = actualMax;
+        // Only update slider value if not editing
+        if (!state.editingPower || !state.editingPower.A) {
+            sliderA.value = Math.min(watts, actualMax);
         }
-        if (state.lastPower) state.lastPower[receiver] = watts;
+        updateSliderFill(sliderA);
+    }
+    state.lastPower = watts;
     }
 
     async function setPower(receiver, watts) {
         try {
             console.log(`Setting ${receiver} power to ${watts}W`);
+            // Ensure state.lastPower is an object
+            if (typeof state.lastPower !== 'object' || state.lastPower === null) {
+                state.lastPower = {};
+            }
             state.lastPower[receiver] = parseInt(watts);
             const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
                 method: 'POST',
@@ -1290,22 +1363,32 @@ function sendAfGain(receiver, value) {
     }
 
     function updatePowerSlider(receiver, watts) {
-        if (state.editingPower && state.editingPower[receiver]) {
+        if (state.editingPower) {
             return; // Don't update while user is dragging the slider
         }
-        updatePowerDisplay(receiver, watts);
+        updatePowerDisplay(null, watts);
     }
 
     function updatePowerSliderMax(maxPower) {
-        const sliderA = document.getElementById('powerSliderA');
-        const sliderB = document.getElementById('powerSliderB');
-        const labelMaxA = document.getElementById('powerMaxLabelA');
-        const labelMaxB = document.getElementById('powerMaxLabelB');
+        const slider = document.getElementById('powerSlider');
+        const labelMax = document.getElementById('powerMaxLabel');
 
-        if (sliderA) { sliderA.max = maxPower; updateSliderFill(sliderA); }
-        if (sliderB) { sliderB.max = maxPower; updateSliderFill(sliderB); }
-        if (labelMaxA) labelMaxA.textContent = maxPower + 'W';
-        if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
+        // Always enforce correct max for FTdx101D and FTdx101MP
+        let actualMax = 200;
+        if (state.radioModel) {
+            const model = state.radioModel.toLowerCase();
+            if (model === "ftdx101d") {
+                actualMax = 100;
+            } else if (model === "ftdx101mp") {
+                actualMax = 200;
+            } else if (typeof maxPower === "number") {
+                actualMax = maxPower;
+            }
+        } else if (typeof maxPower === "number") {
+            actualMax = maxPower;
+        }
+        if (slider) { slider.max = actualMax; updateSliderFill(slider); }
+        if (labelMax) labelMax.textContent = actualMax + 'W';
     }
 
     // S-Meter label interpolation
@@ -1808,9 +1891,24 @@ function sendAfGain(receiver, value) {
     initializeGauges();
     initializeDigitInteraction('A');
     initializeDigitInteraction('B');
-    ['A', 'B'].forEach(r => { const s = document.getElementById('powerSlider' + r); if (s) updateSliderFill(s); });
+    const s = document.getElementById('powerSlider'); if (s) updateSliderFill(s);
     fetchRadioStatus();
     state.pollingInterval = setInterval(fetchRadioStatus, 500);
+
+    // Ensure power slider value is shown live for Receiver A
+    const powerSliderA = document.getElementById('powerSliderA');
+    if (powerSliderA) {
+        powerSliderA.addEventListener('input', function () {
+            state.editingPower.A = true;
+            const displayA = document.getElementById('powerValueA');
+            if (displayA) {
+                displayA.textContent = powerSliderA.value + 'W';
+            }
+        });
+        powerSliderA.addEventListener('change', function () {
+            state.editingPower.A = false;
+        });
+    }
 
     // Overwrite the interim window.radioControl with the real implementations
     window.radioControl = {

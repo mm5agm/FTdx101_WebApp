@@ -76,7 +76,7 @@ namespace FTdx101_WebApp.Pages
             State.vfoA.frequency = _radioStateService.FrequencyA;
             State.vfoA.band = _radioStateService.BandA;
             State.vfoA.sMeter = _radioStateService.SMeterA ?? 0;
-            State.vfoA.power = _radioStateService.PowerA;
+            State.vfoA.power = _radioStateService.Power;
             State.vfoA.mode = _radioStateService.ModeA ?? "";
             State.vfoA.antenna = _radioStateService.AntennaA ?? "";
 

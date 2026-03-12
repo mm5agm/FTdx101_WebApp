@@ -36,6 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include=".github\FUNDING.yml" />
     <None Include=".github\workflows\release.yml" />
   </ItemGroup>
 

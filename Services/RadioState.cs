@@ -47,14 +47,9 @@ namespace FTdx101_WebApp.Services
         public string AntennaB { get; set; } = "";
 
         /// <summary>
-        /// Receiver A power level (0-100)
+        /// Transmit power level (0-100/200)
         /// </summary>
-        public int PowerA { get; set; } = 0;
-
-        /// <summary>
-        /// Receiver B power level (0-100)
-        /// </summary>
-        public int PowerB { get; set; }
+        public int Power { get; set; } = 0;
 
         /// <summary>
         /// Receiver A AF Gain (0-255)

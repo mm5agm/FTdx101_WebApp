@@ -124,8 +124,8 @@ namespace FTdx101_WebApp.Services
                 // 2. Load persisted state from .json
                 var persistedState = statePersistence.Load();
                 logger.LogInformation("[RadioInitializationService] Persisted values before initialization: " +
-                    "ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
-                    persistedState.ModeA, persistedState.ModeB, persistedState.PowerA, persistedState.PowerB, persistedState.AntennaA, persistedState.AntennaB, persistedState.MicGain);
+                    "ModeA={ModeA}, ModeB={ModeB}, Power={Power}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
+                    persistedState.ModeA, persistedState.ModeB, persistedState.Power, persistedState.AntennaA, persistedState.AntennaB, persistedState.MicGain);
 
                 // 3. Send only non-empty/non-zero values to the radio
                 if (!string.IsNullOrEmpty(persistedState.ModeA))
@@ -139,10 +139,10 @@ namespace FTdx101_WebApp.Services
                     await multiplexer.SendCommandAsync(CatCommands.FormatMode(persistedState.ModeB, true), "Initialization", stoppingToken);
                     radioStateService.ModeB = persistedState.ModeB;
                 }
-                if (persistedState.PowerA > 0)
+                if (persistedState.Power > 0)
                 {
-                    await multiplexer.SendCommandAsync($"PC{persistedState.PowerA};", "Initialization", stoppingToken);
-                    radioStateService.PowerA = persistedState.PowerA;
+                    await multiplexer.SendCommandAsync($"PC{persistedState.Power};", "Initialization", stoppingToken);
+                    radioStateService.Power = persistedState.Power;
                 }
                 if (!string.IsNullOrEmpty(persistedState.AntennaA))
                 {

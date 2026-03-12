@@ -24,6 +24,8 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public void DispatchMessage(string message)
         {
+            // TEMP: Log all incoming messages for debugging
+            _logger.LogInformation("[CatMessageDispatcher][TEMP] Incoming message: {Message}", message);
             // Suppress logging RM messages (meter readings poll frequently)
             // But DO log TX messages for debugging
             if (!message.StartsWith("RM"))
@@ -106,8 +108,8 @@ namespace FTdx101_WebApp.Services
                         // Example: PC100; (100W)
                         if (message.Length >= 5 && int.TryParse(message.Substring(2, 3), out var watts))
                         {
-                            _logger.LogInformation("[CAT] Received PC command: watts={Watts}", watts);
-                            _stateService.PowerA = watts;
+                            _logger.LogInformation("[Slider][CAT] Received PC command: watts={Watts}", watts);
+                            _stateService.Power = watts;
                         }
                         break;
                     case "TX":

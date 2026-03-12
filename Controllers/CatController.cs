@@ -237,14 +237,16 @@ namespace FTdx101_WebApp.Controllers
                 _radioStateService.FrequencyA, _radioStateService.BandA,
                 _radioStateService.FrequencyB, _radioStateService.BandB);
 
+            var settings = await _settingsService.GetSettingsAsync();
             return Ok(new
             {
+                radioModel = settings.RadioModel,
                 vfoA = new
                 {
                     frequency = _radioStateService.FrequencyA,
                     band = _radioStateService.BandA,
                     sMeter = _radioStateService.SMeterA ?? 0,
-                    power = _radioStateService.PowerA,
+                    power = _radioStateService.Power,
                     mode = _radioStateService.ModeA ?? "",
                     antenna = _radioStateService.AntennaA ?? "",
                     afGain = _radioStateService.AfGainA,
@@ -679,6 +681,7 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("power/{receiver}")]
         public async Task<IActionResult> SetPower(string receiver, [FromBody] PowerRequest request)
         {
+            _logger.LogInformation("[Slider][CAT] SetPower endpoint called: receiver={Receiver}, watts={Watts}", receiver, request.Watts);
             if (!await _requestSemaphore.WaitAsync(2000))
                 return StatusCode(503, new { error = "Radio busy" });
 
@@ -690,6 +693,7 @@ namespace FTdx101_WebApp.Controllers
                 int maxPower = settings.RadioModel == "FTdx101MP" ? 200 : 100;
 
                 _logger.LogInformation("[API] Received SetPower request: receiver={Receiver}, Watts={Watts}, Model={Model}", receiver, request.Watts, settings.RadioModel);
+                _logger.LogInformation("[API] DEBUG: Received slider value = {Watts}", request.Watts);
 
                 if (request.Watts < 5 || request.Watts > maxPower)
                     return BadRequest(new { error = $"Power out of range (5-{maxPower}W for {settings.RadioModel})" });
@@ -697,15 +701,16 @@ namespace FTdx101_WebApp.Controllers
                 var command = $"PC{request.Watts:D3};";
                 _logger.LogInformation("[API] Sending CAT command: {Command}", command);
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
+                // Immediately send PC; to read back power
+                var readResponse = await _catClient.SendCommandAsync("PC;", "WebUI", CancellationToken.None);
+                int actualPower = ParsePower(readResponse ?? "");
+                _logger.LogInformation("[Slider][CAT] Sent PC command: watts={Watts}, readback={Readback}, actualPower={ActualPower}", request.Watts, readResponse, actualPower);
 
-                if (receiver.ToUpper() == "A")
-                {
-                    _logger.LogInformation("[API] Setting PowerA to {Watts}", request.Watts);
-                    _radioStateService.PowerA = request.Watts;
-                }
+                _logger.LogInformation("[API] Setting Power to {ActualPower}", actualPower);
+                _radioStateService.Power = actualPower;
 
-                _logger.LogInformation("[API] Power set to {Power}W on {RadioModel}", request.Watts, settings.RadioModel);
-                return Ok(new { message = $"Power set to {request.Watts}W", maxPower = maxPower });
+                _logger.LogInformation("[API] Power set to {Power}W on {RadioModel}", actualPower, settings.RadioModel);
+                return Ok(new { message = $"Power set to {actualPower}W", maxPower = maxPower });
             }
             catch (Exception ex)
             {

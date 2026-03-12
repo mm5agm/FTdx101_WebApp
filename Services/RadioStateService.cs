@@ -29,8 +29,8 @@ namespace FTdx101_WebApp.Services
             _logger.LogInformation("RadioStateService constructed with IHubContext: {HubContextAvailable}", hubContext != null);
 
             // ADD THIS LOG:
-            _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
-                _initialState.ModeA, _initialState.ModeB, _initialState.PowerA, _initialState.AntennaA, _initialState.AntennaB, _initialState.MicGain);
+            _logger.LogInformation("RadioStateService constructed with initial state: ModeA={ModeA}, ModeB={ModeB}, Power={Power}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
+                _initialState.ModeA, _initialState.ModeB, _initialState.Power, _initialState.AntennaA, _initialState.AntennaB, _initialState.MicGain);
 
             // Initialize properties from _initialState
             FrequencyA = _initialState.FrequencyA;
@@ -43,7 +43,7 @@ namespace FTdx101_WebApp.Services
             AntennaB = _initialState.AntennaB ?? "";
             RoofingFilterA = _initialState.RoofingFilterA ?? "";
             RoofingFilterB = _initialState.RoofingFilterB ?? "";
-            PowerA = _initialState.PowerA;
+            Power = _initialState.Power;
             MicGain = _initialState.MicGain;
         }
 
@@ -199,15 +199,8 @@ namespace FTdx101_WebApp.Services
                 AntennaB = antenna;
         }
 
-        private int _powerA;
-        public int PowerA { get => _powerA; set => SetField(ref _powerA, value); }
-
-        private int _powerB;
-        public int PowerB
-        {
-            get => _powerB;
-            set => SetField(ref _powerB, value);
-        }
+        private int _power;
+        public int Power { get => _power; set => SetField(ref _power, value); }
 
         private string? _modeA = "";
         public string? ModeA { get => _modeA; set => SetField(ref _modeA, value); }
@@ -274,8 +267,7 @@ namespace FTdx101_WebApp.Services
             }
         }
 
-        private int? _power;
-        public int? Power { get => _power; set => SetField(ref _power, value); }
+        // Removed duplicate int? _power and int? Power definitions. Only int _power and int Power property remain.
 
         private int? _maxPower;
         public int? MaxPower
@@ -323,7 +315,7 @@ namespace FTdx101_WebApp.Services
                 ModeB = ModeB ?? "",
                 AntennaA = AntennaA ?? "",
                 AntennaB = AntennaB ?? "",
-                PowerA = PowerA,
+                Power = Power,
                 AfGainA = AfGainA,
                 AfGainB = AfGainB,
                 MicGain = MicGain,
@@ -383,8 +375,7 @@ namespace FTdx101_WebApp.Services
             AntennaB = state.AntennaB ?? string.Empty;
             RoofingFilterA = state.RoofingFilterA ?? string.Empty;
             RoofingFilterB = state.RoofingFilterB ?? string.Empty;
-            PowerA = state.PowerA;
-            PowerB = state.PowerB;
+            Power = state.Power;
             AfGainA = state.AfGainA;
             AfGainB = state.AfGainB;
             MicGain = state.MicGain;
@@ -404,8 +395,7 @@ namespace FTdx101_WebApp.Services
                 AntennaB = AntennaB ?? "",
                 RoofingFilterA = RoofingFilterA ?? "",
                 RoofingFilterB = RoofingFilterB ?? "",
-                PowerA = PowerA,
-                PowerB = PowerB,
+                Power = Power,
                 AfGainA = AfGainA,
                 AfGainB = AfGainB,
                 MicGain = MicGain

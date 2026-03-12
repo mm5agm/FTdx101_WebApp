@@ -44,8 +44,8 @@ namespace FTdx101_WebApp.Services
                     };
                     var state = JsonSerializer.Deserialize<RadioState>(json, options) ?? CreateDefaultState();
                     _logger.LogInformation("Radio state loaded from {FilePath}", _filePath);
-                    _logger.LogInformation("Loaded state: ModeA={ModeA}, ModeB={ModeB}, PowerA={PowerA}, PowerB={PowerB}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
-                        state.ModeA, state.ModeB, state.PowerA, state.PowerB, state.AntennaA, state.AntennaB, state.MicGain);
+                    _logger.LogInformation("Loaded state: ModeA={ModeA}, ModeB={ModeB}, Power={Power}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
+                        state.ModeA, state.ModeB, state.Power, state.AntennaA, state.AntennaB, state.MicGain);
                     return state;
                 }
             }
@@ -70,8 +70,8 @@ namespace FTdx101_WebApp.Services
 
                     var json = JsonSerializer.Serialize(state, options);
                     File.WriteAllText(_filePath, json);
-                    _logger.LogInformation("Radio state saved to {FilePath}: MicGain={MicGain}, PowerA={PowerA}", 
-                        _filePath, state.MicGain, state.PowerA);
+                    _logger.LogInformation("Radio state saved to {FilePath}: MicGain={MicGain}, Power={Power}", 
+                        _filePath, state.MicGain, state.Power);
                 }
             }
             catch (Exception ex)

@@ -17,7 +17,7 @@ namespace FTdx101_WebApp.Services
         int? SMeterB { get; set; }
         string? AntennaA { get; set; }
         string? AntennaB { get; set; }
-        int? Power { get; set; }
+        int Power { get; set; }
         bool IsTransmitting { get; set; }
         // Add more properties as needed for your app
 
