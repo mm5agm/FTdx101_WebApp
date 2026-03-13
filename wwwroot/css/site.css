@@ -186,65 +186,60 @@ body {
     }
 
 /* Power slider - fills only up to the current value; no visible knob */
-.power-slider {
-    --fill-pct: 48%;
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    width: 100%;
-    height: 10px;
-    background: linear-gradient(
-        to right,
-        #198754 var(--fill-pct),
-        #dee2e6 var(--fill-pct)
-    );
-    border-radius: 5px;
-    outline: none;
-    padding: 0;
-    border: none;
-}
 
-/* WebKit (Chrome, Edge, Safari) - transparent track so element background shows */
-.power-slider::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 10px;
-    background: transparent;
-    border-radius: 5px;
-}
-
-/* Hide the thumb - keep it 1px wide so dragging still works */
-.power-slider::-webkit-slider-thumb {
+/* Power slider: match Mic Gain slider appearance */
+#powerSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 1px;
-    height: 10px;
-    background: transparent;
-    border: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
     cursor: pointer;
     margin-top: 0;
 }
-
-/* Firefox - native fill track support */
-.power-slider::-moz-range-track {
-    width: 100%;
-    height: 10px;
+#powerSlider::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSlider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#powerSlider::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSlider::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#powerSlider::-ms-fill-lower {
+    background: #e6f4ea;
+    border-radius: 9px;
+}
+#powerSlider::-ms-fill-upper {
     background: #dee2e6;
-    border-radius: 5px;
-    border: none;
+    border-radius: 9px;
 }
-
-.power-slider::-moz-range-progress {
-    height: 10px;
-    background: #198754;
-    border-radius: 5px 0 0 5px;
+#powerSlider:focus {
+    outline: none;
+    outline-offset: 0;
 }
-
-.power-slider::-moz-range-thumb {
-    width: 0;
-    height: 0;
+#powerSlider {
     background: transparent;
     border: none;
-    opacity: 0;
 }
 
 /* Focus state for accessibility */

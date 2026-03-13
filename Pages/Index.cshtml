@@ -300,12 +300,12 @@
                     <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
                     <div class="mb-3 mt-3">
                         <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
-                        <input type="range" class="form-range power-slider"
-                               id="powerSlider"
+                        <input type="range" class="form-range" id="powerSlider"
                                min="5"
                                max="200"
                                step="5"
                                value="@Model.RadioState.Power"
+                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
                                oninput="window.radioControl.updatePowerDisplay(window.txVfo === 1 ? 'B' : 'A', this.value)"
                                onchange="window.radioControl.setPower(window.txVfo === 1 ? 'B' : 'A', this.value)">
                     </div>

@@ -1446,6 +1446,9 @@ function sendAfGain(receiver, value) {
     function updatePowerMeter(value) {
         // Debug: log TX state and value
         console.log(`[PowerMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
+        // Developer log for RM5 raw and computed watts
+        console.log(`[RM5] Raw RM5 value: ${value}`);
+        console.log(`[PowerMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
 
         // Clear immediately when not transmitting OR when we get a zero while transmitting
         // (zero during TX means tail-end of transmission, should clear the meter)
@@ -1470,8 +1473,10 @@ function sendAfGain(receiver, value) {
         // Calculate average
         const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
 
-        // FTdx101 power meter: RM5 returns percentage of max power (0-255)
-        // FTdx101MP: 200W max, FTdx101D: 100W max
+        // FTdx101 empirical calibration:
+        // RM5 returns 0-255, but actual output is not always linear.
+        // User reports: 100W on radio = RM5 ~128, 200W = RM5 ~255 (for MP)
+        // We'll use a scaling factor to better match the real output.
         let maxPower = 200;
         let model = "ftdx101mp";
         if (state.radioModel) {
@@ -1480,14 +1485,45 @@ function sendAfGain(receiver, value) {
                 maxPower = 100;
             }
         }
-        console.log(`[PowerMeter] radioModel: '${state.radioModel}', normalized: '${model}', maxPower: ${maxPower}`);
-        const watts = Math.round(avgValue * maxPower / 255);
+        // Empirical: FTdx101D (100W) seems to reach 100W at RM5=128, FTdx101MP (200W) at RM5=255
+        let watts = 0;
+        if (model === "ftdx101d") {
+            watts = Math.round(avgValue * 100 / 128);
+        } else {
+            watts = Math.round(avgValue * 200 / 255);
+        }
+        if (watts > maxPower) watts = maxPower;
+        if (watts < 0) watts = 0;
+        if (watts > maxPower) watts = maxPower;
+        console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Model: ${model}, Watts: ${watts}`);
+        if (watts < 0) watts = 0;
 
-        console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Watts: ${watts}`);
+        console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Model: ${model}, Watts: ${watts}`);
 
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `Power Out ${watts}W`;
 
+        // Robust gauge re-initialization if scale/model changes
+        function reinitPowerGaugeIfNeeded() {
+            try {
+                const canvasId = 'powerMeterCanvas';
+                const powerConfig = makeGaugeConfig(canvasId, 'power');
+                if (!window.gaugePower || window.gaugePower.maxValue !== maxPower) {
+                    // Only destroy and recreate the gauge instance, do not touch DOM
+                    if (window.gaugePower && window.gaugePower.destroy) {
+                        window.gaugePower.destroy();
+                    }
+                    window.gaugePower = new RadialGauge(powerConfig);
+                    window.gaugePower.draw();
+                    if (typeof createGaugeLabels === 'function') {
+                        createGaugeLabels(canvasId, powerConfig._labels);
+                    }
+                }
+            } catch (err) {
+                console.error('[GaugeInit] Error during gaugePower re-initialization:', err);
+            }
+        }
+        reinitPowerGaugeIfNeeded();
         if (window.gaugePower) {
             window.gaugePower.value = watts;
             window.gaugePower.draw();
@@ -1683,20 +1719,33 @@ function sendAfGain(receiver, value) {
                 ],
                 labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"]
             },
-            power: {
+        power: (() => {
+            let model = (window.radioControl && window.radioControl._state && window.radioControl._state.radioModel)
+                ? window.radioControl._state.radioModel.toLowerCase() : "ftdx101mp";
+            let maxValue = model === "ftdx101d" ? 100 : 200;
+            let majorTicks = model === "ftdx101d"
+                ? ["0", "13", "25", "38", "50", "63", "75", "88", "100"]
+                : ["0", "25", "50", "75", "100", "125", "150", "175", "200"];
+            let highlights = model === "ftdx101d"
+                ? [
+                    { from: 0, to: 75, color: "rgba(0,255,0,.25)" },    // Green: 0-75W
+                    { from: 75, to: 88, color: "rgba(255,255,0,.25)" }, // Yellow: 75-88W
+                    { from: 88, to: 100, color: "rgba(255,0,0,.25)" }   // Red: 88-100W
+                  ]
+                : [
+                    { from: 0, to: 150, color: "rgba(0,255,0,.25)" },    // Green: 0-150W
+                    { from: 150, to: 175, color: "rgba(255,255,0,.25)" }, // Yellow: 150-175W
+                    { from: 175, to: 200, color: "rgba(255,0,0,.25)" }    // Red: 175-200W
+                  ];
+            let labels = majorTicks;
+            return {
                 minValue: 0,
-                maxValue: 255,  // 0-255 scale from RM1 command
-                majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
-                highlights: [
-                    { from: 0, to: 192, color: "rgba(0,255,0,.25)" },    // Green: 0-75%
-                    { from: 192, to: 224, color: "rgba(255,255,0,.25)" }, // Yellow: 75-88%
-                    { from: 224, to: 255, color: "rgba(255,0,0,.25)" }    // Red: 88-100%
-                ],
-                // Dynamically set labels based on radio model
-                labels: (window.radioControl && window.radioControl._state && window.radioControl._state.radioModel && window.radioControl._state.radioModel.toLowerCase() === "ftdx101d")
-                    ? ["0", "13", "25", "38", "50", "63", "75", "88", "100"]
-                    : ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
-            },
+                maxValue,
+                majorTicks,
+                highlights,
+                labels
+            };
+        })(),
             swr: {
                 minValue: 0,
                 maxValue: 255,  // 0-255 scale from RM2 command

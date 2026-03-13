@@ -1,0 +1,92 @@
+# Refactor Session
+
+This file defines how Copilot should perform a refactor session within this project.  
+All actions must follow the project-wide rules defined in `.github/copilot-instructions.md`.
+
+## Purpose
+A refactor session applies the project’s refactor rules to a specific set of files.  
+Copilot must produce coherent refactor chunks, each with:
+- A one- or two-sentence summary of the refactor’s drivers.
+- Standalone rationales for each change.
+- Rationales grouped by subsystem.
+- Subsystems ordered dynamically based on which areas were touched.
+- Natural, human phrasing.
+
+## Instructions for Copilot
+When this file is invoked with a list of files:
+
+1. Analyse the provided files for:
+   - Architectural drift
+   - Naming drift
+   - Duplicated logic
+   - Outdated comments
+   - Outdated support messaging
+   - Folder/namespace inconsistencies
+   - Opportunities for helper extraction
+
+2. Apply the project’s refactor rules:
+   - Consolidate duplicated logic aggressively.
+   - Extract shared behaviour into new helper methods/classes.
+   - Reorganise helpers into appropriate folders/namespaces.
+   - Rename folders/namespaces when conceptual boundaries have evolved.
+   - Use camelCase with longer descriptive names for all identifiers, including private fields.
+   - Update comments to reflect current behaviour.
+   - Align support messaging with internal behaviour.
+
+3. Produce output in the required refactor-chunk format:
+   - Start with a summary sentence (one or two sentences).
+   - Group standalone rationales by subsystem.
+   - Order subsystem groups dynamically.
+   - Use natural, concise language.
+
+4. Ensure all changes maintain architectural clarity and reflect empirical behaviour.
+
+## Usage
+Paste a list of files below this line to begin a refactor session.
+C:\Users\colin\source\repos\FTdx101_WebApp\Program.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\RadioHub.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\BenchmarkSuite1\ProcessStatusBenchmark.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\BenchmarkSuite1\Program.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\BenchmarkSuite1\obj\Release\net10.0-windows\.NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\BenchmarkSuite1\obj\Release\net10.0-windows\BenchmarkSuite1.AssemblyInfo.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Controllers\CatController.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Controllers\ExternalAppsController.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Controllers\WsjtxController.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Models\ApplicationSettings.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\obj\Debug\net10.0-windows\.NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\obj\Debug\net10.0-windows\FTdx101_WebApp.GlobalUsings.g.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\obj\Debug\net10.0-windows\FTdx101_WebApp.RazorAssemblyInfo.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\obj\x86\Release\net10.0-windows\.NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\obj\x86\Release\net10.0-windows\FTdx101_WebApp.GlobalUsings.g.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\obj\x86\Release\net10.0-windows\FTdx101_WebApp.RazorAssemblyInfo.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Pages\ApplicationSetup.cshtml.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Pages\Diagnostics.cshtml.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Pages\Error.cshtml.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Pages\Index.cshtml.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Pages\Ports.cshtml.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Pages\Settings.cshtml.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\AppStatus.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\BrowserLauncher.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\CatCommands.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\CatMessageBuffer.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\CatMessageDispatcher.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\CatMultiplexerService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\ICatClient.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\IRadioStateService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\ISettingsService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\MultiplexedCatClient.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\ProcessStatusCacheService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\RadioInitializationService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\RadioState.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\RadioStatePersistenceService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\RadioStateService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\RigctldServer.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\SettingsService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\SMeterPollingService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\SystemTrayService.cs
+C:\Users\colin\source\repos\FTdx101_WebApp\Services\WsjtxUdpService.cs
+
+
+
+
+
