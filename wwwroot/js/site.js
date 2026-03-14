@@ -1440,43 +1440,34 @@ function sendAfGain(receiver, value) {
 
     // Smoothing buffers for meters (reduce jumpiness)
     let powerHistory = [];
-    let swrHistory = [];
-    const historyLength = 7; // Average last 7 readings for smoother display
+let swrHistory = [];
+const historyLength = 7; // Average last 7 readings for smoother display
+let wasTransmittingPower = false;
+let wasTransmittingSWR = false;
 
     function updatePowerMeter(value) {
-        // Debug: log TX state and value
-        console.log(`[PowerMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
-        // Developer log for RM5 raw and computed watts
-        console.log(`[RM5] Raw RM5 value: ${value}`);
-        console.log(`[PowerMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
-
-        // Clear immediately when not transmitting OR when we get a zero while transmitting
-        // (zero during TX means tail-end of transmission, should clear the meter)
-        if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
-            powerHistory = []; // Clear history
+        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
+        if (!state.isTransmitting) {
+            powerHistory = [];
+            wasTransmittingPower = false;
             const valueSpan = document.getElementById('powerMeterValue');
             if (valueSpan) valueSpan.textContent = 'Power Out 0W';
             if (window.gaugePower) {
                 window.gaugePower.value = 0;
                 window.gaugePower.draw();
             }
-            console.log('[PowerMeter] Cleared (zero or not TX)');
             return;
         }
-
-        // Add to history buffer
+        // Only update on TX
+        if (!wasTransmittingPower) {
+            powerHistory = [];
+        }
+        wasTransmittingPower = true;
         powerHistory.push(value);
         if (powerHistory.length > historyLength) {
-            powerHistory.shift(); // Remove oldest
+            powerHistory.shift();
         }
-
-        // Calculate average
         const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
-
-        // FTdx101 empirical calibration:
-        // RM5 returns 0-255, but actual output is not always linear.
-        // User reports: 100W on radio = RM5 ~128, 200W = RM5 ~255 (for MP)
-        // We'll use a scaling factor to better match the real output.
         let maxPower = 200;
         let model = "ftdx101mp";
         if (state.radioModel) {
@@ -1485,7 +1476,6 @@ function sendAfGain(receiver, value) {
                 maxPower = 100;
             }
         }
-        // Empirical: FTdx101D (100W) seems to reach 100W at RM5=128, FTdx101MP (200W) at RM5=255
         let watts = 0;
         if (model === "ftdx101d") {
             watts = Math.round(avgValue * 100 / 128);
@@ -1494,22 +1484,13 @@ function sendAfGain(receiver, value) {
         }
         if (watts > maxPower) watts = maxPower;
         if (watts < 0) watts = 0;
-        if (watts > maxPower) watts = maxPower;
-        console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Model: ${model}, Watts: ${watts}`);
-        if (watts < 0) watts = 0;
-
-        console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Model: ${model}, Watts: ${watts}`);
-
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `Power Out ${watts}W`;
-
-        // Robust gauge re-initialization if scale/model changes
         function reinitPowerGaugeIfNeeded() {
             try {
                 const canvasId = 'powerMeterCanvas';
                 const powerConfig = makeGaugeConfig(canvasId, 'power');
                 if (!window.gaugePower || window.gaugePower.maxValue !== maxPower) {
-                    // Only destroy and recreate the gauge instance, do not touch DOM
                     if (window.gaugePower && window.gaugePower.destroy) {
                         window.gaugePower.destroy();
                     }
@@ -1531,48 +1512,32 @@ function sendAfGain(receiver, value) {
     }
 
     function updateSWRMeter(value) {
-        // Debug: log TX state and value ALWAYS
-        console.log(`[SWRMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
-
-        // Clear immediately when not transmitting OR when we get a zero while transmitting
-        // (zero during TX means tail-end of transmission, should clear the meter)
-        if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
-            swrHistory = []; // Clear history
+        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
+        if (!state.isTransmitting) {
+            swrHistory = [];
+            wasTransmittingSWR = false;
             const valueSpan = document.getElementById('swrMeterValue');
             if (valueSpan) valueSpan.textContent = 'SWR 1.0:1';
             if (window.gaugeSWR) {
                 window.gaugeSWR.value = 0;
                 window.gaugeSWR.draw();
             }
-            console.log('[SWRMeter] Cleared (zero or not TX)');
             return;
         }
-
-        // Add to history buffer
+        if (!wasTransmittingSWR) {
+            swrHistory = [];
+        }
+        wasTransmittingSWR = true;
         swrHistory.push(value);
         if (swrHistory.length > historyLength) {
-            swrHistory.shift(); // Remove oldest
+            swrHistory.shift();
         }
-
-        // Calculate average to reduce jumpiness
         const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
-
-        // FT-dx101 SWR meter calibration
-        // User reports: SWR 5:1 actual shows raw values 68-255 (avg peaks ~244)
-        // So: (5 - 1) / 244 = 0.0164, or SWR = 1.0 + (value / 61)
         const swr = 1.0 + (avgValue / 61.0);
-        const swrClamped = Math.min(swr, 10.0); // Clamp to 10.0 max
-
-        console.log(`[SWRMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, SWR: ${swrClamped.toFixed(1)}:1`);
-
+        const swrClamped = Math.min(swr, 10.0);
         const valueSpan = document.getElementById('swrMeterValue');
         if (valueSpan) valueSpan.textContent = `SWR ${swrClamped.toFixed(1)}:1`;
-
         if (window.gaugeSWR) {
-            // The gauge labels range from 1.0 to 3.0, and the gauge internal arc is 0-255
-            // So we need to map the SWR ratio to the gauge position:
-            // SWR 1.0 → position 0, SWR 3.0 → position 255
-            // Position = (swr - 1.0) / (3.0 - 1.0) * 255 = (swr - 1.0) * 127.5
             const gaugePosition = (swrClamped - 1.0) * 127.5;
             window.gaugeSWR.value = gaugePosition;
             window.gaugeSWR.draw();
@@ -1581,6 +1546,25 @@ function sendAfGain(receiver, value) {
 
     // ALC gauge (0-255 raw value)
     function updateALCMeter(value) {
+        // When not transmitting, always show the bottom scale value (0%)
+        if (!state.isTransmitting) {
+            const valueSpan = document.getElementById('alcValue');
+            const progressBar = document.getElementById('alcBar');
+            if (valueSpan) valueSpan.textContent = '0%';
+            if (progressBar) {
+                progressBar.style.width = '0%';
+                progressBar.setAttribute('aria-valuenow', 0);
+                progressBar.className = 'progress-bar bg-success';
+            }
+            const alcMeterValue = document.getElementById('alcMeterValue');
+            if (alcMeterValue) alcMeterValue.textContent = 'ALC 0V';
+            if (window.gaugeALC) {
+                window.gaugeALC.value = 0;
+                window.gaugeALC.draw();
+            }
+            return;
+        }
+
         // FTdx101 ALC calibration: 50V corresponds to a raw value of 178
         // So we scale the 0-255 raw value to a 0-50V range for display
         const alcVolts = (value / 255) * 50;
