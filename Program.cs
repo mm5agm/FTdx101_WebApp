@@ -33,6 +33,9 @@ builder.Services.AddHostedService<RigctldServer>();
 // Register your settings service
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
+// Register calibration service
+builder.Services.AddSingleton<CalibrationService>();
+
 // Add after existing service registrations
 builder.Services.AddHostedService<SMeterPollingService>();
 

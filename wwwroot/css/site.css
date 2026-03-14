@@ -610,3 +610,157 @@ pre, code { tab-size: 4; }
 .afgain-slider:focus {
     outline: none;
 }
+
+/* Calibration page container for meter tables */
+.calibration-container {
+    width: max-content;
+    min-width: 340px;
+    margin-bottom: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* Calibration Page Modern Look */
+.calibration-bg {
+    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.calibration-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px 0 rgba(80, 120, 200, 0.10);
+    padding: 1rem 0.5rem 1rem 0.5rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 270px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 3px solid #4f8cff;
+}
+.calibration-card.swr { border-color: #38bdf8; }
+.calibration-card.power { border-color: #22c55e; }
+.calibration-card.alc { border-color: #f59e42; }
+
+.calibration-card legend {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2563eb;
+    margin-bottom: 0.7rem;
+    text-align: center;
+}
+.calibration-card.swr legend { color: #0891b2; }
+.calibration-card.power legend { color: #16a34a; }
+.calibration-card.alc legend { color: #ea580c; }
+
+.calibration-card .table-sm {
+    table-layout: auto;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+.calibration-card .table-sm th {
+    background: #f1f5f9;
+    color: #475569;
+    border-top: none;
+    text-align: center;
+    padding: 0.3rem 0.5rem;
+}
+.calibration-card .table-sm td {
+    background: #f8fafc;
+    border-top: none;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.2rem 0.2rem;
+}
+.calibration-card .form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    transition: border-color 0.2s;
+    width: 6ch;
+    min-width: 0;
+    display: inline-block;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1rem;
+    margin-right: 0.1em;
+}
+.calibration-card .form-control:focus {
+    border-color: #4f8cff;
+    box-shadow: 0 0 0 2px #dbeafe;
+}
+.calibration-card .btn-secondary {
+    background: linear-gradient(90deg, #4f8cff 0%, #38bdf8 100%);
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.calibration-card .btn-secondary:hover {
+    background: linear-gradient(90deg, #2563eb 0%, #0891b2 100%);
+}
+.calibration-card .btn-link.text-danger {
+    color: #ef4444;
+    font-size: 1.2em;
+    opacity: 0.8;
+    transition: color 0.2s, opacity 0.2s;
+    margin-left: 0.2em;
+    margin-right: 0;
+    padding: 0 0.2em;
+    vertical-align: middle;
+}
+.calibration-card .btn-link.text-danger:hover {
+    color: #b91c1c;
+    opacity: 1;
+}
+.calibration-save-btn {
+    background: linear-gradient(90deg, #22c55e 0%, #4f8cff 100%);
+    color: #fff;
+    border: none;
+    border-radius: 0.7rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.7rem 2.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 8px 0 rgba(34,197,94,0.08);
+    transition: background 0.2s;
+}
+.calibration-save-btn:hover {
+    background: linear-gradient(90deg, #16a34a 0%, #2563eb 100%);
+}
+.calibration-status {
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 0.5rem;
+    border: 1px solid #bae6fd;
+    margin-top: 1.2rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+}
+
+.calibration-card canvas,
+.calibration-card .gauge-wrapper {
+    max-width: 180px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+@media (max-width: 1200px) {
+    .calibration-card {
+        max-width: 100%;
+    }
+    .calibration-card canvas,
+    .calibration-card .gauge-wrapper {
+        max-width: 140px !important;
+    }
+}
