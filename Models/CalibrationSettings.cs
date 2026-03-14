@@ -12,14 +12,7 @@ namespace FTdx101_WebApp.Models
 
     public class MeterCalibration
     {
-        public List<CalibrationPoint> Points { get; set; } = new()
-        {
-            new CalibrationPoint(),
-            new CalibrationPoint(),
-            new CalibrationPoint(),
-            new CalibrationPoint(),
-            new CalibrationPoint()
-        };
+        public List<CalibrationPoint> Points { get; set; } = new();
     }
 
     public class CalibrationPoint

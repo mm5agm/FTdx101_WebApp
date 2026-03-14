@@ -14,16 +14,29 @@
                     <table class="table table-sm mb-2">
                         <thead><tr><th>S-Point / Value</th><th></th></tr></thead>
                         <tbody>
-                        @for (int i = 0; i < Model.Calibration.SMeter.Points.Count; i++) {
+                        @if (Model.Calibration.SMeter.Points.Count == 0)
+                        {
                             <tr>
                                 <td>
-                                    <input asp-for="Calibration.SMeter.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" autocomplete="off" />
-                                    <input asp-for="Calibration.SMeter.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    <input name="Calibration.SMeter.Points[0].GaugeValue" class="form-control d-inline-block mb-1 s-meter-gauge-input" type="text" autocomplete="off" />
+                                    <input name="Calibration.SMeter.Points[0].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                 </td>
-                                <td style="width:1%;padding:0;">
-                                    <button name="RemoveSMeterPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                </td>
+                                <td></td>
                             </tr>
+                        }
+                        else
+                        {
+                            for (int i = 0; i < Model.Calibration.SMeter.Points.Count; i++) {
+                                <tr>
+                                    <td>
+                                        <input asp-for="Calibration.SMeter.Points[@i].GaugeValue" class="form-control d-inline-block mb-1 s-meter-gauge-input" type="text" autocomplete="off" />
+                                        <input asp-for="Calibration.SMeter.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    </td>
+                                    <td style="width:1%;padding:0;">
+                                        <button name="RemoveSMeterPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
+                                    </td>
+                                </tr>
+                            }
                         }
                         </tbody>
                     </table>
@@ -36,16 +49,29 @@
                     <table class="table table-sm mb-2">
                         <thead><tr><th>Gauge Value / Actual Value</th><th></th></tr></thead>
                         <tbody>
-                        @for (int i = 0; i < Model.Calibration.SWR.Points.Count; i++) {
+                        @if (Model.Calibration.SWR.Points.Count == 0)
+                        {
                             <tr>
                                 <td>
-                                    <input asp-for="Calibration.SWR.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                    <input asp-for="Calibration.SWR.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    <input name="Calibration.SWR.Points[0].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    <input name="Calibration.SWR.Points[0].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                 </td>
-                                <td style="width:1%;padding:0;">
-                                    <button name="RemoveSWRPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                </td>
+                                <td></td>
                             </tr>
+                        }
+                        else
+                        {
+                            for (int i = 0; i < Model.Calibration.SWR.Points.Count; i++) {
+                                <tr>
+                                    <td>
+                                        <input asp-for="Calibration.SWR.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                        <input asp-for="Calibration.SWR.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    </td>
+                                    <td style="width:1%;padding:0;">
+                                        <button name="RemoveSWRPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
+                                    </td>
+                                </tr>
+                            }
                         }
                         </tbody>
                     </table>
@@ -80,16 +106,29 @@
                     <table class="table table-sm mb-2">
                         <thead><tr><th>Gauge Value / Actual Value</th><th></th></tr></thead>
                         <tbody>
-                        @for (int i = 0; i < Model.Calibration.ALC.Points.Count; i++) {
+                        @if (Model.Calibration.ALC.Points.Count == 0)
+                        {
                             <tr>
                                 <td>
-                                    <input asp-for="Calibration.ALC.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                    <input asp-for="Calibration.ALC.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    <input name="Calibration.ALC.Points[0].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    <input name="Calibration.ALC.Points[0].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                 </td>
-                                <td style="width:1%;padding:0;">
-                                    <button name="RemoveALCPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                </td>
+                                <td></td>
                             </tr>
+                        }
+                        else
+                        {
+                            for (int i = 0; i < Model.Calibration.ALC.Points.Count; i++) {
+                                <tr>
+                                    <td>
+                                        <input asp-for="Calibration.ALC.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                        <input asp-for="Calibration.ALC.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    </td>
+                                    <td style="width:1%;padding:0;">
+                                        <button name="RemoveALCPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
+                                    </td>
+                                </tr>
+                            }
                         }
                         </tbody>
                     </table>

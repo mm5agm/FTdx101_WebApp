@@ -691,6 +691,11 @@ pre, code { tab-size: 4; }
     font-size: 1rem;
     margin-right: 0.1em;
 }
+
+/* S-Meter GaugeValue input: wider for S9+60 */
+.s-meter-gauge-input {
+    width: 8ch !important;
+}
 .calibration-card .form-control:focus {
     border-color: #4f8cff;
     box-shadow: 0 0 0 2px #dbeafe;

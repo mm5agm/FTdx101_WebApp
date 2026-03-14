@@ -22,9 +22,22 @@ namespace FTdx101_WebApp.Pages
             _logger = logger;
         }
 
+        // Ensures at least one CalibrationPoint exists in the meter
+        private void EnsureAtLeastOnePoint(MeterCalibration meter)
+        {
+            if (meter.Points == null || meter.Points.Count == 0)
+            {
+                meter.Points = new List<CalibrationPoint> { new CalibrationPoint() };
+            }
+        }
+
         public async Task<IActionResult> OnGetAsync()
         {
             Calibration = await _calibrationService.GetCalibrationAsync();
+            EnsureAtLeastOnePoint(Calibration.SMeter);
+            EnsureAtLeastOnePoint(Calibration.SWR);
+            EnsureAtLeastOnePoint(Calibration.Power);
+            EnsureAtLeastOnePoint(Calibration.ALC);
             return Page();
         }
 
@@ -42,6 +55,37 @@ namespace FTdx101_WebApp.Pages
                 Calibration.Power.Points.Add(new CalibrationPoint());
             if (form.ContainsKey("AddALCPoint"))
                 Calibration.ALC.Points.Add(new CalibrationPoint());
+
+            // Remove actions (look for RemoveSMeterPoint-#, etc)
+            foreach (var key in form.Keys)
+            {
+                if (key.StartsWith("RemoveSMeterPoint-"))
+                {
+                    if (int.TryParse(key["RemoveSMeterPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.SMeter.Points.Count && Calibration.SMeter.Points.Count > 1)
+                        Calibration.SMeter.Points.RemoveAt(idx);
+                }
+                if (key.StartsWith("RemoveSWRPoint-"))
+                {
+                    if (int.TryParse(key["RemoveSWRPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.SWR.Points.Count && Calibration.SWR.Points.Count > 1)
+                        Calibration.SWR.Points.RemoveAt(idx);
+                }
+                if (key.StartsWith("RemovePowerPoint-"))
+                {
+                    if (int.TryParse(key["RemovePowerPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.Power.Points.Count && Calibration.Power.Points.Count > 1)
+                        Calibration.Power.Points.RemoveAt(idx);
+                }
+                if (key.StartsWith("RemoveALCPoint-"))
+                {
+                    if (int.TryParse(key["RemoveALCPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.ALC.Points.Count && Calibration.ALC.Points.Count > 1)
+                        Calibration.ALC.Points.RemoveAt(idx);
+                }
+            }
+
+            // Always ensure at least one point exists for each meter
+            EnsureAtLeastOnePoint(Calibration.SMeter);
+            EnsureAtLeastOnePoint(Calibration.SWR);
+            EnsureAtLeastOnePoint(Calibration.Power);
+            EnsureAtLeastOnePoint(Calibration.ALC);
 
             // Remove actions (look for RemoveSMeterPoint-#, etc)
             foreach (var key in form.Keys)

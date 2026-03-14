@@ -39,12 +39,29 @@ namespace FTdx101_WebApp.Services
                 {
                     _cachedSettings = new CalibrationSettings();
                 }
+                // Cleanup: Remove empty points from all meters
+                CleanupEmptyPoints(_cachedSettings);
                 return _cachedSettings;
             }
             finally
             {
                 _semaphore.Release();
             }
+        }
+
+        // Remove points where both GaugeValue and ActualValue are empty or zero
+        private void CleanupEmptyPoints(CalibrationSettings settings)
+        {
+            void Clean(MeterCalibration meter)
+            {
+                meter.Points = meter.Points
+                    .Where(p => !string.IsNullOrWhiteSpace(p.GaugeValue) || !string.IsNullOrWhiteSpace(p.ActualValue))
+                    .ToList();
+            }
+            Clean(settings.SMeter);
+            Clean(settings.SWR);
+            Clean(settings.Power);
+            Clean(settings.ALC);
         }
 
         public async Task SaveCalibrationAsync(CalibrationSettings settings)
