@@ -52,10 +52,16 @@ namespace FTdx101_WebApp.Services
         // Remove points where both GaugeValue and ActualValue are empty or zero
         private void CleanupEmptyPoints(CalibrationSettings settings)
         {
+            bool IsEmptyOrZero(string? s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return true;
+                var trimmed = s.Trim();
+                return trimmed == "0" || trimmed == "0.0";
+            }
             void Clean(MeterCalibration meter)
             {
                 meter.Points = meter.Points
-                    .Where(p => !string.IsNullOrWhiteSpace(p.GaugeValue) || !string.IsNullOrWhiteSpace(p.ActualValue))
+                    .Where(p => !(IsEmptyOrZero(p.GaugeValue) && IsEmptyOrZero(p.ActualValue)))
                     .ToList();
             }
             Clean(settings.SMeter);

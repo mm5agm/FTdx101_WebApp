@@ -76,6 +76,19 @@ builder.Logging.AddDebug();
 
 var app = builder.Build();
 
+// Middleware to force Content-Language: en on all responses
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() => {
+        if (!context.Response.Headers.ContainsKey("Content-Language"))
+        {
+            context.Response.Headers.Add("Content-Language", "en");
+        }
+        return System.Threading.Tasks.Task.CompletedTask;
+    });
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();

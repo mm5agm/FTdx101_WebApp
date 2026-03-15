@@ -14,21 +14,12 @@
                     <table class="table table-sm mb-2">
                         <thead><tr><th>S-Point / Value</th><th></th></tr></thead>
                         <tbody>
-                        @if (Model.Calibration.SMeter.Points.Count == 0)
-                        {
-                            <tr>
-                                <td>
-                                    <input name="Calibration.SMeter.Points[0].GaugeValue" class="form-control d-inline-block mb-1 s-meter-gauge-input" type="text" autocomplete="off" />
-                                    <input name="Calibration.SMeter.Points[0].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                </td>
-                                <td></td>
-                            </tr>
-                        }
-                        else
+                        @if (Model.Calibration.SMeter.Points.Count > 0)
                         {
                             for (int i = 0; i < Model.Calibration.SMeter.Points.Count; i++) {
                                 <tr>
                                     <td>
+                                        <input type="hidden" name="Calibration.SMeter.Points.index" value="@i" />
                                         <input asp-for="Calibration.SMeter.Points[@i].GaugeValue" class="form-control d-inline-block mb-1 s-meter-gauge-input" type="text" autocomplete="off" />
                                         <input asp-for="Calibration.SMeter.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
@@ -49,21 +40,12 @@
                     <table class="table table-sm mb-2">
                         <thead><tr><th>Gauge Value / Actual Value</th><th></th></tr></thead>
                         <tbody>
-                        @if (Model.Calibration.SWR.Points.Count == 0)
-                        {
-                            <tr>
-                                <td>
-                                    <input name="Calibration.SWR.Points[0].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                    <input name="Calibration.SWR.Points[0].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                </td>
-                                <td></td>
-                            </tr>
-                        }
-                        else
+                        @if (Model.Calibration.SWR.Points.Count > 0)
                         {
                             for (int i = 0; i < Model.Calibration.SWR.Points.Count; i++) {
                                 <tr>
                                     <td>
+                                        <input type="hidden" name="Calibration.SWR.Points.index" value="@i" />
                                         <input asp-for="Calibration.SWR.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                         <input asp-for="Calibration.SWR.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
@@ -87,6 +69,7 @@
                         @for (int i = 0; i < Model.Calibration.Power.Points.Count; i++) {
                             <tr>
                                 <td>
+                                    <input type="hidden" name="Calibration.Power.Points.index" value="@i" />
                                     <input asp-for="Calibration.Power.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     <input asp-for="Calibration.Power.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                 </td>
@@ -106,21 +89,12 @@
                     <table class="table table-sm mb-2">
                         <thead><tr><th>Gauge Value / Actual Value</th><th></th></tr></thead>
                         <tbody>
-                        @if (Model.Calibration.ALC.Points.Count == 0)
-                        {
-                            <tr>
-                                <td>
-                                    <input name="Calibration.ALC.Points[0].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                    <input name="Calibration.ALC.Points[0].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                </td>
-                                <td></td>
-                            </tr>
-                        }
-                        else
+                        @if (Model.Calibration.ALC.Points.Count > 0)
                         {
                             for (int i = 0; i < Model.Calibration.ALC.Points.Count; i++) {
                                 <tr>
                                     <td>
+                                        <input type="hidden" name="Calibration.ALC.Points.index" value="@i" />
                                         <input asp-for="Calibration.ALC.Points[@i].GaugeValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                         <input asp-for="Calibration.ALC.Points[@i].ActualValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
@@ -137,7 +111,7 @@
             </div>
         </div>
         <div class="text-center">
-            <button type="submit" class="calibration-save-btn">Save Calibration</button>
+            <button type="submit" class="save calibration-save-btn" id="saveCalibrationBtn">Save Calibration</button>
         </div>
         @if (!string.IsNullOrEmpty(Model.StatusMessage))
         {

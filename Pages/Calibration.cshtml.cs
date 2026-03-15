@@ -22,28 +22,28 @@ namespace FTdx101_WebApp.Pages
             _logger = logger;
         }
 
-        // Ensures at least one CalibrationPoint exists in the meter
-        private void EnsureAtLeastOnePoint(MeterCalibration meter)
-        {
-            if (meter.Points == null || meter.Points.Count == 0)
-            {
-                meter.Points = new List<CalibrationPoint> { new CalibrationPoint() };
-            }
-        }
 
         public async Task<IActionResult> OnGetAsync()
         {
             Calibration = await _calibrationService.GetCalibrationAsync();
-            EnsureAtLeastOnePoint(Calibration.SMeter);
-            EnsureAtLeastOnePoint(Calibration.SWR);
-            EnsureAtLeastOnePoint(Calibration.Power);
-            EnsureAtLeastOnePoint(Calibration.ALC);
+            // Do not add any blank points on GET; only show if there are points
             return Page();
         }
 
 
+
         public async Task<IActionResult> OnPostAsync()
         {
+            // Ensure all lists are initialized for model binding
+            if (Calibration.SMeter == null) Calibration.SMeter = new MeterCalibration();
+            if (Calibration.SMeter.Points == null) Calibration.SMeter.Points = new List<CalibrationPoint>();
+            if (Calibration.SWR == null) Calibration.SWR = new MeterCalibration();
+            if (Calibration.SWR.Points == null) Calibration.SWR.Points = new List<CalibrationPoint>();
+            if (Calibration.Power == null) Calibration.Power = new MeterCalibration();
+            if (Calibration.Power.Points == null) Calibration.Power.Points = new List<CalibrationPoint>();
+            if (Calibration.ALC == null) Calibration.ALC = new MeterCalibration();
+            if (Calibration.ALC.Points == null) Calibration.ALC.Points = new List<CalibrationPoint>();
+
             // Handle add/remove actions for each meter
             var form = Request.Form;
             // Add actions
@@ -81,11 +81,6 @@ namespace FTdx101_WebApp.Pages
                 }
             }
 
-            // Always ensure at least one point exists for each meter
-            EnsureAtLeastOnePoint(Calibration.SMeter);
-            EnsureAtLeastOnePoint(Calibration.SWR);
-            EnsureAtLeastOnePoint(Calibration.Power);
-            EnsureAtLeastOnePoint(Calibration.ALC);
 
             // Remove actions (look for RemoveSMeterPoint-#, etc)
             foreach (var key in form.Keys)

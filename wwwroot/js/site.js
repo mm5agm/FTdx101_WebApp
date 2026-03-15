@@ -1,4 +1,79 @@
-﻿// FTdx101 Web App - site.js
+﻿// ========================================================================
+// Debugging: Log Save Button Presses and Page Content for Language Issues
+// ========================================================================
+// This block helps diagnose why the browser might think the page is in French.
+// It logs all clicks on elements with "save" in their id, name, or class,
+// and logs the text content of the page and any form data being submitted.
+document.addEventListener('click', function (e) {
+    let el = e.target;
+    if (!el) return;
+    // Check if the element is a button or input with "save" in id, name, or class
+    let isSave = false;
+    if (el.tagName === 'BUTTON' || el.tagName === 'INPUT') {
+        let id = (el.id || '').toLowerCase();
+        let name = (el.name || '').toLowerCase();
+        let cls = (el.className || '').toLowerCase();
+        if (id.includes('save') || name.includes('save') || cls.includes('save')) {
+            isSave = true;
+        }
+    }
+    // Also check parent elements (for icon buttons etc.)
+    if (!isSave && el.closest) {
+        let btn = el.closest('button, input');
+        if (btn) {
+            let id = (btn.id || '').toLowerCase();
+            let name = (btn.name || '').toLowerCase();
+            let cls = (btn.className || '').toLowerCase();
+            if (id.includes('save') || name.includes('save') || cls.includes('save')) {
+                isSave = true;
+                el = btn; // Use the button/input as the element
+            }
+        }
+    }
+    if (isSave) {
+        // Enhanced debug logging
+        console.log('%c[Debug] Save button pressed!','color: white; background: green; font-size: 16px; padding: 2px 8px;', el);
+        console.log('[Debug] Event:', e);
+        console.log('[Debug] Element details:', {
+            tag: el.tagName,
+            id: el.id,
+            name: el.name,
+            className: el.className,
+            type: el.type,
+            value: el.value
+        });
+        // Log the text content of the page (first 500 chars)
+        let bodyText = document.body ? document.body.innerText : '';
+        console.log('[Debug] Page text (first 500 chars):', bodyText.substring(0, 500));
+        // Log any form data if inside a form
+        let form = el.closest && el.closest('form');
+        if (form) {
+            let formData = new FormData(form);
+            let obj = {};
+            for (let [k, v] of formData.entries()) obj[k] = v;
+            console.log('[Debug] Form data:', obj);
+        }
+        // Show a visible alert on the page for diagnostics
+        let existing = document.getElementById('save-debug-alert');
+        if (existing) existing.remove();
+        let alert = document.createElement('div');
+        alert.id = 'save-debug-alert';
+        alert.style.position = 'fixed';
+        alert.style.top = '20px';
+        alert.style.right = '20px';
+        alert.style.zIndex = 9999;
+        alert.style.background = '#28a745';
+        alert.style.color = 'white';
+        alert.style.padding = '12px 24px';
+        alert.style.borderRadius = '8px';
+        alert.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        alert.style.fontSize = '18px';
+        alert.textContent = 'Save button pressed!';
+        document.body.appendChild(alert);
+        setTimeout(() => { if (alert.parentNode) alert.parentNode.removeChild(alert); }, 2000);
+    }
+});
+// FTdx101 Web App - site.js
 // =============================================================================
 // This file has two main sections:
 //
@@ -413,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/cat/status')
         .then(response => response.json())
         .then(data => {
-            if (data && data.radioModel) {
+            if (data && data.radioModel && window.state) {
                 window.state.radioModel = data.radioModel;
                 updatePowerSliderMax();
             }
@@ -1853,35 +1928,40 @@ let wasTransmittingSWR = false;
             }
         }
 
-        // Initialize S-Meters
-        const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
-        gaugeA = new RadialGauge(sMeterConfigA);
-        gaugeA.draw();
-        createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
-
-        const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
-        gaugeB = new RadialGauge(sMeterConfigB);
-        gaugeB.draw();
-        createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
-
+        // Only initialize gauges if the required canvas elements exist
+        const sMeterCanvasA = document.getElementById('sMeterCanvasA');
+        const sMeterCanvasB = document.getElementById('sMeterCanvasB');
+        if (sMeterCanvasA) {
+            const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
+            gaugeA = new RadialGauge(sMeterConfigA);
+            gaugeA.draw();
+            createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
+        }
+        if (sMeterCanvasB) {
+            const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
+            gaugeB = new RadialGauge(sMeterConfigB);
+            gaugeB.draw();
+            createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
+        }
         // Initialize Power Meter (if element exists)
-        if (document.getElementById('powerMeterCanvas')) {
+        const powerMeterCanvas = document.getElementById('powerMeterCanvas');
+        if (powerMeterCanvas) {
             const powerConfig = makeGaugeConfig('powerMeterCanvas', 'power');
             window.gaugePower = new RadialGauge(powerConfig);
             window.gaugePower.draw();
             createGaugeLabels('powerMeterCanvas', powerConfig._labels);
         }
-
         // Initialize SWR Meter (if element exists)
-        if (document.getElementById('swrMeterCanvas')) {
+        const swrMeterCanvas = document.getElementById('swrMeterCanvas');
+        if (swrMeterCanvas) {
             const swrConfig = makeGaugeConfig('swrMeterCanvas', 'swr');
             window.gaugeSWR = new RadialGauge(swrConfig);
             window.gaugeSWR.draw();
             createGaugeLabels('swrMeterCanvas', swrConfig._labels);
         }
-
         // Initialize ALC Meter (if element exists)
-        if (document.getElementById('alcMeterCanvas')) {
+        const alcMeterCanvas = document.getElementById('alcMeterCanvas');
+        if (alcMeterCanvas) {
             console.log('[Gauge] Initializing ALC meter...');
             const alcConfig = makeGaugeConfig('alcMeterCanvas', 'alc');
             console.log('[Gauge] ALC config:', alcConfig);
@@ -1889,8 +1969,6 @@ let wasTransmittingSWR = false;
             window.gaugeALC.draw();
             createGaugeLabels('alcMeterCanvas', alcConfig._labels);
             console.log('[Gauge] ALC meter initialized');
-        } else {
-            console.warn('[Gauge] alcMeterCanvas element not found!');
         }
     }
 
