@@ -1,4 +1,49 @@
 ﻿// ========================================================================
+// =============================
+// DEBUG: Power Gauge Test Button (robust injection)
+// =============================
+// Move test power button injection to the end of the file for maximum visibility
+function injectPowerGaugeTestButton() {
+    if (document.getElementById('testPowerGaugeBtn')) {
+        console.log('[PowerMeter] Test button already exists in DOM');
+        return;
+    }
+    var btn = document.createElement('button');
+    btn.id = 'testPowerGaugeBtn';
+    btn.textContent = 'Test Power Gauge (Set to 50W)';
+    btn.style.position = 'fixed';
+    btn.style.top = '20px';
+    btn.style.right = '20px';
+    btn.style.zIndex = 99999;
+    btn.style.background = '#ff0';
+    btn.style.color = '#000';
+    btn.style.padding = '12px 24px';
+    btn.style.border = '4px solid #f00';
+    btn.style.borderRadius = '10px';
+    btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.4)';
+    btn.style.fontSize = '20px';
+    btn.style.fontWeight = 'bold';
+    btn.style.cursor = 'pointer';
+    btn.onclick = function () {
+        if (window.gaugePower) {
+            window.gaugePower.value = 50;
+            window.gaugePower.draw();
+            console.log('[PowerMeter] Test button: Set gaugePower.value = 50, maxValue =', window.gaugePower.maxValue);
+        } else {
+            console.warn('[PowerMeter] Test button: window.gaugePower is not defined');
+        }
+        var canvas = document.getElementById('powerMeterCanvas');
+        if (!canvas) {
+            console.warn('[PowerMeter] Test button: powerMeterCanvas not found in DOM');
+        } else {
+            console.log('[PowerMeter] Test button: powerMeterCanvas found, width:', canvas.width, 'height:', canvas.height, 'display:', getComputedStyle(canvas).display);
+        }
+    };
+    document.body.appendChild(btn);
+    var rect = btn.getBoundingClientRect();
+    console.log('[PowerMeter] Debug test button injected, element:', btn, 'Bounding rect:', rect);
+}
+
 // Debugging: Log Save Button Presses and Page Content for Language Issues
 // ========================================================================
 // This block helps diagnose why the browser might think the page is in French.
@@ -71,6 +116,20 @@ document.addEventListener('click', function (e) {
         alert.textContent = 'Save button pressed!';
         document.body.appendChild(alert);
         setTimeout(() => { if (alert.parentNode) alert.parentNode.removeChild(alert); }, 2000);
+    }
+});
+// Style fix for Raw Power Out label
+document.addEventListener('DOMContentLoaded', function () {
+    var rawPowerLabel = document.getElementById('raw-powerout-label');
+    if (rawPowerLabel) {
+        rawPowerLabel.style.removeProperty('max-width');
+        rawPowerLabel.style.minWidth = '120px';
+        rawPowerLabel.style.removeProperty('width');
+        rawPowerLabel.style.whiteSpace = 'nowrap';
+        rawPowerLabel.style.textAlign = 'right';
+        rawPowerLabel.style.fontFamily = 'monospace';
+        rawPowerLabel.style.display = 'inline-block';
+        rawPowerLabel.style.marginLeft = '12px';
     }
 });
 // FTdx101 Web App - site.js
@@ -506,6 +565,33 @@ document.addEventListener('DOMContentLoaded', function() {
     //         window.radioControl.updatePowerDisplay('A', slider.value);
     //     });
     // }
+    // --- Ensure Test Power Gauge Button is always visible and re-injected if removed ---
+    (function() {
+        function ensureTestPowerGaugeButtonVisible() {
+            injectPowerGaugeTestButton();
+            // Observe DOM changes to re-inject if removed
+            if (!window._testPowerGaugeBtnObserver) {
+                window._testPowerGaugeBtnObserver = new MutationObserver(function() {
+                    var btn = document.getElementById('testPowerGaugeBtn');
+                    if (!btn) {
+                        injectPowerGaugeTestButton();
+                    }
+                });
+                window._testPowerGaugeBtnObserver.observe(document.body, { childList: true, subtree: true });
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() { setTimeout(ensureTestPowerGaugeButtonVisible, 0); });
+        } else {
+            setTimeout(ensureTestPowerGaugeButtonVisible, 0);
+        }
+        // Add CSS rule to force button visibility
+        if (typeof document !== 'undefined' && document.head) {
+            var style = document.createElement('style');
+            style.innerHTML = '#testPowerGaugeBtn { display: block !important; visibility: visible !important; opacity: 1 !important; }';
+            document.head.appendChild(style);
+        }
+    })();
 });
 
 // ---------------------------------------------------------------------------
@@ -613,6 +699,12 @@ function fetchPowerOutCalibrationPoints() {
         .then(points => {
             if (Array.isArray(points) && points.length > 0) {
                 powerOutCalibrationPoints = points.map(p => ({ label: p.label, value: Number(p.value) }));
+                console.log('[PowerMeter] Calibration points loaded:', powerOutCalibrationPoints);
+                // If currently transmitting, force a meter update with last value
+                if (window.radioControl && window.radioControl._state && window.radioControl._state.isTransmitting && window.lastPowerMeterRawValue !== undefined) {
+                    console.log('[PowerMeter] Forcing meter update after calibration load, last raw value:', window.lastPowerMeterRawValue);
+                    window.updatePowerMeter(window.lastPowerMeterRawValue);
+                }
             }
         })
         .catch(err => {
@@ -681,13 +773,8 @@ function powerOutLabel(val) {
 // Interpolate Watts from raw value using calibration points
 function interpolatePowerOutWatts(rawValue) {
     if (!Array.isArray(powerOutCalibrationPoints) || powerOutCalibrationPoints.length < 2) {
-        // Fallback to legacy scaling if no calibration
-        // Default: 0-255 raw maps to 0-200W (MP) or 0-100W (D)
-        let maxW = 200;
-        let model = (window.radioControl && window.radioControl._state && window.radioControl._state.radioModel)
-            ? window.radioControl._state.radioModel.toLowerCase() : "ftdx101mp";
-        if (model === "ftdx101d") maxW = 100;
-        return Math.round(rawValue * maxW / 255);
+        // No calibration: always return 0
+        return 0;
     }
     // Use calibration points
     return Math.round(powerOutLabel(rawValue));
@@ -780,6 +867,13 @@ connection.on("RadioStateUpdate", function (update) {
     // --- TX STATE ---
     if (update.property === "IsTransmitting") {
         isTransmitting = update.value;
+        // Always update the IIFE's state for correct gauge behavior
+        if (window.radioControl && window.radioControl._state) {
+            window.radioControl._state.isTransmitting = update.value;
+            console.log('[SignalR] Set IIFE state.isTransmitting =', update.value);
+        } else {
+            console.warn('[SignalR] IIFE state not available to set isTransmitting');
+        }
         updateTxButton();
         updateTxIndicators(update.value);
     }
@@ -790,6 +884,11 @@ connection.on("RadioStateUpdate", function (update) {
 
     // --- METER UPDATES ---
     if (update.property === "PowerMeter" && typeof window.updatePowerMeter === 'function') {
+        // Ensure the IIFE's state is in sync
+        if (window.radioControl && window.radioControl._state) {
+            window.radioControl._state.isTransmitting = isTransmitting;
+        }
+        console.log('[SignalR] PowerMeter update received:', update.value, 'type:', typeof update.value, 'isTransmitting:', isTransmitting, 'IIFE state.isTransmitting:', window.radioControl && window.radioControl._state ? window.radioControl._state.isTransmitting : 'N/A');
         window.updatePowerMeter(update.value);
     }
     if (update.property === "SWRMeter" && typeof window.updateSWRMeter === 'function') {
@@ -1627,6 +1726,10 @@ let wasTransmittingPower = false;
 let wasTransmittingSWR = false;
 
     function updatePowerMeter(value) {
+        // Store last raw value globally for calibration reloads
+        window.lastPowerMeterRawValue = value;
+        // Debug: log TX state and calibration
+        console.log('[PowerMeter] updatePowerMeter called. isTransmitting:', state.isTransmitting, 'raw value:', value, 'type:', typeof value, 'calibration:', powerOutCalibrationPoints);
         // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
         if (!state.isTransmitting) {
             powerHistory = [];
@@ -1639,6 +1742,8 @@ let wasTransmittingSWR = false;
             if (window.gaugePower) {
                 window.gaugePower.value = 0;
                 window.gaugePower.draw();
+            } else {
+                console.warn('[PowerMeter] window.gaugePower is not defined when trying to set to 0');
             }
             return;
         }
@@ -1654,42 +1759,52 @@ let wasTransmittingSWR = false;
         const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
         // Use calibration points for Watts
         let watts = interpolatePowerOutWatts(avgValue);
-        const valueSpan = document.getElementById('powerMeterValue');
-        if (valueSpan) valueSpan.textContent = `Power Out ${watts}W`;
-        // Update raw Power Out label
-        var rawPowerLabel = document.getElementById('raw-powerout-label');
-        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw: ' + Math.round(avgValue);
-        function reinitPowerGaugeIfNeeded() {
+        // Clamp watts to gauge maxValue
+        let maxW = 200;
+        if (Array.isArray(powerOutCalibrationPoints) && powerOutCalibrationPoints.length > 1) {
+            const last = powerOutCalibrationPoints[powerOutCalibrationPoints.length-1];
+            const lastNum = parseFloat(last.label);
+            if (!isNaN(lastNum)) maxW = lastNum;
+        }
+        if (!window.gaugePower || window.gaugePower.maxValue !== maxW) {
+            // Only re-initialize if maxValue changed
             try {
                 const canvasId = 'powerMeterCanvas';
                 const powerConfig = makeGaugeConfig(canvasId, 'power');
-                // Optionally, update gauge max if calibration points change
-                let maxW = 200;
-                if (Array.isArray(powerOutCalibrationPoints) && powerOutCalibrationPoints.length > 1) {
-                    // Use max label as max value if numeric
-                    const last = powerOutCalibrationPoints[powerOutCalibrationPoints.length-1];
-                    const lastNum = parseFloat(last.label);
-                    if (!isNaN(lastNum)) maxW = lastNum;
+                powerConfig.maxValue = maxW;
+                if (window.gaugePower && window.gaugePower.destroy) {
+                    window.gaugePower.destroy();
                 }
-                if (!window.gaugePower || window.gaugePower.maxValue !== maxW) {
-                    if (window.gaugePower && window.gaugePower.destroy) {
-                        window.gaugePower.destroy();
-                    }
-                    powerConfig.maxValue = maxW;
-                    window.gaugePower = new RadialGauge(powerConfig);
-                    window.gaugePower.draw();
-                    if (typeof createGaugeLabels === 'function') {
-                        createGaugeLabels(canvasId, powerConfig._labels);
-                    }
+                window.gaugePower = new RadialGauge(powerConfig);
+                window.gaugePower.draw();
+                if (typeof createGaugeLabels === 'function') {
+                    createGaugeLabels(canvasId, powerConfig._labels);
                 }
+                console.log('[PowerMeter] Gauge re-initialized with maxValue:', maxW);
             } catch (err) {
                 console.error('[GaugeInit] Error during gaugePower re-initialization:', err);
             }
         }
-        reinitPowerGaugeIfNeeded();
+        // Clamp value to [0, maxW]
+        let clampedWatts = Math.max(0, Math.min(watts, maxW));
+        console.log('[PowerMeter] avgValue:', avgValue, 'watts:', watts, 'clampedWatts:', clampedWatts, 'gauge maxValue:', maxW);
+        const valueSpan = document.getElementById('powerMeterValue');
+        if (valueSpan) valueSpan.textContent = `Power Out ${clampedWatts}W`;
+        // Update raw Power Out label
+        var rawPowerLabel = document.getElementById('raw-powerout-label');
+        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw: ' + Math.round(avgValue);
+        var canvas = document.getElementById('powerMeterCanvas');
+        if (!canvas) {
+            console.warn('[PowerMeter] powerMeterCanvas not found in DOM');
+        } else {
+            console.log('[PowerMeter] powerMeterCanvas found, width:', canvas.width, 'height:', canvas.height, 'display:', getComputedStyle(canvas).display);
+        }
         if (window.gaugePower) {
-            window.gaugePower.value = watts;
+            window.gaugePower.value = clampedWatts;
             window.gaugePower.draw();
+            console.log('[PowerMeter] gaugePower.value set to', clampedWatts, 'maxValue:', window.gaugePower.maxValue);
+        } else {
+            console.warn('[PowerMeter] window.gaugePower is not defined when trying to set value');
         }
     }
 

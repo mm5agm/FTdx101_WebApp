@@ -31,5 +31,20 @@ namespace FTdx101_WebApp.Controllers
                 return Ok(new List<object>());
             return Ok(points);
         }
+
+        // GET: /api/calibration/powerout
+        [HttpGet("powerout")]
+        public async Task<IActionResult> GetPowerOutCalibration()
+        {
+            var settings = await _calibrationService.GetCalibrationAsync();
+            var points = settings.Power?.Points
+                ?.Where(p => !string.IsNullOrWhiteSpace(p.GaugeValue) && !string.IsNullOrWhiteSpace(p.ActualValue))
+                .Select(p => new { label = p.GaugeValue, value = double.TryParse(p.ActualValue, out var v) ? v : 0 })
+                .OrderBy(p => p.value)
+                .ToList();
+            if (points == null)
+                return Ok(new List<object>());
+            return Ok(points);
+        }
     }
 }
