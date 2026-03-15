@@ -588,6 +588,53 @@ connection.on("ShowSettingsPage", function () {
     window.location.href = "/Settings";
 });
 
+// --- Dynamic S-Meter Calibration Points ---
+let sMeterCalibrationPoints = null;
+
+function fetchSMeterCalibrationPoints() {
+    fetch('/api/calibration/smeter')
+        .then(r => r.json())
+        .then(points => {
+            if (Array.isArray(points) && points.length > 0) {
+                sMeterCalibrationPoints = points.map(p => ({ label: p.label, value: Number(p.value) }));
+            }
+        })
+        .catch(err => {
+            console.warn('Failed to fetch S-Meter calibration points, using defaults.', err);
+            sMeterCalibrationPoints = null;
+        });
+}
+
+document.addEventListener('DOMContentLoaded', fetchSMeterCalibrationPoints);
+
+function sMeterLabel(val) {
+    if (!Array.isArray(sMeterCalibrationPoints) || sMeterCalibrationPoints.length < 2) {
+        return '';
+    }
+    const points = sMeterCalibrationPoints;
+    if (val <= points[0].value) return points[0].label;
+    for (let i = 1; i < points.length; i++) {
+        if (val <= points[i].value) {
+            const prev = points[i - 1];
+            const next = points[i];
+            const frac = (val - prev.value) / (next.value - prev.value);
+            if (val === next.value) return next.label;
+            if (next.label.startsWith("S9+")) {
+                const plus = parseInt(next.label.replace("S9+", ""));
+                const prevPlus = prev.label.startsWith("S9+") ? parseInt(prev.label.replace("S9+", "")) : 0;
+                const interp = Math.round(prevPlus + frac * (plus - prevPlus));
+                return "S9+" + interp;
+            } else {
+                const prevNum = parseInt(prev.label.replace("S", ""));
+                const nextNum = parseInt(next.label.replace("S", ""));
+                const interp = Math.round(prevNum + frac * (nextNum - prevNum));
+                return "S" + interp;
+            }
+        }
+    }
+    return points[points.length - 1].label;
+}
+
 // ---------------------------------------------------------------------------
 // BUG FIX: updateModeSelect
 // ---------------------------------------------------------------------------
@@ -1507,6 +1554,7 @@ function sendAfGain(receiver, value) {
         if (receiver === 'A' && gaugeA) {
             gaugeA.value = value;
             gaugeA.draw();
+            updateRawSMeterValueA(value);
         } else if (receiver === 'B' && gaugeB) {
             gaugeB.value = value;
             gaugeB.draw();
@@ -2054,6 +2102,61 @@ let wasTransmittingSWR = false;
     window.updatePATemperature = updatePATemperature;
     window.updateMICMeter = updateMICMeter;
 
+    // --- Raw Meter Label Visibility State ---
+    // Use localStorage to sync across tabs/pages
+    function getShowRawMeterLabels() {
+        return localStorage.getItem('showRawMeterLabels') === 'true';
+    }
+    function setShowRawMeterLabels(val) {
+        localStorage.setItem('showRawMeterLabels', val ? 'true' : 'false');
+        window.showRawMeterLabels = val;
+        updateRawMeterLabelVisibility();
+    }
+    function updateRawMeterLabelVisibility() {
+        var show = window.showRawMeterLabels;
+        var el = document.getElementById('raw-s-meter-label-a');
+        if (el) el.style.display = show ? '' : 'none';
+    }
+    // Listen for localStorage changes (cross-tab)
+    window.addEventListener('storage', function (e) {
+        if (e.key === 'showRawMeterLabels') {
+            window.showRawMeterLabels = getShowRawMeterLabels();
+            updateRawMeterLabelVisibility();
+        }
+    });
+    // Expose for other scripts
+    window.getShowRawMeterLabels = getShowRawMeterLabels;
+    window.setShowRawMeterLabels = setShowRawMeterLabels;
+    window.updateRawMeterLabelVisibility = updateRawMeterLabelVisibility;
+    // Init on page load
+    window.showRawMeterLabels = getShowRawMeterLabels();
+    document.addEventListener('DOMContentLoaded', updateRawMeterLabelVisibility);
+
+    // --- Raw S-Meter Value Update ---
+    // Store last raw S-Meter value for VFO A
+    window.lastRawSMeterA = 0;
+    function updateRawSMeterValueA(val) {
+        window.lastRawSMeterA = val;
+        var el = document.getElementById('rawSMeterValueA');
+        if (el) el.textContent = val;
+    }
+
+    // Calibration page: Toggle button logic for raw meter labels
+    // (runs on both pages, harmless if button not present)
+    document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('toggleRawMeterLabelsBtn');
+        if (btn) {
+            function updateBtnText() {
+                btn.textContent = window.getShowRawMeterLabels() ? 'Hide Raw Meter Readings' : 'Show Raw Meter Readings';
+            }
+            btn.addEventListener('click', function () {
+                var newVal = !window.getShowRawMeterLabels();
+                window.setShowRawMeterLabels(newVal);
+                updateBtnText();
+            });
+            updateBtnText();
+        }
+    });
 })();
 
 // ===========================================================================

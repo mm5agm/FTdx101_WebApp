@@ -12,7 +12,7 @@
                 <fieldset class="calibration-card">
                     <legend>S-Meter</legend>
                     <table class="table table-sm mb-2">
-                        <thead><tr><th>S-Point / Value</th><th></th></tr></thead>
+                        <thead><tr><th>S-Point / Raw Value</th><th></th></tr></thead>
                         <tbody>
                         @if (Model.Calibration.SMeter.Points.Count > 0)
                         {
@@ -111,6 +111,9 @@
             </div>
         </div>
         <div class="text-center">
+            <button type="button" class="btn btn-outline-primary me-3" id="toggleRawMeterLabelsBtn" style="min-width:180px;">
+                Show Raw Meter Readings
+            </button>
             <button type="submit" class="save calibration-save-btn" id="saveCalibrationBtn">Save Calibration</button>
         </div>
         @if (!string.IsNullOrEmpty(Model.StatusMessage))
