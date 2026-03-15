@@ -373,6 +373,7 @@ pre, code { tab-size: 4; }
 
 .band-radio-label span {
     user-select: none;
+    font-weight: bold;
 }
 
 .band-radio-label input[type="radio"]:checked + span {

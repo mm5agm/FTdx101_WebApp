@@ -390,6 +390,10 @@ function updateTxIndicators(isTransmitting) {
         if (typeof window.updatePowerMeter === 'function') {
             window.updatePowerMeter(0);
         }
+        if (typeof window.gaugePower !== 'undefined' && window.gaugePower) {
+            window.gaugePower.value = 0;
+            window.gaugePower.draw();
+        }
         if (typeof window.updateSWRMeter === 'function') {
             window.updateSWRMeter(0);
         }
@@ -1659,6 +1663,9 @@ let wasTransmittingSWR = false;
         // Debug: log TX state and calibration
         console.log('[PowerMeter] updatePowerMeter called. isTransmitting:', state.isTransmitting, 'raw value:', value, 'type:', typeof value, 'calibration:', powerOutCalibrationPoints);
         // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
+        if (!state.isTransmitting) {
+            value = 0;
+        }
         if (!state.isTransmitting) {
             powerHistory = [];
             wasTransmittingPower = false;
