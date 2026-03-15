@@ -1,49 +1,4 @@
-﻿// ========================================================================
-// =============================
-// DEBUG: Power Gauge Test Button (robust injection)
-// =============================
-// Move test power button injection to the end of the file for maximum visibility
-function injectPowerGaugeTestButton() {
-    if (document.getElementById('testPowerGaugeBtn')) {
-        console.log('[PowerMeter] Test button already exists in DOM');
-        return;
-    }
-    var btn = document.createElement('button');
-    btn.id = 'testPowerGaugeBtn';
-    btn.textContent = 'Test Power Gauge (Set to 50W)';
-    btn.style.position = 'fixed';
-    btn.style.top = '20px';
-    btn.style.right = '20px';
-    btn.style.zIndex = 99999;
-    btn.style.background = '#ff0';
-    btn.style.color = '#000';
-    btn.style.padding = '12px 24px';
-    btn.style.border = '4px solid #f00';
-    btn.style.borderRadius = '10px';
-    btn.style.boxShadow = '0 4px 16px rgba(0,0,0,0.4)';
-    btn.style.fontSize = '20px';
-    btn.style.fontWeight = 'bold';
-    btn.style.cursor = 'pointer';
-    btn.onclick = function () {
-        if (window.gaugePower) {
-            window.gaugePower.value = 50;
-            window.gaugePower.draw();
-            console.log('[PowerMeter] Test button: Set gaugePower.value = 50, maxValue =', window.gaugePower.maxValue);
-        } else {
-            console.warn('[PowerMeter] Test button: window.gaugePower is not defined');
-        }
-        var canvas = document.getElementById('powerMeterCanvas');
-        if (!canvas) {
-            console.warn('[PowerMeter] Test button: powerMeterCanvas not found in DOM');
-        } else {
-            console.log('[PowerMeter] Test button: powerMeterCanvas found, width:', canvas.width, 'height:', canvas.height, 'display:', getComputedStyle(canvas).display);
-        }
-    };
-    document.body.appendChild(btn);
-    var rect = btn.getBoundingClientRect();
-    console.log('[PowerMeter] Debug test button injected, element:', btn, 'Bounding rect:', rect);
-}
-
+﻿
 // Debugging: Log Save Button Presses and Page Content for Language Issues
 // ========================================================================
 // This block helps diagnose why the browser might think the page is in French.
@@ -565,33 +520,6 @@ document.addEventListener('DOMContentLoaded', function() {
     //         window.radioControl.updatePowerDisplay('A', slider.value);
     //     });
     // }
-    // --- Ensure Test Power Gauge Button is always visible and re-injected if removed ---
-    (function() {
-        function ensureTestPowerGaugeButtonVisible() {
-            injectPowerGaugeTestButton();
-            // Observe DOM changes to re-inject if removed
-            if (!window._testPowerGaugeBtnObserver) {
-                window._testPowerGaugeBtnObserver = new MutationObserver(function() {
-                    var btn = document.getElementById('testPowerGaugeBtn');
-                    if (!btn) {
-                        injectPowerGaugeTestButton();
-                    }
-                });
-                window._testPowerGaugeBtnObserver.observe(document.body, { childList: true, subtree: true });
-            }
-        }
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() { setTimeout(ensureTestPowerGaugeButtonVisible, 0); });
-        } else {
-            setTimeout(ensureTestPowerGaugeButtonVisible, 0);
-        }
-        // Add CSS rule to force button visibility
-        if (typeof document !== 'undefined' && document.head) {
-            var style = document.createElement('style');
-            style.innerHTML = '#testPowerGaugeBtn { display: block !important; visibility: visible !important; opacity: 1 !important; }';
-            document.head.appendChild(style);
-        }
-    })();
 });
 
 // ---------------------------------------------------------------------------
