@@ -588,8 +588,10 @@ connection.on("ShowSettingsPage", function () {
     window.location.href = "/Settings";
 });
 
-// --- Dynamic S-Meter Calibration Points ---
+
+// --- Dynamic Calibration Points: S-Meter and Power Out ---
 let sMeterCalibrationPoints = null;
+let powerOutCalibrationPoints = null;
 
 function fetchSMeterCalibrationPoints() {
     fetch('/api/calibration/smeter')
@@ -600,13 +602,29 @@ function fetchSMeterCalibrationPoints() {
             }
         })
         .catch(err => {
-            console.warn('Failed to fetch S-Meter calibration points, using defaults.', err);
+            console.warn('Failed to fetch S-Meter calibration points.', err);
             sMeterCalibrationPoints = null;
         });
 }
 
-document.addEventListener('DOMContentLoaded', fetchSMeterCalibrationPoints);
+function fetchPowerOutCalibrationPoints() {
+    fetch('/api/calibration/powerout')
+        .then(r => r.json())
+        .then(points => {
+            if (Array.isArray(points) && points.length > 0) {
+                powerOutCalibrationPoints = points.map(p => ({ label: p.label, value: Number(p.value) }));
+            }
+        })
+        .catch(err => {
+            console.warn('Failed to fetch Power Out calibration points.', err);
+            powerOutCalibrationPoints = null;
+        });
+}
 
+document.addEventListener('DOMContentLoaded', fetchSMeterCalibrationPoints);
+document.addEventListener('DOMContentLoaded', fetchPowerOutCalibrationPoints);
+
+// S-Meter label interpolation using only dynamic calibration data
 function sMeterLabel(val) {
     if (!Array.isArray(sMeterCalibrationPoints) || sMeterCalibrationPoints.length < 2) {
         return '';
@@ -633,6 +651,46 @@ function sMeterLabel(val) {
         }
     }
     return points[points.length - 1].label;
+}
+
+// Power Out label interpolation using only dynamic calibration data
+function powerOutLabel(val) {
+    if (!Array.isArray(powerOutCalibrationPoints) || powerOutCalibrationPoints.length < 2) {
+        return '';
+    }
+    const points = powerOutCalibrationPoints;
+    if (val <= points[0].value) return points[0].label;
+    for (let i = 1; i < points.length; i++) {
+        if (val <= points[i].value) {
+            const prev = points[i - 1];
+            const next = points[i];
+            const frac = (val - prev.value) / (next.value - prev.value);
+            // Interpolate numeric labels if both are numbers, else just return next label
+            const prevNum = parseFloat(prev.label);
+            const nextNum = parseFloat(next.label);
+            if (!isNaN(prevNum) && !isNaN(nextNum)) {
+                const interp = prevNum + frac * (nextNum - prevNum);
+                return interp;
+            }
+            return parseFloat(next.label) || 0;
+        }
+    }
+    return parseFloat(points[points.length - 1].label) || 0;
+}
+
+// Interpolate Watts from raw value using calibration points
+function interpolatePowerOutWatts(rawValue) {
+    if (!Array.isArray(powerOutCalibrationPoints) || powerOutCalibrationPoints.length < 2) {
+        // Fallback to legacy scaling if no calibration
+        // Default: 0-255 raw maps to 0-200W (MP) or 0-100W (D)
+        let maxW = 200;
+        let model = (window.radioControl && window.radioControl._state && window.radioControl._state.radioModel)
+            ? window.radioControl._state.radioModel.toLowerCase() : "ftdx101mp";
+        if (model === "ftdx101d") maxW = 100;
+        return Math.round(rawValue * maxW / 255);
+    }
+    // Use calibration points
+    return Math.round(powerOutLabel(rawValue));
 }
 
 // ---------------------------------------------------------------------------
@@ -1575,6 +1633,9 @@ let wasTransmittingSWR = false;
             wasTransmittingPower = false;
             const valueSpan = document.getElementById('powerMeterValue');
             if (valueSpan) valueSpan.textContent = 'Power Out 0W';
+            // Update raw Power Out label to 0
+            var rawPowerLabel = document.getElementById('raw-powerout-label');
+            if (rawPowerLabel) rawPowerLabel.textContent = 'Raw: 0';
             if (window.gaugePower) {
                 window.gaugePower.value = 0;
                 window.gaugePower.draw();
@@ -1591,32 +1652,30 @@ let wasTransmittingSWR = false;
             powerHistory.shift();
         }
         const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
-        let maxPower = 200;
-        let model = "ftdx101mp";
-        if (state.radioModel) {
-            model = state.radioModel.toString().toLowerCase();
-            if (model === "ftdx101d") {
-                maxPower = 100;
-            }
-        }
-        let watts = 0;
-        if (model === "ftdx101d") {
-            watts = Math.round(avgValue * 100 / 128);
-        } else {
-            watts = Math.round(avgValue * 200 / 255);
-        }
-        if (watts > maxPower) watts = maxPower;
-        if (watts < 0) watts = 0;
+        // Use calibration points for Watts
+        let watts = interpolatePowerOutWatts(avgValue);
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `Power Out ${watts}W`;
+        // Update raw Power Out label
+        var rawPowerLabel = document.getElementById('raw-powerout-label');
+        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw: ' + Math.round(avgValue);
         function reinitPowerGaugeIfNeeded() {
             try {
                 const canvasId = 'powerMeterCanvas';
                 const powerConfig = makeGaugeConfig(canvasId, 'power');
-                if (!window.gaugePower || window.gaugePower.maxValue !== maxPower) {
+                // Optionally, update gauge max if calibration points change
+                let maxW = 200;
+                if (Array.isArray(powerOutCalibrationPoints) && powerOutCalibrationPoints.length > 1) {
+                    // Use max label as max value if numeric
+                    const last = powerOutCalibrationPoints[powerOutCalibrationPoints.length-1];
+                    const lastNum = parseFloat(last.label);
+                    if (!isNaN(lastNum)) maxW = lastNum;
+                }
+                if (!window.gaugePower || window.gaugePower.maxValue !== maxW) {
                     if (window.gaugePower && window.gaugePower.destroy) {
                         window.gaugePower.destroy();
                     }
+                    powerConfig.maxValue = maxW;
                     window.gaugePower = new RadialGauge(powerConfig);
                     window.gaugePower.draw();
                     if (typeof createGaugeLabels === 'function') {
@@ -2102,7 +2161,7 @@ let wasTransmittingSWR = false;
     window.updatePATemperature = updatePATemperature;
     window.updateMICMeter = updateMICMeter;
 
-    // --- Raw Meter Label Visibility State ---
+    // --- Raw Meter Label Visibility State (S-Meter and Power Out) ---
     // Use localStorage to sync across tabs/pages
     function getShowRawMeterLabels() {
         return localStorage.getItem('showRawMeterLabels') === 'true';
@@ -2114,8 +2173,10 @@ let wasTransmittingSWR = false;
     }
     function updateRawMeterLabelVisibility() {
         var show = window.showRawMeterLabels;
-        var el = document.getElementById('raw-s-meter-label-a');
-        if (el) el.style.display = show ? '' : 'none';
+        var elS = document.getElementById('raw-s-meter-label-a');
+        if (elS) elS.style.display = show ? '' : 'none';
+        var elP = document.getElementById('raw-powerout-label');
+        if (elP) elP.style.display = show ? '' : 'none';
     }
     // Listen for localStorage changes (cross-tab)
     window.addEventListener('storage', function (e) {
