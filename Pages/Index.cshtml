@@ -10,6 +10,7 @@
 
 <!-- Cache-busted CSS reference -->
 <link rel="stylesheet" href="~/css/site.css?v=20260226n" />
+<link rel="stylesheet" href="~/css/closer-to-raw-power.css?v=20260226n" />
 
 <!-- Message Box Modal (Windows-style) -->
 <div class="modal fade" id="messageBoxModal" tabindex="-1" aria-labelledby="messageBoxTitle" aria-hidden="true">
@@ -277,7 +278,7 @@
             <div class="card border-secondary">
                 <div class="card-body py-2">
                     <!-- Gauges row -->
-                    <div class="d-flex justify-content-start align-items-start flex-wrap" style="margin-left: -7rem; gap: 0;">
+                    <div class="d-flex justify-content-start align-items-start flex-wrap" style="margin-left: -7rem; gap: 0; margin-bottom: 0.2rem !important;">
                         <!-- SWR Meter -->
                         <div class="text-center" style="position: relative;">
                             <div class="analog-meter-container">
@@ -304,7 +305,7 @@
                         </div>
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
-                    <div class="mb-3 mt-3">
+                    <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
                         <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
                         <input type="range" class="form-range" id="powerSlider"
                                min="5"
@@ -316,7 +317,7 @@
                                onchange="window.radioControl.setPower(window.txVfo === 1 ? 'B' : 'A', this.value)">
                     </div>
                     <!-- MIC Gain / Data Out Level -->
-                    <div class="mb-3 mt-3">
+                    <div class="mb-3 closer-to-raw-power">
                         <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
                         <input type="range" class="form-range power-slider"
                                id="micGainSlider"
@@ -329,7 +330,7 @@
                                onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
                     </div>
                     <!-- IDD (Drain Current) and PA Temp Display (side by side) -->
-                    <div class="mb-2 mt-3 d-flex align-items-center gap-3">
+                    <div class="mb-2 closer-to-raw-power d-flex align-items-center gap-3">
                         <label class="mb-0">IDD (Drain Current): <span id="iddDisplayValue" class="fw-bold badge bg-primary">0.0A</span></label>
                         <label class="mb-0">PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
                     </div>
