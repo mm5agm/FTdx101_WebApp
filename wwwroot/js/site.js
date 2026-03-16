@@ -782,10 +782,11 @@ connection.on("RadioStateUpdate", function (update) {
     }
 
     // --- POWER CHANGE ---
-    if (update.property === "PowerA") {
-        updatePowerDisplay("A", update.value);
-        const sliderA = document.getElementById('powerSliderA');
-        if (sliderA) sliderA.value = update.value;
+    // Only handle generic Power (no A/B distinction)
+    if (update.property === "Power" || update.property === "PowerA") {
+        updatePowerDisplay(null, update.value);
+        const slider = document.getElementById('powerSlider');
+        if (slider) slider.value = update.value;
     }
 
     // --- RADIO POWER STATE ---
@@ -837,17 +838,7 @@ connection.on("RadioStateUpdate", function (update) {
         }
     }
 
-    if (update.property === "PowerB") {
-        updatePowerDisplay("B", update.value);
-        const sliderB = document.getElementById('powerSliderB');
-        if (sliderB) sliderB.value = update.value;
-    }
-    // Generic "Power" fallback (maps to receiver A)
-    if (update.property === "Power") {
-        updatePowerDisplay("A", update.value);
-        const sliderA = document.getElementById('powerSliderA');
-        if (sliderA) sliderA.value = update.value;
-    }
+    // Remove PowerB and fallback PowerA logic; only use Power
 });
 
 // SignalR connection is started once below (after the IIFE) with a .catch() error handler.
@@ -1521,30 +1512,30 @@ function sendAfGain(receiver, value) {
     }
 
     function updatePowerDisplay(receiver, watts) {
-    // Only Receiver A supported for now
-    const displayA = document.getElementById('powerValueA');
-    if (displayA && watts !== undefined && watts !== null) {
-        displayA.textContent = watts + 'W';
-    }
-    const sliderA = document.getElementById('powerSliderA');
-    if (sliderA) {
-        let actualMax = 200;
-        if (window.state && window.state.radioModel) {
-            const model = window.state.radioModel.toLowerCase();
-            if (model === "ftdx101d") {
-                actualMax = 100;
-            } else if (model === "ftdx101mp") {
-                actualMax = 200;
+        // Only one power control supported
+        const display = document.getElementById('powerValue');
+        if (display && watts !== undefined && watts !== null) {
+            display.textContent = watts + 'W';
+        }
+        const slider = document.getElementById('powerSlider');
+        if (slider) {
+            let actualMax = 200;
+            if (window.state && window.state.radioModel) {
+                const model = window.state.radioModel.toLowerCase();
+                if (model === "ftdx101d") {
+                    actualMax = 100;
+                } else if (model === "ftdx101mp") {
+                    actualMax = 200;
+                }
             }
+            slider.max = actualMax;
+            // Only update slider value if not editing (prevents jump while dragging)
+            if (!window.editingPower) {
+                slider.value = Math.min(watts, actualMax);
+            }
+            updateSliderFill(slider);
         }
-        sliderA.max = actualMax;
-        // Only update slider value if not editing
-        if (!state.editingPower || !state.editingPower.A) {
-            sliderA.value = Math.min(watts, actualMax);
-        }
-        updateSliderFill(sliderA);
-    }
-    state.lastPower = watts;
+        state.lastPower = watts;
     }
 
     async function setPower(receiver, watts) {
@@ -1572,10 +1563,10 @@ function sendAfGain(receiver, value) {
     }
 
     function updatePowerSlider(receiver, watts) {
-        if (state.editingPower) {
-            return; // Don't update while user is dragging the slider
+        // Only update if not editing (prevents jump while dragging)
+        if (!window.editingPower) {
+            updatePowerDisplay(null, watts);
         }
-        updatePowerDisplay(null, watts);
     }
 
     function updatePowerSliderMax(maxPower) {
@@ -1669,9 +1660,9 @@ let wasTransmittingSWR = false;
             wasTransmittingPower = false;
             const valueSpan = document.getElementById('powerMeterValue');
             if (valueSpan) valueSpan.textContent = 'Power Out 0W';
-            // Update raw Power Out label to 0
+            // Update raw Power Out label to 0 with descriptive label
             var rawPowerLabel = document.getElementById('raw-powerout-label');
-            if (rawPowerLabel) rawPowerLabel.textContent = 'Raw: 0';
+            if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: 0';
             if (window.gaugePower) {
                 window.gaugePower.value = 0;
                 window.gaugePower.draw();
@@ -1723,9 +1714,9 @@ let wasTransmittingSWR = false;
         console.log('[PowerMeter] avgValue:', avgValue, 'watts:', watts, 'clampedWatts:', clampedWatts, 'gauge maxValue:', maxW);
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `Power Out ${clampedWatts}W`;
-        // Update raw Power Out label
+        // Update raw Power Out label with descriptive label
         var rawPowerLabel = document.getElementById('raw-powerout-label');
-        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw: ' + Math.round(avgValue);
+        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
         var canvas = document.getElementById('powerMeterCanvas');
         if (!canvas) {
             console.warn('[PowerMeter] powerMeterCanvas not found in DOM');
@@ -2161,24 +2152,44 @@ let wasTransmittingSWR = false;
     fetchRadioStatus();
     state.pollingInterval = setInterval(fetchRadioStatus, 500);
 
-    // Ensure power slider value is shown live for Receiver A
-    const powerSliderA = document.getElementById('powerSliderA');
-    const displayA = document.getElementById('powerValueA');
-    if (powerSliderA && displayA) {
-        powerSliderA.addEventListener('input', function () {
-            state.editingPower.A = true;
-            displayA.textContent = powerSliderA.value + 'W';
+    // Robustly track editing state for the power slider to prevent backend/UI jumps
+    const powerSlider = document.getElementById('powerSlider');
+    const powerDisplay = document.getElementById('powerValue');
+    if (powerSlider && powerDisplay) {
+        window.editingPower = false;
+        // Set editingPower true on any user interaction
+        powerSlider.addEventListener('input', function () {
+            window.editingPower = true;
+            powerDisplay.textContent = powerSlider.value + 'W';
         });
-        powerSliderA.addEventListener('change', function () {
-            state.editingPower.A = false;
+        powerSlider.addEventListener('mousedown', function () {
+            window.editingPower = true;
         });
-    }
-    // Also support Receiver B if present
-    const powerSliderB = document.getElementById('powerSliderB');
-    const displayB = document.getElementById('powerValueB');
-    if (powerSliderB && displayB) {
-        powerSliderB.addEventListener('input', function () {
-            displayB.textContent = powerSliderB.value + 'W';
+        powerSlider.addEventListener('touchstart', function () {
+            window.editingPower = true;
+        });
+        powerSlider.addEventListener('focus', function () {
+            window.editingPower = true;
+        });
+        // Reset editingPower on all possible end events
+        powerSlider.addEventListener('change', function () {
+            window.editingPower = false;
+        });
+        powerSlider.addEventListener('mouseup', function () {
+            window.editingPower = false;
+        });
+        powerSlider.addEventListener('touchend', function () {
+            window.editingPower = false;
+        });
+        powerSlider.addEventListener('mouseleave', function () {
+            window.editingPower = false;
+        });
+        powerSlider.addEventListener('blur', function () {
+            window.editingPower = false;
+        });
+        // Defensive: clear editingPower if window loses focus
+        window.addEventListener('blur', function () {
+            window.editingPower = false;
         });
     }
 
@@ -2190,20 +2201,8 @@ let wasTransmittingSWR = false;
         setAntenna,
         setRoofingFilter,
         _state: state,  // Expose state for TX indicator updates
-        // Wrap updatePowerDisplay so we flag editingPower while the user is dragging
-        updatePowerDisplay: (receiver, value) => {
-            state.editingPower[receiver] = true;
-            updatePowerDisplay(receiver, value);
-        },
-        setPower: async (receiver, value) => {
-            state.editingPower[receiver] = true;
-            await setPower(receiver, value);
-            clearTimeout(state.editingPowerTimeout);
-            state.editingPowerTimeout = setTimeout(() => {
-                state.editingPower[receiver] = false;
-                updatePowerDisplay(receiver, state.lastPower[receiver]);
-            }, 1000);
-        }
+        updatePowerDisplay: updatePowerDisplay,
+        setPower: setPower
     };
 
     // Expose meter update functions globally for SignalR
