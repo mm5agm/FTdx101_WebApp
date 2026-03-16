@@ -328,17 +328,14 @@
                                oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
                                onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
                     </div>
-                    <!-- IDD (Drain Current) Display -->
-                    <div class="mb-2 mt-3">
-                        <label>IDD (Drain Current): <span id="iddDisplayValue" class="fw-bold badge bg-primary">0.0A</span></label>
+                    <!-- IDD (Drain Current) and PA Temp Display (side by side) -->
+                    <div class="mb-2 mt-3 d-flex align-items-center gap-3">
+                        <label class="mb-0">IDD (Drain Current): <span id="iddDisplayValue" class="fw-bold badge bg-primary">0.0A</span></label>
+                        <label class="mb-0">PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
                     </div>
                     <!-- PA Voltage Display -->
                     <div class="mb-2">
                         <label>PA Voltage: <span id="paVoltageValue" class="fw-bold badge bg-secondary">0.0V</span></label>
-                    </div>
-                    <!-- PA Temperature Display -->
-                    <div class="mb-2">
-                        <label>PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
                     </div>
                 </div>
             </div>
