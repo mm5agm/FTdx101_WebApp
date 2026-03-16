@@ -43,7 +43,7 @@
         @if (Model.ShowApp1Button)
         {
             <div class="col-auto">
-                <button id="wsjtxBtn" class="btn btn-secondary btn-lg"
+                <button id="wsjtxBtn" class="btn btn-secondary btn-sm"
                         onclick="launchWsjtx()" title="Launch @Model.App1Name">
                     @Model.App1Name
                     <span id="wsjtxTxBadge" class="badge bg-danger ms-1" style="display:none;">TX</span>
@@ -53,7 +53,7 @@
         @if (Model.ShowApp2Button)
         {
             <div class="col-auto">
-                <button id="jtalertBtn" class="btn btn-secondary btn-lg"
+                <button id="jtalertBtn" class="btn btn-secondary btn-sm"
                         onclick="launchJtalert()" title="Launch @Model.App2Name">
                     @Model.App2Name
                 </button>
@@ -62,14 +62,14 @@
         @if (Model.ShowApp3Button)
         {
             <div class="col-auto">
-                <button id="log4omBtn" class="btn btn-secondary btn-lg"
+                <button id="log4omBtn" class="btn btn-secondary btn-sm"
                         onclick="launchLog4om()" title="Launch @Model.App3Name">
                     @Model.App3Name
                 </button>
             </div>
         }
         <div class="col-auto ms-auto">
-            <button id="radioPowerBtn" class="btn btn-danger btn-lg"
+            <button id="radioPowerBtn" class="btn btn-danger btn-sm"
                     onclick="toggleRadioPower()" title="Radio Power On/Off">
                 <i class="bi bi-power"></i> POWER
             </button>

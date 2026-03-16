@@ -474,11 +474,11 @@ function updateRadioPowerButton() {
     if (!btn) return;
 
     if (radioPowerOn) {
-        btn.className = 'btn btn-success btn-lg';
+        btn.className = 'btn btn-success btn-sm';
         btn.innerHTML = '<i class="bi bi-power"></i> POWER';
         btn.title = 'Radio is ON - Click to turn OFF';
     } else {
-        btn.className = 'btn btn-danger btn-lg';
+        btn.className = 'btn btn-danger btn-sm';
         btn.innerHTML = '<i class="bi bi-power"></i> POWER';
         btn.title = 'Radio is OFF - Click to turn ON';
     }

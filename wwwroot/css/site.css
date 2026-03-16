@@ -327,6 +327,7 @@ pre, code { tab-size: 4; }
     width: auto;
     max-width: 150px;
     font-size: 0.9rem;
+    font-weight: bold;
 }
 
 /* Mode select container - stack mode and antenna dropdowns vertically */
