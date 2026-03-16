@@ -511,19 +511,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 updatePowerSliderMax();
             }
         });
-    // Do NOT update powerValue from slider input; only update from backend status/SignalR
-    // const slider = document.getElementById('powerSlider');
-    // if (slider) {
-    //     slider.addEventListener('input', function () {
-    //         // Use updatePowerDisplay to update value live
-    //         // Show slider value live
-    //         const display = document.getElementById('powerValue');
-    //         if (display) {
-    //             display.textContent = slider.value + 'W';
-    //         }
-    //         window.radioControl.updatePowerDisplay('A', slider.value);
-    //     });
-    // }
+
+    // Update powerValue label live as slider moves (outer/global version)
+    const slider = document.getElementById('powerSlider');
+    const display = document.getElementById('powerValue');
+    if (slider && display) {
+        // Initialize label to slider value on page load
+        display.textContent = slider.value + 'W';
+        slider.addEventListener('input', function () {
+            display.textContent = slider.value + 'W';
+        });
+    }
 });
 
 // ---------------------------------------------------------------------------
@@ -2165,16 +2163,22 @@ let wasTransmittingSWR = false;
 
     // Ensure power slider value is shown live for Receiver A
     const powerSliderA = document.getElementById('powerSliderA');
-    if (powerSliderA) {
+    const displayA = document.getElementById('powerValueA');
+    if (powerSliderA && displayA) {
         powerSliderA.addEventListener('input', function () {
             state.editingPower.A = true;
-            const displayA = document.getElementById('powerValueA');
-            if (displayA) {
-                displayA.textContent = powerSliderA.value + 'W';
-            }
+            displayA.textContent = powerSliderA.value + 'W';
         });
         powerSliderA.addEventListener('change', function () {
             state.editingPower.A = false;
+        });
+    }
+    // Also support Receiver B if present
+    const powerSliderB = document.getElementById('powerSliderB');
+    const displayB = document.getElementById('powerValueB');
+    if (powerSliderB && displayB) {
+        powerSliderB.addEventListener('input', function () {
+            displayB.textContent = powerSliderB.value + 'W';
         });
     }
 
