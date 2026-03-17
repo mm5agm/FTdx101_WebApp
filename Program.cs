@@ -53,7 +53,7 @@ builder.Services.AddRazorPages();
 builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 builder.Services.AddSingleton<BrowserLauncher>();
-builder.Services.AddHostedService<SystemTrayService>();
+// builder.Services.AddHostedService<SystemTrayService>();
 
 // Register WSJT-X UDP listener as a singleton so it can be injected into controllers
 builder.Services.AddSingleton<WsjtxUdpService>();
@@ -67,7 +67,7 @@ builder.Logging.AddConsole();
 builder.Logging.AddFilter((category, level) =>
 {
     // Show Information and above for WsjtxUdpService
-    if (category.Contains("FTdx101_WebApp.Services.WsjtxUdpService"))
+    if (!string.IsNullOrEmpty(category) && category.Contains("FTdx101_WebApp.Services.WsjtxUdpService"))
         return level >= LogLevel.Information;
     // Show Warning and above for everything else
     return level >= LogLevel.Warning;
@@ -82,7 +82,7 @@ app.Use(async (context, next) =>
     context.Response.OnStarting(() => {
         if (!context.Response.Headers.ContainsKey("Content-Language"))
         {
-            context.Response.Headers.Add("Content-Language", "en");
+            context.Response.Headers.Append("Content-Language", "en");
         }
         return System.Threading.Tasks.Task.CompletedTask;
     });

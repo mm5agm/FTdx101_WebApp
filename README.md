@@ -23,9 +23,7 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 
 ---
 
-## Important - You need .NET10 to run this application. Download the x86 version from the official Microsoft website: https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.3/windowsdesktop-runtime-10.0.3-win-x86.exe and install it as Administratorbefore running.
-
-> **Why x86?** I use WSJT-X V3.0.0 Improved Widescreen Plus and that is 32 bit. This app is built as x86 for better integration.
+## Important - You need .NET10 to run this application. Download the x64 version from the official Microsoft website: https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.5/dotnet-runtime-10.0.5-win-x64.exe and install it as Administratorbefore running.
 
 ---
 
@@ -47,13 +45,13 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 - **TX Button:** Toggle transmit from VFO header - updates automatically with WSJT-X
 - **Dual VFO Support:** Independent control of VFO A and VFO B
 - **Band Selection:** Quick access to all bands (160m - 4m, UK-centric)
-- **Power & Gain:** Adjustable power (0-200W) and MIC Gain (switches to Data Out Gain in DATA modes) - settings persist across restarts
+- **Power & Gain:** Adjustable power (5-200W MP, 5 - 100W D ) and MIC Gain (switches to Data Out Gain in DATA modes) - settings persist across restarts
 - **Mode Selection:** USB, LSB, CW-U, CW_L, RTTY-L, RTTY-U, DATA-L, DATA-U, DATA-FM, DATA-FM-N, PSK, AM, AM-N, FM, FM-N
 - **Filter selection** (width only at present. Shift to de added)
 ### Metering
 - **S-Meter:** Real-time analog-style signal strength display
 - **TX Meters:** Live Power, SWR, and ALC gauges during transmit
-- **PA Monitoring:** IDD current, voltage (~48V), and temperature
+- **PA Monitoring:** IDD current, and temperature
 
 ### Integration
 - **Built-in CAT Multiplexer:** The app is the only process that opens the serial port - no conflicts!
@@ -62,7 +60,7 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 - **No Virtual COM Ports:** Eliminates need for com0com or VSPE, but user can also use a virtual COM port if they prefer to communicate with other software that way.
 - **External App Launchers:** Configure up to 3 app buttons (e.g., WSJT-X, JTAlert, Log4OM)
 
-### Real-Time Updates
+### Real-Time Updates from radio
 Uses **Auto Information Mode (AI1;)** - the radio streams status changes to the app automatically. Only S-meters are polled. Result: instant, responsive UI.
 
 > * credit: Martin G8MAB*
@@ -75,7 +73,6 @@ If there's interest in this program, I'm open to suggestions for additional cont
 
 - Touch-friendly frequency tuning for tablets
 - Per-band memory (frequency, mode, antenna, power)
-
 - Noise blanker controls
 - AGC settings
 - Clarifier/RIT controls
@@ -100,20 +97,5 @@ Suggestions welcome! Open an issue or discussion.
 
 ## ⚙️ Configuration
 
-Settings are stored in `%AppData%\MM5AGM\FTdx101 WebApp\radio_state.json`
+Settings are stored in "C:\Users\your_user_name\AppData\Roaming\MM5AGM\FTdx101 WebApp\
 
-Created automatically on first run. Example:
-```json
-{
-  "FrequencyA": 21074100,
-  "FrequencyB": 14074000,
-  "BandA": "15m",
-  "BandB": "20m",
-  "ModeA": "USB",
-  "ModeB": "USB",
-  "AntennaA": "1",
-  "AntennaB": "1",
-  "PowerA": 10,
-  "PowerB": 0
-}
-```

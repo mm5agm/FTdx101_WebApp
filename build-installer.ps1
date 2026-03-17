@@ -27,10 +27,11 @@ Write-Host ""
 Write-Host "=== FTdx101 WebApp - Build Installer v$Version ===" -ForegroundColor Cyan
 Write-Host ""
 
+
 # ---------------------------------------------------------------------------
-# Step 1 - Publish (x86, framework-dependent)
+# Step 1 - Publish (x64, framework-dependent)
 # ---------------------------------------------------------------------------
-Write-Host "Step 1: Publishing app (x86, framework-dependent)..." -ForegroundColor Yellow
+Write-Host "Step 1: Publishing app (x64, framework-dependent)..." -ForegroundColor Yellow
 
 if (Test-Path $PublishDir) {
     Remove-Item $PublishDir -Recurse -Force
@@ -39,7 +40,7 @@ if (Test-Path $PublishDir) {
 
 dotnet publish FTdx101_WebApp.csproj `
     --configuration Release `
-    --runtime win-x86 `
+    --runtime win-x64 `
     --self-contained false `
     --output $PublishDir
 

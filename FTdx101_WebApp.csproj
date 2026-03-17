@@ -5,8 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OutputType>WinExe</OutputType>
-    <PlatformTarget>x86</PlatformTarget>
-    <Platforms>AnyCPU;x86</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
@@ -53,7 +53,7 @@
     <Product>MM5AGM Yaesu Control</Product>
     <Description>Web-based control panel for Yaesu FTdx101 series transceivers</Description>
     <Company>MM5AGM</Company>
-    <Copyright>© 2025 MM5AGM</Copyright>
+    <Copyright>© 2026 MM5AGM</Copyright>
     <AssemblyConfiguration>Debug</AssemblyConfiguration>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
