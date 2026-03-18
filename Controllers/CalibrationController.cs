@@ -23,8 +23,8 @@ namespace FTdx101_WebApp.Controllers
         {
             var settings = await _calibrationService.GetCalibrationAsync();
             var points = settings.SMeter?.Points
-                ?.Where(p => !string.IsNullOrWhiteSpace(p.GaugeValue) && !string.IsNullOrWhiteSpace(p.ActualValue))
-                .Select(p => new { label = p.GaugeValue, value = double.TryParse(p.ActualValue, out var v) ? v : 0 })
+                ?.Where(p => !string.IsNullOrWhiteSpace(p.SPoint) && !string.IsNullOrWhiteSpace(p.RawValue))
+                .Select(p => new { label = p.SPoint, value = double.TryParse(p.RawValue, out var v) ? v : 0 })
                 .OrderBy(p => p.value)
                 .ToList();
             if (points == null)
@@ -38,8 +38,8 @@ namespace FTdx101_WebApp.Controllers
         {
             var settings = await _calibrationService.GetCalibrationAsync();
             var points = settings.Power?.Points
-                ?.Where(p => !string.IsNullOrWhiteSpace(p.GaugeValue) && !string.IsNullOrWhiteSpace(p.ActualValue))
-                .Select(p => new { label = p.GaugeValue, value = double.TryParse(p.ActualValue, out var v) ? v : 0 })
+                ?.Where(p => !string.IsNullOrWhiteSpace(p.Power) && !string.IsNullOrWhiteSpace(p.RawValue))
+                .Select(p => new { label = p.Power, value = double.TryParse(p.RawValue, out var v) ? v : 0 })
                 .OrderBy(p => p.value)
                 .ToList();
             if (points == null)

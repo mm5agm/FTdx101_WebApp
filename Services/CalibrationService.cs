@@ -58,16 +58,36 @@ namespace FTdx101_WebApp.Services
                 var trimmed = s.Trim();
                 return trimmed == "0" || trimmed == "0.0";
             }
-            void Clean(MeterCalibration meter)
+            void Clean(MeterCalibration meter, string type)
             {
-                meter.Points = meter.Points
-                    .Where(p => !(IsEmptyOrZero(p.GaugeValue) && IsEmptyOrZero(p.ActualValue)))
-                    .ToList();
+                switch (type)
+                {
+                    case "SMeter":
+                        meter.Points = meter.Points
+                            .Where(p => !(IsEmptyOrZero(p.SPoint) && IsEmptyOrZero(p.RawValue)))
+                            .ToList();
+                        break;
+                    case "SWR":
+                        meter.Points = meter.Points
+                            .Where(p => !(IsEmptyOrZero(p.SWR) && IsEmptyOrZero(p.RawValue)))
+                            .ToList();
+                        break;
+                    case "Power":
+                        meter.Points = meter.Points
+                            .Where(p => !(IsEmptyOrZero(p.Power) && IsEmptyOrZero(p.RawValue)))
+                            .ToList();
+                        break;
+                    case "ALC":
+                        meter.Points = meter.Points
+                            .Where(p => !(IsEmptyOrZero(p.ALC) && IsEmptyOrZero(p.RawValue)))
+                            .ToList();
+                        break;
+                }
             }
-            Clean(settings.SMeter);
-            Clean(settings.SWR);
-            Clean(settings.Power);
-            Clean(settings.ALC);
+            Clean(settings.SMeter, "SMeter");
+            Clean(settings.SWR, "SWR");
+            Clean(settings.Power, "Power");
+            Clean(settings.ALC, "ALC");
         }
 
         public async Task SaveCalibrationAsync(CalibrationSettings settings)
