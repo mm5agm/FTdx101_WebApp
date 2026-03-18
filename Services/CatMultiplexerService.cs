@@ -230,6 +230,11 @@ namespace FTdx101_WebApp.Services
                         await Task.Delay(10, cancellationToken);
                     }
                 }
+                catch (TaskCanceledException tce)
+                {
+                    _logger.LogInformation("Command queue processor canceled: {Message}", tce.Message);
+                    break;
+                }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing command queue");

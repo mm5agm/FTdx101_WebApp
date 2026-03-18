@@ -90,7 +90,9 @@ namespace FTdx101_WebApp.Services
             {
                 _listener?.Stop();
                 _logger.LogInformation("rigctld server stopped");
+                _logger.LogWarning("RigctldServer ExecuteAsync has exited. Service should be stopped.");
             }
+
         }
 
         private async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)

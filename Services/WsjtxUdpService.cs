@@ -47,7 +47,6 @@ namespace FTdx101_WebApp.Services
             _settingsService = settingsService;
             _logger.LogInformation("WsjtxUdpService constructor called. Service is being constructed.");
         }
-    // (Removed misplaced IPAddressExtensions class from here)
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -84,7 +83,9 @@ namespace FTdx101_WebApp.Services
             {
                 udpClient?.Close();
                 _logger.LogInformation("WSJT-X UDP listener stopped");
+                _logger.LogWarning("WsjtxUdpService ExecuteAsync has exited. Service should be stopped.");
             }
+
         }
 
         // --- Message parsing (all synchronous — spans are safe here) ---

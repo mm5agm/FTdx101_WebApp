@@ -86,6 +86,47 @@ document.addEventListener('DOMContentLoaded', function () {
         rawPowerLabel.style.display = 'inline-block';
         rawPowerLabel.style.marginLeft = '12px';
     }
+
+    // --- SignalR connection setup and disconnect on page unload ---
+    if (window.signalRConnection === undefined) {
+        window.signalRConnection = new signalR.HubConnectionBuilder().withUrl("/radioHub").build();
+        window.signalRConnection.start().catch(function (err) { console.error("SignalR start error:", err); });
+        // Heartbeat: send every 5 seconds
+        window.signalRHeartbeatInterval = setInterval(function () {
+            if (window.signalRConnection && window.signalRConnection.invoke) {
+                window.signalRConnection.invoke("Heartbeat").catch(function (err) {
+                    // Ignore errors if connection is closed
+                });
+            }
+        }, 5000);
+    }
+    // Use 'unload', 'beforeunload', and 'visibilitychange' for best reliability
+    window.addEventListener('unload', function (e) {
+        if (window.signalRConnection && window.signalRConnection.stop) {
+            window.signalRConnection.stop();
+            if (window.signalRHeartbeatInterval) {
+                clearInterval(window.signalRHeartbeatInterval);
+            }
+        }
+    });
+    window.addEventListener('beforeunload', function () {
+        if (window.signalRConnection && window.signalRConnection.stop) {
+            window.signalRConnection.stop();
+            if (window.signalRHeartbeatInterval) {
+                clearInterval(window.signalRHeartbeatInterval);
+            }
+        }
+    });
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+            if (window.signalRConnection && window.signalRConnection.stop) {
+                window.signalRConnection.stop();
+                if (window.signalRHeartbeatInterval) {
+                    clearInterval(window.signalRHeartbeatInterval);
+                }
+            }
+        }
+    });
 });
 // FTdx101 Web App - site.js
 // =============================================================================
