@@ -119,11 +119,7 @@ var browserLauncher = app.Services.GetRequiredService<BrowserLauncher>();
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
 lifetime.ApplicationStarted.Register(() =>
 {
-    // Only launch browser if not attached to debugger (Visual Studio F5 already opens a browser)
-    if (!System.Diagnostics.Debugger.IsAttached)
-    {
-        browserLauncher.OpenOnce("http://localhost:8080");
-    }
+    browserLauncher.OpenOnce("http://localhost:8080");
 });
 
 app.Run();
