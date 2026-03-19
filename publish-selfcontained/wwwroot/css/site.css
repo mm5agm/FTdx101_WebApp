@@ -1,0 +1,832 @@
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
+
+.band-row-scroll {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding-bottom: 0.25rem;
+    overflow-x: unset;
+    white-space: normal;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.gap-2 {
+    gap: 0.4rem;
+}
+
+/* Ensure band buttons with negative margin aren't clipped */
+.flex-grow-1 {
+    overflow: visible !important;
+    position: relative;
+}
+
+.d-flex.flex-nowrap {
+    overflow: visible !important;
+}
+
+@media (min-width: 992px) {
+    .receiver-card {
+        width: 100%;
+    }
+}
+
+/* Frequency display: large, readable, monospace, matches h3 size */
+.frequency-display {
+    font-size: 2.2rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+    vertical-align: middle;
+}
+
+/* Band/mode/antenna buttons - optimized for 2-line layout with good touch targets */
+.btn-outline-primary.btn-sm,
+.btn-outline-success.btn-sm {
+    min-width: 3rem;
+    margin-bottom: 0.2rem;
+    font-size: 0.95rem;
+    padding: 0.3rem 0.6rem;
+}
+
+/* Active button state */
+.btn-outline-primary.active {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+.btn-outline-success.active {
+    background-color: #198754;
+    color: white;
+    border-color: #198754;
+}
+
+/* Progress bar for S-meter: thicker and more visible */
+.progress-bar.bg-success {
+    height: 100%;
+    font-size: 1rem;
+    transition: width 0.3s;
+}
+
+/* Card header for better alignment */
+.card-header h3 {
+    margin-bottom: 0;
+    font-size: 2.2rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Frequency digit styling for interactive tuning */
+.digit {
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 2px;
+    transition: background 0.2s;
+}
+
+    .digit.selected {
+        background: yellow;
+        color: black;
+        border-radius: 3px;
+        padding: 2px 4px;
+    }
+
+/* Analog S-Meter Container - Transparent with no border, left-aligned */
+.analog-meter-container {
+    display: block;  /* Changed from flex to block */
+    background: transparent;
+    border: none;
+    padding: 0 !important;
+    margin: 10px 0 0 -1.5rem !important;  /* Changed bottom margin from 10px to 0 */
+    position: relative;
+}
+
+/* The gauge-wrapper is created by JavaScript and wraps the canvas */
+.gauge-wrapper {
+    display: block;  /* Already set by JS, but enforce it */
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure gauge labels overlay is also positioned correctly */
+.gauge-labels-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+    .analog-meter-container canvas {
+        max-width: 100%;
+        height: auto;
+    }
+
+/* Gauge wrapper for positioning labels */
+.gauge-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Custom gauge labels positioned outside the arc */
+.gauge-labels-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+    .gauge-labels-overlay .gauge-label {
+        position: absolute;
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+}
+
+/* Move Power Out label up by twice its height */
+#powerMeterValue,
+.power-meter-value {
+    transform: translateX(-50%) translateY(-35px) !important;
+    }
+
+/* Power slider - fills only up to the current value; no visible knob */
+
+/* Power slider: match Mic Gain slider appearance */
+#powerSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+#powerSlider::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSlider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#powerSlider::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSlider::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#powerSlider::-ms-fill-lower {
+    background: #e6f4ea;
+    border-radius: 9px;
+}
+#powerSlider::-ms-fill-upper {
+    background: #dee2e6;
+    border-radius: 9px;
+}
+#powerSlider:focus {
+    outline: none;
+    outline-offset: 0;
+}
+#powerSlider {
+    background: transparent;
+    border: none;
+}
+
+/* Focus state for accessibility */
+#powerSliderA:focus, .power-slider:focus, #micGainSlider:focus {
+    outline: none;
+    outline-offset: 0;
+}
+
+
+#tabletMessage {
+    pointer-events: none;
+    padding: 0.2em 0.5em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    word-break: break-all;
+    max-width: 100vw;
+}
+
+/* TX Indicator Blink Animation */
+@keyframes tx-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.tx-blink {
+    animation: tx-blink 0.8s ease-in-out infinite;
+}
+
+pre, code { tab-size: 4; }
+
+/* ==========================================================================
+   Radio button visibility fix - mode, antenna, and band selectors
+   Bootstrap's .form-check-input radio circles are faint by default because
+   they use a light grey border (#adb5bd) and a thin 1px stroke.
+   These rules give all radio inputs a larger circle with a dark, clear border
+   to match the visibility of the native band-button circles.
+   ========================================================================== */
+
+/* Larger circle with a clearly visible dark border */
+.form-check-input[type="radio"],
+.band-radio-group input[type="radio"] {
+    width: 1.15rem;
+    height: 1.15rem;
+    border: 2px solid #495057; /* dark grey - clearly visible on white */
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* When checked, colour the dot to match the receiver panel colour */
+.border-primary .form-check-input[type="radio"],
+.border-primary .band-radio-group input[type="radio"] {
+    accent-color: #0d6efd; /* blue for Receiver A */
+}
+
+.border-success .form-check-input[type="radio"],
+.border-success .band-radio-group input[type="radio"],
+.border-success .band-radio-grid input[type="radio"] {
+    accent-color: #198754; /* green for Receiver B */
+}
+
+/* Labels are clickable */
+.form-check-label,
+.band-radio-group label,
+.band-radio-grid label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Band buttons container - handles positioning independently */
+.band-buttons-container {
+    position: relative;
+    /* No fixed width or negative margin */
+}
+
+/* Mode select dropdown - constrain width to fit longest option */
+#modeSelectA,
+#modeSelectB,
+#antennaSelectA,
+#antennaSelectB {
+    width: auto;
+    max-width: 150px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* Mode select container - stack mode and antenna dropdowns vertically */
+.mode-select-container {
+    margin-left: -0.6rem;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Compact band button grid layout - 3 columns on desktop, 4 on mobile/tablet */
+.band-radio-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+    max-width: 100%;
+}
+
+.band-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.9rem;
+}
+
+.band-radio-label:hover {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+}
+
+.band-radio-label input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+.band-radio-label span {
+    user-select: none;
+    font-weight: bold;
+}
+
+.band-radio-label input[type="radio"]:checked + span {
+    font-weight: bold;
+}
+
+/* Receiver A (blue) checked state */
+.border-primary .band-radio-label:has(input:checked) {
+    background-color: #cfe2ff;
+    border-color: #0d6efd;
+    color: #084298;
+}
+
+/* Receiver B (green) checked state */
+.border-success .band-radio-label:has(input:checked) {
+    background-color: #d1e7dd;
+    border-color: #198754;
+    color: #0f5132;
+}
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 768px) {
+    .band-radio-grid {
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 100%;
+    }
+}
+
+/* Maximize usable width for receiver panels */
+.container-fluid {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}
+
+/* Shift band buttons and mode selector left (closer to S-meter) */
+.band-buttons-shifted {
+    margin-left: -16rem;
+}
+
+/* Move the power meter gauge closer to the SWR meter */
+.power-meter-container .gauge-wrapper {
+    margin-left: -200px !important;
+}
+#powerMeterValue {
+    margin-left: -110px !important;
+}
+#powerSliderA {
+    width: 260px !important;
+    height: 18px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+#powerSliderA::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSliderA::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0; /* Center thumb on track */
+}
+
+/* Firefox */
+#powerSliderA::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSliderA::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* IE/Edge */
+#powerSliderA::-ms-fill-lower,
+#powerSliderA::-ms-fill-upper {
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#powerSliderA::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#powerSliderA {
+    /* Remove default styles for IE/Edge */
+    background: transparent;
+    border: none;
+}
+
+/* MIC Gain slider knob green */
+#micGainSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+#afGainSliderA::-webkit-slider-thumb,
+#afGainSliderB::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+#afGainSliderA::-moz-range-thumb,
+#afGainSliderB::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#afGainSliderA::-ms-thumb,
+#afGainSliderB::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#afGainSliderA,
+#afGainSliderB {
+    background: transparent !important;
+}
+#micGainSlider::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#micGainSlider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#micGainSlider::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+#micGainSlider::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#micGainSlider::-ms-fill-lower {
+    background: #e6f4ea;
+    border-radius: 9px;
+}
+#micGainSlider::-ms-fill-upper {
+    background: #dee2e6;
+    border-radius: 9px;
+}
+#micGainSlider:focus {
+    outline: none;
+    outline-offset: 0;
+}
+#micGainSlider {
+    background: transparent;
+    border: none;
+}
+
+/* AF Gain slider: visible green knob and track, no hidden thumb */
+.afgain-slider {
+    width: 100%;
+    height: 18px;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+.afgain-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+.afgain-slider::-webkit-slider-runnable-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+.afgain-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.afgain-slider::-moz-range-track {
+    height: 18px;
+    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    border-radius: 9px;
+}
+.afgain-slider::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.afgain-slider:focus {
+    outline: none;
+}
+
+/* Calibration page container for meter tables */
+/* Calibration: Prevent flex-grow and force compact width for meter columns */
+.calibration-col {
+    flex: 0 0 auto !important;
+    max-width: 320px;
+    min-width: 0;
+}
+
+.calibration-container {
+    width: max-content;
+    min-width: 340px;
+    margin-bottom: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* Calibration Page Modern Look */
+.calibration-bg {
+    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+fieldset.calibration-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px 0 rgba(80, 120, 200, 0.10);
+    padding: 1rem 0.5rem 1rem 0.5rem;
+    margin-bottom: 2rem;
+    width: 270px;
+    max-width: 270px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 3px solid #4f8cff;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    transition: height 0.25s cubic-bezier(.4,2,.6,1), max-height 0.25s cubic-bezier(.4,2,.6,1), padding 0.2s;
+    overflow: visible !important;
+}
+.calibration-card.swr { border-color: #38bdf8; }
+.calibration-card.power { border-color: #22c55e; }
+.calibration-card.alc { border-color: #f59e42; }
+
+.calibration-card legend {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2563eb;
+    margin-bottom: 0.7rem;
+    text-align: center;
+}
+.calibration-card.swr legend { color: #0891b2; }
+.calibration-card.power legend { color: #16a34a; }
+.calibration-card.alc legend { color: #ea580c; }
+
+.calibration-card .table-sm {
+    table-layout: auto;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+.calibration-card .table-sm th {
+    background: #f1f5f9;
+    color: #475569;
+    border-top: none;
+    text-align: center;
+    padding: 0.3rem 0.5rem;
+}
+.calibration-card .table-sm td {
+    background: #f8fafc;
+    border-top: none;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.2rem 0.2rem;
+}
+.calibration-card .form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    transition: border-color 0.2s;
+    width: 6ch;
+    min-width: 0;
+    display: inline-block;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1rem;
+    margin-right: 0.1em;
+}
+
+/* S-Meter GaugeValue input: wider for S9+60 */
+.s-meter-gauge-input {
+    width: 8ch !important;
+}
+.calibration-card .form-control:focus {
+    border-color: #4f8cff;
+    box-shadow: 0 0 0 2px #dbeafe;
+}
+.calibration-card .btn-secondary {
+    background: linear-gradient(90deg, #4f8cff 0%, #38bdf8 100%);
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.calibration-card .btn-secondary:hover {
+    background: linear-gradient(90deg, #2563eb 0%, #0891b2 100%);
+}
+.calibration-card .btn-link.text-danger {
+    color: #ef4444;
+    font-size: 1.2em;
+    opacity: 0.8;
+    transition: color 0.2s, opacity 0.2s;
+    margin-left: 0.2em;
+    margin-right: 0;
+    padding: 0 0.2em;
+    vertical-align: middle;
+}
+.calibration-card .btn-link.text-danger:hover {
+    color: #b91c1c;
+    opacity: 1;
+}
+.calibration-save-btn {
+    background: linear-gradient(90deg, #22c55e 0%, #4f8cff 100%);
+    color: #fff;
+    border: none;
+    border-radius: 0.7rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.7rem 2.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 8px 0 rgba(34,197,94,0.08);
+    transition: background 0.2s;
+}
+.calibration-save-btn:hover {
+    background: linear-gradient(90deg, #16a34a 0%, #2563eb 100%);
+}
+.calibration-status {
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 0.5rem;
+    border: 1px solid #bae6fd;
+    margin-top: 1.2rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+}
+
+.calibration-card canvas,
+.calibration-card .gauge-wrapper {
+    max-width: 180px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+@media (max-width: 1200px) {
+    .calibration-col {
+        max-width: 100% !important;
+    }
+    .calibration-card {
+        width: 100%;
+        max-width: 100%;
+    }
+    .calibration-card canvas,
+    .calibration-card .gauge-wrapper {
+        max-width: 140px !important;
+    }
+}
+
+/* Raw meter label for calibration support */
+.raw-meter-label {
+    background: #e0e7ff;
+    border-radius: 6px;
+    padding: 2px 4px;
+    position: relative;
+    top: -1.2em;
+    font-family: 'Consolas', 'Courier New', monospace;
+    letter-spacing: 0.01em;
+    transition: background 0.2s;
+    user-select: all;
+    font-size: 0.9rem; /* Match band radio button font size */
+    display: inline-block;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    white-space: nowrap;
+}
+#raw-powerout-label {
+    background: #e0e7ff;
+    border-radius: 6px;
+    padding: 2px 10px 2px 10px;
+    margin-bottom: 2px;
+    margin-top: -65px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    letter-spacing: 0.01em;
+    transition: background 0.2s;
+    user-select: all;
+    margin-left: -200px !important;
+    font-size: 0.9rem; /* Match band radio button font size */
+}
+
+/* Move Power, Mic Gain, IDD, and PA Temp controls closer to Raw Power Out label (minimal gap) */
+.closer-to-raw-power {
+    margin-top: 8px !important; /* Minimal gap to visually group with Raw Power Out */
+}
