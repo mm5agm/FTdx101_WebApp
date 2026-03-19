@@ -96,7 +96,27 @@ namespace FTdx101_WebApp.Services
             try
             {
                 var options = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(settings, options);
+                // Project to only relevant fields for each meter
+                var minimal = new
+                {
+                    SMeter = new
+                    {
+                        Points = settings.SMeter.Points.Select(p => new { p.SPoint, p.RawValue }).ToList()
+                    },
+                    SWR = new
+                    {
+                        Points = settings.SWR.Points.Select(p => new { p.SWR, p.RawValue }).ToList()
+                    },
+                    Power = new
+                    {
+                        Points = settings.Power.Points.Select(p => new { p.Power, p.RawValue }).ToList()
+                    },
+                    ALC = new
+                    {
+                        Points = settings.ALC.Points.Select(p => new { p.ALC, p.RawValue }).ToList()
+                    }
+                };
+                var json = JsonSerializer.Serialize(minimal, options);
                 await File.WriteAllTextAsync(_calibrationFilePath, json);
                 _cachedSettings = settings;
             }
