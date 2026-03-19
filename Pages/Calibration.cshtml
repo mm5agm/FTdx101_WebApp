@@ -20,8 +20,8 @@
                                 <tr>
                                     <td>
                                         <input type="hidden" name="Calibration.SMeter.Points.index" value="@i" />
-                                            <input asp-for="Calibration.SMeter.Points[@i].SPoint" class="form-control d-inline-block mb-1 s-meter-gauge-input" type="text" autocomplete="off" />
-                                            <input asp-for="Calibration.SMeter.Points[@i].RawValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                        <input asp-for="Calibration.SMeter.Points[@i].SPoint" class="form-control d-inline-block mb-1 s-meter-gauge-input" type="text" autocomplete="off" />
+                                        <input asp-for="Calibration.SMeter.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
                                     <td style="width:1%;padding:0;">
                                         <button name="RemoveSMeterPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
@@ -46,8 +46,8 @@
                                 <tr>
                                     <td>
                                         <input type="hidden" name="Calibration.SWR.Points.index" value="@i" />
-                                            <input asp-for="Calibration.SWR.Points[@i].SWR" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                            <input asp-for="Calibration.SWR.Points[@i].RawValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                        <input asp-for="Calibration.SWR.Points[@i].SWR" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                        <input asp-for="Calibration.SWR.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
                                     <td style="width:1%;padding:0;">
                                         <button name="RemoveSWRPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
@@ -67,16 +67,16 @@
                             <thead><tr><th>Power / Raw Value</th><th></th></tr></thead>
                         <tbody>
                         @for (int i = 0; i < Model.Calibration.Power.Points.Count; i++) {
-                            <tr>
-                                <td>
-                                    <input type="hidden" name="Calibration.Power.Points.index" value="@i" />
+                                <tr>
+                                    <td>
+                                        <input type="hidden" name="Calibration.Power.Points.index" value="@i" />
                                         <input asp-for="Calibration.Power.Points[@i].Power" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                        <input asp-for="Calibration.Power.Points[@i].RawValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                </td>
-                                <td style="width:1%;padding:0;">
-                                    <button name="RemovePowerPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                </td>
-                            </tr>
+                                        <input asp-for="Calibration.Power.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                    </td>
+                                    <td style="width:1%;padding:0;">
+                                        <button name="RemovePowerPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
+                                    </td>
+                                </tr>
                         }
                         </tbody>
                     </table>
@@ -95,8 +95,8 @@
                                 <tr>
                                     <td>
                                         <input type="hidden" name="Calibration.ALC.Points.index" value="@i" />
-                                            <input asp-for="Calibration.ALC.Points[@i].ALC" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
-                                            <input asp-for="Calibration.ALC.Points[@i].RawValue" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                        <input asp-for="Calibration.ALC.Points[@i].ALC" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                                        <input asp-for="Calibration.ALC.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
                                     <td style="width:1%;padding:0;">
                                         <button name="RemoveALCPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
@@ -116,9 +116,24 @@
             </button>
             <button type="submit" class="save calibration-save-btn" id="saveCalibrationBtn">Save Calibration</button>
         </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggleBtn = document.getElementById('toggleRawMeterLabelsBtn');
+            var rawFields = document.querySelectorAll('.raw-meter-value');
+            var showing = false;
+            toggleBtn.addEventListener('click', function () {
+                showing = !showing;
+                rawFields.forEach(function (el) {
+                    el.style.display = showing ? '' : 'none';
+                });
+                toggleBtn.textContent = showing ? 'Hide Raw Meter Readings' : 'Show Raw Meter Readings';
+            });
+        });
+    </script>
+    </form>
+</div>
         @if (!string.IsNullOrEmpty(Model.StatusMessage))
         {
             <div class="calibration-status">@Model.StatusMessage</div>
         }
-    </form>
 </div>

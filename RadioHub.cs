@@ -48,13 +48,13 @@ namespace FTdx101_WebApp.Hubs
             lastHeartbeats.TryRemove(Context.ConnectionId, out _);
             await base.OnDisconnectedAsync(exception);
 
-            // If no clients remain, shut down the app
-            if (connections.IsEmpty)
-            {
-                _logger.LogInformation("No clients remain. Attempting shutdown. IHostApplicationLifetime injected: true");
-                _logger.LogInformation("RadioHub: Calling StopApplication.");
-                _lifetime.StopApplication();
-            }
+            // If no clients remain, do not shut down the app (shutdown logic removed)
+            // if (connections.IsEmpty)
+            // {
+            //     _logger.LogInformation("No clients remain. Attempting shutdown. IHostApplicationLifetime injected: true");
+            //     _logger.LogInformation("RadioHub: Calling StopApplication.");
+            //     _lifetime.StopApplication();
+            // }
         }
 
         // Heartbeat method called by client every 5 seconds
@@ -78,13 +78,13 @@ namespace FTdx101_WebApp.Hubs
                     lastHeartbeats.TryRemove(kvp.Key, out _);
                 }
             }
-            // If no clients remain, shut down the app
-            if (connections.IsEmpty)
-            {
-                _logger.LogInformation("[Heartbeat] No clients remain. Attempting shutdown. IHostApplicationLifetime injected: true");
-                _logger.LogInformation("[Heartbeat] RadioHub: Calling StopApplication.");
-                _lifetime.StopApplication();
-            }
+            // If no clients remain, do not shut down the app (shutdown logic removed)
+            // if (connections.IsEmpty)
+            // {
+            //     _logger.LogInformation("[Heartbeat] No clients remain. Attempting shutdown. IHostApplicationLifetime injected: true");
+            //     _logger.LogInformation("[Heartbeat] RadioHub: Calling StopApplication.");
+            //     _lifetime.StopApplication();
+            // }
         }
 
 
