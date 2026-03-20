@@ -17,6 +17,7 @@ namespace FTdx101_WebApp.Models
 
     public class CalibrationPoint
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         // For S-Meter, SPoint is a string (e.g., 'S9+20'), for others it's numeric but stored as string for model binding
         public string SPoint { get; set; } = string.Empty; // For S-Meter
         public string SWR { get; set; } = string.Empty; // For SWR

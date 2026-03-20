@@ -39,6 +39,22 @@ namespace FTdx101_WebApp.Services
                 {
                     _cachedSettings = new CalibrationSettings();
                 }
+                // Assign new Guid to any CalibrationPoint with empty Id (for legacy or hand-edited files)
+                void EnsureIds(MeterCalibration meter, string type)
+                {
+                    foreach (var p in meter.Points)
+                    {
+                        if (p.Id == Guid.Empty)
+                        {
+                            p.Id = Guid.NewGuid();
+                        }
+                    }
+                }
+                EnsureIds(_cachedSettings.SMeter, "SMeter");
+                EnsureIds(_cachedSettings.SWR, "SWR");
+                EnsureIds(_cachedSettings.Power, "Power");
+                EnsureIds(_cachedSettings.ALC, "ALC");
+
                 // Cleanup: Remove empty points from all meters
                 CleanupEmptyPoints(_cachedSettings);
                 return _cachedSettings;
@@ -52,11 +68,9 @@ namespace FTdx101_WebApp.Services
         // Remove points where both GaugeValue and ActualValue are empty or zero
         private void CleanupEmptyPoints(CalibrationSettings settings)
         {
-            bool IsEmptyOrZero(string? s)
+            bool IsTrulyEmpty(string? s)
             {
-                if (string.IsNullOrWhiteSpace(s)) return true;
-                var trimmed = s.Trim();
-                return trimmed == "0" || trimmed == "0.0";
+                return string.IsNullOrWhiteSpace(s);
             }
             void Clean(MeterCalibration meter, string type)
             {
@@ -64,22 +78,22 @@ namespace FTdx101_WebApp.Services
                 {
                     case "SMeter":
                         meter.Points = meter.Points
-                            .Where(p => !(IsEmptyOrZero(p.SPoint) && IsEmptyOrZero(p.RawValue)))
+                            .Where(p => !(IsTrulyEmpty(p.SPoint) && IsTrulyEmpty(p.RawValue)))
                             .ToList();
                         break;
                     case "SWR":
                         meter.Points = meter.Points
-                            .Where(p => !(IsEmptyOrZero(p.SWR) && IsEmptyOrZero(p.RawValue)))
+                            .Where(p => !(IsTrulyEmpty(p.SWR) && IsTrulyEmpty(p.RawValue)))
                             .ToList();
                         break;
                     case "Power":
                         meter.Points = meter.Points
-                            .Where(p => !(IsEmptyOrZero(p.Power) && IsEmptyOrZero(p.RawValue)))
+                            .Where(p => !(IsTrulyEmpty(p.Power) && IsTrulyEmpty(p.RawValue)))
                             .ToList();
                         break;
                     case "ALC":
                         meter.Points = meter.Points
-                            .Where(p => !(IsEmptyOrZero(p.ALC) && IsEmptyOrZero(p.RawValue)))
+                            .Where(p => !(IsTrulyEmpty(p.ALC) && IsTrulyEmpty(p.RawValue)))
                             .ToList();
                         break;
                 }
@@ -96,27 +110,8 @@ namespace FTdx101_WebApp.Services
             try
             {
                 var options = new JsonSerializerOptions { WriteIndented = true };
-                // Project to only relevant fields for each meter
-                var minimal = new
-                {
-                    SMeter = new
-                    {
-                        Points = settings.SMeter.Points.Select(p => new { p.SPoint, p.RawValue }).ToList()
-                    },
-                    SWR = new
-                    {
-                        Points = settings.SWR.Points.Select(p => new { p.SWR, p.RawValue }).ToList()
-                    },
-                    Power = new
-                    {
-                        Points = settings.Power.Points.Select(p => new { p.Power, p.RawValue }).ToList()
-                    },
-                    ALC = new
-                    {
-                        Points = settings.ALC.Points.Select(p => new { p.ALC, p.RawValue }).ToList()
-                    }
-                };
-                var json = JsonSerializer.Serialize(minimal, options);
+                // Save the full CalibrationSettings object, including Ids
+                var json = JsonSerializer.Serialize(settings, options);
                 await File.WriteAllTextAsync(_calibrationFilePath, json);
                 _cachedSettings = settings;
             }

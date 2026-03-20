@@ -17,18 +17,14 @@
                         @if (Model.Calibration.SMeter.Points.Count > 0)
                         {
                             for (int i = 0; i < Model.Calibration.SMeter.Points.Count; i++) {
-                                bool isBlank = string.IsNullOrWhiteSpace(Model.Calibration.SMeter.Points[i].SPoint) && string.IsNullOrWhiteSpace(Model.Calibration.SMeter.Points[i].RawValue);
-                                bool isLast = (i == Model.Calibration.SMeter.Points.Count - 1);
                                 <tr>
                                     <td>
-                                        <input type="hidden" name="Calibration.SMeter.Points.index" value="@i" />
+                                        <input type="hidden" name="Calibration.SMeter.Points[@i].Id" value="@Model.Calibration.SMeter.Points[i].Id" />
                                         <input asp-for="Calibration.SMeter.Points[@i].SPoint" class="form-control d-inline-block mb-1 s-meter-gauge-input" type="text" autocomplete="off" />
                                         <input asp-for="Calibration.SMeter.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
                                     <td style="width:1%;padding:0;">
-                                        @if (!(isBlank && isLast)) {
-                                            <button name="RemoveSMeterPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                        }
+                                        <button name="RemoveSMeterPoint-@Model.Calibration.SMeter.Points[i].Id" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
                                     </td>
                                 </tr>
                             }
@@ -42,23 +38,19 @@
                 <fieldset class="calibration-card swr">
                     <legend>SWR</legend>
                     <table class="table table-sm mb-2">
-                            <thead><tr><th>SWR / Raw Value</th><th></th></tr></thead>
+                        <thead><tr><th>SWR / Raw Value</th><th></th></tr></thead>
                         <tbody>
                         @if (Model.Calibration.SWR.Points.Count > 0)
                         {
                             for (int i = 0; i < Model.Calibration.SWR.Points.Count; i++) {
-                                bool isBlank = string.IsNullOrWhiteSpace(Model.Calibration.SWR.Points[i].SWR) && string.IsNullOrWhiteSpace(Model.Calibration.SWR.Points[i].RawValue);
-                                bool isLast = (i == Model.Calibration.SWR.Points.Count - 1);
                                 <tr>
                                     <td>
-                                        <input type="hidden" name="Calibration.SWR.Points.index" value="@i" />
+                                        <input asp-for="Calibration.SWR.Points[@i].Id" type="hidden" />
                                         <input asp-for="Calibration.SWR.Points[@i].SWR" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                         <input asp-for="Calibration.SWR.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
                                     <td style="width:1%;padding:0;">
-                                        @if (!(isBlank && isLast)) {
-                                            <button name="RemoveSWRPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                        }
+                                        <button name="RemoveSWRPoint-@Model.Calibration.SWR.Points[i].Id" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
                                     </td>
                                 </tr>
                             }
@@ -72,23 +64,22 @@
                 <fieldset class="calibration-card power">
                     <legend>Power</legend>
                     <table class="table table-sm mb-2">
-                            <thead><tr><th>Power / Raw Value</th><th></th></tr></thead>
+                        <thead><tr><th>Power / Raw Value</th><th></th></tr></thead>
                         <tbody>
-                        @for (int i = 0; i < Model.Calibration.Power.Points.Count; i++) {
-                                bool isBlank = string.IsNullOrWhiteSpace(Model.Calibration.Power.Points[i].Power) && string.IsNullOrWhiteSpace(Model.Calibration.Power.Points[i].RawValue);
-                                bool isLast = (i == Model.Calibration.Power.Points.Count - 1);
+                        @if (Model.Calibration.Power.Points.Count > 0)
+                        {
+                            for (int i = 0; i < Model.Calibration.Power.Points.Count; i++) {
                                 <tr>
                                     <td>
-                                        <input type="hidden" name="Calibration.Power.Points.index" value="@i" />
+                                        <input asp-for="Calibration.Power.Points[@i].Id" type="hidden" />
                                         <input asp-for="Calibration.Power.Points[@i].Power" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                         <input asp-for="Calibration.Power.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
                                     <td style="width:1%;padding:0;">
-                                        @if (!(isBlank && isLast)) {
-                                            <button name="RemovePowerPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                        }
+                                        <button name="RemovePowerPoint-@Model.Calibration.Power.Points[i].Id" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
                                     </td>
                                 </tr>
+                            }
                         }
                         </tbody>
                     </table>
@@ -99,23 +90,19 @@
                 <fieldset class="calibration-card alc">
                     <legend>ALC</legend>
                     <table class="table table-sm mb-2">
-                            <thead><tr><th>Volts / Raw Value</th><th></th></tr></thead>
+                        <thead><tr><th>Volts / Raw Value</th><th></th></tr></thead>
                         <tbody>
                         @if (Model.Calibration.ALC.Points.Count > 0)
                         {
                             for (int i = 0; i < Model.Calibration.ALC.Points.Count; i++) {
-                                bool isBlank = string.IsNullOrWhiteSpace(Model.Calibration.ALC.Points[i].ALC) && string.IsNullOrWhiteSpace(Model.Calibration.ALC.Points[i].RawValue);
-                                bool isLast = (i == Model.Calibration.ALC.Points.Count - 1);
                                 <tr>
                                     <td>
-                                        <input type="hidden" name="Calibration.ALC.Points.index" value="@i" />
+                                        <input asp-for="Calibration.ALC.Points[@i].Id" type="hidden" />
                                         <input asp-for="Calibration.ALC.Points[@i].ALC" class="form-control d-inline-block mb-1" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                         <input asp-for="Calibration.ALC.Points[@i].RawValue" class="form-control d-inline-block mb-1 raw-meter-value" type="text" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
                                     </td>
                                     <td style="width:1%;padding:0;">
-                                        @if (!(isBlank && isLast)) {
-                                            <button name="RemoveALCPoint-@i" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
-                                        }
+                                        <button name="RemoveALCPoint-@Model.Calibration.ALC.Points[i].Id" class="btn btn-link text-danger p-0 m-0 align-middle" type="submit" title="Remove point">&times;</button>
                                     </td>
                                 </tr>
                             }
@@ -130,7 +117,7 @@
             <button type="button" class="btn btn-outline-primary me-3" id="toggleRawMeterLabelsBtn" style="min-width:180px;">
                 Show Raw Meter Readings
             </button>
-            <button type="submit" class="save calibration-save-btn" id="saveCalibrationBtn">Save Calibration</button>
+            <button type="submit" name="saveCalibrationBtn" class="save calibration-save-btn" id="saveCalibrationBtn">Save Calibration</button>
         </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {

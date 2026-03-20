@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using FTdx101_WebApp.Models;
 using FTdx101_WebApp.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace FTdx101_WebApp.Pages
 {
@@ -22,95 +26,65 @@ namespace FTdx101_WebApp.Pages
             _logger = logger;
         }
 
+        private void RemapCalibrationPointIds(string prefix, List<CalibrationPoint> points)
+        {
+            for (int i = 0; i < points.Count; i++)
+            {
+                var key = $"{prefix}[{i}].Id";
+                if (Request.Form.ContainsKey(key))
+                {
+                    var idStr = Request.Form[key];
+                    if (Guid.TryParse(idStr, out var id))
+                        points[i].Id = id;
+                }
+            }
+        }
 
         public async Task<IActionResult> OnGetAsync()
         {
             Calibration = await _calibrationService.GetCalibrationAsync();
-            // Do not add any blank points on GET; only show if there are points
             return Page();
         }
 
-
-
         public async Task<IActionResult> OnPostAsync()
         {
-            // Ensure all lists are initialized for model binding
-            if (Calibration.SMeter == null) Calibration.SMeter = new MeterCalibration();
-            if (Calibration.SMeter.Points == null) Calibration.SMeter.Points = new List<CalibrationPoint>();
-            if (Calibration.SWR == null) Calibration.SWR = new MeterCalibration();
-            if (Calibration.SWR.Points == null) Calibration.SWR.Points = new List<CalibrationPoint>();
-            if (Calibration.Power == null) Calibration.Power = new MeterCalibration();
-            if (Calibration.Power.Points == null) Calibration.Power.Points = new List<CalibrationPoint>();
-            if (Calibration.ALC == null) Calibration.ALC = new MeterCalibration();
-            if (Calibration.ALC.Points == null) Calibration.ALC.Points = new List<CalibrationPoint>();
+            RemapCalibrationPointIds("Calibration.SMeter.Points", Calibration.SMeter.Points);
+            RemapCalibrationPointIds("Calibration.SWR.Points", Calibration.SWR.Points);
+            RemapCalibrationPointIds("Calibration.Power.Points", Calibration.Power.Points);
+            RemapCalibrationPointIds("Calibration.ALC.Points", Calibration.ALC.Points);
 
-            // Handle add/remove actions for each meter
-            var form = Request.Form;
-            // Add actions
-            if (form.ContainsKey("AddSMeterPoint"))
-                Calibration.SMeter.Points.Add(new CalibrationPoint());
-            if (form.ContainsKey("AddSWRPoint"))
-                Calibration.SWR.Points.Add(new CalibrationPoint());
-            if (form.ContainsKey("AddPowerPoint"))
-                Calibration.Power.Points.Add(new CalibrationPoint());
-            if (form.ContainsKey("AddALCPoint"))
-                Calibration.ALC.Points.Add(new CalibrationPoint());
+            if (Request.Form.ContainsKey("AddSMeterPoint"))
+                Calibration.SMeter.Points.Add(new CalibrationPoint { Id = Guid.NewGuid() });
+            if (Request.Form.ContainsKey("AddSWRPoint"))
+                Calibration.SWR.Points.Add(new CalibrationPoint { Id = Guid.NewGuid() });
+            if (Request.Form.ContainsKey("AddPowerPoint"))
+                Calibration.Power.Points.Add(new CalibrationPoint { Id = Guid.NewGuid() });
+            if (Request.Form.ContainsKey("AddALCPoint"))
+                Calibration.ALC.Points.Add(new CalibrationPoint { Id = Guid.NewGuid() });
 
-            // Remove actions (look for RemoveSMeterPoint-#, etc)
-            foreach (var key in form.Keys)
+            foreach (var key in Request.Form.Keys.Where(k => k.StartsWith("RemoveSMeterPoint-")).ToList())
             {
-                if (key.StartsWith("RemoveSMeterPoint-"))
-                {
-                    if (int.TryParse(key["RemoveSMeterPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.SMeter.Points.Count && Calibration.SMeter.Points.Count > 1)
-                        Calibration.SMeter.Points.RemoveAt(idx);
-                }
-                if (key.StartsWith("RemoveSWRPoint-"))
-                {
-                    if (int.TryParse(key["RemoveSWRPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.SWR.Points.Count && Calibration.SWR.Points.Count > 1)
-                        Calibration.SWR.Points.RemoveAt(idx);
-                }
-                if (key.StartsWith("RemovePowerPoint-"))
-                {
-                    if (int.TryParse(key["RemovePowerPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.Power.Points.Count && Calibration.Power.Points.Count > 1)
-                        Calibration.Power.Points.RemoveAt(idx);
-                }
-                if (key.StartsWith("RemoveALCPoint-"))
-                {
-                    if (int.TryParse(key["RemoveALCPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.ALC.Points.Count && Calibration.ALC.Points.Count > 1)
-                        Calibration.ALC.Points.RemoveAt(idx);
-                }
+                var idStr = key["RemoveSMeterPoint-".Length..];
+                if (Guid.TryParse(idStr, out var id))
+                    Calibration.SMeter.Points.RemoveAll(p => p.Id == id);
             }
-
-
-            // Remove actions (look for RemoveSMeterPoint-#, etc)
-            foreach (var key in form.Keys)
+            foreach (var key in Request.Form.Keys.Where(k => k.StartsWith("RemoveSWRPoint-")).ToList())
             {
-                if (key.StartsWith("RemoveSMeterPoint-"))
-                {
-                    if (int.TryParse(key["RemoveSMeterPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.SMeter.Points.Count)
-                        Calibration.SMeter.Points.RemoveAt(idx);
-                }
-                if (key.StartsWith("RemoveSWRPoint-"))
-                {
-                    if (int.TryParse(key["RemoveSWRPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.SWR.Points.Count)
-                        Calibration.SWR.Points.RemoveAt(idx);
-                }
-                if (key.StartsWith("RemovePowerPoint-"))
-                {
-                    if (int.TryParse(key["RemovePowerPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.Power.Points.Count)
-                        Calibration.Power.Points.RemoveAt(idx);
-                }
-                if (key.StartsWith("RemoveALCPoint-"))
-                {
-                    if (int.TryParse(key["RemoveALCPoint-".Length..], out int idx) && idx >= 0 && idx < Calibration.ALC.Points.Count)
-                        Calibration.ALC.Points.RemoveAt(idx);
-                }
+                string idStr = key["RemoveSWRPoint-".Length..];
+                if (!string.IsNullOrEmpty(idStr) && Guid.TryParse(idStr, out var id))
+                    Calibration.SWR.Points.RemoveAll(p => p.Id == id);
             }
-
-            // If any add/remove, just redisplay page (don't save)
-            if (form.Keys.Any(k => k.StartsWith("Add") || k.StartsWith("Remove")))
+            foreach (var key in Request.Form.Keys.Where(k => k.StartsWith("RemovePowerPoint-")).ToList())
             {
-                return Page();
+                string idStr = key["RemovePowerPoint-".Length..];
+                if (!string.IsNullOrEmpty(idStr) && Guid.TryParse(idStr, out var id))
+                    Calibration.Power.Points.RemoveAll(p => p.Id == id);
+            }
+            foreach (var key in Request.Form.Keys.Where(k => k.StartsWith("RemoveALCPoint-")).ToList())
+            {
+                string idStr = key["RemoveALCPoint-".Length..];
+                if (!string.IsNullOrEmpty(idStr) && Guid.TryParse(idStr, out var id))
+                    Calibration.ALC.Points.RemoveAll(p => p.Id == id);
             }
 
             if (!ModelState.IsValid)
@@ -118,13 +92,13 @@ namespace FTdx101_WebApp.Pages
                 StatusMessage = "Invalid input.";
                 return Page();
             }
-            // Optionally: trim empty trailing points (not required, but can be added)
-            // Save as-is
-            await _calibrationService.SaveCalibrationAsync(Calibration);
-            StatusMessage = "Calibration settings saved.";
-            return RedirectToPage();
+
+            if (Request.Form["saveCalibrationBtn"].Count > 0)
+            {
+                await _calibrationService.SaveCalibrationAsync(Calibration);
+                StatusMessage = "Calibration updated.";
+            }
+            return Page();
         }
-
-
     }
 }

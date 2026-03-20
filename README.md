@@ -23,7 +23,7 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 
 ---
 
-## Important - You need .NET10 to run this application. Download the x64 version from the official Microsoft website: https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.5/dotnet-runtime-10.0.5-win-x64.exe and install it as Administratorbefore running.
+## Important - .NET 10 is now built into this app so there is no need to download and install it.
 
 ---
 
