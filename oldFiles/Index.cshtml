@@ -1,0 +1,549 @@
+﻿@page
+@model FTdx101_WebApp.Pages.IndexModel
+@{
+    ViewData["Title"] = "FT-dx101 Series Control";
+    var allModes = new[] {
+        "LSB", "USB", "CW-U", "CW-L", "FM", "FM-N", "AM", "AM-N", "RTTY-L", "RTTY-U",
+        "DATA-L", "DATA-U", "DATA-FM", "DATA-FM-N", "PSK"
+    };
+}
+
+<!-- Cache-busted CSS reference -->
+<link rel="stylesheet" href="~/css/site.css?v=20260226n" />
+<link rel="stylesheet" href="~/css/closer-to-raw-power.css?v=20260226n" />
+
+<!-- Message Box Modal (Windows-style) -->
+<div class="modal fade" id="messageBoxModal" tabindex="-1" aria-labelledby="messageBoxTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content" style="border-radius: 4px; border: 2px solid #dc3545;">
+            <div class="modal-header py-2" style="background: linear-gradient(to bottom, #dc3545, #c82333); border-bottom: 1px solid #bd2130;">
+                <h6 class="modal-title text-white" id="messageBoxTitle" style="font-size: 0.9rem;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Warning
+                </h6>
+            </div>
+            <div class="modal-body py-3" style="background: #fff;">
+                <p id="messageBoxText" class="mb-0" style="font-size: 0.9rem; color: #000;"></p>
+            </div>
+            <div class="modal-footer py-2 justify-content-center" style="background: #f8f9fa; border-top: 1px solid #dee2e6;">
+                <button type="button" class="btn btn-danger btn-sm px-4" data-bs-dismiss="modal" style="min-width: 80px;">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay for initialization status -->
+<div id="initOverlay" class="init-overlay">
+    <div class="init-message">
+        <span id="initStatusText">Initializing radio, please wait...</span>
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        @if (Model.ShowApp1Button)
+        {
+            <div class="col-auto">
+                <button id="wsjtxBtn" class="btn btn-secondary btn-sm"
+                        onclick="launchWsjtx()" title="Launch @Model.App1Name">
+                    @Model.App1Name
+                    <span id="wsjtxTxBadge" class="badge bg-danger ms-1" style="display:none;">TX</span>
+                </button>
+            </div>
+        }
+        @if (Model.ShowApp2Button)
+        {
+            <div class="col-auto">
+                <button id="jtalertBtn" class="btn btn-secondary btn-sm"
+                        onclick="launchJtalert()" title="Launch @Model.App2Name">
+                    @Model.App2Name
+                </button>
+            </div>
+        }
+        @if (Model.ShowApp3Button)
+        {
+            <div class="col-auto">
+                <button id="log4omBtn" class="btn btn-secondary btn-sm"
+                        onclick="launchLog4om()" title="Launch @Model.App3Name">
+                    @Model.App3Name
+                </button>
+            </div>
+        }
+        <div class="col-auto ms-auto">
+            <button id="radioPowerBtn" class="btn btn-danger btn-sm"
+                    onclick="toggleRadioPower()" title="Radio Power On/Off">
+                <i class="bi bi-power"></i> POWER
+            </button>
+        </div>
+    </div>
+    <div class="row g-3 flex-wrap">
+        <!-- VFO A Panel -->
+        <div class="col-lg-6 col-12">
+            <div class="card border-primary h-100 receiver-card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <span id="receiverAHeading">VFO A</span>
+                    </h3>
+                    <button id="txButtonA" class="btn btn-warning btn-sm" style="display:none;"
+                            onclick="toggleTx()" title="Toggle Transmit">
+                        <i class="bi bi-broadcast"></i> TX
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
+                        <!-- Left: S-Meter and Frequency stacked -->
+                        <div class="flex-shrink-0">
+                            <div class="analog-meter-container">
+                                <canvas id="sMeterCanvasA"></canvas>
+                            </div>
+                            <div id="raw-s-meter-label-a" class="raw-meter-label" style="display:none;text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
+                                Raw S-Meter: <span id="rawSMeterValueA">0</span>
+                            </div>
+                            <!-- Frequency display below S-Meter -->
+                            <div class="d-flex align-items-center" style="margin-top: -5px;">
+                                <span id="freqA" class="fw-bold frequency-display digit-display"></span>
+                                <span class="frequency-display digit-display ms-1">MHz</span>
+                                <div id="freqA-controls" class="ms-2" style="display:none;">
+                                    <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
+                                    <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Middle: Band buttons in compact 3-row grid -->
+                        <div class="flex-grow-1 band-buttons-shifted">
+                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
+                        </div>
+                        <!-- Right: Mode and Antenna selects -->
+                        <div class="flex-shrink-0 mode-select-container">
+                            <select class="form-select mb-1" id="modeSelectA" 
+                                    onchange="setMode('A', this.value)">
+                                @foreach (var mode in allModes)
+                                {
+                                    @if (Model.RadioState.ModeA == mode)
+                                    {
+                                        <option value="@mode" selected>@mode</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@mode">@mode</option>
+                                    }
+                                }
+                            </select>
+                            <select class="form-select" id="antennaSelectA" 
+                                    onchange="window.radioControl.setAntenna('A', this.value)">
+                                @foreach (var ant in new[] { "1", "2", "3" })
+                                {
+                                    @if (Model.RadioState.AntennaA == ant)
+                                    {
+                                        <option value="@ant" selected>ANT @ant</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@ant">ANT @ant</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Other controls below -->
+                    <div>
+                        <!-- Roofing Filter A -->
+                        <div class="d-flex align-items-center mt-2 mb-2">
+                            <label class="me-2 mb-0">Roofing Filter:</label>
+                            <select class="form-select form-select-sm fw-bold" id="roofingFilterSelectA" 
+                                    style="width: auto;"
+                                    onchange="window.radioControl.setRoofingFilter('A', this.value)">
+                                <option value="6">12 kHz</option>
+                                <option value="7">3 kHz</option>
+                                <option value="8">1.2 kHz</option>
+                                <option value="9">600 Hz</option>
+                                <option value="A">300 Hz</option>
+                            </select>
+                        </div>
+                        <!-- AF Gain A -->
+                        <div class="mb-3 mt-2">
+                            <label>AF Gain: <span id="afGainValueA" class="fw-bold">0</span></label>
+                            <input type="range" class="form-range afgain-slider"
+                                   id="afGainSliderA"
+                                   min="0" max="255" step="1" value="0"
+                                   style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
+                                   oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
+                        </div>
+                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- VFO B Panel -->
+        <div class="col-lg-6 col-12">
+            <div class="card border-success h-100 receiver-card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <span id="receiverBHeading">VFO B</span>
+                    </h3>
+                    <button id="txButtonB" class="btn btn-warning btn-sm" style="display:none;"
+                            onclick="toggleTx()" title="Toggle Transmit">
+                        <i class="bi bi-broadcast"></i> TX
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
+                        <!-- Left: S-Meter and Frequency stacked -->
+                        <div class="flex-shrink-0">
+                            <div class="analog-meter-container">
+                                <canvas id="sMeterCanvasB"></canvas>
+                            </div>
+                            <!-- Frequency display below S-Meter -->
+                            <div class="d-flex align-items-center" style="margin-top: -5px;">
+                                <span id="freqB" class="fw-bold frequency-display digit-display"></span>
+                                <span class="frequency-display digit-display ms-1">MHz</span>
+                                <div id="freqB-controls" class="ms-2" style="display:none;">
+                                    <button id="freqB-up" class="btn btn-secondary btn-sm">▲</button>
+                                    <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Middle: Band buttons in compact 3-row grid -->
+                        <div class="flex-grow-1 band-buttons-shifted">
+                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
+                        </div>
+                        <!-- Right: Mode and Antenna selects -->
+                        <div class="flex-shrink-0 mode-select-container">
+                            <select class="form-select mb-1" id="modeSelectB" 
+                                    onchange="setMode('B', this.value)">
+                                @foreach (var mode in allModes)
+                                {
+                                    @if (Model.RadioState.ModeB == mode)
+                                    {
+                                        <option value="@mode" selected>@mode</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@mode">@mode</option>
+                                    }
+                                }
+                            </select>
+                            <select class="form-select" id="antennaSelectB" 
+                                    onchange="window.radioControl.setAntenna('B', this.value)">
+                                @foreach (var ant in new[] { "1", "2", "3" })
+                                {
+                                    @if (Model.RadioState.AntennaB == ant)
+                                    {
+                                        <option value="@ant" selected>ANT @ant</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@ant">ANT @ant</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Other controls below -->
+                    <div>
+                        <!-- Roofing Filter B -->
+                        <div class="d-flex align-items-center mt-2 mb-2">
+                            <label class="me-2 mb-0">Roofing Filter:</label>
+                            <select class="form-select form-select-sm fw-bold" id="roofingFilterSelectB" 
+                                    style="width: auto;"
+                                    onchange="window.radioControl.setRoofingFilter('B', this.value)">
+                                <option value="6">12 kHz</option>
+                                <option value="7">3 kHz</option>
+                                <option value="8">1.2 kHz</option>
+                                <option value="9">600 Hz</option>
+                                <option value="A">300 Hz</option>
+                            </select>
+                        </div>
+                        <!-- AF Gain B -->
+                        <div class="mb-3 mt-2">
+                            <label>AF Gain: <span id="afGainValueB" class="fw-bold">0</span></label>
+                            <input type="range" class="form-range afgain-slider"
+                                   id="afGainSliderB"
+                                   min="0" max="255" step="1" value="0"
+                                   style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
+                                   oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
+                        </div>
+                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Power and SWR Meters -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card border-secondary">
+                <div class="card-body py-2">
+                    <!-- Gauges row -->
+                    <div class="d-flex justify-content-start align-items-start flex-wrap" style="margin-left: -7rem; gap: 0; margin-bottom: 0.2rem !important;">
+                        <!-- SWR Meter -->
+                        <div class="text-center" style="position: relative;">
+                            <div class="analog-meter-container">
+                                <canvas id="swrMeterCanvas"></canvas>
+                            </div>
+                            <span id="swrMeterValue" class="badge bg-danger" style="position: absolute; bottom: 35px; left: calc(50% - 15px); transform: translateX(-50%); z-index: 100; white-space: nowrap;">SWR 1.0:1</span>
+                        </div>
+                        <!-- Power Meter -->
+                        <div class="text-center power-meter-container" style="position: relative;">
+                            <div class="analog-meter-container">
+                                <canvas id="powerMeterCanvas"></canvas>
+                            </div>
+                            <span id="powerMeterValue" class="badge bg-warning text-dark" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap;">Power Out 0W</span>
+                            <div id="raw-powerout-label" class="raw-meter-label" style="display:none;text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
+                                Raw Power Out: <span id="rawPowerOutValue">0</span>
+                            </div>
+                        </div>
+                        <!-- ALC Meter -->
+                        <div class="text-center" style="position: relative; margin-left: -10rem;">
+                            <div class="analog-meter-container">
+                                <canvas id="alcMeterCanvas"></canvas>
+                            </div>
+                            <span id="alcMeterValue" class="badge bg-info" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap;">ALC 0V</span>
+                        </div>
+                    </div>
+                    <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
+                    <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
+                        <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
+                        <input type="range" class="form-range" id="powerSlider"
+                               min="5"
+                               max="200"
+                               step="5"
+                               value="@Model.RadioState.Power"
+                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
+                               oninput="window.radioControl.updatePowerDisplay(window.txVfo === 1 ? 'B' : 'A', this.value)"
+                               onchange="window.radioControl.setPower(window.txVfo === 1 ? 'B' : 'A', this.value)">
+                    </div>
+                    <!-- MIC Gain / Data Out Level -->
+                    <div class="mb-3 closer-to-raw-power">
+                        <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
+                        <input type="range" class="form-range power-slider"
+                               id="micGainSlider"
+                               min="0"
+                               max="100"
+                               step="1"
+                               value="@Model.MicGain"
+                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
+                               oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
+                               onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
+                    </div>
+                    <!-- IDD (Drain Current) and PA Temp Display (side by side) -->
+                    <div class="mb-2 closer-to-raw-power d-flex align-items-center gap-3">
+                        <label class="mb-0">IDD (Drain Current): <span id="iddDisplayValue" class="fw-bold badge bg-primary">0.0A</span></label>
+                        <label class="mb-0">PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
+<script src="~/js/site.js?v=20260228c"></script>
+    <script>
+        async function launchWsjtx() {
+            try {
+                const response = await fetch('/api/wsjtx/launch', { method: 'POST' });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.alreadyRunning) {
+                        console.log('WSJT-X is already running, brought window to front');
+                        // Optional: show a brief message to the user
+                        const btn = document.getElementById('wsjtxBtn');
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = 'WSJT-X Already Running';
+                        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                    }
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to launch WSJT-X');
+                }
+            } catch (e) {
+                alert('Error launching WSJT-X: ' + e.message);
+            }
+        }
+
+        async function updateWsjtxStatus() {
+            try {
+                const response = await fetch('/api/wsjtx/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    const btn = document.getElementById('wsjtxBtn');
+                    const txBadge = document.getElementById('wsjtxTxBadge');
+
+                    // Green = UDP connected (WSJT-X talking to us)
+                    // Yellow = process running but no UDP yet
+                    // Grey = not running
+                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-danger');
+                    if (data.connected) {
+                        btn.classList.add('btn-success');
+                        btn.title = 'WSJT-X connected' + (data.mode ? ' \u2014 ' + data.mode : '');
+                    } else if (data.running) {
+                        btn.classList.add('btn-warning');
+                        btn.title = 'WSJT-X running \u2014 waiting for UDP data';
+                    } else {
+                        btn.classList.add('btn-danger');
+                        btn.title = 'WSJT-X is not running';
+                    }
+
+                    // Red TX badge when transmitting
+                    if (txBadge) {
+                        txBadge.style.display = data.transmitting ? 'inline' : 'none';
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        updateWsjtxStatus();
+        setInterval(updateWsjtxStatus, 5000);
+
+        // JTAlert launch and status functions
+        async function launchJtalert() {
+            try {
+                const response = await fetch('/api/jtalert/launch', { method: 'POST' });
+                const btn = document.getElementById('jtalertBtn');
+                if (response.ok) {
+                    const data = await response.json();
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-success');
+                    btn.title = 'JTAlert is running';
+                    if (data.alreadyRunning) {
+                        console.log('JTAlert is already running, brought window to front');
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = 'JTAlert Already Running';
+                        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                    }
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to launch JTAlert');
+                }
+            } catch (e) {
+                alert('Error launching JTAlert: ' + e.message);
+            }
+        }
+
+        async function updateJtalertStatus() {
+            try {
+                const response = await fetch('/api/jtalert/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[JTAlert Status Poll]', data); // Debug log
+                    const btn = document.getElementById('jtalertBtn');
+
+                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-danger');
+                    if (data.running) {
+                        btn.classList.add('btn-success');
+                        btn.title = 'JTAlert is running';
+                    } else {
+                        btn.classList.add('btn-danger');
+                        btn.title = 'JTAlert is not running';
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        updateJtalertStatus();
+        setInterval(updateJtalertStatus, 5000);
+
+        // Log4OM launch and status functions
+        async function launchLog4om() {
+            try {
+                const response = await fetch('/api/log4om/launch', { method: 'POST' });
+                const btn = document.getElementById('log4omBtn');
+                if (response.ok) {
+                    const data = await response.json();
+                    btn.classList.remove('btn-secondary');
+                    btn.classList.add('btn-success');
+                    btn.title = 'Log4OM is running';
+                    if (data.alreadyRunning) {
+                        console.log('Log4OM is already running, brought window to front');
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = 'Log4OM Already Running';
+                        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                    }
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to launch Log4OM');
+                }
+            } catch (e) {
+                alert('Error launching Log4OM: ' + e.message);
+            }
+        }
+
+        async function updateLog4omStatus() {
+            try {
+                const response = await fetch('/api/log4om/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[Log4OM Status Poll]', data); // Debug log
+                    const btn = document.getElementById('log4omBtn');
+
+                    btn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-danger');
+                    if (data.running) {
+                        btn.classList.add('btn-success');
+                        btn.title = 'Log4OM is running';
+                    } else {
+                        btn.classList.add('btn-danger');
+                        btn.title = 'Log4OM is not running';
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        updateLog4omStatus();
+        setInterval(updateLog4omStatus, 5000);
+
+        window.setAfGain = async function(receiver, val) {
+    let band = receiver === 'A' ? '0' : '1';
+    let value = String(val).padStart(3, '0');
+    try {
+        const response = await fetch('/api/cat/afgain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ band, value })
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            alert(data.error || 'Failed to set AF Gain');
+        }
+    } catch (e) {
+        alert('Error setting AF Gain: ' + e.message);
+    }
+}
+
+        async function setMicGain(value) {
+            console.log('[setMicGain] Called with value:', value);
+            try {
+                const response = await fetch('/api/cat/micgain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: parseInt(value) })
+                });
+                console.log('[setMicGain] API response status:', response.status);
+                if (!response.ok) {
+                    const data = await response.json();
+                    console.error('Failed to set MIC Gain:', data.error);
+                } else {
+                    console.log('[setMicGain] Successfully set MIC Gain to', value);
+                }
+            } catch (e) {
+                console.error('Error setting MIC Gain:', e.message);
+            }
+        }
+
+        function updateAfGainFill(sliderId) {
+            const slider = document.getElementById(sliderId);
+            const value = parseInt(slider.value, 10);
+            const max = parseInt(slider.max, 10);
+            const pct = (value / max) * 100;
+            slider.style.background = `linear-gradient(to right, #198754 0%, #198754 ${pct}%, #dee2e6 ${pct}%, #dee2e6 100%)`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAfGainFill('afGainSliderA');
+            updateAfGainFill('afGainSliderB');
+        });
+    </script>
+}

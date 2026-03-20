@@ -246,7 +246,7 @@ namespace FTdx101_WebApp.Controllers
                     frequency = _radioStateService.FrequencyA,
                     band = _radioStateService.BandA,
                     sMeter = _radioStateService.SMeterA ?? 0,
-                    power = _radioStateService.Power,
+                    power = _radioStateService.PowerMeter ?? 0,
                     mode = _radioStateService.ModeA ?? "",
                     antenna = _radioStateService.AntennaA ?? "",
                     afGain = _radioStateService.AfGainA,
@@ -262,7 +262,12 @@ namespace FTdx101_WebApp.Controllers
                     afGain = _radioStateService.AfGainB,
                     roofingFilter = _radioStateService.RoofingFilterB ?? ""
                 },
-                micGain = _radioStateService.MicGain
+                micGain = _radioStateService.MicGain,
+                powerMeter = _radioStateService.PowerMeter ?? 0,
+                swrMeter = _radioStateService.SWRMeter ?? 0,
+                iddMeter = _radioStateService.IDDMeter ?? 0,
+                vddMeter = _radioStateService.VDDMeter ?? 0,
+                temperature = _radioStateService.Temperature ?? 0
             });
         }
 
