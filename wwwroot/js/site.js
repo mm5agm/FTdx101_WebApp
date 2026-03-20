@@ -825,9 +825,7 @@ connection.on("RadioStateUpdate", function (update) {
     // --- POWER CHANGE ---
     // Only handle generic Power (no A/B distinction)
     if (update.property === "Power" || update.property === "PowerA") {
-        updatePowerDisplay(null, update.value);
-        const slider = document.getElementById('powerSlider');
-        if (slider) slider.value = update.value;
+        // Do not update the slider or label from backend. Power slider is user-only.
     }
 
     // --- RADIO POWER STATE ---
@@ -848,6 +846,15 @@ connection.on("RadioStateUpdate", function (update) {
         }
         updateTxButton();
         updateTxIndicators(update.value);
+        // When TX starts, send CAT power command with current slider value
+        if (update.value === true) {
+             const slider = document.getElementById('powerSlider');
+             if (slider && window.radioControl && typeof window.radioControl.setPower === 'function') {
+                 // Use VFO B if txVfo === 1, else VFO A
+                 const receiver = (typeof window.txVfo !== 'undefined' && window.txVfo === 1) ? 'B' : 'A';
+                 window.radioControl.setPower(receiver, slider.value);
+             }
+        }
     }
     if (update.property === "TxVfo") {
         txVfo = update.value;
@@ -1456,8 +1463,9 @@ function sendAfGain(receiver, value) {
             let powerValue = 100;
             if (data.vfoA && data.vfoA.power !== undefined) {
                 powerValue = data.vfoA.power;
-            } else if (state.lastPower) {
-                powerValue = state.lastPower;
+                state.lastPower.A = data.vfoA.power;
+            } else if (state.lastPower && typeof state.lastPower === 'object' && state.lastPower.A !== undefined) {
+                powerValue = state.lastPower.A;
             }
             updatePowerSlider(null, powerValue);
             // TX meter (updatePowerMeter) will use RM5 during transmit only
@@ -1554,29 +1562,12 @@ function sendAfGain(receiver, value) {
 
     function updatePowerDisplay(receiver, watts) {
         // Only one power control supported
+        // Only update the label from the slider value, never from backend
         const display = document.getElementById('powerValue');
-        if (display && watts !== undefined && watts !== null) {
-            display.textContent = watts + 'W';
-        }
         const slider = document.getElementById('powerSlider');
-        if (slider) {
-            let actualMax = 200;
-            if (window.state && window.state.radioModel) {
-                const model = window.state.radioModel.toLowerCase();
-                if (model === "ftdx101d") {
-                    actualMax = 100;
-                } else if (model === "ftdx101mp") {
-                    actualMax = 200;
-                }
-            }
-            slider.max = actualMax;
-            // Only update slider value if not editing (prevents jump while dragging)
-            if (!window.editingPower) {
-                slider.value = Math.min(watts, actualMax);
-            }
-            updateSliderFill(slider);
+        if (display && slider) {
+            display.textContent = slider.value + 'W';
         }
-        state.lastPower = watts;
     }
 
     async function setPower(receiver, watts) {
@@ -1604,18 +1595,15 @@ function sendAfGain(receiver, value) {
     }
 
     function updatePowerSlider(receiver, watts) {
-        // Only update if not editing (prevents jump while dragging)
-        if (!window.editingPower) {
-            updatePowerDisplay(null, watts);
-        }
+        // No-op: backend never updates the slider. User only.
     }
 
     function updatePowerSliderMax(maxPower) {
+        // Enforce correct min/max for FTdx101D and FTdx101MP
         const slider = document.getElementById('powerSlider');
         const labelMax = document.getElementById('powerMaxLabel');
-
-        // Always enforce correct max for FTdx101D and FTdx101MP
         let actualMax = 200;
+        let actualMin = 5;
         if (state.radioModel) {
             const model = state.radioModel.toLowerCase();
             if (model === "ftdx101d") {
@@ -1628,7 +1616,11 @@ function sendAfGain(receiver, value) {
         } else if (typeof maxPower === "number") {
             actualMax = maxPower;
         }
-        if (slider) { slider.max = actualMax; updateSliderFill(slider); }
+        if (slider) {
+            slider.max = actualMax;
+            slider.min = actualMin;
+            updateSliderFill(slider);
+        }
         if (labelMax) labelMax.textContent = actualMax + 'W';
     }
 
@@ -1862,13 +1854,24 @@ let wasTransmittingSWR = false;
 
     // Update IDD display (0-255 raw value, display as amps)
     function updateIDDMeter(value) {
-        // Assuming 255 = ~25A max for FTdx101MP (adjust based on actual specs)
+        // Smoothing: ignore sudden jumps >5A, ignore 0 unless persists, clamp to 0-25A
+        if (!window._iddLast) window._iddLast = 0;
         const amps = (value / 255) * 25.0;
         const iddDisplay = document.getElementById('iddDisplayValue');
-
+        // Ignore 0 unless it persists for 2+ updates
+        if (amps === 0) {
+            window._iddZeroCount = (window._iddZeroCount || 0) + 1;
+            if (window._iddZeroCount < 2) return;
+        } else {
+            window._iddZeroCount = 0;
+        }
+        // Ignore sudden jumps >5A
+        if (Math.abs(amps - window._iddLast) > 5 && window._iddLast !== 0) {
+            return;
+        }
+        window._iddLast = amps;
         if (iddDisplay) {
             iddDisplay.textContent = `${amps.toFixed(1)}A`;
-            // Color coding based on current draw
             iddDisplay.classList.remove('bg-primary', 'bg-warning', 'bg-danger', 'bg-success');
             if (amps < 10) {
                 iddDisplay.classList.add('bg-success');
@@ -1884,24 +1887,33 @@ let wasTransmittingSWR = false;
     // Filter out noisy readings - PA voltage should be stable around 48V
     let lastValidVDD = 204; // Default to ~48V
     function updatePAVoltage(value) {
-        // Filter out obviously wrong values (PA voltage should be 40-55V range, which is ~170-235 raw)
-        // Only accept values in reasonable range
+        // Smoothing: ignore sudden jumps >3V, ignore 0 unless persists, clamp to 40-55V
         const minRaw = 170;  // ~40V
         const maxRaw = 235;  // ~55V
-
+        if (!window._vddLast) window._vddLast = 48;
+        if (!window._vddZeroCount) window._vddZeroCount = 0;
         if (value >= minRaw && value <= maxRaw) {
             lastValidVDD = value;
         } else {
-            return; // Ignore noisy reading
+            // Ignore noisy reading
+            return;
         }
-
-        // Assuming 255 = ~60V max for PA voltage
         const volts = (lastValidVDD / 255) * 60.0;
+        // Ignore 0 unless it persists for 2+ updates
+        if (volts === 0) {
+            window._vddZeroCount++;
+            if (window._vddZeroCount < 2) return;
+        } else {
+            window._vddZeroCount = 0;
+        }
+        // Ignore sudden jumps >3V
+        if (Math.abs(volts - window._vddLast) > 3 && window._vddLast !== 0) {
+            return;
+        }
+        window._vddLast = volts;
         const voltageDisplay = document.getElementById('paVoltageValue');
-
         if (voltageDisplay) {
             voltageDisplay.textContent = `${volts.toFixed(1)}V`;
-            // Color coding based on voltage (nominal ~50V for FTdx101)
             voltageDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
             if (volts < 45) {
                 voltageDisplay.classList.add('bg-warning'); // Low voltage warning
@@ -1915,11 +1927,22 @@ let wasTransmittingSWR = false;
 
     // Update PA Temperature display (value is directly in °C from IF command)
     function updatePATemperature(tempC) {
+        // Smoothing: ignore sudden jumps >10°C, ignore 0 unless persists
+        if (!window._paTempLast) window._paTempLast = 25;
+        if (!window._paTempZeroCount) window._paTempZeroCount = 0;
+        if (tempC === 0) {
+            window._paTempZeroCount++;
+            if (window._paTempZeroCount < 2) return;
+        } else {
+            window._paTempZeroCount = 0;
+        }
+        if (Math.abs(tempC - window._paTempLast) > 10 && window._paTempLast !== 0) {
+            return;
+        }
+        window._paTempLast = tempC;
         const tempDisplay = document.getElementById('paTemperatureValue');
-
         if (tempDisplay) {
             tempDisplay.textContent = `${tempC}°C`;
-            // Color coding based on temperature
             tempDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
             if (tempC < 40) {
                 tempDisplay.classList.add('bg-success'); // Cool - normal
