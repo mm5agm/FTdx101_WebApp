@@ -1,124 +1,91 @@
-using System.Threading;
-using System.Threading.Tasks;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Hosting;
-using System.IO;
-using FTdx101_WebApp.Models;
+using FTdx101_WebApp.Models.Calibration;
 
-namespace FTdx101_WebApp.Services
+namespace FTdx101_WebApp.Services;
+
+
+public interface ICalibrationService
 {
-    public class CalibrationService
-    {
-        private readonly string _calibrationFilePath;
-        private readonly ILogger<CalibrationService> _logger;
-        private readonly SemaphoreSlim _semaphore = new(1, 1);
-        private CalibrationSettings? _cachedSettings;
-
-        public CalibrationService(IWebHostEnvironment environment, ILogger<CalibrationService> logger)
-        {
-            var appData = Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData),
-                "MM5AGM", "FTdx101 WebApp");
-            Directory.CreateDirectory(appData);
-            _calibrationFilePath = Path.Combine(appData, "calibration.user.json");
-            _logger = logger;
-        }
-
-        public async Task<CalibrationSettings> GetCalibrationAsync()
-        {
-            await _semaphore.WaitAsync();
-            try
-            {
-                if (File.Exists(_calibrationFilePath))
-                {
-                    var json = await File.ReadAllTextAsync(_calibrationFilePath);
-                    _cachedSettings = JsonSerializer.Deserialize<CalibrationSettings>(json) ?? new CalibrationSettings();
-                }
-                else
-                {
-                    _cachedSettings = new CalibrationSettings();
-                }
-                // Assign new Guid to any CalibrationPoint with empty Id (for legacy or hand-edited files)
-                void EnsureIds(MeterCalibration meter, string type)
-                {
-                    foreach (var p in meter.Points)
-                    {
-                        if (p.Id == Guid.Empty)
-                        {
-                            p.Id = Guid.NewGuid();
-                        }
-                    }
-                }
-                EnsureIds(_cachedSettings.SMeter, "SMeter");
-                EnsureIds(_cachedSettings.SWR, "SWR");
-                EnsureIds(_cachedSettings.Power, "Power");
-                EnsureIds(_cachedSettings.ALC, "ALC");
-
-                // Cleanup: Remove empty points from all meters
-                CleanupEmptyPoints(_cachedSettings);
-                return _cachedSettings;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // Remove points where both GaugeValue and ActualValue are empty or zero
-        private void CleanupEmptyPoints(CalibrationSettings settings)
-        {
-            bool IsTrulyEmpty(string? s)
-            {
-                return string.IsNullOrWhiteSpace(s);
-            }
-            void Clean(MeterCalibration meter, string type)
-            {
-                switch (type)
-                {
-                    case "SMeter":
-                        meter.Points = meter.Points
-                            .Where(p => !(IsTrulyEmpty(p.SPoint) && IsTrulyEmpty(p.RawValue)))
-                            .ToList();
-                        break;
-                    case "SWR":
-                        meter.Points = meter.Points
-                            .Where(p => !(IsTrulyEmpty(p.SWR) && IsTrulyEmpty(p.RawValue)))
-                            .ToList();
-                        break;
-                    case "Power":
-                        meter.Points = meter.Points
-                            .Where(p => !(IsTrulyEmpty(p.Power) && IsTrulyEmpty(p.RawValue)))
-                            .ToList();
-                        break;
-                    case "ALC":
-                        meter.Points = meter.Points
-                            .Where(p => !(IsTrulyEmpty(p.ALC) && IsTrulyEmpty(p.RawValue)))
-                            .ToList();
-                        break;
-                }
-            }
-            Clean(settings.SMeter, "SMeter");
-            Clean(settings.SWR, "SWR");
-            Clean(settings.Power, "Power");
-            Clean(settings.ALC, "ALC");
-        }
-
-        public async Task SaveCalibrationAsync(CalibrationSettings settings)
-        {
-            await _semaphore.WaitAsync();
-            try
-            {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                // Save the full CalibrationSettings object, including Ids
-                var json = JsonSerializer.Serialize(settings, options);
-                await File.WriteAllTextAsync(_calibrationFilePath, json);
-                _cachedSettings = settings;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-    }
+    Dictionary<string, List<CalibrationPoint>> GetAllCalibrationTables();
+    CalibrationFile Current { get; }
+    double CalibrateNumeric(string meterName, double raw);
+    string CalibrateSMeterLabel(double raw);
+    void Save(CalibrationFile file);
+    void ResetToDefault();
 }
+
+public class CalibrationService : ICalibrationService
+{
+    public CalibrationFile Current { get; private set; }
+
+    public CalibrationService()
+    {
+        Current = CalibrationStorage.Load();
+    }
+    public Dictionary<string, List<CalibrationPoint>> GetAllCalibrationTables()
+{
+    return Current.Meters
+        .GroupBy(m => m.Name)
+        .ToDictionary(
+            g => g.Key,
+            g => g.SelectMany(m => m.Points).ToList()
+        );
+}
+
+    public double CalibrateNumeric(string meterName, double raw)
+    {
+        var meter = Current.Meters
+            .FirstOrDefault(m => m.Name == meterName && m.Type == "numeric");
+
+        if (meter == null || meter.Points.Count == 0)
+            return raw;
+
+        var points = meter.Points.OrderBy(p => p.Raw).ToList();
+
+        if (raw <= points.First().Raw) return points.First().Radio ?? raw;
+        if (raw >= points.Last().Raw) return points.Last().Radio ?? raw;
+
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            var a = points[i];
+            var b = points[i + 1];
+
+            if (raw >= a.Raw && raw <= b.Raw)
+            {
+                var t = (raw - a.Raw) / (b.Raw - a.Raw);
+                var ra = a.Radio ?? a.Raw;
+                var rb = b.Radio ?? b.Raw;
+                return ra + t * (rb - ra);
+            }
+        }
+
+        return raw;
+    }
+
+    public string CalibrateSMeterLabel(double raw)
+    {
+        var meter = Current.Meters
+            .FirstOrDefault(m => m.Name == "S-Meter" && m.Type == "s_meter");
+
+        if (meter == null || meter.Points.Count == 0)
+            return raw.ToString("F0");
+
+        var points = meter.Points.OrderBy(p => p.Raw).ToList();
+
+        var nearest = points.OrderBy(p => Math.Abs(p.Raw - raw)).First();
+        return nearest.Label ?? raw.ToString("F0");
+    }
+
+    public void Save(CalibrationFile file)
+    {
+        Current = file;
+        CalibrationStorage.Save(file);
+    }
+
+    public void ResetToDefault()
+    {
+        Current = CalibrationStorage.LoadDefault();
+        CalibrationStorage.Save(Current);
+    }
+   
+}
+

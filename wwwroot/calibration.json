@@ -1,0 +1,18 @@
+{
+  "Meters": [
+    {
+      "Name": "S-Meter",
+      "Type": "s_meter",
+      "Points": [
+        { "Raw": 0, "Label": "S1" },
+        { "Raw": 20, "Label": "S3" },
+        { "Raw": 40, "Label": "S5" },
+        { "Raw": 80, "Label": "S7" },
+        { "Raw": 120, "Label": "S9" },
+        { "Raw": 160, "Label": "+10" },
+        { "Raw": 200, "Label": "+20" },
+        { "Raw": 240, "Label": "+40" }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,7 @@ using FTdx101_WebApp.Hubs; // Adjust namespace as needed
 using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<ICalibrationService, CalibrationService>();
 
 // ADD SIGNALR EARLY (before services that depend on IHubContext):
 builder.Services.AddSignalR();
@@ -33,8 +34,6 @@ builder.Services.AddHostedService<RigctldServer>();
 // Register your settings service
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
-// Register calibration service
-builder.Services.AddSingleton<CalibrationService>();
 
 // Add after existing service registrations
 builder.Services.AddHostedService<SMeterPollingService>();
@@ -99,10 +98,11 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
+//app.MapGet("/", () => "ROOT ROUTE HIT");
 
 app.MapRazorPages();
 app.MapControllers();

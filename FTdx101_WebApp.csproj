@@ -9,6 +9,9 @@
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>x64</Platforms>
     <UseWindowsForms>true</UseWindowsForms>
+
+    <!-- Disable automatic content inclusion so we can manage wwwroot ourselves -->
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -58,5 +61,21 @@
     <AssemblyConfiguration>Debug</AssemblyConfiguration>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
+  <!-- Explicitly copy the entire wwwroot folder into the output directory -->
+  <ItemGroup>
+    <Content Include="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Explicitly include Razor Pages now that EnableDefaultContentItems is false -->
+  <ItemGroup>
+    <Content Include="Pages\**\*.cshtml" />
+    <Content Include="Pages\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
 </Project>
+
+
