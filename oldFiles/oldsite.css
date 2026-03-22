@@ -1,20 +1,3 @@
-/* Gauge label overlays for analog meters (restored from oldsite.css) */
-.gauge-labels-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-.gauge-labels-overlay .gauge-label {
-    position: absolute;
-    font-size: 12px;
-    font-weight: 600;
-    color: #333;
-    transform: translate(-50%, -50%);
-    white-space: nowrap;
-}
 html {
     font-size: 14px;
 }
@@ -115,6 +98,114 @@ body {
     border-color: #198754;
 }
 
+/* Progress bar for S-meter: thicker and more visible */
+.progress-bar.bg-success {
+    height: 100%;
+    font-size: 1rem;
+    transition: width 0.3s;
+}
+
+/* Card header for better alignment */
+.card-header h3 {
+    margin-bottom: 0;
+    font-size: 2.2rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Frequency digit styling for interactive tuning */
+.digit {
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 2px;
+    transition: background 0.2s;
+}
+
+    .digit.selected {
+        background: yellow;
+        color: black;
+        border-radius: 3px;
+        padding: 2px 4px;
+    }
+
+/* Analog S-Meter Container - Transparent with no border, left-aligned */
+.analog-meter-container {
+    display: block;  /* Changed from flex to block */
+    background: transparent;
+    border: none;
+    padding: 0 !important;
+    margin: 10px 0 0 -1.5rem !important;  /* Changed bottom margin from 10px to 0 */
+    position: relative;
+}
+
+/* The gauge-wrapper is created by JavaScript and wraps the canvas */
+.gauge-wrapper {
+    display: block;  /* Already set by JS, but enforce it */
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure gauge labels overlay is also positioned correctly */
+.gauge-labels-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+    .analog-meter-container canvas {
+        max-width: 100%;
+        height: auto;
+    }
+
+/* Gauge wrapper for positioning labels */
+.gauge-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Custom gauge labels positioned outside the arc */
+.gauge-labels-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+    .gauge-labels-overlay .gauge-label {
+        position: absolute;
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+}
+
+/* Move Power Out label up by twice its height */
+#powerMeterValue,
+.power-meter-value {
+    transform: translateX(-50%) translateY(-35px) !important;
+    }
+
+/* Power slider - fills only up to the current value; no visible knob */
+
+/* Power slider: match Mic Gain slider appearance */
+#powerSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #28a745;
+    border: 2px solid #b7e4c7;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: 0;
+}
+#powerSlider::-webkit-slider-runnable-track {
     height: 18px;
     background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
     border-radius: 9px;

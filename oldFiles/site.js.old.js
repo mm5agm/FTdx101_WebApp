@@ -1,134 +1,4 @@
-﻿
-// Debugging: Log Save Button Presses and Page Content for Language Issues
-// ========================================================================
-// This block helps diagnose why the browser might think the page is in French.
-// It logs all clicks on elements with "save" in their id, name, or class,
-// and logs the text content of the page and any form data being submitted.
-document.addEventListener('click', function (e) {
-    let el = e.target;
-    if (!el) return;
-    // Check if the element is a button or input with "save" in id, name, or class
-    let isSave = false;
-    if (el.tagName === 'BUTTON' || el.tagName === 'INPUT') {
-        let id = (el.id || '').toLowerCase();
-        let name = (el.name || '').toLowerCase();
-        let cls = (el.className || '').toLowerCase();
-        if (id.includes('save') || name.includes('save') || cls.includes('save')) {
-            isSave = true;
-        }
-    }
-    // Also check parent elements (for icon buttons etc.)
-    if (!isSave && el.closest) {
-        let btn = el.closest('button, input');
-        if (btn) {
-            let id = (btn.id || '').toLowerCase();
-            let name = (btn.name || '').toLowerCase();
-            let cls = (btn.className || '').toLowerCase();
-            if (id.includes('save') || name.includes('save') || cls.includes('save')) {
-                isSave = true;
-                el = btn; // Use the button/input as the element
-            }
-        }
-    }
-    if (isSave) {
-        // Enhanced debug logging
-        console.log('%c[Debug] Save button pressed!','color: white; background: green; font-size: 16px; padding: 2px 8px;', el);
-        console.log('[Debug] Event:', e);
-        console.log('[Debug] Element details:', {
-            tag: el.tagName,
-            id: el.id,
-            name: el.name,
-            className: el.className,
-            type: el.type,
-            value: el.value
-        });
-        // Log the text content of the page (first 500 chars)
-        let bodyText = document.body ? document.body.innerText : '';
-        console.log('[Debug] Page text (first 500 chars):', bodyText.substring(0, 500));
-        // Log any form data if inside a form
-        let form = el.closest && el.closest('form');
-        if (form) {
-            let formData = new FormData(form);
-            let obj = {};
-            for (let [k, v] of formData.entries()) obj[k] = v;
-            console.log('[Debug] Form data:', obj);
-        }
-        // Show a visible alert on the page for diagnostics
-        let existing = document.getElementById('save-debug-alert');
-        if (existing) existing.remove();
-        let alert = document.createElement('div');
-        alert.id = 'save-debug-alert';
-        alert.style.position = 'fixed';
-        alert.style.top = '20px';
-        alert.style.right = '20px';
-        alert.style.zIndex = 9999;
-        alert.style.background = '#28a745';
-        alert.style.color = 'white';
-        alert.style.padding = '12px 24px';
-        alert.style.borderRadius = '8px';
-        alert.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-        alert.style.fontSize = '18px';
-        alert.textContent = 'Save button pressed!';
-        document.body.appendChild(alert);
-        setTimeout(() => { if (alert.parentNode) alert.parentNode.removeChild(alert); }, 2000);
-    }
-});
-// Style fix for Raw Power Out label
-document.addEventListener('DOMContentLoaded', function () {
-    var rawPowerLabel = document.getElementById('raw-powerout-label');
-    if (rawPowerLabel) {
-        rawPowerLabel.style.removeProperty('max-width');
-        rawPowerLabel.style.minWidth = '120px';
-        rawPowerLabel.style.removeProperty('width');
-        rawPowerLabel.style.whiteSpace = 'nowrap';
-        rawPowerLabel.style.textAlign = 'right';
-        rawPowerLabel.style.fontFamily = 'monospace';
-        rawPowerLabel.style.display = 'inline-block';
-        rawPowerLabel.style.marginLeft = '12px';
-    }
-
-    // --- SignalR connection setup and disconnect on page unload ---
-    if (window.signalRConnection === undefined) {
-        window.signalRConnection = new signalR.HubConnectionBuilder().withUrl("/radioHub").build();
-        window.signalRConnection.start().catch(function (err) { console.error("SignalR start error:", err); });
-        // Heartbeat: send every 5 seconds
-        window.signalRHeartbeatInterval = setInterval(function () {
-            if (window.signalRConnection && window.signalRConnection.invoke) {
-                window.signalRConnection.invoke("Heartbeat").catch(function (err) {
-                    // Ignore errors if connection is closed
-                });
-            }
-        }, 5000);
-    }
-    // Use 'unload', 'beforeunload', and 'visibilitychange' for best reliability
-    window.addEventListener('unload', function (e) {
-        if (window.signalRConnection && window.signalRConnection.stop) {
-            window.signalRConnection.stop();
-            if (window.signalRHeartbeatInterval) {
-                clearInterval(window.signalRHeartbeatInterval);
-            }
-        }
-    });
-    window.addEventListener('beforeunload', function () {
-        if (window.signalRConnection && window.signalRConnection.stop) {
-            window.signalRConnection.stop();
-            if (window.signalRHeartbeatInterval) {
-                clearInterval(window.signalRHeartbeatInterval);
-            }
-        }
-    });
-    document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'hidden') {
-            if (window.signalRConnection && window.signalRConnection.stop) {
-                window.signalRConnection.stop();
-                if (window.signalRHeartbeatInterval) {
-                    clearInterval(window.signalRHeartbeatInterval);
-                }
-            }
-        }
-    });
-});
-// FTdx101 Web App - site.js
+﻿// FTdx101 Web App - site.js
 // =============================================================================
 // This file has two main sections:
 //
@@ -172,8 +42,7 @@ const state = {
     selectedIdx: { A: null, B: null },
     editing: { A: false, B: false },
     localFreq: { A: null, B: null },
-    lastBackendFreq: { A: null, B: null },
-    radioModel: 'FTdx101MP' // Default, will be updated from backend
+    lastBackendFreq: { A: null, B: null }
 };
 
 // Frequency display renderer (outer version, used by outer updateFrequencyDisplay)
@@ -388,29 +257,15 @@ window.setAntenna = async function (receiver, antenna) {
 
 // Outer power slider max updater
 function updatePowerSliderMax(maxPower) {
-    const slider = document.getElementById('powerSlider');
-    const labelMax = document.getElementById('powerMaxLabel');
+    const sliderA = document.getElementById('powerSliderA');
+    const sliderB = document.getElementById('powerSliderB');
+    const labelMaxA = document.getElementById('powerMaxLabelA');
+    const labelMaxB = document.getElementById('powerMaxLabelB');
 
-    // Always enforce correct max for FTdx101D and FTdx101MP
-    let actualMax = 200;
-    if (window.state && window.state.radioModel) {
-        const model = window.state.radioModel.toLowerCase();
-        if (model === "ftdx101d") {
-            actualMax = 100;
-        } else if (model === "ftdx101mp") {
-            actualMax = 200;
-        } else if (typeof maxPower === "number") {
-            actualMax = maxPower;
-        }
-    } else if (typeof maxPower === "number") {
-        actualMax = maxPower;
-    }
-    // Always enforce correct max for FTdx101D
-    if (window.state && window.state.radioModel && window.state.radioModel.toLowerCase() === "ftdx101d") {
-        actualMax = 100;
-    }
-    if (slider) slider.max = actualMax;
-    if (labelMax) labelMax.textContent = actualMax + 'W';
+    if (sliderA) sliderA.max = maxPower;
+    if (sliderB) sliderB.max = maxPower;
+    if (labelMaxA) labelMaxA.textContent = maxPower + 'W';
+    if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
 }
 
 // TX state updater - updates TX button and meters
@@ -431,10 +286,6 @@ function updateTxIndicators(isTransmitting) {
         if (typeof window.updatePowerMeter === 'function') {
             window.updatePowerMeter(0);
         }
-        if (typeof window.gaugePower !== 'undefined' && window.gaugePower) {
-            window.gaugePower.value = 0;
-            window.gaugePower.draw();
-        }
         if (typeof window.updateSWRMeter === 'function') {
             window.updateSWRMeter(0);
         }
@@ -443,7 +294,8 @@ function updateTxIndicators(isTransmitting) {
 
 // Outer power setter (stub - real version is inside the IIFE)
 async function setPower(receiver, watts) {
-    const power = parseInt(watts);
+    const maxPower = state.radioModel === 'FTdx101MP' ? 200 : 100;
+    const power = Math.max(5, Math.min(parseInt(watts), maxPower));
     try {
         console.log(`Setting ${receiver} power to ${power}W`);
         const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
@@ -463,12 +315,8 @@ async function setPower(receiver, watts) {
 }
 
 // Placeholder - replaced by the IIFE's real implementation once it runs
-window.updatePowerDisplay = function(receiver, watts) {
-    // Find the power value display element
-    const powerValue = document.getElementById('powerValue');
-    if (powerValue) {
-        powerValue.innerText = `${watts}W`;
-    }
+window.updatePowerDisplay = function () {
+    console.warn("updatePowerDisplay not implemented");
 };
 
 // ---------------------------------------------------------------------------
@@ -515,11 +363,11 @@ function updateRadioPowerButton() {
     if (!btn) return;
 
     if (radioPowerOn) {
-        btn.className = 'btn btn-success btn-sm';
+        btn.className = 'btn btn-success btn-lg';
         btn.innerHTML = '<i class="bi bi-power"></i> POWER';
         btn.title = 'Radio is ON - Click to turn OFF';
     } else {
-        btn.className = 'btn btn-danger btn-sm';
+        btn.className = 'btn btn-danger btn-lg';
         btn.innerHTML = '<i class="bi bi-power"></i> POWER';
         btn.title = 'Radio is OFF - Click to turn ON';
     }
@@ -543,26 +391,6 @@ async function checkRadioPowerStatus() {
 document.addEventListener('DOMContentLoaded', function() {
     checkRadioPowerStatus();
     checkTxStatus();
-    // Fetch radio status and update slider max
-    fetch('/api/cat/status')
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.radioModel && window.state) {
-                window.state.radioModel = data.radioModel;
-                updatePowerSliderMax();
-            }
-        });
-
-    // Update powerValue label live as slider moves (outer/global version)
-    const slider = document.getElementById('powerSlider');
-    const display = document.getElementById('powerValue');
-    if (slider && display) {
-        // Initialize label to slider value on page load
-        display.textContent = slider.value + 'W';
-        slider.addEventListener('input', function () {
-            display.textContent = slider.value + 'W';
-        });
-    }
 });
 
 // ---------------------------------------------------------------------------
@@ -645,15 +473,6 @@ connection.on("ShowSettingsPage", function () {
     window.location.href = "/Settings";
 });
 
-
-
-
-// S-Meter label interpolation using only dynamic calibration data
-function sMeterLabel(val) {
-    return window.calibrationService.calibrateSMeterLabel(val);
-}
-
-
 // ---------------------------------------------------------------------------
 // BUG FIX: updateModeSelect
 // ---------------------------------------------------------------------------
@@ -726,9 +545,10 @@ connection.on("RadioStateUpdate", function (update) {
     }
 
     // --- POWER CHANGE ---
-    // Only handle generic Power (no A/B distinction)
-    if (update.property === "Power" || update.property === "PowerA") {
-        // Do not update the slider or label from backend. Power slider is user-only.
+    if (update.property === "PowerA") {
+        updatePowerDisplay("A", update.value);
+        const sliderA = document.getElementById('powerSliderA');
+        if (sliderA) sliderA.value = update.value;
     }
 
     // --- RADIO POWER STATE ---
@@ -740,24 +560,8 @@ connection.on("RadioStateUpdate", function (update) {
     // --- TX STATE ---
     if (update.property === "IsTransmitting") {
         isTransmitting = update.value;
-        // Always update the IIFE's state for correct gauge behavior
-        if (window.radioControl && window.radioControl._state) {
-            window.radioControl._state.isTransmitting = update.value;
-            console.log('[SignalR] Set IIFE state.isTransmitting =', update.value);
-        } else {
-            console.warn('[SignalR] IIFE state not available to set isTransmitting');
-        }
         updateTxButton();
         updateTxIndicators(update.value);
-        // When TX starts, send CAT power command with current slider value
-        if (update.value === true) {
-             const slider = document.getElementById('powerSlider');
-             if (slider && window.radioControl && typeof window.radioControl.setPower === 'function') {
-                 // Use VFO B if txVfo === 1, else VFO A
-                 const receiver = (typeof window.txVfo !== 'undefined' && window.txVfo === 1) ? 'B' : 'A';
-                 window.radioControl.setPower(receiver, slider.value);
-             }
-        }
     }
     if (update.property === "TxVfo") {
         txVfo = update.value;
@@ -766,11 +570,6 @@ connection.on("RadioStateUpdate", function (update) {
 
     // --- METER UPDATES ---
     if (update.property === "PowerMeter" && typeof window.updatePowerMeter === 'function') {
-        // Ensure the IIFE's state is in sync
-        if (window.radioControl && window.radioControl._state) {
-            window.radioControl._state.isTransmitting = isTransmitting;
-        }
-        console.log('[SignalR] PowerMeter update received:', update.value, 'type:', typeof update.value, 'isTransmitting:', isTransmitting, 'IIFE state.isTransmitting:', window.radioControl && window.radioControl._state ? window.radioControl._state.isTransmitting : 'N/A');
         window.updatePowerMeter(update.value);
     }
     if (update.property === "SWRMeter" && typeof window.updateSWRMeter === 'function') {
@@ -789,7 +588,17 @@ connection.on("RadioStateUpdate", function (update) {
         }
     }
 
-    // Remove PowerB and fallback PowerA logic; only use Power
+    if (update.property === "PowerB") {
+        updatePowerDisplay("B", update.value);
+        const sliderB = document.getElementById('powerSliderB');
+        if (sliderB) sliderB.value = update.value;
+    }
+    // Generic "Power" fallback (maps to receiver A)
+    if (update.property === "Power") {
+        updatePowerDisplay("A", update.value);
+        const sliderA = document.getElementById('powerSliderA');
+        if (sliderA) sliderA.value = update.value;
+    }
 });
 
 // SignalR connection is started once below (after the IIFE) with a .catch() error handler.
@@ -872,12 +681,6 @@ async function updateBandButtonsFromBackend() {
         const response = await fetch('/api/cat/status');
         if (!response.ok) return;
         const data = await response.json();
-        // Update global radioModel if present
-        if (data.radioModel) {
-            state.radioModel = data.radioModel;
-            // Always call updatePowerSliderMax to use latest radioModel
-            updatePowerSliderMax();
-        }
         if (data.vfoA && data.vfoA.band) {
             document.querySelectorAll('input[name="band-A"]').forEach(radio => {
                 radio.checked = (radio.value.toLowerCase() === data.vfoA.band.toLowerCase());
@@ -1006,79 +809,6 @@ function sendAfGain(receiver, value) {
         operationInProgress: false,
         isTransmitting: false  // Track TX state for meter display
     };
-// --- Calibration Service (JS side, backed by JSON from backend) ---
-const calibrationService = (function () {
-    const tables = {}; // meterName -> array of { raw, value, label? }
-
-    function calibrateNumeric(meterName, raw) {
-        const table = tables[meterName];
-        if (!table || table.length === 0) return raw; // fallback: identity
-        return interpolateNumeric(table, raw);
-    }
-
-    function calibrateSMeterLabel(raw) {
-        let table = tables["SMETER"];
-        // If no calibration, use default S-Meter points
-        if (!table || table.length === 0) {
-            table = [
-                { raw: 0, label: "S1" },
-                { raw: 20, label: "S3" },
-                { raw: 40, label: "S5" },
-                { raw: 80, label: "S7" },
-                { raw: 120, label: "S9" },
-                { raw: 160, label: "+10" },
-                { raw: 200, label: "+20" },
-                { raw: 240, label: "+40" }
-            ];
-        }
-        return interpolateLabel(table, raw);
-    }
-
-    return {
-        _tables: tables,
-        calibrateNumeric,
-        calibrateSMeterLabel
-    };
-})();
-
-// Expose globally for meter functions
-window.calibrationService = calibrationService;
-function interpolateNumeric(points, raw) {
-    // points: [{ raw: number, value: number }, ...] sorted by raw
-    if (points.length === 1) return points[0].value;
-
-    if (raw <= points[0].raw) return points[0].value;
-    if (raw >= points[points.length - 1].raw) return points[points.length - 1].value;
-
-    for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const next = points[i];
-        if (raw <= next.raw) {
-            const frac = (raw - prev.raw) / (next.raw - prev.raw);
-            return prev.value + frac * (next.value - prev.value);
-        }
-    }
-    return points[points.length - 1].value;
-}
-
-function interpolateLabel(points, raw) {
-    // points: [{ raw: number, label: string }, ...] sorted by raw
-    if (points.length === 1) return points[0].label;
-
-    if (raw <= points[0].raw) return points[0].label;
-    if (raw >= points[points.length - 1].raw) return points[points.length - 1].label;
-
-    for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const next = points[i];
-        if (raw <= next.raw) {
-            // For now: snap to the closer label
-            const mid = (prev.raw + next.raw) / 2;
-            return raw <= mid ? prev.label : next.label;
-        }
-    }
-    return points[points.length - 1].label;
-}
 
     function renderFrequencyDigits(freq, selIdx) {
         if (!freq || freq < 1000) {
@@ -1144,14 +874,6 @@ function interpolateLabel(points, raw) {
         document.querySelectorAll(`input[name="antenna${receiver}"]`).forEach(btn => {
             btn.checked = (btn.value === antenna);
         });
-    }
-
-    // Update roofing filter dropdown
-    function updateRoofingFilterSelect(receiver, filterCode) {
-        const selectEl = document.getElementById(`roofingFilterSelect${receiver}`);
-        if (selectEl && filterCode) {
-            selectEl.value = filterCode;
-        }
     }
 
     function initializeDigitInteraction(receiver) {
@@ -1313,69 +1035,6 @@ function interpolateLabel(points, raw) {
         }
     }
 
-    // Show Windows-style message box (auto-dismisses after 3 seconds)
-    function showMessageBox(message, title = 'Warning') {
-        const modalEl = document.getElementById('messageBoxModal');
-        const titleEl = document.getElementById('messageBoxTitle');
-        const textEl = document.getElementById('messageBoxText');
-
-        if (modalEl && titleEl && textEl) {
-            titleEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${title}`;
-            textEl.textContent = message;
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-
-            // Auto-dismiss after 3 seconds
-            setTimeout(() => {
-                modal.hide();
-            }, 3000);
-        } else {
-            // Fallback to alert if modal not found
-            alert(message);
-        }
-    }
-
-    async function setRoofingFilter(receiver, filter) {
-        const didPause = pausePolling();
-
-        try {
-            console.log(`Setting ${receiver} roofing filter to ${filter}`);
-            const response = await fetch(`/api/cat/roofingfilter/${receiver.toLowerCase()}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filter })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                console.error('Failed to set roofing filter:', data.error);
-                showMessageBox(`Failed to set roofing filter: ${data.error}`, 'Error');
-                return;
-            }
-
-            // Check if there's a warning (filter not installed)
-            if (data.warning) {
-                console.warn(`Roofing filter warning: ${data.message}`);
-                showMessageBox(data.message, 'Roofing Filter');
-                // Update dropdown to show actual filter
-                const selectEl = document.getElementById(`roofingFilterSelect${receiver}`);
-                if (selectEl && data.filter) {
-                    selectEl.value = data.filter;
-                }
-            } else {
-                console.log(`Roofing filter set successfully: ${receiver} -> ${data.filterName}`);
-            }
-        } catch (error) {
-            console.error('Error setting roofing filter:', error);
-            showMessageBox('Error setting roofing filter. Check console for details.', 'Error');
-        } finally {
-            if (didPause) {
-                resumePolling();
-            }
-        }
-    }
-
     function pausePolling() {
         if (state.pollingInterval && !state.operationInProgress) {
             state.operationInProgress = true;
@@ -1408,25 +1067,13 @@ function interpolateLabel(points, raw) {
             }
             const data = await response.json();
 
+            if (data.maxPower !== undefined) {
+                state.maxPower = data.maxPower;
+                updatePowerSliderMax(data.maxPower);
+            }
             if (data.radioModel !== undefined) {
                 state.radioModel = data.radioModel;
             }
-            // Always call updatePowerSliderMax to use latest radioModel
-            if (state.radioModel) {
-                const model = state.radioModel.toLowerCase();
-                if (model === "ftdx101d") {
-                    state.maxPower = 100;
-                } else if (model === "ftdx101mp") {
-                    state.maxPower = 200;
-                } else {
-                    const maxPower = (data.maxPower !== undefined) ? data.maxPower : 200;
-                    state.maxPower = maxPower;
-                }
-            } else {
-                const maxPower = (data.maxPower !== undefined) ? data.maxPower : 200;
-                state.maxPower = maxPower;
-            }
-            updatePowerSliderMax();
 
             state.lastBackendFreq.A = data.vfoA.frequency;
             state.lastBackendFreq.B = data.vfoB.frequency;
@@ -1435,16 +1082,12 @@ function interpolateLabel(points, raw) {
             state.lastAntenna.A = data.vfoA.antenna;
             state.lastAntenna.B = data.vfoB.antenna;
 
-            // Show set power value (not meter reading) when not transmitting
-            let powerValue = 100;
-            if (data.vfoA && data.vfoA.power !== undefined) {
-                powerValue = data.vfoA.power;
-                state.lastPower.A = data.vfoA.power;
-            } else if (state.lastPower && typeof state.lastPower === 'object' && state.lastPower.A !== undefined) {
-                powerValue = state.lastPower.A;
+            if (data.vfoA.power !== undefined) {
+                updatePowerSlider('A', data.vfoA.power);
             }
-            updatePowerSlider(null, powerValue);
-            // TX meter (updatePowerMeter) will use RM5 during transmit only
+            if (data.vfoB.power !== undefined) {
+                updatePowerSlider('B', data.vfoB.power);
+            }
 
             // Stop showing local frequency once backend confirms our sent value
             if (state.editing.A && state.lastSentFreq.A !== null && state.localFreq.A === null && data.vfoA.frequency === state.lastSentFreq.A) {
@@ -1482,14 +1125,6 @@ function interpolateLabel(points, raw) {
             // Update mode and antenna buttons from polling
             updateModeAndAntennaButtons('A', data.vfoA.mode, data.vfoA.antenna);
             updateModeAndAntennaButtons('B', data.vfoB.mode, data.vfoB.antenna);
-
-            // Update roofing filter dropdowns
-            if (data.vfoA.roofingFilter) {
-                updateRoofingFilterSelect('A', data.vfoA.roofingFilter);
-            }
-            if (data.vfoB.roofingFilter) {
-                updateRoofingFilterSelect('B', data.vfoB.roofingFilter);
-            }
 
             // Update MIC Gain / Data Out Gain label based on current mode (VFO A is main)
             updateMicGainLabel(data.vfoA.mode);
@@ -1537,27 +1172,26 @@ function interpolateLabel(points, raw) {
     }
 
     function updatePowerDisplay(receiver, watts) {
-        // Only one power control supported
-        // Only update the label from the slider value, never from backend
-        const display = document.getElementById('powerValue');
-        const slider = document.getElementById('powerSlider');
-        if (display && slider) {
-            display.textContent = slider.value + 'W';
+        const display = document.getElementById('powerValue' + receiver);
+        if (display) {
+            display.textContent = watts + 'W';
         }
+        const slider = document.getElementById('powerSlider' + receiver);
+        if (slider) {
+            slider.value = watts;
+            updateSliderFill(slider);
+        }
+        if (state.lastPower) state.lastPower[receiver] = watts;
     }
 
     async function setPower(receiver, watts) {
         try {
             console.log(`Setting ${receiver} power to ${watts}W`);
-            // Ensure state.lastPower is an object
-            if (typeof state.lastPower !== 'object' || state.lastPower === null) {
-                state.lastPower = {};
-            }
             state.lastPower[receiver] = parseInt(watts);
             const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ Watts: parseInt(watts) })
+                body: JSON.stringify({ watts: parseInt(watts) })
             });
             if (!response.ok) {
                 console.error('Failed to set power:', await response.text());
@@ -1571,33 +1205,58 @@ function interpolateLabel(points, raw) {
     }
 
     function updatePowerSlider(receiver, watts) {
-        // No-op: backend never updates the slider. User only.
+        if (state.editingPower && state.editingPower[receiver]) {
+            return; // Don't update while user is dragging the slider
+        }
+        updatePowerDisplay(receiver, watts);
     }
 
     function updatePowerSliderMax(maxPower) {
-        // Enforce correct min/max for FTdx101D and FTdx101MP
-        const slider = document.getElementById('powerSlider');
-        const labelMax = document.getElementById('powerMaxLabel');
-        let actualMax = 200;
-        let actualMin = 5;
-        if (state.radioModel) {
-            const model = state.radioModel.toLowerCase();
-            if (model === "ftdx101d") {
-                actualMax = 100;
-            } else if (model === "ftdx101mp") {
-                actualMax = 200;
-            } else if (typeof maxPower === "number") {
-                actualMax = maxPower;
+        const sliderA = document.getElementById('powerSliderA');
+        const sliderB = document.getElementById('powerSliderB');
+        const labelMaxA = document.getElementById('powerMaxLabelA');
+        const labelMaxB = document.getElementById('powerMaxLabelB');
+
+        if (sliderA) { sliderA.max = maxPower; updateSliderFill(sliderA); }
+        if (sliderB) { sliderB.max = maxPower; updateSliderFill(sliderB); }
+        if (labelMaxA) labelMaxA.textContent = maxPower + 'W';
+        if (labelMaxB) labelMaxB.textContent = maxPower + 'W';
+    }
+
+    // S-Meter label interpolation
+    function sMeterLabel(val) {
+        const points = [
+            { label: "S0", value: 0 },
+            { label: "S1", value: 4 },
+            { label: "S3", value: 30 },
+            { label: "S5", value: 65 },
+            { label: "S7", value: 95 },
+            { label: "S9", value: 130 },
+            { label: "S9+20", value: 171 },
+            { label: "S9+40", value: 212 },
+            { label: "S9+60", value: 255 }
+        ];
+        if (val <= points[0].value) return points[0].label;
+        for (let i = 1; i < points.length; i++) {
+            if (val <= points[i].value) {
+                const prev = points[i - 1];
+                const next = points[i];
+                const frac = (val - prev.value) / (next.value - prev.value);
+                if (val === next.value) return next.label;
+                if (next.label.startsWith("S9+")) {
+                    const plus = parseInt(next.label.replace("S9+", ""));
+                    const prevPlus = prev.label.startsWith("S9+") ? parseInt(prev.label.replace("S9+", "")) : 0;
+                    const interp = Math.round(prevPlus + frac * (plus - prevPlus));
+                    return "S9+" + interp;
+                } else {
+                    const prevNum = parseInt(prev.label.replace("S", ""));
+                    const nextNum = parseInt(next.label.replace("S", ""));
+                    const interp = Math.round(prevNum + frac * (nextNum - prevNum));
+                    return "S" + interp;
+                }
             }
-        } else if (typeof maxPower === "number") {
-            actualMax = maxPower;
         }
-        if (slider) {
-            slider.max = actualMax;
-            slider.min = actualMin;
-            updateSliderFill(slider);
-        }
-        if (labelMax) labelMax.textContent = actualMax + 'W';
+        return "S9+60";
     }
 
     function updateSMeter(receiver, value) {
@@ -1605,7 +1264,6 @@ function interpolateLabel(points, raw) {
         if (receiver === 'A' && gaugeA) {
             gaugeA.value = value;
             gaugeA.draw();
-            updateRawSMeterValueA(value);
         } else if (receiver === 'B' && gaugeB) {
             gaugeB.value = value;
             gaugeB.draw();
@@ -1614,156 +1272,109 @@ function interpolateLabel(points, raw) {
 
     // Smoothing buffers for meters (reduce jumpiness)
     let powerHistory = [];
-let swrHistory = [];
-const historyLength = 7; // Average last 7 readings for smoother display
-let wasTransmittingPower = false;
-let wasTransmittingSWR = false;
+    let swrHistory = [];
+    const historyLength = 7; // Average last 7 readings for smoother display
 
     function updatePowerMeter(value) {
-        // Store last raw value globally for calibration reloads
-        window.lastPowerMeterRawValue = value;
-        // Debug: log TX state and calibration
-        console.log('[PowerMeter] updatePowerMeter called. isTransmitting:', state.isTransmitting, 'raw value:', value, 'type:', typeof value, 'calibration:', powerOutCalibrationPoints);
-        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
-        if (!state.isTransmitting) {
-            value = 0;
-        }
-        if (!state.isTransmitting) {
-            powerHistory = [];
-            wasTransmittingPower = false;
+        // Debug: log TX state and value
+        console.log(`[PowerMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
+
+        // Clear immediately when not transmitting OR when we get a zero while transmitting
+        // (zero during TX means tail-end of transmission, should clear the meter)
+        if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
+            powerHistory = []; // Clear history
             const valueSpan = document.getElementById('powerMeterValue');
             if (valueSpan) valueSpan.textContent = 'Power Out 0W';
-            // Update raw Power Out label to 0 with descriptive label
-            var rawPowerLabel = document.getElementById('raw-powerout-label');
-            if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: 0';
             if (window.gaugePower) {
                 window.gaugePower.value = 0;
                 window.gaugePower.draw();
-            } else {
-                console.warn('[PowerMeter] window.gaugePower is not defined when trying to set to 0');
             }
+            console.log('[PowerMeter] Cleared (zero or not TX)');
             return;
         }
-        // Only update on TX
-        if (!wasTransmittingPower) {
-            powerHistory = [];
-        }
-        wasTransmittingPower = true;
+
+        // Add to history buffer
         powerHistory.push(value);
         if (powerHistory.length > historyLength) {
-            powerHistory.shift();
+            powerHistory.shift(); // Remove oldest
         }
-        const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
-        // Use calibration points for Watts
-       let watts = window.calibrationService.calibrateNumeric("PWR", avgValue);
 
-        // Clamp watts to gauge maxValue
-        let maxW = 200;
-        if (Array.isArray(powerOutCalibrationPoints) && powerOutCalibrationPoints.length > 1) {
-            const last = powerOutCalibrationPoints[powerOutCalibrationPoints.length-1];
-            const lastNum = parseFloat(last.label);
-            if (!isNaN(lastNum)) maxW = lastNum;
-        }
-        if (!window.gaugePower || window.gaugePower.maxValue !== maxW) {
-            // Only re-initialize if maxValue changed
-            try {
-                const canvasId = 'powerMeterCanvas';
-                const powerConfig = makeGaugeConfig(canvasId, 'power');
-                powerConfig.maxValue = maxW;
-                if (window.gaugePower && window.gaugePower.destroy) {
-                    window.gaugePower.destroy();
-                }
-                window.gaugePower = new RadialGauge(powerConfig);
-                window.gaugePower.draw();
-                if (typeof createGaugeLabels === 'function') {
-                    createGaugeLabels(canvasId, powerConfig._labels);
-                }
-                console.log('[PowerMeter] Gauge re-initialized with maxValue:', maxW);
-            } catch (err) {
-                console.error('[GaugeInit] Error during gaugePower re-initialization:', err);
-            }
-        }
-        // Clamp value to [0, maxW]
-        let clampedWatts = Math.max(0, Math.min(watts, maxW));
-        console.log('[PowerMeter] avgValue:', avgValue, 'watts:', watts, 'clampedWatts:', clampedWatts, 'gauge maxValue:', maxW);
+        // Calculate average
+        const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
+
+        // FT-dx101 power meter calibration: User reports 20W actual shows ~70 raw
+        // So: 20W / 70 = 0.286 watts per raw unit
+        // This scale is the SAME for both FTdx101D and MP (same meter, different max power)
+        const scale = 0.286;
+        const watts = Math.round(avgValue * scale);
+
+        console.log(`[PowerMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, Watts: ${watts}`);
+
         const valueSpan = document.getElementById('powerMeterValue');
-        if (valueSpan) valueSpan.textContent = `Power Out ${clampedWatts}W`;
-        // Update raw Power Out label with descriptive label
-        var rawPowerLabel = document.getElementById('raw-powerout-label');
-        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
-        var canvas = document.getElementById('powerMeterCanvas');
-        if (!canvas) {
-            console.warn('[PowerMeter] powerMeterCanvas not found in DOM');
-        } else {
-            console.log('[PowerMeter] powerMeterCanvas found, width:', canvas.width, 'height:', canvas.height, 'display:', getComputedStyle(canvas).display);
-        }
+        if (valueSpan) valueSpan.textContent = `Power Out ${watts}W`;
+
         if (window.gaugePower) {
-            window.gaugePower.value = clampedWatts;
+            // The gauge needle position must match the watt labels, not the raw 0-255 scale
+            // So we set gauge.value = watts (which the gauge will display on its 0-255 internal scale)
+            // But the gauge maxValue is 255, so we need to use watts directly
+            window.gaugePower.value = watts;
             window.gaugePower.draw();
-            console.log('[PowerMeter] gaugePower.value set to', clampedWatts, 'maxValue:', window.gaugePower.maxValue);
-        } else {
-            console.warn('[PowerMeter] window.gaugePower is not defined when trying to set value');
         }
     }
 
     function updateSWRMeter(value) {
-        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
-        if (!state.isTransmitting) {
-            swrHistory = [];
-            wasTransmittingSWR = false;
+        // Debug: log TX state and value ALWAYS
+        console.log(`[SWRMeter] isTransmitting: ${state.isTransmitting}, value: ${value}`);
+
+        // Clear immediately when not transmitting OR when we get a zero while transmitting
+        // (zero during TX means tail-end of transmission, should clear the meter)
+        if (!state.isTransmitting || (state.isTransmitting && value === 0)) {
+            swrHistory = []; // Clear history
             const valueSpan = document.getElementById('swrMeterValue');
             if (valueSpan) valueSpan.textContent = 'SWR 1.0:1';
             if (window.gaugeSWR) {
                 window.gaugeSWR.value = 0;
                 window.gaugeSWR.draw();
             }
+            console.log('[SWRMeter] Cleared (zero or not TX)');
             return;
         }
-        if (!wasTransmittingSWR) {
-            swrHistory = [];
-        }
-        wasTransmittingSWR = true;
+
+        // Add to history buffer
         swrHistory.push(value);
         if (swrHistory.length > historyLength) {
-            swrHistory.shift();
+            swrHistory.shift(); // Remove oldest
         }
-        const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
-      const swr = window.calibrationService.calibrateNumeric("SWR", avgValue);
 
-        const swrClamped = Math.min(swr, 10.0);
+        // Calculate average to reduce jumpiness
+        const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
+
+        // FT-dx101 SWR meter calibration
+        // User reports: SWR 5:1 actual shows raw values 68-255 (avg peaks ~244)
+        // So: (5 - 1) / 244 = 0.0164, or SWR = 1.0 + (value / 61)
+        const swr = 1.0 + (avgValue / 61.0);
+        const swrClamped = Math.min(swr, 10.0); // Clamp to 10.0 max
+
+        console.log(`[SWRMeter] Raw: ${value}, Avg: ${avgValue.toFixed(1)}, SWR: ${swrClamped.toFixed(1)}:1`);
+
         const valueSpan = document.getElementById('swrMeterValue');
         if (valueSpan) valueSpan.textContent = `SWR ${swrClamped.toFixed(1)}:1`;
+
         if (window.gaugeSWR) {
+            // The gauge labels range from 1.0 to 3.0, and the gauge internal arc is 0-255
+            // So we need to map the SWR ratio to the gauge position:
+            // SWR 1.0 → position 0, SWR 3.0 → position 255
+            // Position = (swr - 1.0) / (3.0 - 1.0) * 255 = (swr - 1.0) * 127.5
             const gaugePosition = (swrClamped - 1.0) * 127.5;
             window.gaugeSWR.value = gaugePosition;
             window.gaugeSWR.draw();
         }
     }
 
-    // ALC gauge (0-255 raw value)
+    // Update ALC bar meter (0-255 raw value) and ALC gauge
     function updateALCMeter(value) {
-        // When not transmitting, always show the bottom scale value (0%)
-        if (!state.isTransmitting) {
-            const valueSpan = document.getElementById('alcValue');
-            const progressBar = document.getElementById('alcBar');
-            if (valueSpan) valueSpan.textContent = '0%';
-            if (progressBar) {
-                progressBar.style.width = '0%';
-                progressBar.setAttribute('aria-valuenow', 0);
-                progressBar.className = 'progress-bar bg-success';
-            }
-            const alcMeterValue = document.getElementById('alcMeterValue');
-            if (alcMeterValue) alcMeterValue.textContent = 'ALC 0V';
-            if (window.gaugeALC) {
-                window.gaugeALC.value = 0;
-                window.gaugeALC.draw();
-            }
-            return;
-        }
-
-        // FTdx101 ALC calibration: 50V corresponds to a raw value of 178
-        // So we scale the 0-255 raw value to a 0-50V range for display
-        const alcVolts = window.calibrationService.calibrateNumeric("ALC", value);
+        // Convert 0-255 raw value to 0-50V scale for display
+        const alcVolts = (value / 255) * 50;
         const percentage = Math.round((value / 255) * 100);
         const valueSpan = document.getElementById('alcValue');
         const progressBar = document.getElementById('alcBar');
@@ -1796,24 +1407,13 @@ let wasTransmittingSWR = false;
 
     // Update IDD display (0-255 raw value, display as amps)
     function updateIDDMeter(value) {
-        // Smoothing: ignore sudden jumps >5A, ignore 0 unless persists, clamp to 0-25A
-        if (!window._iddLast) window._iddLast = 0;
-       const amps = window.calibrationService.calibrateNumeric("IDD", value);
+        // Assuming 255 = ~25A max for FTdx101MP (adjust based on actual specs)
+        const amps = (value / 255) * 25.0;
         const iddDisplay = document.getElementById('iddDisplayValue');
-        // Ignore 0 unless it persists for 2+ updates
-        if (amps === 0) {
-            window._iddZeroCount = (window._iddZeroCount || 0) + 1;
-            if (window._iddZeroCount < 2) return;
-        } else {
-            window._iddZeroCount = 0;
-        }
-        // Ignore sudden jumps >5A
-        if (Math.abs(amps - window._iddLast) > 5 && window._iddLast !== 0) {
-            return;
-        }
-        window._iddLast = amps;
+
         if (iddDisplay) {
             iddDisplay.textContent = `${amps.toFixed(1)}A`;
+            // Color coding based on current draw
             iddDisplay.classList.remove('bg-primary', 'bg-warning', 'bg-danger', 'bg-success');
             if (amps < 10) {
                 iddDisplay.classList.add('bg-success');
@@ -1829,33 +1429,24 @@ let wasTransmittingSWR = false;
     // Filter out noisy readings - PA voltage should be stable around 48V
     let lastValidVDD = 204; // Default to ~48V
     function updatePAVoltage(value) {
-        // Smoothing: ignore sudden jumps >3V, ignore 0 unless persists, clamp to 40-55V
+        // Filter out obviously wrong values (PA voltage should be 40-55V range, which is ~170-235 raw)
+        // Only accept values in reasonable range
         const minRaw = 170;  // ~40V
         const maxRaw = 235;  // ~55V
-        if (!window._vddLast) window._vddLast = 48;
-        if (!window._vddZeroCount) window._vddZeroCount = 0;
+
         if (value >= minRaw && value <= maxRaw) {
             lastValidVDD = value;
         } else {
-            // Ignore noisy reading
-            return;
+            return; // Ignore noisy reading
         }
-     const volts = window.calibrationService.calibrateNumeric("VPA", lastValidVDD);
-        // Ignore 0 unless it persists for 2+ updates
-        if (volts === 0) {
-            window._vddZeroCount++;
-            if (window._vddZeroCount < 2) return;
-        } else {
-            window._vddZeroCount = 0;
-        }
-        // Ignore sudden jumps >3V
-        if (Math.abs(volts - window._vddLast) > 3 && window._vddLast !== 0) {
-            return;
-        }
-        window._vddLast = volts;
+
+        // Assuming 255 = ~60V max for PA voltage
+        const volts = (lastValidVDD / 255) * 60.0;
         const voltageDisplay = document.getElementById('paVoltageValue');
+
         if (voltageDisplay) {
             voltageDisplay.textContent = `${volts.toFixed(1)}V`;
+            // Color coding based on voltage (nominal ~50V for FTdx101)
             voltageDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
             if (volts < 45) {
                 voltageDisplay.classList.add('bg-warning'); // Low voltage warning
@@ -1869,22 +1460,11 @@ let wasTransmittingSWR = false;
 
     // Update PA Temperature display (value is directly in °C from IF command)
     function updatePATemperature(tempC) {
-        // Smoothing: ignore sudden jumps >10°C, ignore 0 unless persists
-        if (!window._paTempLast) window._paTempLast = 25;
-        if (!window._paTempZeroCount) window._paTempZeroCount = 0;
-        if (tempC === 0) {
-            window._paTempZeroCount++;
-            if (window._paTempZeroCount < 2) return;
-        } else {
-            window._paTempZeroCount = 0;
-        }
-        if (Math.abs(tempC - window._paTempLast) > 10 && window._paTempLast !== 0) {
-            return;
-        }
-       window._paTempLast = window.calibrationService.calibrateNumeric("TPA", tempC);
         const tempDisplay = document.getElementById('paTemperatureValue');
+
         if (tempDisplay) {
             tempDisplay.textContent = `${tempC}°C`;
+            // Color coding based on temperature
             tempDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
             if (tempC < 40) {
                 tempDisplay.classList.add('bg-success'); // Cool - normal
@@ -1928,39 +1508,38 @@ let wasTransmittingSWR = false;
                     { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
                     { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
                 ],
-                // Classic S-Meter labels: 0, S1-S9, +20, +40, +60
                 labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"]
             },
             power: {
                 minValue: 0,
-                maxValue: 200,
-                majorTicks: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
+                maxValue: 255,  // 0-255 scale from RM1 command
+                majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
                 highlights: [
-                    { from: 0, to: 150, color: "rgba(0,255,0,.25)" },
-                    { from: 150, to: 175, color: "rgba(255,255,0,.25)" },
-                    { from: 175, to: 200, color: "rgba(255,0,0,.25)" }
+                    { from: 0, to: 192, color: "rgba(0,255,0,.25)" },    // Green: 0-75%
+                    { from: 192, to: 224, color: "rgba(255,255,0,.25)" }, // Yellow: 75-88%
+                    { from: 224, to: 255, color: "rgba(255,0,0,.25)" }    // Red: 88-100%
                 ],
                 labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
             },
             swr: {
                 minValue: 0,
-                maxValue: 255,
+                maxValue: 255,  // 0-255 scale from RM2 command
                 majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
                 highlights: [
-                    { from: 0, to: 85, color: "rgba(0,255,0,.25)" },
-                    { from: 85, to: 128, color: "rgba(255,255,0,.25)" },
-                    { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
+                    { from: 0, to: 85, color: "rgba(0,255,0,.25)" },     // Green: 1.0-1.5
+                    { from: 85, to: 128, color: "rgba(255,255,0,.25)" },  // Yellow: 1.5-2.0
+                    { from: 128, to: 255, color: "rgba(255,0,0,.25)" }    // Red: 2.0-3.0+
                 ],
                 labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"]
             },
             alc: {
                 minValue: 0,
-                maxValue: 255,
+                maxValue: 255,  // 0-255 scale (same as other gauges)
                 majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
                 highlights: [
-                    { from: 0, to: 178, color: "rgba(0,255,0,.25)" },
-                    { from: 178, to: 230, color: "rgba(255,255,0,.25)" },
-                    { from: 230, to: 255, color: "rgba(255,0,0,.25)" }
+                    { from: 0, to: 178, color: "rgba(0,255,0,.25)" },      // Green: 0-70% (normal)
+                    { from: 178, to: 230, color: "rgba(255,255,0,.25)" },  // Yellow: 70-90% (caution)
+                    { from: 230, to: 255, color: "rgba(255,0,0,.25)" }     // Red: 90-100% (high)
                 ],
                 labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"]
             }
@@ -2034,8 +1613,6 @@ let wasTransmittingSWR = false;
 
             const centerX = gaugeWidth / 2;
             const centerY = gaugeHeight - 64;  // Adjusted from 85 (75% of original)
-            const isSMeter = (canvasId === 'sMeterCanvasA' || canvasId === 'sMeterCanvasB');
-            // Use classic radius for all meters for label placement
             const radius = gaugeWidth * 0.17;
             const angleStep = 180 / (labels.length - 1);
 
@@ -2067,40 +1644,35 @@ let wasTransmittingSWR = false;
             }
         }
 
-        // Only initialize gauges if the required canvas elements exist
-        const sMeterCanvasA = document.getElementById('sMeterCanvasA');
-        const sMeterCanvasB = document.getElementById('sMeterCanvasB');
-        if (sMeterCanvasA) {
-            const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
-            gaugeA = new RadialGauge(sMeterConfigA);
-            gaugeA.draw();
-            createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
-        }
-        if (sMeterCanvasB) {
-            const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
-            gaugeB = new RadialGauge(sMeterConfigB);
-            gaugeB.draw();
-            createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
-        }
+        // Initialize S-Meters
+        const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
+        gaugeA = new RadialGauge(sMeterConfigA);
+        gaugeA.draw();
+        createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
+
+        const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
+        gaugeB = new RadialGauge(sMeterConfigB);
+        gaugeB.draw();
+        createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
+
         // Initialize Power Meter (if element exists)
-        const powerMeterCanvas = document.getElementById('powerMeterCanvas');
-        if (powerMeterCanvas) {
+        if (document.getElementById('powerMeterCanvas')) {
             const powerConfig = makeGaugeConfig('powerMeterCanvas', 'power');
             window.gaugePower = new RadialGauge(powerConfig);
             window.gaugePower.draw();
             createGaugeLabels('powerMeterCanvas', powerConfig._labels);
         }
+
         // Initialize SWR Meter (if element exists)
-        const swrMeterCanvas = document.getElementById('swrMeterCanvas');
-        if (swrMeterCanvas) {
+        if (document.getElementById('swrMeterCanvas')) {
             const swrConfig = makeGaugeConfig('swrMeterCanvas', 'swr');
             window.gaugeSWR = new RadialGauge(swrConfig);
             window.gaugeSWR.draw();
             createGaugeLabels('swrMeterCanvas', swrConfig._labels);
         }
+
         // Initialize ALC Meter (if element exists)
-        const alcMeterCanvas = document.getElementById('alcMeterCanvas');
-        if (alcMeterCanvas) {
+        if (document.getElementById('alcMeterCanvas')) {
             console.log('[Gauge] Initializing ALC meter...');
             const alcConfig = makeGaugeConfig('alcMeterCanvas', 'alc');
             console.log('[Gauge] ALC config:', alcConfig);
@@ -2108,6 +1680,8 @@ let wasTransmittingSWR = false;
             window.gaugeALC.draw();
             createGaugeLabels('alcMeterCanvas', alcConfig._labels);
             console.log('[Gauge] ALC meter initialized');
+        } else {
+            console.warn('[Gauge] alcMeterCanvas element not found!');
         }
     }
 
@@ -2141,50 +1715,9 @@ let wasTransmittingSWR = false;
     initializeGauges();
     initializeDigitInteraction('A');
     initializeDigitInteraction('B');
-    const s = document.getElementById('powerSlider'); if (s) updateSliderFill(s);
+    ['A', 'B'].forEach(r => { const s = document.getElementById('powerSlider' + r); if (s) updateSliderFill(s); });
     fetchRadioStatus();
     state.pollingInterval = setInterval(fetchRadioStatus, 500);
-
-    // Robustly track editing state for the power slider to prevent backend/UI jumps
-    const powerSlider = document.getElementById('powerSlider');
-    const powerDisplay = document.getElementById('powerValue');
-    if (powerSlider && powerDisplay) {
-        window.editingPower = false;
-        // Set editingPower true on any user interaction
-        powerSlider.addEventListener('input', function () {
-            window.editingPower = true;
-            powerDisplay.textContent = powerSlider.value + 'W';
-        });
-        powerSlider.addEventListener('mousedown', function () {
-            window.editingPower = true;
-        });
-        powerSlider.addEventListener('touchstart', function () {
-            window.editingPower = true;
-        });
-        powerSlider.addEventListener('focus', function () {
-            window.editingPower = true;
-        });
-        // Reset editingPower on all possible end events
-        powerSlider.addEventListener('change', function () {
-            window.editingPower = false;
-        });
-        powerSlider.addEventListener('mouseup', function () {
-            window.editingPower = false;
-        });
-        powerSlider.addEventListener('touchend', function () {
-            window.editingPower = false;
-        });
-        powerSlider.addEventListener('mouseleave', function () {
-            window.editingPower = false;
-        });
-        powerSlider.addEventListener('blur', function () {
-            window.editingPower = false;
-        });
-        // Defensive: clear editingPower if window loses focus
-        window.addEventListener('blur', function () {
-            window.editingPower = false;
-        });
-    }
 
     // Overwrite the interim window.radioControl with the real implementations
     window.radioControl = {
@@ -2192,10 +1725,21 @@ let wasTransmittingSWR = false;
         setBand,
         setMode,
         setAntenna,
-        setRoofingFilter,
         _state: state,  // Expose state for TX indicator updates
-        updatePowerDisplay: updatePowerDisplay,
-        setPower: setPower
+        // Wrap updatePowerDisplay so we flag editingPower while the user is dragging
+        updatePowerDisplay: (receiver, value) => {
+            state.editingPower[receiver] = true;
+            updatePowerDisplay(receiver, value);
+        },
+        setPower: async (receiver, value) => {
+            state.editingPower[receiver] = true;
+            await setPower(receiver, value);
+            clearTimeout(state.editingPowerTimeout);
+            state.editingPowerTimeout = setTimeout(() => {
+                state.editingPower[receiver] = false;
+                updatePowerDisplay(receiver, state.lastPower[receiver]);
+            }, 1000);
+        }
     };
 
     // Expose meter update functions globally for SignalR
@@ -2207,63 +1751,6 @@ let wasTransmittingSWR = false;
     window.updatePATemperature = updatePATemperature;
     window.updateMICMeter = updateMICMeter;
 
-    // --- Raw Meter Label Visibility State (S-Meter and Power Out) ---
-    // Use localStorage to sync across tabs/pages
-    function getShowRawMeterLabels() {
-        return localStorage.getItem('showRawMeterLabels') === 'true';
-    }
-    function setShowRawMeterLabels(val) {
-        localStorage.setItem('showRawMeterLabels', val ? 'true' : 'false');
-        window.showRawMeterLabels = val;
-        updateRawMeterLabelVisibility();
-    }
-    function updateRawMeterLabelVisibility() {
-        var show = window.showRawMeterLabels;
-        var elS = document.getElementById('raw-s-meter-label-a');
-        if (elS) elS.style.display = show ? '' : 'none';
-        var elP = document.getElementById('raw-powerout-label');
-        if (elP) elP.style.display = show ? '' : 'none';
-    }
-    // Listen for localStorage changes (cross-tab)
-    window.addEventListener('storage', function (e) {
-        if (e.key === 'showRawMeterLabels') {
-            window.showRawMeterLabels = getShowRawMeterLabels();
-            updateRawMeterLabelVisibility();
-        }
-    });
-    // Expose for other scripts
-    window.getShowRawMeterLabels = getShowRawMeterLabels;
-    window.setShowRawMeterLabels = setShowRawMeterLabels;
-    window.updateRawMeterLabelVisibility = updateRawMeterLabelVisibility;
-    // Init on page load
-    window.showRawMeterLabels = getShowRawMeterLabels();
-    document.addEventListener('DOMContentLoaded', updateRawMeterLabelVisibility);
-
-    // --- Raw S-Meter Value Update ---
-    // Store last raw S-Meter value for VFO A
-    window.lastRawSMeterA = 0;
-    function updateRawSMeterValueA(val) {
-        window.lastRawSMeterA = val;
-        var el = document.getElementById('rawSMeterValueA');
-        if (el) el.textContent = val;
-    }
-
-    // Calibration page: Toggle button logic for raw meter labels
-    // (runs on both pages, harmless if button not present)
-    document.addEventListener('DOMContentLoaded', function () {
-        var btn = document.getElementById('toggleRawMeterLabelsBtn');
-        if (btn) {
-            function updateBtnText() {
-                btn.textContent = window.getShowRawMeterLabels() ? 'Hide Raw Meter Readings' : 'Show Raw Meter Readings';
-            }
-            btn.addEventListener('click', function () {
-                var newVal = !window.getShowRawMeterLabels();
-                window.setShowRawMeterLabels(newVal);
-                updateBtnText();
-            });
-            updateBtnText();
-        }
-    });
 })();
 
 // ===========================================================================
@@ -2290,15 +1777,6 @@ connection.on("RadioStateUpdate", function (update) {
         }
         if (update.property === "BandB") {
             updateBandButton('B', update.value);
-        }
-        // Roofing filter updates
-        if (update.property === "RoofingFilterA") {
-            const selectEl = document.getElementById('roofingFilterSelectA');
-            if (selectEl) selectEl.value = update.value;
-        }
-        if (update.property === "RoofingFilterB") {
-            const selectEl = document.getElementById('roofingFilterSelectB');
-            if (selectEl) selectEl.value = update.value;
         }
     }
 });
