@@ -1,0 +1,111 @@
+@page
+@model FTdx101_WebApp.Pages.MeterCalibration.IndexModel
+@{
+    ViewData["Title"] = "Meter Calibration";
+}
+
+<div class="meter-calibration-container">
+    <h2>Meter Calibration</h2>
+    <div class="gauge-section">
+        <canvas id="meterCalibrationGauge" width="420" height="135"></canvas>
+    </div>
+    <div class="current-value-label">
+        Current RM Value: <span id="currentMeterRM">@Model.CurrentRawValue</span>
+    </div>
+    <div class="calibration-labels">
+        <span>Label</span> / <span>Raw Value</span>
+    </div>
+    <form method="post">
+        <div class="calibration-points-list">
+            @for (int i = 0; i < Model.Calibration.Points.Count; i++)
+            {
+                <div class="calibration-point-row">
+                    <input type="text" name="Calibration.Points[@i].Label" value="@Model.Calibration.Points[i].Label" placeholder="Label" class="calibration-label-input" />
+                    <input type="number" name="Calibration.Points[@i].Raw" value="@Model.Calibration.Points[i].Raw" step="1" class="calibration-raw-input" />
+                    <button type="submit" name="delete" value="@i" class="delete-point-btn">×</button>
+                </div>
+            }
+        </div>
+        <button type="submit" name="add" value="1" class="add-point-btn">Add Point</button>
+        <button type="submit" class="save-btn">Save Calibration</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/site.js"></script>
+    <script>
+        // JS to render the gauge in calibration context
+    </script>
+}
+
+<style>
+.meter-calibration-container {
+    border: 2px solid #4f8cff;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin: 2rem auto;
+    max-width: 500px;
+    background: #f8f9fa;
+}
+.gauge-section {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+.current-value-label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+.calibration-labels {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+.calibration-points-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.calibration-point-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.calibration-label-input, .calibration-raw-input {
+    flex: 1 1 0;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.3rem;
+    border: 1px solid #bcd;
+    font-size: 1rem;
+}
+.delete-point-btn {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 0.3rem;
+    font-size: 1.2rem;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+}
+.add-point-btn {
+    background: #4f8cff;
+    color: #fff;
+    border: none;
+    border-radius: 0.3rem;
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+.save-btn {
+    background: #22c55e;
+    color: #fff;
+    border: none;
+    border-radius: 0.3rem;
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+}
+</style>
