@@ -1,19 +1,40 @@
 {
   "meters": [
     {
-      "name": "PWR",
-      "type": "numeric",
-      "points": []
+       "name": "PWR",
+  "type": "numeric",
+  "points": [
+    { "raw": 30, "label": "5" },
+    { "raw": 76, "label": "25" },
+    { "raw": 112, "label": "50" },
+    { "raw": 157, "label": "100" },
+    { "raw": 190, "label": "150" },
+    { "raw": 222, "label": "200" }
+  ]
     },
     {
       "name": "SWR",
       "type": "numeric",
-      "points": []
+      "points":  [
+    { "raw": 30, "label": "1.1" },
+    { "raw": 76, "label": "1.2" },
+    { "raw": 112, "label": "1.3" },
+    { "raw": 157, "label": "1.4" },
+    { "raw": 190, "label": "2.5" },
+    { "raw": 222, "label": "3.0" }
+  ]
     },
     {
       "name": "ALC",
       "type": "numeric",
-      "points": []
+      "points":  [
+    { "raw": 30, "label": "5" },
+    { "raw": 76, "label": "15" },
+    { "raw": 112, "label": "25" },
+    { "raw": 157, "label": "40" },
+    { "raw": 190, "label": "50" },
+    { "raw": 222, "label": "70" }
+  ]
     },
 {
   "name": "S-Meter",

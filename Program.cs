@@ -73,54 +73,66 @@ builder.Logging.AddFilter((category, level) =>
 });
 builder.Logging.AddDebug();
 
-var app = builder.Build();
 
-// Middleware to force Content-Language: en on all responses
-app.Use(async (context, next) =>
+try
 {
-    context.Response.OnStarting(() => {
-        if (!context.Response.Headers.ContainsKey("Content-Language"))
-        {
-            context.Response.Headers.Append("Content-Language", "en");
-        }
-        return System.Threading.Tasks.Task.CompletedTask;
+    var app = builder.Build();
+
+    // Middleware to force Content-Language: en on all responses
+    app.Use(async (context, next) =>
+    {
+        context.Response.OnStarting(() => {
+            if (!context.Response.Headers.ContainsKey("Content-Language"))
+            {
+                context.Response.Headers.Append("Content-Language", "en");
+            }
+            return System.Threading.Tasks.Task.CompletedTask;
+        });
+        await next();
     });
-    await next();
-});
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        app.UseExceptionHandler("/Error");
+        app.UseHsts();
+    }
+
+    app.UseStaticFiles();
+    app.UseRouting();
+    app.UseAuthorization();
+    //app.MapGet("/", () => "ROOT ROUTE HIT");
+
+    app.MapRazorPages();
+    app.MapControllers();
+
+    // MAP SIGNALR HUB:
+    app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
+
+    app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
+
+    // Open browser automatically when app starts (but not when debugging in Visual Studio)
+    var browserLauncher = app.Services.GetRequiredService<BrowserLauncher>();
+    var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+    lifetime.ApplicationStarted.Register(() =>
+    {
+        browserLauncher.OpenOnce("http://localhost:8080");
+    });
+
+    app.Run();
 }
-else
+catch (Exception ex)
 {
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
+    var msg = $"[FATAL] Application failed to start: {ex.Message}\n{ex.StackTrace}";
+    Console.Error.WriteLine(msg);
+    try
+    {
+        System.IO.File.AppendAllText("fatal_startup_error.log", $"{DateTime.Now:u} {msg}\n");
+    }
+    catch { }
+    throw;
 }
-
-
-app.UseStaticFiles();
-app.UseRouting();
-app.UseAuthorization();
-//app.MapGet("/", () => "ROOT ROUTE HIT");
-
-app.MapRazorPages();
-app.MapControllers();
-
-// MAP SIGNALR HUB:
-app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
-
-
-
-app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
-
-// Open browser automatically when app starts (but not when debugging in Visual Studio)
-var browserLauncher = app.Services.GetRequiredService<BrowserLauncher>();
-var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-lifetime.ApplicationStarted.Register(() =>
-{
-    browserLauncher.OpenOnce("http://localhost:8080");
-});
-
-app.Run();
 

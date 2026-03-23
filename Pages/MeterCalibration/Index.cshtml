@@ -4,8 +4,9 @@
     ViewData["Title"] = "Meter Calibration";
 }
 
+
 <div class="meter-calibration-container">
-    <h2>Meter Calibration</h2>
+    <h2>S-Meter</h2>
     <div class="gauge-section">
         <canvas id="meterCalibrationGauge" width="420" height="135"></canvas>
     </div>
@@ -32,9 +33,14 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/gauge.js"></script>
     <script src="~/js/site.js"></script>
     <script>
-        // JS to render the gauge in calibration context
+        document.addEventListener('DOMContentLoaded', function () {
+            // Render the S-Meter gauge using the new class
+            const sMeterGauge = new SMeterGauge('meterCalibrationGauge');
+            sMeterGauge.render();
+        });
     </script>
 }
 

@@ -90,7 +90,19 @@ namespace FTdx101_WebApp.Services
         private void BroadcastUpdate(string property, object value)
         {
             _logger.LogInformation("[BroadcastUpdate] Broadcasting {Property} = {Value}", property, value);
-            _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value });
+            if (property == "PowerMeter")
+            {
+                _logger.LogWarning("[DEBUG][PowerMeter] Broadcasting PowerMeter value: {@Value}", value);
+            }
+            // Special case: PowerMeter should include isTransmitting for frontend sync
+            if (property == "PowerMeter")
+            {
+                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value = new { value, isTransmitting = this.IsTransmitting } });
+            }
+            else
+            {
+                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value });
+            }
         }
 
         // --- Properties for all CAT commands in GetInitialValues() ---

@@ -15,6 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="oldFiles\**" />
+    <Compile Remove="oldFiles/Backup/**" />
+    <Content Remove="oldFiles/Backup/**" />
+    <EmbeddedResource Remove="oldFiles/Backup/**" />
+    <None Remove="oldFiles/Backup/**" />
     <Compile Remove="YaesuCatNew\**" />
     <Content Remove="YaesuCatNew\**" />
     <EmbeddedResource Remove="YaesuCatNew\**" />

@@ -292,7 +292,7 @@
                                 <canvas id="powerMeterCanvas"></canvas>
                             </div>
                             <span id="powerMeterValue" class="badge bg-warning text-dark" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap;">Power Out 0W</span>
-                            <div id="raw-powerout-label" class="raw-meter-label" style="display:none;text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
+                            <div id="raw-powerout-label" class="raw-meter-label" style="text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
                                 Raw Power Out: <span id="rawPowerOutValue">0</span>
                             </div>
                         </div>
@@ -341,8 +341,32 @@
 </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
-<script src="~/js/site.js?v=20260228c"></script>
+    <script src="~/js/gauge.js?v=20260228c"></script>
+    <script src="~/js/site.js?v=20260228c"></script>
     <script>
+        // Initialize all gauges using the new class-based structure
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.getElementById('sMeterCanvasA')) {
+                window.sMeterGaugeA = new SMeterGauge('sMeterCanvasA');
+                window.sMeterGaugeA.render();
+            }
+            if (document.getElementById('sMeterCanvasB')) {
+                window.sMeterGaugeB = new SMeterGauge('sMeterCanvasB');
+                window.sMeterGaugeB.render();
+            }
+            if (document.getElementById('powerMeterCanvas')) {
+                window.powerGauge = new PowerGauge('powerMeterCanvas');
+                window.powerGauge.render();
+            }
+            if (document.getElementById('swrMeterCanvas')) {
+                window.swrGauge = new SWRGauge('swrMeterCanvas');
+                window.swrGauge.render();
+            }
+            if (document.getElementById('alcMeterCanvas')) {
+                window.alcGauge = new ALCGauge('alcMeterCanvas');
+                window.alcGauge.render();
+            }
+        });
         async function launchWsjtx() {
             try {
                 const response = await fetch('/api/wsjtx/launch', { method: 'POST' });
