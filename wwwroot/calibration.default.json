@@ -62,6 +62,7 @@
       },
       {
         "name": "S-Meter",
+        "key": "SMETER",
         "type": "s_meter",
         "points": [
           { "raw": 0, "S Value": "S1" },

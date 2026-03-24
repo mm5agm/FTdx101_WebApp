@@ -872,6 +872,18 @@ connection.on("RadioStateUpdate", function (update) {
             window.updatePATemperature(update.value);
         }
     }
+    // --- S-METER KEY-BASED UPDATE ---
+    if (update.property === "SMETER") {
+        console.log('[SignalR] S-Meter (SMETER) update received:', update.value);
+        // Assume update.value = { receiver: 'A'|'B', raw: number }
+        if (update.value && (update.value.receiver === 'A' || update.value.receiver === 'B')) {
+            updateSMeter(update.value.receiver, update.value.raw);
+        } else if (typeof update.value === 'number') {
+            // Fallback: update both if receiver not specified
+            updateSMeter('A', update.value);
+            updateSMeter('B', update.value);
+        }
+    }
 });
 
 // SignalR connection is started once below (after the IIFE) with a .catch() error handler.
