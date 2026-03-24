@@ -102,7 +102,7 @@ namespace FTdx101_WebApp.Services
                 };
 
                 _serialPort.Open();
-                await Task.Delay(200);
+                await Task.Delay(50); // Reduced from 200ms
 
                 _logger.LogInformation("✓ Connected to {PortName} at {BaudRate} baud, 8-N-2", portName, baudRate);
 
@@ -180,7 +180,7 @@ namespace FTdx101_WebApp.Services
                     {
                         _messageDispatcher.DispatchMessage(response + ";");
                     }
-                    await Task.Delay(50); // Small delay between commands
+                    await Task.Delay(10); // Reduced from 50ms
                 }
                 catch (Exception ex)
                 {
@@ -198,7 +198,7 @@ namespace FTdx101_WebApp.Services
             _pendingResponses[prefix] = tcs;
             await SendToSerialPortAsync(command, cancellationToken);
 
-            var timeoutTask = Task.Delay(500, cancellationToken); // Reduced timeout
+            var timeoutTask = Task.Delay(150, cancellationToken); // Reduced from 500ms
             var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
             _pendingResponses.TryRemove(prefix, out _);
@@ -227,7 +227,7 @@ namespace FTdx101_WebApp.Services
                     }
                     else
                     {
-                        await Task.Delay(10, cancellationToken);
+                        await Task.Delay(2, cancellationToken); // Reduced from 10ms
                     }
                 }
                 catch (TaskCanceledException tce)
@@ -238,7 +238,7 @@ namespace FTdx101_WebApp.Services
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing command queue");
-                    await Task.Delay(100, cancellationToken);
+                    await Task.Delay(20, cancellationToken); // Reduced from 100ms
                 }
             }
 
@@ -354,13 +354,13 @@ namespace FTdx101_WebApp.Services
                 _messageDispatcher.DispatchMessage(response + ";");
             }
             if (delay > 0)
-                await Task.Delay(delay);
+                await Task.Delay(Math.Min(delay, 20)); // Cap delay to 20ms
         }
 
         public async Task SendCommandPause(string command, bool processResult = false)
         {
-            // Always pause 100ms after sending
-            await SendCommand(command, processResult, delay: 100);
+            // Always pause 20ms after sending
+            await SendCommand(command, processResult, delay: 20);
         }
 
         public async Task GetInitialValues()
@@ -528,7 +528,7 @@ namespace FTdx101_WebApp.Services
 
             // Add timeout to prevent hanging forever
             var completionTask = _initializationCompletionSource.Task;
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(10));
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(3)); // Reduced from 10s
             var completedTask = await Task.WhenAny(completionTask, timeoutTask);
 
             if (completedTask == timeoutTask)

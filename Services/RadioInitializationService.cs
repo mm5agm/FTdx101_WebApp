@@ -106,9 +106,9 @@ namespace FTdx101_WebApp.Services
                 logger.LogInformation("[RadioInitializationService] Radio responded to FA;: {Response}", faResponse);
 
                 // Send initialization commands and wait for DT0 response (with timeout)
-                logger.LogInformation("[RadioInitializationService] Sending full initialization sequence and waiting for DT0...");
+                logger.LogInformation("[RadioInitializationService] Sending full initialization sequence and waiting for DT0 (timeout 5s)...");
 
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, cts.Token);
 
                 try
@@ -127,50 +127,52 @@ namespace FTdx101_WebApp.Services
                     "ModeA={ModeA}, ModeB={ModeB}, Power={Power}, AntennaA={AntennaA}, AntennaB={AntennaB}, MicGain={MicGain}",
                     persistedState.ModeA, persistedState.ModeB, persistedState.Power, persistedState.AntennaA, persistedState.AntennaB, persistedState.MicGain);
 
-                // 3. Send only non-empty/non-zero values to the radio
+                // 3. Send only non-empty/non-zero values to the radio (parallelized)
+                var stateTasks = new List<Task>();
                 if (!string.IsNullOrEmpty(persistedState.ModeA))
                 {
                     logger.LogInformation("About to send ModeA={ModeA} to radio", persistedState.ModeA);
-                    await multiplexer.SendCommandAsync(CatCommands.FormatMode(persistedState.ModeA, false), "Initialization", stoppingToken);
-                    radioStateService.ModeA = persistedState.ModeA;
+                    stateTasks.Add(multiplexer.SendCommandAsync(CatCommands.FormatMode(persistedState.ModeA, false), "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.ModeA = persistedState.ModeA; }));
                 }
                 if (!string.IsNullOrEmpty(persistedState.ModeB))
                 {
-                    await multiplexer.SendCommandAsync(CatCommands.FormatMode(persistedState.ModeB, true), "Initialization", stoppingToken);
-                    radioStateService.ModeB = persistedState.ModeB;
+                    stateTasks.Add(multiplexer.SendCommandAsync(CatCommands.FormatMode(persistedState.ModeB, true), "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.ModeB = persistedState.ModeB; }));
                 }
                 if (persistedState.Power > 0)
                 {
-                    await multiplexer.SendCommandAsync($"PC{persistedState.Power};", "Initialization", stoppingToken);
-                    radioStateService.Power = persistedState.Power;
+                    stateTasks.Add(multiplexer.SendCommandAsync($"PC{persistedState.Power};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.Power = persistedState.Power; }));
                 }
                 if (!string.IsNullOrEmpty(persistedState.AntennaA))
                 {
-                    await multiplexer.SendCommandAsync($"AN0{persistedState.AntennaA};", "Initialization", stoppingToken);
-                    radioStateService.AntennaA = persistedState.AntennaA;
+                    stateTasks.Add(multiplexer.SendCommandAsync($"AN0{persistedState.AntennaA};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.AntennaA = persistedState.AntennaA; }));
                 }
                 if (!string.IsNullOrEmpty(persistedState.AntennaB))
                 {
-                    await multiplexer.SendCommandAsync($"AN1{persistedState.AntennaB};", "Initialization", stoppingToken);
-                    radioStateService.AntennaB = persistedState.AntennaB;
+                    stateTasks.Add(multiplexer.SendCommandAsync($"AN1{persistedState.AntennaB};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.AntennaB = persistedState.AntennaB; }));
                 }
                 // Restore AF Gain
                 if (persistedState.AfGainA >= 0 && persistedState.AfGainA <= 255)
                 {
-                    await multiplexer.SendCommandAsync($"AG0{persistedState.AfGainA:D3};", "Initialization", stoppingToken);
-                    radioStateService.AfGainA = persistedState.AfGainA;
+                    stateTasks.Add(multiplexer.SendCommandAsync($"AG0{persistedState.AfGainA:D3};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.AfGainA = persistedState.AfGainA; }));
                 }
                 if (persistedState.AfGainB >= 0 && persistedState.AfGainB <= 255)
                 {
-                    await multiplexer.SendCommandAsync($"AG1{persistedState.AfGainB:D3};", "Initialization", stoppingToken);
-                    radioStateService.AfGainB = persistedState.AfGainB;
+                    stateTasks.Add(multiplexer.SendCommandAsync($"AG1{persistedState.AfGainB:D3};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.AfGainB = persistedState.AfGainB; }));
                 }
                 // Restore MIC Gain
                 if (persistedState.MicGain >= 0 && persistedState.MicGain <= 100)
                 {
-                    await multiplexer.SendCommandAsync($"MG{persistedState.MicGain:D3};", "Initialization", stoppingToken);
-                    radioStateService.MicGain = persistedState.MicGain;
+                    stateTasks.Add(multiplexer.SendCommandAsync($"MG{persistedState.MicGain:D3};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.MicGain = persistedState.MicGain; }));
                 }
+                await Task.WhenAll(stateTasks);
 
                 // 4. Read actual radio state (frequencies, band, etc.) before marking initialized
                 logger.LogInformation("[RadioInitializationService] Reading actual radio state...");
