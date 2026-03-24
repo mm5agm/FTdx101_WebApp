@@ -1,4 +1,33 @@
-﻿
+﻿// --- Fullscreen Toggle: ',' to enter, 'Esc' to exit ---
+document.addEventListener('keydown', function (e) {
+    // Ignore if typing in an input, textarea, or contenteditable
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+    if (e.key === ',') {
+        // Enter fullscreen on the <body> element (entire app)
+        const body = document.body;
+        if (body && !document.fullscreenElement) {
+            body.requestFullscreen && body.requestFullscreen();
+            e.preventDefault();
+        }
+    } else if (e.key === 'Escape') {
+        // Exit fullscreen if in fullscreen
+        if (document.fullscreenElement) {
+            document.exitFullscreen && document.exitFullscreen();
+            e.preventDefault();
+        }
+    }
+});
+
+// Add/remove fullscreen-mode class on body when entering/exiting fullscreen
+document.addEventListener('fullscreenchange', function () {
+    if (document.fullscreenElement) {
+        document.body.classList.add('fullscreen-mode');
+    } else {
+        document.body.classList.remove('fullscreen-mode');
+    }
+});
+
 // Debugging: Log Save Button Presses and Page Content for Language Issues
 // ========================================================================
 // This block helps diagnose why the browser might think the page is in French.
