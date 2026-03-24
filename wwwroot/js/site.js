@@ -116,19 +116,39 @@ document.addEventListener('DOMContentLoaded', function () {
         rawPowerLabel.style.marginLeft = '12px';
     }
 
-    // --- SignalR connection setup and disconnect on page unload ---
-    if (window.signalRConnection === undefined) {
-        window.signalRConnection = new signalR.HubConnectionBuilder().withUrl("/radioHub").build();
-        window.signalRConnection.start().catch(function (err) { console.error("SignalR start error:", err); });
-        // Heartbeat: send every 5 seconds
-        window.signalRHeartbeatInterval = setInterval(function () {
-            if (window.signalRConnection && window.signalRConnection.invoke) {
-                window.signalRConnection.invoke("Heartbeat").catch(function (err) {
-                    // Ignore errors if connection is closed
-                });
+    // --- Load calibration tables and register with calibrationService, then connect SignalR ---
+    fetch('/api/calibration/all')
+        .then(response => response.json())
+        .then(meters => {
+            if (Array.isArray(meters)) {
+                window.calibrationService.loadMeters(meters);
+                console.log('[Calibration] Loaded meters:', meters.map(m => m.key || m.name));
+            } else if (meters && typeof meters === 'object') {
+                // If backend returns a dictionary, convert to array
+                const arr = Object.entries(meters).map(([key, points]) => ({ key, points }));
+                window.calibrationService.loadMeters(arr);
+                console.log('[Calibration] Loaded meters (dict):', Object.keys(meters));
+            } else {
+                console.warn('[Calibration] Unexpected calibration data format:', meters);
             }
-        }, 5000);
-    }
+
+            // --- SignalR connection setup and disconnect on page unload ---
+            if (window.signalRConnection === undefined) {
+                window.signalRConnection = new signalR.HubConnectionBuilder().withUrl("/radioHub").build();
+                window.signalRConnection.start().catch(function (err) { console.error("SignalR start error:", err); });
+                // Heartbeat: send every 5 seconds
+                window.signalRHeartbeatInterval = setInterval(function () {
+                    if (window.signalRConnection && window.signalRConnection.invoke) {
+                        window.signalRConnection.invoke("Heartbeat").catch(function (err) {
+                            // Ignore errors if connection is closed
+                        });
+                    }
+                }, 5000);
+            }
+        })
+        .catch(err => {
+            console.error('[Calibration] Failed to load calibration tables:', err);
+        });
     // Use 'unload', 'beforeunload', and 'visibilitychange' for best reliability
     window.addEventListener('unload', function (e) {
         if (window.signalRConnection && window.signalRConnection.stop) {
@@ -846,8 +866,8 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "VDDMeter" && typeof window.updatePAVoltage === 'function') {
         window.updatePAVoltage(update.value);
     }
-    if (update.property === "Temperature") {
-        console.log('[SignalR] Temperature update received:', update.value);
+    if (update.property === "TPA") {
+        console.log('[SignalR] PA Temp (TPA) update received:', update.value);
         if (typeof window.updatePATemperature === 'function') {
             window.updatePATemperature(update.value);
         }
@@ -1069,11 +1089,29 @@ function sendAfGain(receiver, value) {
         isTransmitting: false  // Track TX state for meter display
     };
 // --- Calibration Service (JS side, backed by JSON from backend) ---
-const calibrationService = (function () {
-    const tables = {}; // meterName -> array of { raw, value, label? }
 
-    function calibrateNumeric(meterName, raw) {
-        const table = tables[meterName];
+// --- Calibration Service (with key support) ---
+const calibrationService = (function () {
+    const tables = {}; // meterKey -> array of { raw, value, label? }
+
+    // Loads calibration meters from JSON array
+    function loadMeters(meters) {
+        meters.forEach(meter => {
+            const key = meter.key || meter.name;
+            // Find the value key in points (other than 'raw')
+            let valueKey = null;
+            if (meter.points && meter.points.length > 0) {
+                const keys = Object.keys(meter.points[0]).filter(k => k !== 'raw');
+                valueKey = keys[0];
+            }
+            if (valueKey) {
+                tables[key] = meter.points.map(pt => ({ raw: pt.raw, value: parseFloat(pt[valueKey]), label: pt.label }));
+            }
+        });
+    }
+
+    function calibrateNumeric(meterKey, raw) {
+        const table = tables[meterKey];
         if (!table || table.length === 0) return raw; // fallback: identity
         return interpolateNumeric(table, raw);
     }
@@ -1098,6 +1136,7 @@ const calibrationService = (function () {
 
     return {
         _tables: tables,
+        loadMeters,
         calibrateNumeric,
         calibrateSMeterLabel
     };

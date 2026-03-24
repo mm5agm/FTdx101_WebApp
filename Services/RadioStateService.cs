@@ -89,19 +89,25 @@ namespace FTdx101_WebApp.Services
 
         private void BroadcastUpdate(string property, object value)
         {
-            _logger.LogInformation("[BroadcastUpdate] Broadcasting {Property} = {Value}", property, value);
-            if (property == "PowerMeter")
+            string propKey = property;
+            // Use meter key for PA Temperature
+            if (property == "Temperature")
+            {
+                propKey = "TPA";
+            }
+            _logger.LogInformation("[BroadcastUpdate] Broadcasting {Property} = {Value}", propKey, value);
+            if (propKey == "PowerMeter")
             {
                 _logger.LogWarning("[DEBUG][PowerMeter] Broadcasting PowerMeter value: {@Value}", value);
             }
             // Special case: PowerMeter should include isTransmitting for frontend sync
-            if (property == "PowerMeter")
+            if (propKey == "PowerMeter")
             {
-                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value = new { value, isTransmitting = this.IsTransmitting } });
+                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property = propKey, value = new { value, isTransmitting = this.IsTransmitting } });
             }
             else
             {
-                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value });
+                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property = propKey, value });
             }
         }
 
