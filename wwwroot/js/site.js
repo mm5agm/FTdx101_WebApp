@@ -1,9 +1,9 @@
-﻿// --- Fullscreen Toggle: ',' to enter, 'Esc' to exit ---
+﻿// --- Fullscreen Toggle: 'f' or 'F' to enter, 'Esc' to exit ---
 document.addEventListener('keydown', function (e) {
     // Ignore if typing in an input, textarea, or contenteditable
     const active = document.activeElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
-    if (e.key === ',') {
+    if (e.key === 'f' || e.key === 'F') {
         // Enter fullscreen on the <body> element (entire app)
         const body = document.body;
         if (body && !document.fullscreenElement) {
