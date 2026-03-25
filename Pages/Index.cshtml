@@ -352,14 +352,7 @@
                 window.sMeterGaugeB = new SMeterGauge('sMeterCanvasB');
                 window.sMeterGaugeB.render();
             }
-            if (document.getElementById('powerMeterCanvas')) {
-                window.powerGauge = new PowerGauge('powerMeterCanvas');
-                window.powerGauge.render();
-            }
-            if (document.getElementById('swrMeterCanvas')) {
-                window.swrGauge = new SWRGauge('swrMeterCanvas');
-                window.swrGauge.render();
-            }
+            // Removed legacy window.powerGauge and window.swrGauge assignments to avoid overriding AnalogueGauge instances
             if (document.getElementById('alcMeterCanvas')) {
                 window.alcGauge = new ALCGauge('alcMeterCanvas');
                 window.alcGauge.render();
