@@ -69,11 +69,11 @@ namespace FTdx101_WebApp.Services
                         }
                     }
 
-                    _logger.LogInformation("[SMeterPolling][DEBUG] Polling SWR Meter...");
+                    _logger.LogInformation("[SMeterPolling][DEBUG] Polling SWR Meter... TX={IsTransmitting}", isTransmitting);
                     var swrResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterSWR + ";", "MeterPoll", stoppingToken);
-                    _logger.LogInformation("[SMeterPolling][DEBUG] SWR Meter response: {0}", swrResponse);
+                    _logger.LogInformation("[SMeterPolling][DebugSWR] TX={IsTransmitting} RM6 raw response: '{Raw}'", isTransmitting, swrResponse);
                     int swr = CatCommands.ParseMeterReading(swrResponse ?? "");
-                    _logger.LogInformation("[SMeterPolling][DEBUG] SWR raw='{Raw}', parsed={Value}", swrResponse, swr);
+                    _logger.LogInformation("[SMeterPolling][DebugSWR] TX={IsTransmitting} RM6 parsed value: {Value}", isTransmitting, swr);
                     _stateService.SWRMeter = swr;
 
                     _logger.LogInformation("[SMeterPolling][DEBUG] Polling IDD Meter...");

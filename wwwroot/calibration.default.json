@@ -4,6 +4,7 @@
         "name": "PA Temperature",
         "key": "TPA",
         "type": "numeric",
+        "gaugeType": "gauge",
         "points": [
           { "raw": 30, "Degrees C": 30 },
           { "raw": 76, "Degrees C": 50 },
@@ -17,6 +18,7 @@
         "name": "PA Current",
         "key": "IDD",
         "type": "numeric",
+        "gaugeType": "bar",
         "points": [
           { "raw": 0, "Current": "0" },
           { "raw": 10, "Current": "0.1" },
@@ -29,6 +31,7 @@
         "name": "PWR",
         "key": "PWR",
         "type": "numeric",
+        "gaugeType": "gauge",
         "points": [
           { "raw": 30, "Watts": "5" },
           { "raw": 76, "Watts": "25" },
@@ -42,19 +45,21 @@
         "name": "SWR",
         "key": "SWR",
         "type": "numeric",
+        "gaugeType": "gauge",
         "points": [
-          { "raw": 30, "SWR": "1.1" },
-          { "raw": 76, "SWR": "1.2" },
-          { "raw": 112, "SWR": "1.3" },
-          { "raw": 157, "SWR": "1.4" },
-          { "raw": 190, "SWR": "2.5" },
-          { "raw": 222, "SWR": "3.0" }
+          { "raw": 30, "radio": 1.1 },
+          { "raw": 76, "radio": 1.2 },
+          { "raw": 112, "radio": 1.3 },
+          { "raw": 157, "radio": 1.4 },
+          { "raw": 190, "radio": 2.5 },
+          { "raw": 222, "radio": 3.0 }
         ]
       },
       {
         "name": "ALC",
         "key": "ALC",
         "type": "numeric",
+        "gaugeType": "gauge",
         "points": [
           { "raw": 30, "Volts": "5" },
           { "raw": 76, "Volts": "15" },
@@ -68,6 +73,7 @@
         "name": "S-Meter",
         "key": "SMETER",
         "type": "s_meter",
+        "gaugeType": "gauge",
         "points": [
           { "raw": 0, "S Value": "S1" },
           { "raw": 20, "S Value": "S3" },

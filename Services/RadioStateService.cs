@@ -276,11 +276,7 @@ namespace FTdx101_WebApp.Services
             {
                 if (value == null) return;
                 int clamped = Math.Clamp(value.Value, 0, 255);
-                if (_swrMeter.HasValue && clamped != 0 && Math.Abs(clamped - _swrMeter.Value) > 50)
-                {
-                    _logger.LogWarning("[SWRMeter] Ignored spike: {Old} -> {New}", _swrMeter, clamped);
-                    return;
-                }
+                _logger.LogInformation("[SWRMeter][DebugSWR] Setting SWRMeter from {Old} to {New}", _swrMeter, clamped);
                 SetField(ref _swrMeter, clamped);
             }
         }

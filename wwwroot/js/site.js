@@ -1112,17 +1112,27 @@ const calibrationService = (function () {
             const key = meter.key || meter.name;
             let valueKey = null;
             if (meter.points && meter.points.length > 0) {
-                // For TPA (PA Temperature), use 'Degrees C' as the value key
+                // Explicit value key selection for each meter type
                 if (key === "TPA") {
                     valueKey = "Degrees C";
+                } else if (key === "SWR") {
+                    valueKey = "radio";
+                } else if (key === "PWR") {
+                    valueKey = "Watts";
+                } else if (key === "IDD") {
+                    valueKey = "Current";
+                } else if (key === "ALC") {
+                    valueKey = "Volts";
+                } else if (key === "SMETER") {
+                    valueKey = "S Value";
                 } else {
-                    // Find the value key in points (other than 'raw')
+                    // Fallback: first non-raw key
                     const keys = Object.keys(meter.points[0]).filter(k => k !== 'raw');
                     valueKey = keys[0];
                 }
             }
             if (valueKey) {
-                tables[key] = meter.points.map(pt => ({ raw: pt.raw, value: parseFloat(pt[valueKey]), label: pt.label }));
+                tables[key] = meter.points.map(pt => ({ raw: pt.raw, value: Number(pt[valueKey]), label: pt.label }));
             }
         });
     }
@@ -1836,6 +1846,8 @@ let wasTransmittingSWR = false;
                 window.lastSWRMeterRawValue = value;
         // Store last raw value globally for calibration reloads and debugging
         window.lastSWRMeterRawValue = value;
+        // Debug: Log raw RM6 value received for SWR
+        console.debug('[DebugSWR] RM6 raw value received:', value);
         // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
         if (!state.isTransmitting) {
             swrHistory = [];
@@ -1857,13 +1869,46 @@ let wasTransmittingSWR = false;
             swrHistory.shift();
         }
         const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
-      const swr = window.calibrationService.calibrateNumeric("SWR", avgValue);
-
-        const swrClamped = Math.min(swr, 10.0);
+        // Log calibration points and input value for debugging
+        const swrPoints = (window.calibrationService._tables && window.calibrationService._tables["SWR"]) || [];
+        console.debug('[DebugSWR] Calibration points:', swrPoints);
+        console.debug('[DebugSWR] calibrateNumeric input avgValue:', avgValue);
+        // Interpolate SWR value from calibration table
+        const swr = window.calibrationService.calibrateNumeric("SWR", avgValue);
+        // Defensive: handle NaN
+        let swrDisplay = swr;
+        if (isNaN(swrDisplay) || !isFinite(swrDisplay)) {
+            console.warn('[DebugSWR] SWR calibration returned NaN or invalid:', swr, 'avgValue:', avgValue, 'points:', swrPoints);
+            swrDisplay = 1.0;
+        }
+        // Clamp for display, but use actual range for gauge
+        const swrClamped = Math.min(swrDisplay, 10.0);
         const valueSpan = document.getElementById('swrMeterValue');
-        if (valueSpan) valueSpan.textContent = `SWR ${swrClamped.toFixed(1)}:1`;
+        if (valueSpan) valueSpan.textContent = `SWR ${swrClamped.toFixed(2)}:1`;
         if (window.gaugeSWR) {
-            const gaugePosition = (swrClamped - 1.0) * 127.5;
+            let minSWR = 1.0, maxSWR = 3.0;
+            if (swrPoints.length > 1) {
+                minSWR = Math.min(...swrPoints.map(pt => pt.value));
+                maxSWR = Math.max(...swrPoints.map(pt => pt.value));
+            }
+            // Map SWR value to gauge position (0-255)
+            let gaugePosition = 0;
+            if (swrDisplay <= minSWR) {
+                gaugePosition = 0;
+            } else if (swrDisplay >= maxSWR) {
+                gaugePosition = 255;
+            } else {
+                // Find the two calibration points that bracket swrDisplay
+                for (let i = 1; i < swrPoints.length; i++) {
+                    const prev = swrPoints[i - 1];
+                    const next = swrPoints[i];
+                    if (swrDisplay <= next.value) {
+                        const frac = (swrDisplay - prev.value) / (next.value - prev.value);
+                        gaugePosition = prev.raw + frac * (next.raw - prev.raw);
+                        break;
+                    }
+                }
+            }
             window.gaugeSWR.value = gaugePosition;
             window.gaugeSWR.draw();
         }
