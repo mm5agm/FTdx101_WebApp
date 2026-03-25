@@ -17,14 +17,13 @@ public static class CalibrationStorage
 
     public static CalibrationFile Load()
     {
-        if (File.Exists(UserPath))
+        if (!File.Exists(UserPath))
         {
-            var json = File.ReadAllText(UserPath);
-            return JsonSerializer.Deserialize<CalibrationFile>(json)!;
+            Directory.CreateDirectory(Path.GetDirectoryName(UserPath)!);
+            File.Copy(DefaultPath, UserPath, overwrite: false);
         }
-
-        var defJson = File.ReadAllText(DefaultPath);
-        return JsonSerializer.Deserialize<CalibrationFile>(defJson)!;
+        var json = File.ReadAllText(UserPath);
+        return JsonSerializer.Deserialize<CalibrationFile>(json)!;
     }
 
     public static CalibrationFile LoadDefault()
