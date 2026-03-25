@@ -1110,11 +1110,16 @@ const calibrationService = (function () {
     function loadMeters(meters) {
         meters.forEach(meter => {
             const key = meter.key || meter.name;
-            // Find the value key in points (other than 'raw')
             let valueKey = null;
             if (meter.points && meter.points.length > 0) {
-                const keys = Object.keys(meter.points[0]).filter(k => k !== 'raw');
-                valueKey = keys[0];
+                // For TPA (PA Temperature), use 'Degrees C' as the value key
+                if (key === "TPA") {
+                    valueKey = "Degrees C";
+                } else {
+                    // Find the value key in points (other than 'raw')
+                    const keys = Object.keys(meter.points[0]).filter(k => k !== 'raw');
+                    valueKey = keys[0];
+                }
             }
             if (valueKey) {
                 tables[key] = meter.points.map(pt => ({ raw: pt.raw, value: parseFloat(pt[valueKey]), label: pt.label }));
