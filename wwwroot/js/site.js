@@ -1998,26 +1998,20 @@ let wasTransmittingSWR = false;
 
     // Update PA Temperature display (value is directly in °C from IF command)
     function updatePATemperature(tempC) {
-        // Smoothing: ignore sudden jumps >10°C, ignore 0 unless persists
-        if (!window._paTempLast) window._paTempLast = 25;
-        if (!window._paTempZeroCount) window._paTempZeroCount = 0;
-        if (tempC === 0) {
-            window._paTempZeroCount++;
-            if (window._paTempZeroCount < 2) return;
-        } else {
-            window._paTempZeroCount = 0;
-        }
-        if (Math.abs(tempC - window._paTempLast) > 10 && window._paTempLast !== 0) {
+        // Smoothing: ignore sudden jumps >10°C (calibrated)
+        const calibrated = window.calibrationService.calibrateNumeric("TPA", tempC);
+        if (!window._paTempLast) window._paTempLast = calibrated;
+        if (Math.abs(calibrated - window._paTempLast) > 10 && window._paTempLast !== 0) {
             return;
         }
-       window._paTempLast = window.calibrationService.calibrateNumeric("TPA", tempC);
+        window._paTempLast = calibrated;
         const tempDisplay = document.getElementById('paTemperatureValue');
         if (tempDisplay) {
-            tempDisplay.textContent = `${tempC}°C`;
+            tempDisplay.textContent = `${calibrated}°C`;
             tempDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
-            if (tempC < 40) {
+            if (calibrated < 40) {
                 tempDisplay.classList.add('bg-success'); // Cool - normal
-            } else if (tempC < 60) {
+            } else if (calibrated < 60) {
                 tempDisplay.classList.add('bg-warning'); // Warm - caution
             } else {
                 tempDisplay.classList.add('bg-danger'); // Hot - warning
