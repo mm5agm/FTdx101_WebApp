@@ -872,16 +872,20 @@ connection.on("RadioStateUpdate", function (update) {
             window.updatePATemperature(update.value);
         }
     }
-    // --- S-METER KEY-BASED UPDATE ---
+    // --- S-METER KEY-BASED UPDATE (defensive, non-blocking) ---
     if (update.property === "SMETER") {
-        console.log('[SignalR] S-Meter (SMETER) update received:', update.value);
-        // Assume update.value = { receiver: 'A'|'B', raw: number }
-        if (update.value && (update.value.receiver === 'A' || update.value.receiver === 'B')) {
-            updateSMeter(update.value.receiver, update.value.raw);
-        } else if (typeof update.value === 'number') {
-            // Fallback: update both if receiver not specified
-            updateSMeter('A', update.value);
-            updateSMeter('B', update.value);
+        try {
+            console.log('[SignalR] S-Meter (SMETER) update received:', update.value);
+            // Only process if update.value is valid
+            if (update.value && (update.value.receiver === 'A' || update.value.receiver === 'B') && typeof update.value.raw === 'number') {
+                updateSMeter(update.value.receiver, update.value.raw);
+            } else if (typeof update.value === 'number') {
+                // Fallback: update both if receiver not specified
+                updateSMeter('A', update.value);
+                updateSMeter('B', update.value);
+            }
+        } catch (err) {
+            console.error('[SignalR] Error in SMETER handler:', err);
         }
     }
 });
