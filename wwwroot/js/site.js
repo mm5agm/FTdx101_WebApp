@@ -1904,68 +1904,38 @@ let wasTransmittingSWR = false;
     }
 
     // Instantiate AnalogueGauge for Power Out
-    console.log('[DEBUG][IIFE] Instantiating AnalogueGauge for Power Out');
-    const powerGauge = new AnalogueGauge({
-        key: 'PowerMeter',
-        labelPrefix: 'Power Out',
-        valueUnit: 'W',
-        gaugeId: 'powerMeterCanvas',
-        labelId: 'powerMeterValue',
-        rawLabelId: 'raw-powerout-label',
-        calibrationKey: 'PWR',
-        clampMin: 0,
-        clampMax: 200,
-        isTransmittingFn: isTransmitting,
-        gaugeVar: 'gaugePower',
-        makeGaugeConfigFn: (id) => {
-            const config = makeGaugeConfig(id, 'power');
-            setTimeout(() => { if (typeof createGaugeLabels === 'function') createGaugeLabels(id, config.labels || config._labels); }, 100);
-            return config;
-        },
-        createGaugeLabelsFn: typeof createGaugeLabels !== 'undefined' ? createGaugeLabels : null,
-        configType: 'power'
-    });
-
+    // Use new PowerGauge class for Power Out
+    let powerGaugeInstance = null;
     function updatePowerMeter(value) {
-        powerGauge.update(value);
+        if (!powerGaugeInstance) {
+            powerGaugeInstance = new PowerGauge('powerMeterCanvas');
+            powerGaugeInstance.render();
+        }
+        powerGaugeInstance.gauge.value = value;
+        powerGaugeInstance.gauge.draw();
     }
     // Ensure Power meter is initialized on page load
     setTimeout(() => {
         if (document.getElementById('powerMeterCanvas')) {
-            powerGauge.update(0);
+            updatePowerMeter(0);
         }
     }, 200);
 
     // Instantiate AnalogueGauge for SWR
-    console.log('[DEBUG][IIFE] Instantiating AnalogueGauge for SWR');
-    const swrGauge = new AnalogueGauge({
-        key: 'SWRMeter',
-        labelPrefix: 'SWR',
-        valueUnit: ':1',
-        gaugeId: 'swrMeterCanvas',
-        labelId: 'swrMeterValue',
-        rawLabelId: null, // Add if you want a raw label for SWR
-        calibrationKey: 'SWR',
-        clampMin: 1.0,
-        clampMax: 3.0,
-        isTransmittingFn: isTransmitting,
-        gaugeVar: 'gaugeSWR',
-        makeGaugeConfigFn: (id) => {
-            const config = makeGaugeConfig(id, 'swr');
-            setTimeout(() => { if (typeof createGaugeLabels === 'function') createGaugeLabels(id, config.labels || config._labels); }, 100);
-            return config;
-        },
-        createGaugeLabelsFn: typeof createGaugeLabels !== 'undefined' ? createGaugeLabels : null,
-        configType: 'swr'
-    });
-
+    // Use new SWRGauge class for SWR
+    let swrGaugeInstance = null;
     function updateSWRMeter(value) {
-        swrGauge.update(value);
+        if (!swrGaugeInstance) {
+            swrGaugeInstance = new SWRGauge('swrMeterCanvas');
+            swrGaugeInstance.render();
+        }
+        swrGaugeInstance.gauge.value = value;
+        swrGaugeInstance.gauge.draw();
     }
     // Ensure SWR meter is initialized on page load
     setTimeout(() => {
         if (document.getElementById('swrMeterCanvas')) {
-            swrGauge.update(0);
+            updateSWRMeter(0);
         }
     }, 200);
 

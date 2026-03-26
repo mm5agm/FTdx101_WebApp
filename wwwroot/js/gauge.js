@@ -3,8 +3,46 @@
 
 class Gauge {
     constructor(canvasId, config) {
+        // Common config for all gauges
+        const baseConfig = {
+            renderTo: canvasId,
+            width: 420,
+            height: 135,
+            minValue: 0,
+            maxValue: 255,
+            startAngle: 90,
+            ticksAngle: 180,
+            valueBox: false,
+            minorTicks: 0,
+            strokeTicks: false,
+            tickSide: "out",
+            needleSide: "center",
+            colorPlate: "transparent",
+            borders: false,
+            needleShadow: false,
+            colorMajorTicks: "#555555",
+            colorMinorTicks: "transparent",
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorBarProgress: "#198754",
+            colorBarProgressEnd: "#198754",
+            colorBar: "#dddddd",
+            barShadow: 0,
+            barWidth: 10,
+            barStrokeWidth: 0,
+            needleType: "arrow",
+            needleWidth: 3,
+            needleCircleSize: 7,
+            needleCircleOuter: false,
+            needleCircleInner: true,
+            colorNeedleCircleInner: "#dc3545",
+            colorNeedleCircleInnerEnd: "#dc3545",
+            animationDuration: 400,
+            animationRule: "linear",
+            value: 0
+        };
         this.canvasId = canvasId;
-        this.config = config;
+        this.config = Object.assign({}, baseConfig, config);
         this.gauge = null;
     }
 
@@ -57,61 +95,21 @@ class Gauge {
 
 class SMeterGauge extends Gauge {
     constructor(canvasId, options = {}) {
-        const config = Object.assign({
-            renderTo: canvasId,
-            width: 420,
-            height: 135,
-            minValue: 0,
-            maxValue: 255,
+        super(canvasId, Object.assign({
             majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
             highlights: [
                 { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
                 { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
             ],
             labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"],
-            _labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"],
-            startAngle: 90,
-            ticksAngle: 180,
-            valueBox: false,
-            minorTicks: 0,
-            strokeTicks: false,
-            tickSide: "out",
-            needleSide: "center",
-            colorPlate: "#ffffff",
-            borders: false,
-            needleShadow: false,
-            colorMajorTicks: "#555555",
-            colorMinorTicks: "transparent",
-            colorNumbers: "transparent",
-            fontNumbersSize: 0,
-            colorBarProgress: "#198754",
-            colorBarProgressEnd: "#198754",
-            colorBar: "#dddddd",
-            barShadow: 0,
-            barWidth: 10,
-            barStrokeWidth: 0,
-            needleType: "arrow",
-            needleWidth: 3,
-            needleCircleSize: 7,
-            needleCircleOuter: false,
-            needleCircleInner: true,
-            colorNeedleCircleInner: "#dc3545",
-            colorNeedleCircleInnerEnd: "#dc3545",
-            animationDuration: 400,
-            animationRule: "linear",
-            value: 0
-        }, options);
-        super(canvasId, config);
+            _labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"]
+        }, options));
     }
 }
 
 class PowerGauge extends Gauge {
     constructor(canvasId, options = {}) {
-        const config = Object.assign({
-            renderTo: canvasId,
-            width: 420,
-            height: 135,
-            minValue: 0,
+        super(canvasId, Object.assign({
             maxValue: 200,
             majorTicks: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
             highlights: [
@@ -120,50 +118,14 @@ class PowerGauge extends Gauge {
                 { from: 175, to: 200, color: "rgba(255,0,0,.25)" }
             ],
             labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
-            _labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
-            startAngle: 90,
-            ticksAngle: 180,
-            valueBox: false,
-            minorTicks: 0,
-            strokeTicks: false,
-            tickSide: "out",
-            needleSide: "center",
-            colorPlate: "#ffffff",
-            borders: false,
-            needleShadow: false,
-            colorMajorTicks: "#555555",
-            colorMinorTicks: "transparent",
-            colorNumbers: "transparent",
-            fontNumbersSize: 0,
-            colorBarProgress: "#198754",
-            colorBarProgressEnd: "#198754",
-            colorBar: "#dddddd",
-            barShadow: 0,
-            barWidth: 10,
-            barStrokeWidth: 0,
-            needleType: "arrow",
-            needleWidth: 3,
-            needleCircleSize: 7,
-            needleCircleOuter: false,
-            needleCircleInner: true,
-            colorNeedleCircleInner: "#dc3545",
-            colorNeedleCircleInnerEnd: "#dc3545",
-            animationDuration: 400,
-            animationRule: "linear",
-            value: 0
-        }, options);
-        super(canvasId, config);
+            _labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
+        }, options));
     }
 }
 
 class SWRGauge extends Gauge {
     constructor(canvasId, options = {}) {
-        const config = Object.assign({
-            renderTo: canvasId,
-            width: 420,
-            height: 135,
-            minValue: 0,
-            maxValue: 255,
+        super(canvasId, Object.assign({
             majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
             highlights: [
                 { from: 0, to: 85, color: "rgba(0,255,0,.25)" },
@@ -171,50 +133,14 @@ class SWRGauge extends Gauge {
                 { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
             ],
             labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
-            _labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
-            startAngle: 90,
-            ticksAngle: 180,
-            valueBox: false,
-            minorTicks: 0,
-            strokeTicks: false,
-            tickSide: "out",
-            needleSide: "center",
-            colorPlate: "transparent",
-            borders: false,
-            needleShadow: false,
-            colorMajorTicks: "#555555",
-            colorMinorTicks: "transparent",
-            colorNumbers: "transparent",
-            fontNumbersSize: 0,
-            colorBarProgress: "#198754",
-            colorBarProgressEnd: "#198754",
-            colorBar: "#dddddd",
-            barShadow: 0,
-            barWidth: 10,
-            barStrokeWidth: 0,
-            needleType: "arrow",
-            needleWidth: 3,
-            needleCircleSize: 7,
-            needleCircleOuter: false,
-            needleCircleInner: true,
-            colorNeedleCircleInner: "#dc3545",
-            colorNeedleCircleInnerEnd: "#dc3545",
-            animationDuration: 400,
-            animationRule: "linear",
-            value: 0
-        }, options);
-        super(canvasId, config);
+            _labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"]
+        }, options));
     }
 }
 
 class ALCGauge extends Gauge {
     constructor(canvasId, options = {}) {
-        const config = Object.assign({
-            renderTo: canvasId,
-            width: 420,
-            height: 135,
-            minValue: 0,
-            maxValue: 255,
+        super(canvasId, Object.assign({
             majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
             highlights: [
                 { from: 0, to: 178, color: "rgba(0,255,0,.25)" },
@@ -222,39 +148,8 @@ class ALCGauge extends Gauge {
                 { from: 230, to: 255, color: "rgba(255,0,0,.25)" }
             ],
             labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"],
-            _labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"],
-            startAngle: 90,
-            ticksAngle: 180,
-            valueBox: false,
-            minorTicks: 0,
-            strokeTicks: false,
-            tickSide: "out",
-            needleSide: "center",
-            colorPlate: "transparent",
-            borders: false,
-            needleShadow: false,
-            colorMajorTicks: "#555555",
-            colorMinorTicks: "transparent",
-            colorNumbers: "transparent",
-            fontNumbersSize: 0,
-            colorBarProgress: "#198754",
-            colorBarProgressEnd: "#198754",
-            colorBar: "#dddddd",
-            barShadow: 0,
-            barWidth: 10,
-            barStrokeWidth: 0,
-            needleType: "arrow",
-            needleWidth: 3,
-            needleCircleSize: 7,
-            needleCircleOuter: false,
-            needleCircleInner: true,
-            colorNeedleCircleInner: "#dc3545",
-            colorNeedleCircleInnerEnd: "#dc3545",
-            animationDuration: 400,
-            animationRule: "linear",
-            value: 0
-        }, options);
-        super(canvasId, config);
+            _labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"]
+        }, options));
     }
 }
 
