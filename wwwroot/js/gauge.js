@@ -13,6 +13,9 @@ class Gauge {
             console.error('RadialGauge library not loaded.');
             return;
         }
+        // Always enforce half-arc (180°) for all meters
+        this.config.startAngle = 90;
+        this.config.ticksAngle = 180;
         this.gauge = new RadialGauge(this.config);
         this.gauge.draw();
         this.createLabels();
@@ -176,7 +179,7 @@ class SWRGauge extends Gauge {
             strokeTicks: false,
             tickSide: "out",
             needleSide: "center",
-            colorPlate: "#ffffff",
+            colorPlate: "transparent",
             borders: false,
             needleShadow: false,
             colorMajorTicks: "#555555",
@@ -227,7 +230,7 @@ class ALCGauge extends Gauge {
             strokeTicks: false,
             tickSide: "out",
             needleSide: "center",
-            colorPlate: "#ffffff",
+            colorPlate: "transparent",
             borders: false,
             needleShadow: false,
             colorMajorTicks: "#555555",
