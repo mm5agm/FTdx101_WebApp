@@ -55,23 +55,48 @@ class MeterGauge extends HTMLElement {
     }
 
     renderGauge() {
-        const width = this.clientWidth || 200;
-        const height = this.clientHeight || 120;
+        // Set default size if not specified
+        const width = this.clientWidth || 420;
+        const height = this.clientHeight || 135;
         this.canvas.width = width;
         this.canvas.height = height;
-        // Placeholder: Replace with actual Gauge class logic
-        const ctx = this.canvas.getContext('2d');
-        ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = '#222';
-        ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = '#fff';
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(this._type.toUpperCase(), width/2, 30);
-        ctx.fillText(this._valueLabel, width/2, 60);
-        ctx.fillText(this._bottomLabel, width/2, height-10);
-        ctx.fillText(this._value, width/2, height/2);
-        // TODO: Integrate with real Gauge/PowerGauge/etc. classes
+
+        // Remove any previous gauge instance
+        if (this.gauge && this.gauge.gauge && typeof this.gauge.gauge.destroy === 'function') {
+            this.gauge.gauge.destroy();
+        }
+
+        // Choose the correct gauge class
+        let GaugeClass = window.Gauge;
+        switch ((this._type || '').toLowerCase()) {
+            case 's-meter':
+                GaugeClass = window.SMeterGauge;
+                break;
+            case 'power':
+                GaugeClass = window.PowerGauge;
+                break;
+            case 'swr':
+                GaugeClass = window.SWRGauge;
+                break;
+            case 'alc':
+                GaugeClass = window.ALCGauge;
+                break;
+        }
+
+        // Compose config
+        const config = Object.assign({
+            width,
+            height,
+            value: this._value,
+            valueLabel: this._valueLabel,
+            bottomLabel: this._bottomLabel
+        }, this._config);
+
+        // Create and render the gauge
+        this.gauge = new GaugeClass(this.canvas, config);
+        if (typeof this.gauge.render === 'function') {
+            this.gauge.render();
+        }
     }
 }
 
