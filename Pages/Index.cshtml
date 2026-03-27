@@ -93,9 +93,7 @@
                     <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
                         <!-- Left: S-Meter and Frequency stacked -->
                         <div class="flex-shrink-0">
-                            <div class="analog-meter-container">
-                                <canvas id="sMeterCanvasA"></canvas>
-                            </div>
+                            <meter-gauge type="s-meter" value-label="S-Meter" bottom-label="A"></meter-gauge>
                             <div id="raw-s-meter-label-a" class="raw-meter-label" style="display:none;text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
                                 Raw S-Meter: <span id="rawSMeterValueA">0</span>
                             </div>
@@ -191,9 +189,7 @@
                     <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
                         <!-- Left: S-Meter and Frequency stacked -->
                         <div class="flex-shrink-0">
-                            <div class="analog-meter-container">
-                                <canvas id="sMeterCanvasB"></canvas>
-                            </div>
+                            <meter-gauge type="s-meter" value-label="S-Meter" bottom-label="B"></meter-gauge>
                             <!-- Frequency display below S-Meter -->
                             <div class="d-flex align-items-center" style="margin-top: -5px;">
                                 <span id="freqB" class="fw-bold frequency-display digit-display"></span>
@@ -277,24 +273,11 @@
             <div class="card border-secondary">
                 <div class="card-body py-2">
                     <!-- Gauges row -->
-                        <div class="d-flex justify-content-center align-items-start flex-wrap" style="gap: 0; margin-bottom: 0.2rem !important;">
-                        <!-- SWR Meter -->
-                        <div class="meter-container">
-                            <canvas id="swrMeterCanvas"></canvas>
-                            <span id="swrMeterValue" class="badge bg-danger">SWR 1.0:1</span>
-                        </div>
-                        <!-- Power Meter -->
-                        <div class="meter-container">
-                            <canvas id="powerMeterCanvas"></canvas>
-                            <span id="powerMeterValue" class="badge bg-warning text-dark">Power Out 0W</span>
-                            <div id="raw-powerout-label" class="raw-meter-label">Raw Power Out: <span id="rawPowerOutValue">0</span></div>
-                        </div>
-                        <!-- ALC Meter -->
-                        <div class="meter-container">
-                            <canvas id="alcMeterCanvas"></canvas>
-                            <span id="alcMeterValue" class="badge bg-info">ALC 0V</span>
-                        </div>
-                    </div>
+                        <meter-panel layout="1x3">
+                            <meter-gauge type="swr" value-label="SWR" bottom-label=""></meter-gauge>
+                            <meter-gauge type="power" value-label="Power Out" bottom-label=""></meter-gauge>
+                            <meter-gauge type="alc" value-label="ALC" bottom-label=""></meter-gauge>
+                        </meter-panel>
                     <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
                     <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
                         <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
@@ -332,23 +315,12 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script src="~/js/gauge.js?v=20260228c"></script>
+    <script src="~/js/meter-gauge.js?v=20260228c"></script>
+    <script src="~/js/meter-panel.js?v=20260228c"></script>
     <script src="~/js/site.js?v=20260228c"></script>
     <script>
-        // Initialize all gauges using the new class-based structure
-        document.addEventListener('DOMContentLoaded', function () {
-            if (document.getElementById('sMeterCanvasA')) {
-                window.sMeterGaugeA = new SMeterGauge('sMeterCanvasA');
-                window.sMeterGaugeA.render();
-            }
-            if (document.getElementById('sMeterCanvasB')) {
-                window.sMeterGaugeB = new SMeterGauge('sMeterCanvasB');
-                window.sMeterGaugeB.render();
-            }
-            // Removed legacy window.powerGauge and window.swrGauge assignments to avoid overriding AnalogueGauge instances
-            if (document.getElementById('alcMeterCanvas')) {
-                window.alcGauge = new ALCGauge('alcMeterCanvas');
-                window.alcGauge.render();
-            }
+        // Example: Update a gauge value
+        // document.querySelector("meter-gauge[type='power']").value = newValue;
         });
         async function launchWsjtx() {
             try {

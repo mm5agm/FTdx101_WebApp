@@ -477,16 +477,10 @@ function updateTxIndicators(isTransmitting) {
 
     if (!isTransmitting) {
         // Zero the meters when not transmitting
-        if (typeof window.updatePowerMeter === 'function') {
-            window.updatePowerMeter(0);
-        }
-        if (typeof window.gaugePower !== 'undefined' && window.gaugePower) {
-            window.gaugePower.value = 0;
-            window.gaugePower.draw();
-        }
-        if (typeof window.updateSWRMeter === 'function') {
-            window.updateSWRMeter(0);
-        }
+        const powerGauge = document.querySelector("meter-gauge[type='power']");
+        if (powerGauge) powerGauge.value = 0;
+        const swrGauge = document.querySelector("meter-gauge[type='swr']");
+        if (swrGauge) swrGauge.value = 0;
     }
 }
 
@@ -1075,8 +1069,7 @@ function sendAfGain(receiver, value) {
 
     console.log('=== FTdx101 Control Interface Starting ===');
 
-    // Gauge instances (canvas-gauge RadialGauge)
-    let gaugeA, gaugeB;
+    // No legacy gauge instances needed; use <meter-gauge> Web Components
 
     // Full inner state object - this is the authoritative state for the app
     const state = {
@@ -1750,14 +1743,16 @@ function interpolateLabel(points, raw) {
     }
 
     function updateSMeter(receiver, value) {
-        // Update only the analog gauge (text badges removed from UI)
-        if (receiver === 'A' && gaugeA) {
-            gaugeA.value = value;
-            gaugeA.draw();
+        // Update <meter-gauge> Web Component for S-Meter
+        const type = 's-meter';
+        let selector = "meter-gauge[type='" + type + "']";
+        // If you have separate A/B, use a distinguishing attribute or index
+        const meters = document.querySelectorAll(selector);
+        if (receiver === 'A' && meters[0]) {
+            meters[0].value = value;
             updateRawSMeterValueA(value);
-        } else if (receiver === 'B' && gaugeB) {
-            gaugeB.value = value;
-            gaugeB.draw();
+        } else if (receiver === 'B' && meters[1]) {
+            meters[1].value = value;
         }
     }
 
@@ -1907,37 +1902,17 @@ let wasTransmittingSWR = false;
     // Use new PowerGauge class for Power Out
     let powerGaugeInstance = null;
     function updatePowerMeter(value) {
-        if (!powerGaugeInstance) {
-            powerGaugeInstance = new PowerGauge('powerMeterCanvas');
-            powerGaugeInstance.render();
-        }
-        powerGaugeInstance.gauge.value = value;
-        powerGaugeInstance.gauge.draw();
+        const powerGauge = document.querySelector("meter-gauge[type='power']");
+        if (powerGauge) powerGauge.value = value;
     }
-    // Ensure Power meter is initialized on page load
-    setTimeout(() => {
-        if (document.getElementById('powerMeterCanvas')) {
-            updatePowerMeter(0);
-        }
-    }, 200);
 
     // Instantiate AnalogueGauge for SWR
     // Use new SWRGauge class for SWR
     let swrGaugeInstance = null;
     function updateSWRMeter(value) {
-        if (!swrGaugeInstance) {
-            swrGaugeInstance = new SWRGauge('swrMeterCanvas');
-            swrGaugeInstance.render();
-        }
-        swrGaugeInstance.gauge.value = value;
-        swrGaugeInstance.gauge.draw();
+        const swrGauge = document.querySelector("meter-gauge[type='swr']");
+        if (swrGauge) swrGauge.value = value;
     }
-    // Ensure SWR meter is initialized on page load
-    setTimeout(() => {
-        if (document.getElementById('swrMeterCanvas')) {
-            updateSWRMeter(0);
-        }
-    }, 200);
 
     // Update IDD display (0-255 raw value, display as amps)
     function updateIDDMeter(value) {
@@ -2207,41 +2182,7 @@ let wasTransmittingSWR = false;
         }
 
         // Only initialize gauges if the required canvas elements exist
-        const sMeterCanvasA = document.getElementById('sMeterCanvasA');
-        const sMeterCanvasB = document.getElementById('sMeterCanvasB');
-        if (sMeterCanvasA) {
-            const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
-            gaugeA = new RadialGauge(sMeterConfigA);
-            gaugeA.draw();
-            createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
-        }
-        if (sMeterCanvasB) {
-            const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
-            gaugeB = new RadialGauge(sMeterConfigB);
-            gaugeB.draw();
-            createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
-        }
-        // Initialize Power Meter (if element exists)
-        const powerMeterCanvas = document.getElementById('powerMeterCanvas');
-        if (powerMeterCanvas) {
-            // PowerGauge will be initialized by updatePowerMeter logic as needed
-            // Remove legacy RadialGauge instance
-            // createGaugeLabels('powerMeterCanvas', powerConfig._labels); // If needed, handled by PowerGauge
-        }
-        // Initialize SWR Meter (if element exists)
-        // The SWR meter is now managed by the AnalogueGauge swrGauge instance (see above)
-        // Legacy RadialGauge instantiation removed to prevent full-circle/duplicate rendering.
-        // Initialize ALC Meter (if element exists)
-        const alcMeterCanvas = document.getElementById('alcMeterCanvas');
-        if (alcMeterCanvas) {
-            console.log('[Gauge] Initializing ALC meter...');
-            const alcConfig = makeGaugeConfig('alcMeterCanvas', 'alc');
-            console.log('[Gauge] ALC config:', alcConfig);
-            window.gaugeALC = new RadialGauge(alcConfig);
-            window.gaugeALC.draw();
-            createGaugeLabels('alcMeterCanvas', alcConfig._labels);
-            console.log('[Gauge] ALC meter initialized');
-        }
+        // No legacy canvas-based gauge initialization needed; handled by <meter-gauge> Web Components
     }
 
 
