@@ -278,6 +278,11 @@
                             <meter-gauge type="power" value-label="Power Out" bottom-label=""></meter-gauge>
                             <meter-gauge type="alc" value-label="ALC" bottom-label=""></meter-gauge>
                         </meter-panel>
+                    <!-- IDD (Drain Current) and PA Temp Display (side by side) -->
+                    <div class="mb-2 closer-to-raw-power d-flex align-items-center gap-3">
+                        <label class="mb-0">IDD (Drain Current): <span id="iddDisplayValue" class="fw-bold badge bg-primary">0.0A</span></label>
+                        <label class="mb-0">PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
+                    </div>
                     <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
                     <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
                         <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
