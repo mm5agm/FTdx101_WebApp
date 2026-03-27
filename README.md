@@ -72,7 +72,7 @@ Uses **Auto Information Mode (AI1;)** - the radio streams status changes to the 
 If there's interest in this program, I'm open to suggestions for additional controls to add, such as:
 
 - **Full Screen mode being implemented
-- **Seperate screen for meter calibration - default calibration loaded on startup.
+- **default calibration loaded on startup.
 - **Less than 5 seconds to load app (on my pc)
 - Touch-friendly frequency tuning for tablets
 - Per-band memory (frequency, mode, antenna, power)
