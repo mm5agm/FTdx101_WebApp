@@ -1,15 +1,45 @@
+// --- Dynamic config builder for PowerGauge (and optionally others) ---
+function makePowerGaugeConfig(options = {}) {
+    // Detect radio model if available
+    let model = (window.radioControl && window.radioControl._state && window.radioControl._state.radioModel)
+        ? window.radioControl._state.radioModel.toLowerCase() : "ftdx101mp";
+    let maxValue = model === "ftdx101d" ? 100 : 200;
+    let majorTicks = model === "ftdx101d"
+        ? ["0", "13", "25", "38", "50", "63", "75", "88", "100"]
+        : ["0", "25", "50", "75", "100", "125", "150", "175", "200"];
+    let highlights = model === "ftdx101d"
+        ? [
+            { from: 0, to: 75, color: "rgba(0,255,0,.25)" },
+            { from: 75, to: 88, color: "rgba(255,255,0,.25)" },
+            { from: 88, to: 100, color: "rgba(255,0,0,.25)" }
+        ]
+        : [
+            { from: 0, to: 150, color: "rgba(0,255,0,.25)" },
+            { from: 150, to: 175, color: "rgba(255,255,0,.25)" },
+            { from: 175, to: 200, color: "rgba(255,0,0,.25)" }
+        ];
+    let labels = majorTicks;
+    return Object.assign({
+        minValue: 0,
+        maxValue,
+        majorTicks,
+        highlights,
+        labels,
+        _labels: labels,
+        colorPlate: "#ffffff"
+    }, options);
+}
+
 // gauge.js - Base and derived classes for all meter gauges
 // Requires: canvas-gauge library loaded globally (RadialGauge)
 
 class Gauge {
     constructor(canvasId, config) {
-        // Common config for all gauges
-        const baseConfig = {
+        // Only set defaults for properties not provided in config
+        const defaultConfig = {
             renderTo: canvasId,
             width: 420,
             height: 135,
-            minValue: 0,
-            maxValue: 255,
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -41,8 +71,9 @@ class Gauge {
             animationRule: "linear",
             value: 0
         };
+        // Do NOT override minValue, maxValue, majorTicks, labels, highlights if provided
         this.canvasId = canvasId;
-        this.config = Object.assign({}, baseConfig, config);
+        this.config = Object.assign({}, defaultConfig, config);
         this.gauge = null;
     }
 
@@ -60,6 +91,8 @@ class Gauge {
     }
 
     createLabels() {
+        // Suppress overlay labels if requested (used by MeterGauge to avoid double overlays)
+        if (this.config.suppressOverlayLabels) return;
         // Overlay readable labels on top of the canvas gauge
         const canvas = document.getElementById(this.canvasId);
         if (!canvas || canvas.nextElementSibling?.classList.contains('gauge-labels-overlay')) {
@@ -96,6 +129,8 @@ class Gauge {
 class SMeterGauge extends Gauge {
     constructor(canvasId, options = {}) {
         super(canvasId, Object.assign({
+            minValue: 0,
+            maxValue: 255,
             majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
             highlights: [
                 { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
@@ -109,30 +144,24 @@ class SMeterGauge extends Gauge {
 
 class PowerGauge extends Gauge {
     constructor(canvasId, options = {}) {
-        super(canvasId, Object.assign({
-            maxValue: 200,
-            majorTicks: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
-            highlights: [
-                { from: 0, to: 150, color: "rgba(0,255,0,.25)" },
-                { from: 150, to: 175, color: "rgba(255,255,0,.25)" },
-                { from: 175, to: 200, color: "rgba(255,0,0,.25)" }
-            ],
-            labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
-            _labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
-        }, options));
+        super(canvasId, makePowerGaugeConfig(options));
     }
 }
 
 class SWRGauge extends Gauge {
     constructor(canvasId, options = {}) {
         super(canvasId, Object.assign({
-            majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
+            colorMajorTicks: "transparent",
+            majorTicks: [],
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorPlate: "transparent",
+            colorTitle: "transparent",
             highlights: [
                 { from: 0, to: 85, color: "rgba(0,255,0,.25)" },
                 { from: 85, to: 128, color: "rgba(255,255,0,.25)" },
                 { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
             _labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"]
         }, options));
     }
@@ -141,13 +170,17 @@ class SWRGauge extends Gauge {
 class ALCGauge extends Gauge {
     constructor(canvasId, options = {}) {
         super(canvasId, Object.assign({
-            majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
+            colorMajorTicks: "transparent",
+            majorTicks: [],
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorPlate: "transparent",
+            colorTitle: "transparent",
             highlights: [
                 { from: 0, to: 178, color: "rgba(0,255,0,.25)" },
                 { from: 178, to: 230, color: "rgba(255,255,0,.25)" },
                 { from: 230, to: 255, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"],
             _labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"]
         }, options));
     }

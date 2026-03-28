@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gauge Test Page</title>
+    <link rel="stylesheet" href="css/site.css">
+    <style>
+        body { background: #f8f9fa; font-family: sans-serif; }
+        .gauge-row { display: flex; gap: 2rem; margin: 2rem 0; justify-content: center; }
+        meter-gauge { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .label { text-align: center; margin-top: 0.5rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;">Gauge Rendering Test</h1>
+    <div class="gauge-row">
+        <div>
+            <meter-gauge id="s-meter" type="s-meter" style="width:420px;height:135px;"></meter-gauge>
+            <div class="label">S-Meter (should show S1, S3, ...)</div>
+        </div>
+        <div>
+            <meter-gauge id="power-gauge" type="power" style="width:420px;height:135px;"></meter-gauge>
+            <div class="label">Power Gauge (should match S-Meter config)</div>
+        </div>
+        <div>
+            <canvas id="legacy-power-canvas" width="420" height="135"></canvas>
+            <div class="label">Legacy PowerGauge (direct config, no abstraction)</div>
+        </div>
+    </div>
+    <script src="js/gauge.js"></script>
+    <script src="js/meter-gauge.js"></script>
+    <script>
+        // Set up S-Meter with S-Meter config
+        document.getElementById('s-meter').applyConfig && document.getElementById('s-meter').applyConfig({
+            minValue: 0,
+            maxValue: 255,
+            majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+            labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"],
+            _labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"]
+        });
+        // Set up Power Gauge with same config as S-Meter
+        document.getElementById('power-gauge').applyConfig && document.getElementById('power-gauge').applyConfig({
+            minValue: 0,
+            maxValue: 255,
+            majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+            labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"],
+            _labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"]
+        });
+
+        // --- Legacy direct PowerGauge instantiation (no abstraction) ---
+        window.addEventListener('DOMContentLoaded', function() {
+            var legacyConfig = {
+                renderTo: 'legacy-power-canvas',
+                width: 420,
+                height: 135,
+                minValue: 0,
+                maxValue: 255,
+                startAngle: 90,
+                ticksAngle: 180,
+                valueBox: false,
+                majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
+                minorTicks: 0,
+                strokeTicks: false,
+                tickSide: "out",
+                needleSide: "center",
+                highlights: [
+                    { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
+                    { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
+                ],
+                colorPlate: "#ffffff",
+                borders: false,
+                needleShadow: false,
+                colorMajorTicks: "#555555",
+                colorMinorTicks: "transparent",
+                colorNumbers: "transparent",
+                fontNumbersSize: 0,
+                colorBarProgress: "#198754",
+                colorBarProgressEnd: "#198754",
+                colorBar: "#dddddd",
+                barShadow: 0,
+                barWidth: 10,
+                barStrokeWidth: 0,
+                needleType: "arrow",
+                needleWidth: 3,
+                needleCircleSize: 7,
+                needleCircleOuter: false,
+                needleCircleInner: true,
+                colorNeedleCircleInner: "#dc3545",
+                colorNeedleCircleInnerEnd: "#dc3545",
+                animationDuration: 400,
+                animationRule: "linear",
+                value: 0
+            };
+            var legacyGauge = new window.RadialGauge(legacyConfig);
+            legacyGauge.draw();
+        });
+    </script>
+</body>
+</html>

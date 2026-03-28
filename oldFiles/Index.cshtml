@@ -1,5 +1,20 @@
 ﻿@page
 @model FTdx101_WebApp.Pages.IndexModel
+
+<!-- Diagnostic: Always-visible SMeterGauge at top of page -->
+<div style="width: 420px; height: 135px; background: #ffe4e1; border: 2px solid #dc3545; margin: 1rem auto; text-align: center; z-index: 9999; position: relative;">
+    <span style="position: absolute; top: 2px; left: 10px; color: #dc3545; font-weight: bold; font-size: 1rem;">Diagnostic SMeterGauge</span>
+    <canvas id="diagnosticSMeterGauge" width="420" height="135" style="margin-top: 20px;"></canvas>
+</div>
+<script>
+    // Always initialize the diagnostic SMeterGauge as soon as possible
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.SMeterGauge && document.getElementById('diagnosticSMeterGauge')) {
+            window.diagnosticSMeterGauge = new SMeterGauge('diagnosticSMeterGauge');
+            window.diagnosticSMeterGauge.render();
+        }
+    });
+</script>
 @{
     ViewData["Title"] = "FT-dx101 Series Control";
     var allModes = new[] {
@@ -294,6 +309,10 @@
                             <div id="raw-powerout-label" class="raw-meter-label" style="text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
                                 Raw Power Out: <span id="rawPowerOutValue">0</span>
                             </div>
+                            <!-- Diagnostic: Add SMeterGauge in Power Meter container -->
+                            <div class="analog-meter-container">
+                                <canvas id="sMeterInPowerContainer"></canvas>
+                            </div>
                         </div>
                         <!-- ALC Meter -->
                         <div class="text-center" style="position: relative; margin-left: -10rem;">
@@ -327,6 +346,10 @@
                                style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
                                oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
                                onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
+                        <!-- Diagnostic: Add SMeterGauge in MIC Gain container -->
+                        <div class="analog-meter-container">
+                            <canvas id="sMeterInMicGainContainer"></canvas>
+                        </div>
                     </div>
                     <!-- IDD (Drain Current) and PA Temp Display (side by side) -->
                     <div class="mb-2 closer-to-raw-power d-flex align-items-center gap-3">
@@ -344,6 +367,16 @@
     <script>
         // Initialize all gauges using the new class-based structure
         document.addEventListener('DOMContentLoaded', function () {
+            // Diagnostic: Render always-visible SMeterGauge at top
+            if (document.getElementById('diagnosticSMeterGauge')) {
+                window.diagnosticSMeterGauge = new SMeterGauge('diagnosticSMeterGauge');
+                window.diagnosticSMeterGauge.render();
+            }
+            // Diagnostic: Render always-visible SMeterGauge at top
+            if (document.getElementById('diagnosticSMeterGauge')) {
+                window.diagnosticSMeterGauge = new SMeterGauge('diagnosticSMeterGauge');
+                window.diagnosticSMeterGauge.render();
+            }
             if (document.getElementById('sMeterCanvasA')) {
                 window.sMeterGaugeA = new SMeterGauge('sMeterCanvasA');
                 window.sMeterGaugeA.render();
@@ -363,6 +396,16 @@
             if (document.getElementById('alcMeterCanvas')) {
                 window.alcGauge = new ALCGauge('alcMeterCanvas');
                 window.alcGauge.render();
+            }
+            // Diagnostic: Render SMeterGauge in Power Meter container
+            if (document.getElementById('sMeterInPowerContainer')) {
+                window.sMeterInPowerContainer = new SMeterGauge('sMeterInPowerContainer');
+                window.sMeterInPowerContainer.render();
+            }
+            // Diagnostic: Render SMeterGauge in MIC Gain container
+            if (document.getElementById('sMeterInMicGainContainer')) {
+                window.sMeterInMicGainContainer = new SMeterGauge('sMeterInMicGainContainer');
+                window.sMeterInMicGainContainer.render();
             }
         });
         async function launchWsjtx() {
