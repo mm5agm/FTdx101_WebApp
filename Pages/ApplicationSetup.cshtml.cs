@@ -6,6 +6,7 @@ namespace FTdx101_WebApp.Pages
 {
     public class ApplicationSetupModel : PageModel
     {
+        public bool EnableAppLaunching { get; set; } = true;
         private readonly ISettingsService _settingsService;
 
         public ApplicationSetupModel(ISettingsService settingsService)
@@ -53,6 +54,8 @@ namespace FTdx101_WebApp.Pages
         public async Task OnGetAsync()
         {
             var settings = await _settingsService.GetSettingsAsync();
+
+            EnableAppLaunching = settings.EnableAppLaunching;
 
             // App 1
             ShowApp1Button = settings.ShowWsjtxButton;

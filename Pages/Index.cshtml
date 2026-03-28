@@ -39,7 +39,19 @@
     </div>
 </div>
 
+
 <div class="row mb-3">
+    @if (!Model.EnableAppLaunching)
+    {
+        <div class="col-12">
+            <div class="alert alert-danger mt-2 mb-2">
+                <i class="bi bi-slash-circle"></i>
+                <strong>Application launching is disabled.</strong> To enable, turn on "Do You Want Applications To Be Run From This App?" in <a href="/Settings">Settings</a>.
+            </div>
+        </div>
+    }
+    else
+    {
         @if (Model.ShowApp1Button)
         {
             <div class="col-auto">
@@ -68,13 +80,14 @@
                 </button>
             </div>
         }
-        <div class="col-auto ms-auto">
-            <button id="radioPowerBtn" class="btn btn-danger btn-sm"
-                    onclick="toggleRadioPower()" title="Radio Power On/Off">
-                <i class="bi bi-power"></i> POWER
-            </button>
-        </div>
+    }
+    <div class="col-auto ms-auto">
+        <button id="radioPowerBtn" class="btn btn-danger btn-sm"
+                onclick="toggleRadioPower()" title="Radio Power On/Off">
+            <i class="bi bi-power"></i> POWER
+        </button>
     </div>
+</div>
     <div class="row g-3 flex-wrap">
         <!-- VFO A Panel -->
         <div class="col-lg-6 col-12">

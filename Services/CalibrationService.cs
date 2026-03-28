@@ -36,7 +36,7 @@ public class CalibrationService : ICalibrationService
         try
         {
             var path = "C:\\Temp\\swr_debug.txt";
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+            System.IO.Directory.CreateDirectory("C:\\Temp");
             System.IO.File.AppendAllText(path, "[DebugBackend] SWR calibration points:\n");
             foreach (var pt in all["SWR"])
                 System.IO.File.AppendAllText(path, System.Text.Json.JsonSerializer.Serialize(pt) + "\n");

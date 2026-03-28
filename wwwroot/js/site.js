@@ -1,4 +1,90 @@
-﻿// --- Fullscreen Toggle: 'f' or 'F' to enter, 'Esc' to exit ---
+﻿// --- Restore missing global helpers for Razor page buttons ---
+// AF Gain slider fill coloring
+window.updateAfGainFill = function(sliderId) {
+    const slider = document.getElementById(sliderId);
+    if (!slider) return;
+    const min = parseFloat(slider.min) || 0;
+    const max = parseFloat(slider.max) || 100;
+    const val = parseFloat(slider.value) || 0;
+    const pct = ((val - min) / (max - min)) * 100;
+    slider.style.setProperty('--fill-pct', pct + '%');
+};
+
+// App launchers for WSJT-X, JTAlert, Log4OM
+window.launchWsjtx = async function() {
+    try {
+        const response = await fetch('/api/wsjtx/launch', { method: 'POST' });
+        const btn = document.getElementById('wsjtxBtn');
+        if (response.ok) {
+            const data = await response.json();
+            // Set button green and update tooltip
+            if (btn) {
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-success');
+                btn.title = 'WSJT-X is running';
+            }
+            if (data.alreadyRunning) {
+                const originalText = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.innerHTML = 'WSJT-X Already Running';
+                    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                }
+            }
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to launch WSJT-X');
+        }
+    } catch (e) {
+        alert('Error launching WSJT-X: ' + e.message);
+    }
+};
+
+window.launchJtalert = async function() {
+    try {
+        const response = await fetch('/api/jtalert/launch', { method: 'POST' });
+        const btn = document.getElementById('jtalertBtn');
+        if (response.ok) {
+            const data = await response.json();
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            btn.title = 'JTAlert is running';
+            if (data.alreadyRunning) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'JTAlert Already Running';
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+            }
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to launch JTAlert');
+        }
+    } catch (e) {
+        alert('Error launching JTAlert: ' + e.message);
+    }
+};
+
+window.launchLog4om = async function() {
+    try {
+        const response = await fetch('/api/log4om/launch', { method: 'POST' });
+        const btn = document.getElementById('log4omBtn');
+        if (response.ok) {
+            const data = await response.json();
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-success');
+            btn.title = 'Log4OM is running';
+            if (data.alreadyRunning) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'Log4OM Already Running';
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+            }
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to launch Log4OM');
+        }
+    } catch (e) {
+        alert('Error launching Log4OM: ' + e.message);
+    }
+};
+// --- Fullscreen Toggle: 'f' or 'F' to enter, 'Esc' to exit ---
 document.addEventListener('keydown', function (e) {
     // Ignore if typing in an input, textarea, or contenteditable
     const active = document.activeElement;
