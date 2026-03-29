@@ -758,13 +758,28 @@ namespace FTdx101_WebApp.Controllers
 
                 string command = $"AG{request.Band}{val:D3};";
                 await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
-                // Persist AF Gain value
+
+                // Read back the actual AF Gain value from the radio
+                string readCmd = request.Band == "0" ? "AG0;" : "AG1;";
+                var response = await _catClient.SendCommandAsync(readCmd, "WebUI", CancellationToken.None);
+                int actualValue = val;
+                if (!string.IsNullOrEmpty(response) && response.Length >= 6)
+                {
+                    // Response format: AG0nnn; or AG1nnn;
+                    var valueStr = response.Substring(3, 3);
+                    if (int.TryParse(valueStr, out int parsed))
+                        actualValue = parsed;
+                }
+
+                // Persist the actual value
                 if (request.Band == "0")
-                    _radioStateService.AfGainA = val;
+                    _radioStateService.AfGainA = actualValue;
                 else if (request.Band == "1")
-                    _radioStateService.AfGainB = val;
-                _logger.LogInformation("Set AF Gain band {Band} to {Value}", request.Band, val);
-                return Ok(new { message = $"AF Gain set to {val} for band {request.Band}" });
+                    _radioStateService.AfGainB = actualValue;
+                _logger.LogInformation("Set AF Gain band {Band} to {Requested} (actual: {Actual})", request.Band, val, actualValue);
+                if (actualValue != val)
+                    _logger.LogWarning("AF Gain mismatch: requested {Requested}, radio returned {Actual}", val, actualValue);
+                return Ok(new { message = $"AF Gain set to {actualValue} for band {request.Band}", actual = actualValue });
             }
             catch (Exception ex)
             {

@@ -2191,19 +2191,33 @@ let wasTransmittingSWR = false;
         const sliderB = document.getElementById('afGainSliderB');
         const labelA = document.getElementById('afGainValueA');
         const labelB = document.getElementById('afGainValueB');
+        // Debounce logic for AF Gain sliders
+        function debounce(fn, delay) {
+            let timer = null;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
         if (sliderA && !sliderA._afGainListenerAttached && labelA) {
+            const debouncedSendA = debounce(function () {
+                sendAfGain('A', parseInt(sliderA.value));
+            }, 100);
             sliderA.addEventListener('input', function () {
                 labelA.innerText = sliderA.value;
                 updateAfGainFill('afGainSliderA');
-                sendAfGain('A', parseInt(sliderA.value));
+                debouncedSendA();
             });
             sliderA._afGainListenerAttached = true;
         }
         if (sliderB && !sliderB._afGainListenerAttached && labelB) {
+            const debouncedSendB = debounce(function () {
+                sendAfGain('B', parseInt(sliderB.value));
+            }, 100);
             sliderB.addEventListener('input', function () {
                 labelB.innerText = sliderB.value;
                 updateAfGainFill('afGainSliderB');
-                sendAfGain('B', parseInt(sliderB.value));
+                debouncedSendB();
             });
             sliderB._afGainListenerAttached = true;
         }
