@@ -1030,7 +1030,34 @@ function changeSelectedDigit(receiver, delta) {
 // better-implemented versions.
 // ===========================================================================
 // --- AF Gain slider change handler ---
+// Professional AF Gain handler: sets pending state, updates only on backend confirmation
+// --- AF Gain slider change handler with smooth UX ---
+// Track user interaction state
+const afGainDragging = { A: false, B: false };
+const afGainPendingValue = { A: null, B: null };
+const afGainPendingTimer = { A: null, B: null };
+const afGainLastConfirmed = { A: null, B: null };
+
 function sendAfGain(receiver, value) {
+    const slider = document.getElementById(`afGainSlider${receiver}`);
+    if (!slider) return;
+    // Optimistic UI: move instantly, show pending
+    slider.value = value;
+    slider.classList.add('pending');
+    afGainPendingValue[receiver] = value;
+    // Start/clear timeout for backend confirmation
+    if (afGainPendingTimer[receiver]) {
+        clearTimeout(afGainPendingTimer[receiver]);
+    }
+    afGainPendingTimer[receiver] = setTimeout(() => {
+        // Timeout: revert to last confirmed value and show error
+        if (afGainPendingValue[receiver] !== null) {
+            slider.value = afGainLastConfirmed[receiver] !== null ? afGainLastConfirmed[receiver] : slider.value;
+            slider.classList.remove('pending');
+            afGainPendingValue[receiver] = null;
+            alert('AF Gain not confirmed by radio. Reverted.');
+        }
+    }, 2000); // 2 seconds
     fetch(`/api/cat/afgain/${receiver.toLowerCase()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1038,8 +1065,73 @@ function sendAfGain(receiver, value) {
     }).then(r => {
         if (!r.ok) {
             r.text().then(t => console.error('Failed to set AF Gain:', t));
+            slider.classList.remove('pending');
+            afGainPendingValue[receiver] = null;
+            if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
         }
-    }).catch(e => console.error('Error setting AF Gain:', e));
+        // On success, wait for backend confirmation via SignalR
+    }).catch(e => {
+        console.error('Error setting AF Gain:', e);
+        slider.classList.remove('pending');
+        afGainPendingValue[receiver] = null;
+        if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
+    });
+}
+
+// Attach event listeners to track dragging
+function setupAfGainSlider(receiver) {
+    const slider = document.getElementById(`afGainSlider${receiver}`);
+    if (!slider) return;
+    slider.addEventListener('mousedown', () => { afGainDragging[receiver] = true; });
+    slider.addEventListener('touchstart', () => { afGainDragging[receiver] = true; });
+    // Only send value on release
+    slider.addEventListener('mouseup', () => {
+        afGainDragging[receiver] = false;
+        sendAfGain(receiver, slider.value);
+    });
+    slider.addEventListener('touchend', () => {
+        afGainDragging[receiver] = false;
+        sendAfGain(receiver, slider.value);
+    });
+    slider.addEventListener('mouseleave', () => { afGainDragging[receiver] = false; });
+    // Prevent sending on every input/change
+    slider.addEventListener('input', () => {
+        // Do nothing here; only send on release
+    });
+}
+
+// Call setupAfGainSlider for both receivers on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    setupAfGainSlider('A');
+    setupAfGainSlider('B');
+});
+
+// SignalR handler: update AF Gain slider on backend confirmation
+if (typeof connection !== 'undefined') {
+    connection.on("RadioStateUpdate", function (update) {
+        if (update.property === "AfGainA" || update.property === "AfGainB") {
+            const receiver = update.property === "AfGainA" ? 'A' : 'B';
+            const slider = document.getElementById(`afGainSlider${receiver}`);
+            if (!slider) return;
+            // Always record last confirmed value
+            afGainLastConfirmed[receiver] = update.value;
+            // If pending and backend confirms, clear pending
+            if (
+                afGainPendingValue[receiver] !== null &&
+                String(update.value) === String(afGainPendingValue[receiver])
+            ) {
+                slider.value = update.value;
+                slider.classList.remove('pending');
+                afGainPendingValue[receiver] = null;
+                if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
+            }
+            // If not pending, allow normal backend updates (e.g., from other sources)
+            else if (afGainPendingValue[receiver] === null && !afGainDragging[receiver]) {
+                slider.value = update.value;
+            }
+            // Otherwise, ignore intermediate confirmations
+        }
+    });
 }
 
 (function () {
