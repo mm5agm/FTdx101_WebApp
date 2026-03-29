@@ -2,8 +2,6 @@ namespace FTdx101_WebApp.Models
 {
     public class ApplicationSettings
     {
-        // Master toggle for all external app launching
-        public bool EnableAppLaunching { get; set; } = true;
         // Connection Settings
         public string SerialPort { get; set; } = "COM3";
         public int BaudRate { get; set; } = 38400;

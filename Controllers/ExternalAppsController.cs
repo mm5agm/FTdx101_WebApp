@@ -23,10 +23,11 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("jtalert/launch")]
         public async Task<IActionResult> LaunchJtalert()
         {
-            var settings = await _settingsService.GetSettingsAsync();
-            if (!settings.EnableAppLaunching)
-                return BadRequest(new { error = "Application launching is disabled by the master toggle in Settings." });
-            return await LaunchExternalApp("JTAlert", "JTAlertV2", async () => settings.JtalertCommandLine);
+            return await LaunchExternalApp("JTAlert", "JTAlertV2", async () =>
+            {
+                var settings = await _settingsService.GetSettingsAsync();
+                return settings.JtalertCommandLine;
+            });
         }
 
         [HttpGet("jtalert/status")]
@@ -40,10 +41,11 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("log4om/launch")]
         public async Task<IActionResult> LaunchLog4om()
         {
-            var settings = await _settingsService.GetSettingsAsync();
-            if (!settings.EnableAppLaunching)
-                return BadRequest(new { error = "Application launching is disabled by the master toggle in Settings." });
-            return await LaunchExternalApp("Log4OM", "Log4OM", async () => settings.Log4omCommandLine);
+            return await LaunchExternalApp("Log4OM", "Log4OM", async () =>
+            {
+                var settings = await _settingsService.GetSettingsAsync();
+                return settings.Log4omCommandLine;
+            });
         }
 
         [HttpGet("log4om/status")]

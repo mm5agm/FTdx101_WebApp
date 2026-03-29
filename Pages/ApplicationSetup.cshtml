@@ -4,17 +4,6 @@
     ViewData["Title"] = "Application Setup";
 }
 
-
-@if (!Model.EnableAppLaunching)
-{
-    <div class="alert alert-danger mt-4">
-        <i class="bi bi-slash-circle"></i>
-        <strong>Application launching is disabled.</strong><br />
-        To enable external application features, turn on "Do You Want Applications To Be Run From This App?" in <a asp-page="/Settings">Settings</a>.
-    </div>
-    return;
-}
-
 <h1>Application Setup</h1>
 
 @if (TempData["Message"] != null)

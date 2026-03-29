@@ -26,7 +26,6 @@ namespace FTdx101_WebApp.Pages
 
     public class IndexModel : PageModel
     {
-        public bool EnableAppLaunching { get; set; } = true;
         private readonly RadioStateService _radioStateService;
         private readonly ISettingsService _settingsService;
 
@@ -63,24 +62,12 @@ namespace FTdx101_WebApp.Pages
 
             // Load app button visibility and names
             var settings = await _settingsService.GetSettingsAsync();
-
-            EnableAppLaunching = settings.EnableAppLaunching;
-
-            if (EnableAppLaunching)
-            {
-                ShowApp1Button = settings.ShowWsjtxButton;
-                ShowApp2Button = settings.ShowJtalertButton;
-                ShowApp3Button = settings.ShowLog4omButton;
-                App1Name = settings.App1Name;
-                App2Name = settings.App2Name;
-                App3Name = settings.App3Name;
-            }
-            else
-            {
-                ShowApp1Button = false;
-                ShowApp2Button = false;
-                ShowApp3Button = false;
-            }
+            ShowApp1Button = settings.ShowWsjtxButton;
+            ShowApp2Button = settings.ShowJtalertButton;
+            ShowApp3Button = settings.ShowLog4omButton;
+            App1Name = settings.App1Name;
+            App2Name = settings.App2Name;
+            App3Name = settings.App3Name;
 
             // Load persisted MIC Gain
             MicGain = _radioStateService.MicGain;

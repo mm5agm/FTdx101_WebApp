@@ -97,16 +97,14 @@ namespace FTdx101_WebApp.Controllers
                 return Ok(new { launched = false, alreadyRunning = true });
             }
 
-
             var settings = await _settingsService.GetSettingsAsync();
-            if (!settings.EnableAppLaunching)
-                return BadRequest(new { error = "Application launching is disabled by the master toggle in Settings." });
-
             var commandLine = settings.WsjtxCommandLine;
+
             if (string.IsNullOrWhiteSpace(commandLine))
                 return BadRequest(new { error = "WSJT-X command line is not configured. Please check Settings." });
 
             var (exe, args) = ParseCommandLine(commandLine);
+
             if (!System.IO.File.Exists(exe))
             {
                 _logger.LogWarning("WSJT-X executable not found at: {Exe}", exe);

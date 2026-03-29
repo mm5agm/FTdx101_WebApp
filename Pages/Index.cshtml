@@ -39,19 +39,7 @@
     </div>
 </div>
 
-
 <div class="row mb-3">
-    @if (!Model.EnableAppLaunching)
-    {
-        <div class="col-12">
-            <div class="alert alert-danger mt-2 mb-2">
-                <i class="bi bi-slash-circle"></i>
-                <strong>Application launching is disabled.</strong> To enable, turn on "Do You Want Applications To Be Run From This App?" in <a href="/Settings">Settings</a>.
-            </div>
-        </div>
-    }
-    else
-    {
         @if (Model.ShowApp1Button)
         {
             <div class="col-auto">
@@ -80,14 +68,13 @@
                 </button>
             </div>
         }
-    }
-    <div class="col-auto ms-auto">
-        <button id="radioPowerBtn" class="btn btn-danger btn-sm"
-                onclick="toggleRadioPower()" title="Radio Power On/Off">
-            <i class="bi bi-power"></i> POWER
-        </button>
+        <div class="col-auto ms-auto">
+            <button id="radioPowerBtn" class="btn btn-danger btn-sm"
+                    onclick="toggleRadioPower()" title="Radio Power On/Off">
+                <i class="bi bi-power"></i> POWER
+            </button>
+        </div>
     </div>
-</div>
     <div class="row g-3 flex-wrap">
         <!-- VFO A Panel -->
         <div class="col-lg-6 col-12">
@@ -104,11 +91,22 @@
                 <div class="card-body">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
                     <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
-                        <!-- Left: S-Meter only -->
+                        <!-- Left: S-Meter and Frequency stacked -->
                         <div class="flex-shrink-0">
-                            <meter-gauge type="s-meter" value-label="S-Meter" bottom-label="A"></meter-gauge>
+                            <div class="analog-meter-container">
+                                <canvas id="sMeterCanvasA"></canvas>
+                            </div>
                             <div id="raw-s-meter-label-a" class="raw-meter-label" style="display:none;text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
                                 Raw S-Meter: <span id="rawSMeterValueA">0</span>
+                            </div>
+                            <!-- Frequency display below S-Meter -->
+                            <div class="d-flex align-items-center" style="margin-top: -5px;">
+                                <span id="freqA" class="fw-bold frequency-display digit-display"></span>
+                                <span class="frequency-display digit-display ms-1">MHz</span>
+                                <div id="freqA-controls" class="ms-2" style="display:none;">
+                                    <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
+                                    <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
+                                </div>
                             </div>
                         </div>
                         <!-- Middle: Band buttons in compact 3-row grid -->
@@ -150,15 +148,6 @@
 
                     <!-- Other controls below -->
                     <div>
-                        <!-- Frequency display for VFO A (moved above Roofing Filter) -->
-                        <div class="d-flex align-items-center mb-2">
-                            <span id="freqA" class="fw-bold frequency-display digit-display"></span>
-                            <span class="frequency-display digit-display ms-1">MHz</span>
-                            <div id="freqA-controls" class="ms-2" style="display:none;">
-                                <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
-                                <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
-                            </div>
-                        </div>
                         <!-- Roofing Filter A -->
                         <div class="d-flex align-items-center mt-2 mb-2">
                             <label class="me-2 mb-0">Roofing Filter:</label>
@@ -179,7 +168,7 @@
                                    id="afGainSliderA"
                                    min="0" max="255" step="1" value="0"
                                    style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
-                                   oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); sendAfGain('A', this.value)">
+                                   oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
                         </div>
                     </div>
                             </div>
@@ -202,7 +191,9 @@
                     <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
                         <!-- Left: S-Meter and Frequency stacked -->
                         <div class="flex-shrink-0">
-                            <meter-gauge type="s-meter" value-label="S-Meter" bottom-label="B"></meter-gauge>
+                            <div class="analog-meter-container">
+                                <canvas id="sMeterCanvasB"></canvas>
+                            </div>
                             <!-- Frequency display below S-Meter -->
                             <div class="d-flex align-items-center" style="margin-top: -5px;">
                                 <span id="freqB" class="fw-bold frequency-display digit-display"></span>
@@ -272,7 +263,7 @@
                                    id="afGainSliderB"
                                    min="0" max="255" step="1" value="0"
                                    style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
-                                   oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); sendAfGain('B', this.value)">
+                                   oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
                         </div>
                     </div>
                                 </div>
@@ -283,14 +274,35 @@
                     <!-- Power and SWR Meters -->
     <div class="row mt-3">
         <div class="col-12">
-            <div class="card border-secondary bottom-meter-card">
+            <div class="card border-secondary">
                 <div class="card-body py-2">
                     <!-- Gauges row -->
-                        <meter-panel layout="1x4">
-                            <meter-gauge type="swr" value-label="SWR" bottom-label=""></meter-gauge>
-                            <meter-gauge type="power" value-label="Power Out" bottom-label=""></meter-gauge>
-                            <meter-gauge type="alc" value-label="ALC" bottom-label=""></meter-gauge>
-                        </meter-panel>
+                    <div class="d-flex justify-content-start align-items-start flex-wrap" style="margin-left: -7rem; gap: 0; margin-bottom: 0.2rem !important;">
+                        <!-- SWR Meter -->
+                        <div class="text-center" style="position: relative;">
+                            <div class="analog-meter-container">
+                                <canvas id="swrMeterCanvas"></canvas>
+                            </div>
+                            <span id="swrMeterValue" class="badge bg-danger" style="position: absolute; bottom: 35px; left: calc(50% - 15px); transform: translateX(-50%); z-index: 100; white-space: nowrap;">SWR 1.0:1</span>
+                        </div>
+                        <!-- Power Meter -->
+                        <div class="text-center power-meter-container" style="position: relative;">
+                            <div class="analog-meter-container">
+                                <canvas id="powerMeterCanvas"></canvas>
+                            </div>
+                            <span id="powerMeterValue" class="badge bg-warning text-dark" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap;">Power Out 0W</span>
+                            <div id="raw-powerout-label" class="raw-meter-label" style="text-align:center;font-size:1.05rem;color:#0d6efd;font-weight:600;margin-top:2px;">
+                                Raw Power Out: <span id="rawPowerOutValue">0</span>
+                            </div>
+                        </div>
+                        <!-- ALC Meter -->
+                        <div class="text-center" style="position: relative; margin-left: -10rem;">
+                            <div class="analog-meter-container">
+                                <canvas id="alcMeterCanvas"></canvas>
+                            </div>
+                            <span id="alcMeterValue" class="badge bg-info" style="position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); z-index: 100; white-space: nowrap;">ALC 0V</span>
+                        </div>
+                    </div>
                     <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
                     <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
                         <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
@@ -316,7 +328,7 @@
                                oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
                                onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
                     </div>
-                    <!-- IDD (Drain Current) and PA Temp Display (side by side, correct position and IDs for JS updates) -->
+                    <!-- IDD (Drain Current) and PA Temp Display (side by side) -->
                     <div class="mb-2 closer-to-raw-power d-flex align-items-center gap-3">
                         <label class="mb-0">IDD (Drain Current): <span id="iddDisplayValue" class="fw-bold badge bg-primary">0.0A</span></label>
                         <label class="mb-0">PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
@@ -328,12 +340,30 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script src="~/js/gauge.js?v=20260228c"></script>
-    <script src="~/js/meter-gauge.js?v=20260228c"></script>
-    <script src="~/js/meter-panel.js?v=20260228c"></script>
     <script src="~/js/site.js?v=20260228c"></script>
     <script>
-        // Example: Update a gauge value
-        // document.querySelector("meter-gauge[type='power']").value = newValue;
+        // Initialize all gauges using the new class-based structure
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.getElementById('sMeterCanvasA')) {
+                window.sMeterGaugeA = new SMeterGauge('sMeterCanvasA');
+                window.sMeterGaugeA.render();
+            }
+            if (document.getElementById('sMeterCanvasB')) {
+                window.sMeterGaugeB = new SMeterGauge('sMeterCanvasB');
+                window.sMeterGaugeB.render();
+            }
+            if (document.getElementById('powerMeterCanvas')) {
+                window.powerGauge = new PowerGauge('powerMeterCanvas');
+                window.powerGauge.render();
+            }
+            if (document.getElementById('swrMeterCanvas')) {
+                window.swrGauge = new SWRGauge('swrMeterCanvas');
+                window.swrGauge.render();
+            }
+            if (document.getElementById('alcMeterCanvas')) {
+                window.alcGauge = new ALCGauge('alcMeterCanvas');
+                window.alcGauge.render();
+            }
         });
         async function launchWsjtx() {
             try {
@@ -487,6 +517,23 @@
         updateLog4omStatus();
         setInterval(updateLog4omStatus, 5000);
 
+        window.setAfGain = async function(receiver, val) {
+    let band = receiver === 'A' ? '0' : '1';
+    let value = String(val).padStart(3, '0');
+    try {
+        const response = await fetch('/api/cat/afgain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ band, value })
+        });
+        if (!response.ok) {
+            const data = await response.json();
+            alert(data.error || 'Failed to set AF Gain');
+        }
+    } catch (e) {
+        alert('Error setting AF Gain: ' + e.message);
+    }
+}
 
         async function setMicGain(value) {
             console.log('[setMicGain] Called with value:', value);

@@ -23,28 +23,12 @@ public class CalibrationService : ICalibrationService
     }
     public Dictionary<string, List<CalibrationPoint>> GetAllCalibrationTables()
 {
-    var all = Current.Meters
+    return Current.Meters
         .GroupBy(m => m.Name)
         .ToDictionary(
             g => g.Key,
             g => g.SelectMany(m => m.Points).ToList()
         );
-
-    // Debug: Write SWR calibration points to file for diagnostics
-    if (all.ContainsKey("SWR"))
-    {
-        try
-        {
-            var path = "C:\\Temp\\swr_debug.txt";
-            System.IO.Directory.CreateDirectory("C:\\Temp");
-            System.IO.File.AppendAllText(path, "[DebugBackend] SWR calibration points:\n");
-            foreach (var pt in all["SWR"])
-                System.IO.File.AppendAllText(path, System.Text.Json.JsonSerializer.Serialize(pt) + "\n");
-        }
-        catch { }
-    }
-
-    return all;
 }
 
     public double CalibrateNumeric(string meterName, double raw)

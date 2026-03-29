@@ -36,7 +36,7 @@ builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
 
 // Add after existing service registrations
-builder.Services.AddHostedService<MeterPollingService>();
+builder.Services.AddHostedService<SMeterPollingService>();
 
 // Register the radio state service — reuse the same singleton instance as RadioStateService
 builder.Services.AddSingleton<IRadioStateService>(sp => sp.GetRequiredService<RadioStateService>());

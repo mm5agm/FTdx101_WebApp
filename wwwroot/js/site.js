@@ -1,90 +1,4 @@
-﻿// --- Restore missing global helpers for Razor page buttons ---
-// AF Gain slider fill coloring
-window.updateAfGainFill = function(sliderId) {
-    const slider = document.getElementById(sliderId);
-    if (!slider) return;
-    const min = parseFloat(slider.min) || 0;
-    const max = parseFloat(slider.max) || 100;
-    const val = parseFloat(slider.value) || 0;
-    const pct = ((val - min) / (max - min)) * 100;
-    slider.style.setProperty('--fill-pct', pct + '%');
-};
-
-// App launchers for WSJT-X, JTAlert, Log4OM
-window.launchWsjtx = async function() {
-    try {
-        const response = await fetch('/api/wsjtx/launch', { method: 'POST' });
-        const btn = document.getElementById('wsjtxBtn');
-        if (response.ok) {
-            const data = await response.json();
-            // Set button green and update tooltip
-            if (btn) {
-                btn.classList.remove('btn-secondary');
-                btn.classList.add('btn-success');
-                btn.title = 'WSJT-X is running';
-            }
-            if (data.alreadyRunning) {
-                const originalText = btn ? btn.innerHTML : '';
-                if (btn) {
-                    btn.innerHTML = 'WSJT-X Already Running';
-                    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-                }
-            }
-        } else {
-            const data = await response.json();
-            alert(data.error || 'Failed to launch WSJT-X');
-        }
-    } catch (e) {
-        alert('Error launching WSJT-X: ' + e.message);
-    }
-};
-
-window.launchJtalert = async function() {
-    try {
-        const response = await fetch('/api/jtalert/launch', { method: 'POST' });
-        const btn = document.getElementById('jtalertBtn');
-        if (response.ok) {
-            const data = await response.json();
-            btn.classList.remove('btn-secondary');
-            btn.classList.add('btn-success');
-            btn.title = 'JTAlert is running';
-            if (data.alreadyRunning) {
-                const originalText = btn.innerHTML;
-                btn.innerHTML = 'JTAlert Already Running';
-                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-            }
-        } else {
-            const data = await response.json();
-            alert(data.error || 'Failed to launch JTAlert');
-        }
-    } catch (e) {
-        alert('Error launching JTAlert: ' + e.message);
-    }
-};
-
-window.launchLog4om = async function() {
-    try {
-        const response = await fetch('/api/log4om/launch', { method: 'POST' });
-        const btn = document.getElementById('log4omBtn');
-        if (response.ok) {
-            const data = await response.json();
-            btn.classList.remove('btn-secondary');
-            btn.classList.add('btn-success');
-            btn.title = 'Log4OM is running';
-            if (data.alreadyRunning) {
-                const originalText = btn.innerHTML;
-                btn.innerHTML = 'Log4OM Already Running';
-                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-            }
-        } else {
-            const data = await response.json();
-            alert(data.error || 'Failed to launch Log4OM');
-        }
-    } catch (e) {
-        alert('Error launching Log4OM: ' + e.message);
-    }
-};
-// --- Fullscreen Toggle: 'f' or 'F' to enter, 'Esc' to exit ---
+﻿// --- Fullscreen Toggle: 'f' or 'F' to enter, 'Esc' to exit ---
 document.addEventListener('keydown', function (e) {
     // Ignore if typing in an input, textarea, or contenteditable
     const active = document.activeElement;
@@ -202,39 +116,19 @@ document.addEventListener('DOMContentLoaded', function () {
         rawPowerLabel.style.marginLeft = '12px';
     }
 
-    // --- Load calibration tables and register with calibrationService, then connect SignalR ---
-    fetch('/api/calibration/all')
-        .then(response => response.json())
-        .then(meters => {
-            if (Array.isArray(meters)) {
-                window.calibrationService.loadMeters(meters);
-                console.log('[Calibration] Loaded meters:', meters.map(m => m.key || m.name));
-            } else if (meters && typeof meters === 'object') {
-                // If backend returns a dictionary, convert to array
-                const arr = Object.entries(meters).map(([key, points]) => ({ key, points }));
-                window.calibrationService.loadMeters(arr);
-                console.log('[Calibration] Loaded meters (dict):', Object.keys(meters));
-            } else {
-                console.warn('[Calibration] Unexpected calibration data format:', meters);
+    // --- SignalR connection setup and disconnect on page unload ---
+    if (window.signalRConnection === undefined) {
+        window.signalRConnection = new signalR.HubConnectionBuilder().withUrl("/radioHub").build();
+        window.signalRConnection.start().catch(function (err) { console.error("SignalR start error:", err); });
+        // Heartbeat: send every 5 seconds
+        window.signalRHeartbeatInterval = setInterval(function () {
+            if (window.signalRConnection && window.signalRConnection.invoke) {
+                window.signalRConnection.invoke("Heartbeat").catch(function (err) {
+                    // Ignore errors if connection is closed
+                });
             }
-
-            // --- SignalR connection setup and disconnect on page unload ---
-            if (window.signalRConnection === undefined) {
-                window.signalRConnection = new signalR.HubConnectionBuilder().withUrl("/radioHub").build();
-                window.signalRConnection.start().catch(function (err) { console.error("SignalR start error:", err); });
-                // Heartbeat: send every 5 seconds
-                window.signalRHeartbeatInterval = setInterval(function () {
-                    if (window.signalRConnection && window.signalRConnection.invoke) {
-                        window.signalRConnection.invoke("Heartbeat").catch(function (err) {
-                            // Ignore errors if connection is closed
-                        });
-                    }
-                }, 5000);
-            }
-        })
-        .catch(err => {
-            console.error('[Calibration] Failed to load calibration tables:', err);
-        });
+        }, 5000);
+    }
     // Use 'unload', 'beforeunload', and 'visibilitychange' for best reliability
     window.addEventListener('unload', function (e) {
         if (window.signalRConnection && window.signalRConnection.stop) {
@@ -563,10 +457,16 @@ function updateTxIndicators(isTransmitting) {
 
     if (!isTransmitting) {
         // Zero the meters when not transmitting
-        const powerGauge = document.querySelector("meter-gauge[type='power']");
-        if (powerGauge) powerGauge.value = 0;
-        const swrGauge = document.querySelector("meter-gauge[type='swr']");
-        if (swrGauge) swrGauge.value = 0;
+        if (typeof window.updatePowerMeter === 'function') {
+            window.updatePowerMeter(0);
+        }
+        if (typeof window.gaugePower !== 'undefined' && window.gaugePower) {
+            window.gaugePower.value = 0;
+            window.gaugePower.draw();
+        }
+        if (typeof window.updateSWRMeter === 'function') {
+            window.updateSWRMeter(0);
+        }
     }
 }
 
@@ -778,6 +678,23 @@ connection.on("ShowSettingsPage", function () {
 
 
 // S-Meter label interpolation using only dynamic calibration data
+// --- Power Out Calibration Points (for PowerMeter gauge/label) ---
+let powerOutCalibrationPoints = null;
+
+function fetchPowerOutCalibrationPoints() {
+    fetch('/api/calibration/powerout')
+        .then(response => response.json())
+        .then(points => {
+            powerOutCalibrationPoints = points.map(p => ({ label: p.label, value: Number(p.value) }));
+            console.log('[PowerMeter] Calibration points loaded:', powerOutCalibrationPoints);
+        })
+        .catch(err => {
+            powerOutCalibrationPoints = null;
+            console.warn('[PowerMeter] Failed to load calibration points:', err);
+        });
+}
+
+document.addEventListener('DOMContentLoaded', fetchPowerOutCalibrationPoints);
 function sMeterLabel(val) {
     return window.calibrationService.calibrateSMeterLabel(val);
 }
@@ -929,26 +846,10 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "VDDMeter" && typeof window.updatePAVoltage === 'function') {
         window.updatePAVoltage(update.value);
     }
-    if (update.property === "TPA") {
-        console.log('[SignalR] PA Temp (TPA) update received:', update.value);
+    if (update.property === "Temperature") {
+        console.log('[SignalR] Temperature update received:', update.value);
         if (typeof window.updatePATemperature === 'function') {
             window.updatePATemperature(update.value);
-        }
-    }
-    // --- S-METER KEY-BASED UPDATE (defensive, non-blocking) ---
-    if (update.property === "SMETER") {
-        try {
-            console.log('[SignalR] S-Meter (SMETER) update received:', update.value);
-            // Only process if update.value is valid
-            if (update.value && (update.value.receiver === 'A' || update.value.receiver === 'B') && typeof update.value.raw === 'number') {
-                updateSMeter(update.value.receiver, update.value.raw);
-            } else if (typeof update.value === 'number') {
-                // Fallback: update both if receiver not specified
-                updateSMeter('A', update.value);
-                updateSMeter('B', update.value);
-            }
-        } catch (err) {
-            console.error('[SignalR] Error in SMETER handler:', err);
         }
     }
 });
@@ -1141,21 +1042,13 @@ function sendAfGain(receiver, value) {
     }).catch(e => console.error('Error setting AF Gain:', e));
 }
 
-
 (function () {
     'use strict';
 
-    console.log('[DEBUG][IIFE] FTdx101 Control Interface IIFE starting');
-    try {
-        // Early error trap
-        window._iifeStarted = true;
-    } catch (e) {
-        console.error('[DEBUG][IIFE] Early error:', e);
-    }
-
     console.log('=== FTdx101 Control Interface Starting ===');
 
-    // No legacy gauge instances needed; use <meter-gauge> Web Components
+    // Gauge instances (canvas-gauge RadialGauge)
+    let gaugeA, gaugeB;
 
     // Full inner state object - this is the authoritative state for the app
     const state = {
@@ -1176,69 +1069,11 @@ function sendAfGain(receiver, value) {
         isTransmitting: false  // Track TX state for meter display
     };
 // --- Calibration Service (JS side, backed by JSON from backend) ---
-
-// --- Calibration Service (with key support) ---
 const calibrationService = (function () {
-    const tables = {}; // meterKey -> array of { raw, value, label? }
+    const tables = {}; // meterName -> array of { raw, value, label? }
 
-    // Loads calibration meters from JSON array
-    function loadMeters(meters) {
-        meters.forEach(meter => {
-            const key = meter.key || meter.name;
-            let valueKey = null;
-            if (meter.points && meter.points.length > 0) {
-                // All keys in the first point, lowercased
-                const allKeys = Object.keys(meter.points[0]).map(k => k.toLowerCase());
-                function findKey(possible) {
-                    const idx = allKeys.indexOf(possible.toLowerCase());
-                    return idx !== -1 ? Object.keys(meter.points[0])[idx] : null;
-                }
-                if (key === "TPA") {
-                    valueKey = findKey("Degrees C");
-                } else if (key === "SWR") {
-                    valueKey = findKey("radio");
-                } else if (key === "PWR") {
-                    valueKey = findKey("Watts");
-                } else if (key === "IDD") {
-                    valueKey = findKey("Current");
-                } else if (key === "ALC") {
-                    valueKey = findKey("Volts");
-                } else if (key === "SMETER") {
-                    valueKey = findKey("S Value");
-                } else {
-                    // Fallback: first non-raw key
-                    const keys = Object.keys(meter.points[0]).filter(k => k.toLowerCase() !== 'raw');
-                    valueKey = keys[0];
-                }
-            }
-            if (valueKey) {
-                tables[key] = meter.points.map((pt, idx) => {
-                    let val = pt[valueKey];
-                    if (val === undefined) {
-                        console.warn(`[CalibrationLoader] Missing value for key '${valueKey}' in meter '${key}' at index ${idx}:`, pt);
-                        val = NaN;
-                    } else if (typeof val === 'string') {
-                        const parsed = parseFloat(val);
-                        if (isNaN(parsed)) {
-                            console.warn(`[CalibrationLoader] Could not parse value '${val}' for key '${valueKey}' in meter '${key}' at index ${idx}`);
-                            val = NaN;
-                        } else {
-                            val = parsed;
-                        }
-                    } else if (typeof val !== 'number') {
-                        console.warn(`[CalibrationLoader] Unexpected value type for key '${valueKey}' in meter '${key}' at index ${idx}:`, val);
-                        val = NaN;
-                    }
-                    return { raw: pt.raw, value: val, label: pt.label };
-                });
-                // Log the final calibration table for this key
-                console.log(`[CalibrationLoader] Loaded calibration table for '${key}':`, tables[key]);
-            }
-        });
-    }
-
-    function calibrateNumeric(meterKey, raw) {
-        const table = tables[meterKey];
+    function calibrateNumeric(meterName, raw) {
+        const table = tables[meterName];
         if (!table || table.length === 0) return raw; // fallback: identity
         return interpolateNumeric(table, raw);
     }
@@ -1263,7 +1098,6 @@ const calibrationService = (function () {
 
     return {
         _tables: tables,
-        loadMeters,
         calibrateNumeric,
         calibrateSMeterLabel
     };
@@ -1829,16 +1663,14 @@ function interpolateLabel(points, raw) {
     }
 
     function updateSMeter(receiver, value) {
-        // Update <meter-gauge> Web Component for S-Meter
-        const type = 's-meter';
-        let selector = "meter-gauge[type='" + type + "']";
-        // If you have separate A/B, use a distinguishing attribute or index
-        const meters = document.querySelectorAll(selector);
-        if (receiver === 'A' && meters[0]) {
-            meters[0].value = value;
+        // Update only the analog gauge (text badges removed from UI)
+        if (receiver === 'A' && gaugeA) {
+            gaugeA.value = value;
+            gaugeA.draw();
             updateRawSMeterValueA(value);
-        } else if (receiver === 'B' && meters[1]) {
-            meters[1].value = value;
+        } else if (receiver === 'B' && gaugeB) {
+            gaugeB.value = value;
+            gaugeB.draw();
         }
     }
 
@@ -1849,131 +1681,10 @@ const historyLength = 7; // Average last 7 readings for smoother display
 let wasTransmittingPower = false;
 let wasTransmittingSWR = false;
 
-
-    // --- AnalogueGauge class for unified numeric gauge logic ---
-    class AnalogueGauge {
-        constructor({
-            key,
-            labelPrefix,
-            valueUnit,
-            gaugeId,
-            labelId,
-            rawLabelId,
-            calibrationKey,
-            historyLength = 7,
-            clampMin = 0,
-            clampMax = null,
-            isTransmittingFn = () => true,
-            gaugeVar = null,
-            makeGaugeConfigFn = null,
-            createGaugeLabelsFn = null,
-            configType = null
-        }) {
-            this.key = key;
-            this.labelPrefix = labelPrefix;
-            this.valueUnit = valueUnit;
-            this.gaugeId = gaugeId;
-            this.labelId = labelId;
-            this.rawLabelId = rawLabelId;
-            this.calibrationKey = calibrationKey;
-            this.historyLength = historyLength;
-            this.clampMin = clampMin;
-            this.clampMax = clampMax;
-            this.isTransmittingFn = isTransmittingFn;
-            this.gaugeVar = gaugeVar;
-            this.makeGaugeConfigFn = makeGaugeConfigFn;
-            this.createGaugeLabelsFn = createGaugeLabelsFn;
-            this.configType = configType;
-            this.history = [];
-            this.wasTransmitting = false;
-            this.lastTx = null;
-            setTimeout(() => {
-                const canvas = document.getElementById(gaugeId);
-                const label = labelId ? document.getElementById(labelId) : null;
-                const rawLabel = rawLabelId ? document.getElementById(rawLabelId) : null;
-                console.log(`[AnalogueGauge] DOM check for key=${key}: canvas=`, !!canvas, 'label=', !!label, 'rawLabel=', !!rawLabel);
-            }, 500);
-        }
-
-        update(rawValue) {
-            window[`last${this.key}RawValue`] = rawValue;
-            const tx = this.isTransmittingFn();
-            if (!tx) {
-                this.history = [];
-                this.wasTransmitting = false;
-                this._setLabel(0);
-                this._setRawLabel(0);
-                this._setGauge(0);
-                this.lastTx = tx;
-                return;
-            }
-            this.lastTx = tx;
-            if (!this.wasTransmitting) {
-                this.history = [];
-            }
-            this.wasTransmitting = true;
-            this.history.push(rawValue);
-            if (this.history.length > this.historyLength) {
-                this.history.shift();
-            }
-            const avgValue = this.history.reduce((sum, v) => sum + v, 0) / this.history.length;
-            const calibrated = window.calibrationService.calibrateNumeric(this.calibrationKey, avgValue);
-            let clamped = calibrated;
-            if (this.clampMax !== null) {
-                clamped = Math.max(this.clampMin, Math.min(calibrated, this.clampMax));
-            }
-            this._setLabel(clamped);
-            this._setRawLabel(avgValue);
-            this._setGauge(clamped);
-        }
-
-        _setLabel(val) {
-            if (!this.labelId) return;
-            const el = document.getElementById(this.labelId);
-            if (el) el.textContent = `${this.labelPrefix} ${val}${this.valueUnit}`;
-        }
-        _setRawLabel(raw) {
-            if (!this.rawLabelId) return;
-            const el = document.getElementById(this.rawLabelId);
-            if (el) el.textContent = `Raw ${this.labelPrefix}: ${Math.round(raw)}`;
-        }
-        _setGauge(val) {
-            if (!this.gaugeVar || !this.gaugeId) {
-                console.warn(`[AnalogueGauge] _setGauge: missing gaugeVar or gaugeId for key=${this.key}`);
-                return;
-            }
-            let gauge = window[this.gaugeVar];
-            let maxValue = this.clampMax;
-            if (!gauge || gauge.maxValue !== maxValue) {
-                if (this.makeGaugeConfigFn) {
-                    try {
-                        const config = this.makeGaugeConfigFn(this.gaugeId, this.key.toLowerCase());
-                        config.maxValue = maxValue;
-                        if (gauge && gauge.destroy) gauge.destroy();
-                        gauge = new RadialGauge(config);
-                        gauge.draw();
-                        window[this.gaugeVar] = gauge;
-                        if (this.createGaugeLabelsFn) this.createGaugeLabelsFn(this.gaugeId, config._labels);
-                        console.log(`[AnalogueGauge] Created new RadialGauge for key=${this.key}, gaugeVar=${this.gaugeVar}`);
-                    } catch (err) {
-                        console.error(`[GaugeInit] Error during ${this.gaugeVar} re-initialization:`, err);
-                    }
-                } else {
-                    console.warn(`[AnalogueGauge] No makeGaugeConfigFn for key=${this.key}`);
-                }
-            }
-            if (gauge) {
-                gauge.value = val;
-                gauge.draw();
-                console.log(`[AnalogueGauge] Set gauge value for key=${this.key} to ${val}`);
-            } else {
-                console.warn(`[AnalogueGauge] No gauge instance for key=${this.key} after _setGauge`);
-            }
-        }
-    }
-
-    // Helper to get TX state
-    function isTransmitting() {
+    function updatePowerMeter(value) {
+        // Store last raw value globally for calibration reloads
+        window.lastPowerMeterRawValue = value;
+        // Robust TX state detection: check both global and IIFE state
         let tx = false;
         if (typeof state !== 'undefined' && typeof state.isTransmitting !== 'undefined') {
             tx = state.isTransmitting;
@@ -1981,23 +1692,179 @@ let wasTransmittingSWR = false;
         if (window.radioControl && window.radioControl._state && typeof window.radioControl._state.isTransmitting !== 'undefined') {
             tx = tx || window.radioControl._state.isTransmitting;
         }
-        return tx;
+        // Debug: log TX state and calibration
+        console.log('[PowerMeter] updatePowerMeter called. isTransmitting:', tx, 'raw value:', value, 'type:', typeof value, 'calibration:', powerOutCalibrationPoints);
+        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
+        if (!tx) {
+            value = 0;
+        }
+        if (!tx) {
+            powerHistory = [];
+            wasTransmittingPower = false;
+            const valueSpan = document.getElementById('powerMeterValue');
+            if (valueSpan) valueSpan.textContent = 'Power Out 0W';
+            // Update raw Power Out label to 0 with descriptive label
+            var rawPowerLabel = document.getElementById('raw-powerout-label');
+            if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: 0';
+            if (window.gaugePower) {
+                window.gaugePower.value = 0;
+                window.gaugePower.draw();
+            } else {
+                console.warn('[PowerMeter] window.gaugePower is not defined when trying to set to 0');
+            }
+            return;
+        }
+        // Only update on TX
+        if (!wasTransmittingPower) {
+            powerHistory = [];
+        }
+        wasTransmittingPower = true;
+        powerHistory.push(value);
+        if (powerHistory.length > historyLength) {
+            powerHistory.shift();
+        }
+        const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
+        // Use calibration points for Watts
+        let watts = window.calibrationService.calibrateNumeric("PWR", avgValue);
+        // Clamp watts to gauge maxValue
+        let maxW = 200;
+        if (Array.isArray(powerOutCalibrationPoints) && powerOutCalibrationPoints.length > 1) {
+            const last = powerOutCalibrationPoints[powerOutCalibrationPoints.length-1];
+            const lastNum = parseFloat(last.label);
+            if (!isNaN(lastNum)) maxW = lastNum;
+        }
+        if (!window.gaugePower || window.gaugePower.maxValue !== maxW) {
+            // Only re-initialize if maxValue changed
+            try {
+                const canvasId = 'powerMeterCanvas';
+                const powerConfig = makeGaugeConfig(canvasId, 'power');
+                powerConfig.maxValue = maxW;
+                if (window.gaugePower && window.gaugePower.destroy) {
+                    window.gaugePower.destroy();
+                }
+                window.gaugePower = new RadialGauge(powerConfig);
+                window.gaugePower.draw();
+                if (typeof createGaugeLabels === 'function') {
+                    createGaugeLabels(canvasId, powerConfig._labels);
+                }
+                console.log('[PowerMeter] Gauge re-initialized with maxValue:', maxW);
+            } catch (err) {
+                console.error('[GaugeInit] Error during gaugePower re-initialization:', err);
+            }
+        }
+        // Clamp value to [0, maxW]
+        let clampedWatts = Math.max(0, Math.min(watts, maxW));
+        console.log('[PowerMeter] avgValue:', avgValue, 'watts:', watts, 'clampedWatts:', clampedWatts, 'gauge maxValue:', maxW);
+        const valueSpan = document.getElementById('powerMeterValue');
+        if (valueSpan) valueSpan.textContent = `Power Out ${clampedWatts}W`;
+        // Update raw Power Out label with descriptive label
+        var rawPowerLabel = document.getElementById('raw-powerout-label');
+        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
+        var canvas = document.getElementById('powerMeterCanvas');
+        if (!canvas) {
+            console.warn('[PowerMeter] powerMeterCanvas not found in DOM');
+        } else {
+            console.log('[PowerMeter] powerMeterCanvas found, width:', canvas.width, 'height:', canvas.height, 'display:', getComputedStyle(canvas).display);
+        }
+        if (window.gaugePower) {
+            window.gaugePower.value = clampedWatts;
+            window.gaugePower.draw();
+            console.log('[PowerMeter] gaugePower.value set to', clampedWatts, 'maxValue:', window.gaugePower.maxValue);
+        } else {
+            console.warn('[PowerMeter] window.gaugePower is not defined when trying to set value');
+        }
     }
 
-    // Instantiate AnalogueGauge for Power Out
-    // Use new PowerGauge class for Power Out
-    let powerGaugeInstance = null;
-    function updatePowerMeter(value) {
-        const powerGauge = document.querySelector("meter-gauge[type='power']");
-        if (powerGauge) powerGauge.value = value;
-    }
-
-    // Instantiate AnalogueGauge for SWR
-    // Use new SWRGauge class for SWR
-    let swrGaugeInstance = null;
     function updateSWRMeter(value) {
-        const swrGauge = document.querySelector("meter-gauge[type='swr']");
-        if (swrGauge) swrGauge.value = value;
+                // Store last raw value globally for calibration reloads and debugging
+                window.lastSWRMeterRawValue = value;
+        // Store last raw value globally for calibration reloads and debugging
+        window.lastSWRMeterRawValue = value;
+        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
+        if (!state.isTransmitting) {
+            swrHistory = [];
+            wasTransmittingSWR = false;
+            const valueSpan = document.getElementById('swrMeterValue');
+            if (valueSpan) valueSpan.textContent = 'SWR 1.0:1';
+            if (window.gaugeSWR) {
+                window.gaugeSWR.value = 0;
+                window.gaugeSWR.draw();
+            }
+            return;
+        }
+        if (!wasTransmittingSWR) {
+            swrHistory = [];
+        }
+        wasTransmittingSWR = true;
+        swrHistory.push(value);
+        if (swrHistory.length > historyLength) {
+            swrHistory.shift();
+        }
+        const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
+      const swr = window.calibrationService.calibrateNumeric("SWR", avgValue);
+
+        const swrClamped = Math.min(swr, 10.0);
+        const valueSpan = document.getElementById('swrMeterValue');
+        if (valueSpan) valueSpan.textContent = `SWR ${swrClamped.toFixed(1)}:1`;
+        if (window.gaugeSWR) {
+            const gaugePosition = (swrClamped - 1.0) * 127.5;
+            window.gaugeSWR.value = gaugePosition;
+            window.gaugeSWR.draw();
+        }
+    }
+
+    // ALC gauge (0-255 raw value)
+    function updateALCMeter(value) {
+        // When not transmitting, always show the bottom scale value (0%)
+        if (!state.isTransmitting) {
+            const valueSpan = document.getElementById('alcValue');
+            const progressBar = document.getElementById('alcBar');
+            if (valueSpan) valueSpan.textContent = '0%';
+            if (progressBar) {
+                progressBar.style.width = '0%';
+                progressBar.setAttribute('aria-valuenow', 0);
+                progressBar.className = 'progress-bar bg-success';
+            }
+            const alcMeterValue = document.getElementById('alcMeterValue');
+            if (alcMeterValue) alcMeterValue.textContent = 'ALC 0V';
+            if (window.gaugeALC) {
+                window.gaugeALC.value = 0;
+                window.gaugeALC.draw();
+            }
+            return;
+        }
+
+        // FTdx101 ALC calibration: 50V corresponds to a raw value of 178
+        // So we scale the 0-255 raw value to a 0-50V range for display
+        const alcVolts = window.calibrationService.calibrateNumeric("ALC", value);
+        const percentage = Math.round((value / 255) * 100);
+        const valueSpan = document.getElementById('alcValue');
+        const progressBar = document.getElementById('alcBar');
+
+        if (valueSpan) valueSpan.textContent = `${percentage}%`;
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+            progressBar.setAttribute('aria-valuenow', percentage);
+
+            // Color coding: green < 70%, yellow < 90%, red >= 90%
+            progressBar.className = 'progress-bar';
+            if (percentage < 70) {
+                progressBar.classList.add('bg-success');
+            } else if (percentage < 90) {
+                progressBar.classList.add('bg-warning');
+            } else {
+                progressBar.classList.add('bg-danger');
+            }
+        }
+
+        // Update ALC gauge (pass raw 0-255 value directly, gauge uses 0-255 scale)
+        const alcMeterValue = document.getElementById('alcMeterValue');
+        if (alcMeterValue) alcMeterValue.textContent = `ALC ${alcVolts.toFixed(0)}V`;
+
+        if (window.gaugeALC) {
+            window.gaugeALC.value = value;  // Raw 0-255 value
+            window.gaugeALC.draw();
+        }
     }
 
     // Update IDD display (0-255 raw value, display as amps)
@@ -2075,20 +1942,26 @@ let wasTransmittingSWR = false;
 
     // Update PA Temperature display (value is directly in °C from IF command)
     function updatePATemperature(tempC) {
-        // Smoothing: ignore sudden jumps >10°C (calibrated)
-        const calibrated = window.calibrationService.calibrateNumeric("TPA", tempC);
-        if (!window._paTempLast) window._paTempLast = calibrated;
-        if (Math.abs(calibrated - window._paTempLast) > 10 && window._paTempLast !== 0) {
+        // Smoothing: ignore sudden jumps >10°C, ignore 0 unless persists
+        if (!window._paTempLast) window._paTempLast = 25;
+        if (!window._paTempZeroCount) window._paTempZeroCount = 0;
+        if (tempC === 0) {
+            window._paTempZeroCount++;
+            if (window._paTempZeroCount < 2) return;
+        } else {
+            window._paTempZeroCount = 0;
+        }
+        if (Math.abs(tempC - window._paTempLast) > 10 && window._paTempLast !== 0) {
             return;
         }
-        window._paTempLast = calibrated;
+       window._paTempLast = window.calibrationService.calibrateNumeric("TPA", tempC);
         const tempDisplay = document.getElementById('paTemperatureValue');
         if (tempDisplay) {
-            tempDisplay.textContent = `${calibrated}°C`;
+            tempDisplay.textContent = `${tempC}°C`;
             tempDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
-            if (calibrated < 40) {
+            if (tempC < 40) {
                 tempDisplay.classList.add('bg-success'); // Cool - normal
-            } else if (calibrated < 60) {
+            } else if (tempC < 60) {
                 tempDisplay.classList.add('bg-warning'); // Warm - caution
             } else {
                 tempDisplay.classList.add('bg-danger'); // Hot - warning
@@ -2268,7 +2141,46 @@ let wasTransmittingSWR = false;
         }
 
         // Only initialize gauges if the required canvas elements exist
-        // No legacy canvas-based gauge initialization needed; handled by <meter-gauge> Web Components
+        const sMeterCanvasA = document.getElementById('sMeterCanvasA');
+        const sMeterCanvasB = document.getElementById('sMeterCanvasB');
+        if (sMeterCanvasA) {
+            const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
+            gaugeA = new RadialGauge(sMeterConfigA);
+            gaugeA.draw();
+            createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
+        }
+        if (sMeterCanvasB) {
+            const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
+            gaugeB = new RadialGauge(sMeterConfigB);
+            gaugeB.draw();
+            createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
+        }
+        // Initialize Power Meter (if element exists)
+        const powerMeterCanvas = document.getElementById('powerMeterCanvas');
+        if (powerMeterCanvas) {
+            // PowerGauge will be initialized by updatePowerMeter logic as needed
+            // Remove legacy RadialGauge instance
+            // createGaugeLabels('powerMeterCanvas', powerConfig._labels); // If needed, handled by PowerGauge
+        }
+        // Initialize SWR Meter (if element exists)
+        const swrMeterCanvas = document.getElementById('swrMeterCanvas');
+        if (swrMeterCanvas) {
+            const swrConfig = makeGaugeConfig('swrMeterCanvas', 'swr');
+            window.gaugeSWR = new RadialGauge(swrConfig);
+            window.gaugeSWR.draw();
+            createGaugeLabels('swrMeterCanvas', swrConfig._labels);
+        }
+        // Initialize ALC Meter (if element exists)
+        const alcMeterCanvas = document.getElementById('alcMeterCanvas');
+        if (alcMeterCanvas) {
+            console.log('[Gauge] Initializing ALC meter...');
+            const alcConfig = makeGaugeConfig('alcMeterCanvas', 'alc');
+            console.log('[Gauge] ALC config:', alcConfig);
+            window.gaugeALC = new RadialGauge(alcConfig);
+            window.gaugeALC.draw();
+            createGaugeLabels('alcMeterCanvas', alcConfig._labels);
+            console.log('[Gauge] ALC meter initialized');
+        }
     }
 
 
@@ -2361,8 +2273,6 @@ let wasTransmittingSWR = false;
     // Expose meter update functions globally for SignalR
     window.updatePowerMeter = updatePowerMeter;
     window.updateSWRMeter = updateSWRMeter;
-    // Patch: Provide a stub for updateALCMeter to prevent ReferenceError
-    function updateALCMeter() {}
     window.updateALCMeter = updateALCMeter;
     window.updateIDDMeter = updateIDDMeter;
     window.updatePAVoltage = updatePAVoltage;

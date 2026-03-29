@@ -89,25 +89,19 @@ namespace FTdx101_WebApp.Services
 
         private void BroadcastUpdate(string property, object value)
         {
-            string propKey = property;
-            // Use meter key for PA Temperature
-            if (property == "Temperature")
-            {
-                propKey = "TPA";
-            }
-            _logger.LogInformation("[BroadcastUpdate] Broadcasting {Property} = {Value}", propKey, value);
-            if (propKey == "PowerMeter")
+            _logger.LogInformation("[BroadcastUpdate] Broadcasting {Property} = {Value}", property, value);
+            if (property == "PowerMeter")
             {
                 _logger.LogWarning("[DEBUG][PowerMeter] Broadcasting PowerMeter value: {@Value}", value);
             }
             // Special case: PowerMeter should include isTransmitting for frontend sync
-            if (propKey == "PowerMeter")
+            if (property == "PowerMeter")
             {
-                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property = propKey, value = new { value, isTransmitting = this.IsTransmitting } });
+                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value = new { value, isTransmitting = this.IsTransmitting } });
             }
             else
             {
-                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property = propKey, value });
+                _hubContext.Clients.All.SendAsync("RadioStateUpdate", new { property, value });
             }
         }
 
@@ -276,7 +270,11 @@ namespace FTdx101_WebApp.Services
             {
                 if (value == null) return;
                 int clamped = Math.Clamp(value.Value, 0, 255);
-                _logger.LogInformation("[SWRMeter][DebugSWR] Setting SWRMeter from {Old} to {New}", _swrMeter, clamped);
+                if (_swrMeter.HasValue && clamped != 0 && Math.Abs(clamped - _swrMeter.Value) > 50)
+                {
+                    _logger.LogWarning("[SWRMeter] Ignored spike: {Old} -> {New}", _swrMeter, clamped);
+                    return;
+                }
                 SetField(ref _swrMeter, clamped);
             }
         }

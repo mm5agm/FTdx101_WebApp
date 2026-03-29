@@ -8,9 +8,7 @@
 <div class="meter-calibration-container">
     <h2>S-Meter</h2>
     <div class="gauge-section">
-        <meter-panel layout="1x1">
-            <meter-gauge type="calibration" value-label="Calibration" bottom-label=""></meter-gauge>
-        </meter-panel>
+        <canvas id="meterCalibrationGauge" width="420" height="135"></canvas>
     </div>
     <div class="current-value-label">
         Current RM Value: <span id="currentMeterRM">@Model.CurrentRawValue</span>
@@ -35,12 +33,11 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/meter-gauge.js"></script>
-    <script src="~/js/meter-panel.js"></script>
+    <script src="~/js/gauge.js"></script>
     <script src="~/js/site.js"></script>
     <script>
-        // Example: Update calibration gauge value
-        // document.querySelector("meter-gauge[type='calibration']").value = @Model.CurrentRawValue;
+        document.addEventListener('DOMContentLoaded', function () {
+            // Render the S-Meter gauge using the new class
             const sMeterGauge = new SMeterGauge('meterCalibrationGauge');
             sMeterGauge.render();
         });

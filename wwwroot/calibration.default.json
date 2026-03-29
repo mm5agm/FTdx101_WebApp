@@ -1,89 +1,55 @@
 {
   "meters": [
-      {
-        "name": "PA Temperature",
-        "key": "TPA",
-        "type": "numeric",
-        "gaugeType": "gauge",
-        "points": [
-          { "raw": 30, "Degrees C": 30 },
-          { "raw": 76, "Degrees C": 50 },
-          { "raw": 112, "Degrees C": 70 },
-          { "raw": 157, "Degrees C": 90 },
-          { "raw": 190, "Degrees C": 110 },
-          { "raw": 222, "Degrees C": 130 }
-        ]
-      },
-      {
-        "name": "PA Current",
-        "key": "IDD",
-        "type": "numeric",
-        "gaugeType": "bar",
-        "points": [
-          { "raw": 0, "Current": 0 },
-          { "raw": 10, "Current": 0.1 },
-          { "raw": 20, "Current": 0.2 },
-          { "raw": 30, "Current": 0.3 },
-          { "raw": 40, "Current": 0.4 }
-        ]
-      },
-      {
-        "name": "PWR",
-        "key": "PWR",
-        "type": "numeric",
-        "gaugeType": "gauge",
-        "points": [
-          { "raw": 30, "Watts": 5 },
-          { "raw": 76, "Watts": 25 },
-          { "raw": 112, "Watts": 50 },
-          { "raw": 157, "Watts": 100 },
-          { "raw": 190, "Watts": 150 },
-          { "raw": 222, "Watts": 200 }
-        ]
-      },
-      {
-        "name": "SWR",
-        "key": "SWR",
-        "type": "numeric",
-        "gaugeType": "gauge",
-        "points": [
-          { "raw": 30, "radio": 1.1 },
-          { "raw": 76, "radio": 1.2 },
-          { "raw": 112, "radio": 1.3 },
-          { "raw": 157, "radio": 1.4 },
-          { "raw": 190, "radio": 2.5 },
-          { "raw": 222, "radio": 3.0 }
-        ]
-      },
-      {
-        "name": "ALC",
-        "key": "ALC",
-        "type": "numeric",
-        "gaugeType": "gauge",
-        "points": [
-          { "raw": 30, "Volts": 5 },
-          { "raw": 76, "Volts": 15 },
-          { "raw": 112, "Volts": 25 },
-          { "raw": 157, "Volts": 40 },
-          { "raw": 190, "Volts": 50 },
-          { "raw": 222, "Volts": 70 }
-        ]
-      },
-      {
-        "name": "S-Meter",
-        "key": "SMETER",
-        "type": "s_meter",
-        "gaugeType": "gauge",
-        "points": [
-          { "raw": 0, "S Value": "S1" },
-          { "raw": 20, "S Value": "S3" },
-          { "raw": 40, "S Value": "S5" },
-          { "raw": 80, "S Value": "S7" },
-          { "raw": 120, "S Value": "S9" },
-          { "raw": 160, "S Value": "+10" },
-          { "raw": 200, "S Value": "+20" },
-          { "raw": 240, "S Value": "+40" }
-        ]
-      }
-    ]
+    {
+       "name": "PWR",
+  "type": "numeric",
+  "points": [
+    { "raw": 30, "label": "5" },
+    { "raw": 76, "label": "25" },
+    { "raw": 112, "label": "50" },
+    { "raw": 157, "label": "100" },
+    { "raw": 190, "label": "150" },
+    { "raw": 222, "label": "200" }
+  ]
+    },
+    {
+      "name": "SWR",
+      "type": "numeric",
+      "points":  [
+    { "raw": 30, "Radio": "1.1" },
+    { "raw": 76, "Radio": "1.2" },
+    { "raw": 112, "Radio": "1.3" },
+    { "raw": 157, "Radio": "1.4" },
+    { "raw": 190, "Radio": "2.5" },
+    { "raw": 222, "Radio": "3.0" }
+  ]
+    },
+    {
+      "name": "ALC",
+      "type": "numeric",
+      "points":  [
+    { "raw": 30, "Radio": "5" },
+    { "raw": 76, "Radio": "15" },
+    { "raw": 112, "Radio": "25" },
+    { "raw": 157, "Radio": "40" },
+    { "raw": 190, "Radio": "50" },
+    { "raw": 222, "Radio": "70" }
+  ]
+    },
+{
+  "name": "S-Meter",
+  "type": "s_meter",
+  "points": [
+    { "raw": 0, "Radio": "S1" },
+    { "raw": 20, "Radio": "S3" },
+    { "raw": 40, "Radio": "S5" },
+    { "raw": 80, "Radio": "S7" },
+    { "raw": 120, "Radio": "S9" },
+    { "raw": 160, "Radio": "+10" },
+    { "raw": 200, "Radio": "+20" },
+    { "raw": 240, "Radio": "+40" }
+  ]
+}
+
+  ]
 }

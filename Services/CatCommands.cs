@@ -6,18 +6,6 @@ namespace FTdx101_WebApp.Services
     /// </summary>
     public static class CatCommands
     {
-        // AF GAIN COMMANDS
-        public static string FormatAfGainA(int value)
-        {
-            // AG000xxx; where xxx is 3-digit zero-padded value for MAIN band
-            return $"AG000{value:D3};";
-        }
-
-        public static string FormatAfGainB(int value)
-        {
-            // AG001xxx; where xxx is 3-digit zero-padded value for SUB band
-            return $"AG001{value:D3};";
-        }
         // FREQUENCY COMMANDS
         public const string FrequencyVfoA = "FA";
         public const string FrequencyVfoB = "FB";

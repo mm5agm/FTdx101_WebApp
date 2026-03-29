@@ -30,7 +30,7 @@ jobs:
         run: |
           dotnet publish FTdx101_WebApp.csproj `
             --configuration Release `
-            --runtime win-x64 `
+            --runtime win-x86 `
             --self-contained false `
             --output publish
         shell: pwsh

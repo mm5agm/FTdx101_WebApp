@@ -10,19 +10,6 @@ namespace FTdx101_WebApp.Services
     /// </summary>
     public class MultiplexedCatClient : ICatClient
     {
-        public async Task<bool> SetAfGainAAsync(int value)
-        {
-            var command = CatCommands.FormatAfGainA(value);
-            await SendCommandAsync(command, DefaultClientId, CancellationToken.None);
-            return true;
-        }
-
-        public async Task<bool> SetAfGainBAsync(int value)
-        {
-            var command = CatCommands.FormatAfGainB(value);
-            await SendCommandAsync(command, DefaultClientId, CancellationToken.None);
-            return true;
-        }
         private readonly CatMultiplexerService _multiplexer;
         private readonly ILogger<MultiplexedCatClient> _logger;
         private const string DefaultClientId = "WebUI";
