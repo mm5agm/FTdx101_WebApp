@@ -23,6 +23,7 @@ namespace FTdx101_WebApp.Controllers
             _logger.LogInformation("[API] SetAfGainA called: value={Value}", value);
             if (!_catClient.IsConnected)
                 await EnsureConnectedAsync();
+            await _catClient.SetAfGainAAsync(value);
             _radioStateService.AfGainA = value;
             _logger.LogInformation("Set Receiver A AF Gain to {Value}", value);
             _logger.LogInformation("[API] SetAfGainA completed: value={Value}", value);
@@ -35,6 +36,7 @@ namespace FTdx101_WebApp.Controllers
             _logger.LogInformation("[API] SetAfGainB called: value={Value}", value);
             if (!_catClient.IsConnected)
                 await EnsureConnectedAsync();
+            await _catClient.SetAfGainBAsync(value);
             _radioStateService.AfGainB = value;
             _logger.LogInformation("Set Receiver B AF Gain to {Value}", value);
             _logger.LogInformation("[API] SetAfGainB completed: value={Value}", value);

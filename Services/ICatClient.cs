@@ -6,6 +6,10 @@ namespace FTdx101_WebApp.Services
 {
     public interface ICatClient : IDisposable
     {
+        // AF Gain
+        Task<bool> SetAfGainAAsync(int value);
+        Task<bool> SetAfGainBAsync(int value);
+
         Task<bool> ConnectAsync(string portName, int baudRate = 38400);
         Task DisconnectAsync();
         bool IsConnected { get; }

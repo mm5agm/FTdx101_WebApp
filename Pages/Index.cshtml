@@ -179,7 +179,7 @@
                                    id="afGainSliderA"
                                    min="0" max="255" step="1" value="0"
                                    style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
-                                   oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
+                                   oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); sendAfGain('A', this.value)">
                         </div>
                     </div>
                             </div>
@@ -272,7 +272,7 @@
                                    id="afGainSliderB"
                                    min="0" max="255" step="1" value="0"
                                    style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
-                                   oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
+                                   oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); sendAfGain('B', this.value)">
                         </div>
                     </div>
                                 </div>
@@ -487,23 +487,6 @@
         updateLog4omStatus();
         setInterval(updateLog4omStatus, 5000);
 
-        window.setAfGain = async function(receiver, val) {
-    let band = receiver === 'A' ? '0' : '1';
-    let value = String(val).padStart(3, '0');
-    try {
-        const response = await fetch('/api/cat/afgain', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ band, value })
-        });
-        if (!response.ok) {
-            const data = await response.json();
-            alert(data.error || 'Failed to set AF Gain');
-        }
-    } catch (e) {
-        alert('Error setting AF Gain: ' + e.message);
-    }
-}
 
         async function setMicGain(value) {
             console.log('[setMicGain] Called with value:', value);
