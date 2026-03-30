@@ -13,44 +13,70 @@ class Gauge {
             console.error('RadialGauge library not loaded.');
             return;
         }
+
+        // Create gauge
         this.gauge = new RadialGauge(this.config);
         this.gauge.draw();
+
+        // Create overlay labels
         this.createLabels();
     }
 
     createLabels() {
-        // Overlay readable labels on top of the canvas gauge
         const canvas = document.getElementById(this.canvasId);
-        if (!canvas || canvas.nextElementSibling?.classList.contains('gauge-labels-overlay')) {
-            return;
-        }
-        const wrapper = document.createElement('div');
-        wrapper.className = 'gauge-wrapper';
-        wrapper.style.cssText = `position:relative;display:block;width:${this.config.width}px;height:${this.config.height}px;margin-left:0`;
+        if (!canvas) return;
+
+        const wrapper = canvas.parentNode;
+        wrapper.style.position = "relative";
+
+        // Remove any existing overlay (prevents stale labels)
+        const existing = wrapper.querySelector('.gauge-labels-overlay');
+        if (existing) existing.remove();
+
+        // Overlay container
         const labelsDiv = document.createElement('div');
         labelsDiv.className = 'gauge-labels-overlay';
+        labelsDiv.style.position = 'absolute';
+        labelsDiv.style.left = '0';
+        labelsDiv.style.top = '0';
+        labelsDiv.style.width = this.config.width + 'px';
+        labelsDiv.style.height = this.config.height + 'px';
+        labelsDiv.style.pointerEvents = 'none';
+
+        // Use ONLY your own labels
+        const labels = this.config.labels || [];
+
         const centerX = this.config.width / 2;
         const centerY = this.config.height - 64;
         const radius = this.config.width * 0.17;
-        const labels = this.config._labels || [];
+
         const angleStep = 180 / (labels.length - 1);
+
         labels.forEach((label, index) => {
             const angle = 180 - (angleStep * index);
-            const radians = (angle * Math.PI) / 180;
+            const radians = angle * Math.PI / 180;
+
             const x = centerX + radius * Math.cos(radians);
             const y = centerY - radius * Math.sin(radians);
+
             const span = document.createElement('span');
             span.className = 'gauge-label';
             span.textContent = label;
-            span.style.left = x + 'px';
-            span.style.top = y + 'px';
+            span.style.position = 'absolute';
+            span.style.left = `${x}px`;
+            span.style.top = `${y}px`;
+            span.style.transform = 'translate(-50%, -50%)';
+
             labelsDiv.appendChild(span);
         });
-        canvas.parentNode.insertBefore(wrapper, canvas);
-        wrapper.appendChild(canvas);
+
         wrapper.appendChild(labelsDiv);
     }
 }
+
+// ------------------------------------------------------------
+// S-METER
+// ------------------------------------------------------------
 
 class SMeterGauge extends Gauge {
     constructor(canvasId, options = {}) {
@@ -65,8 +91,7 @@ class SMeterGauge extends Gauge {
                 { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
                 { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"],
-            _labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"],
+            labels: ["S0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -98,9 +123,14 @@ class SMeterGauge extends Gauge {
             animationRule: "linear",
             value: 0
         }, options);
+
         super(canvasId, config);
     }
 }
+
+// ------------------------------------------------------------
+// POWER METER
+// ------------------------------------------------------------
 
 class PowerGauge extends Gauge {
     constructor(canvasId, options = {}) {
@@ -117,7 +147,6 @@ class PowerGauge extends Gauge {
                 { from: 175, to: 200, color: "rgba(255,0,0,.25)" }
             ],
             labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
-            _labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -149,9 +178,14 @@ class PowerGauge extends Gauge {
             animationRule: "linear",
             value: 0
         }, options);
+
         super(canvasId, config);
     }
 }
+
+// ------------------------------------------------------------
+// SWR METER
+// ------------------------------------------------------------
 
 class SWRGauge extends Gauge {
     constructor(canvasId, options = {}) {
@@ -168,7 +202,6 @@ class SWRGauge extends Gauge {
                 { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
             ],
             labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
-            _labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -200,9 +233,14 @@ class SWRGauge extends Gauge {
             animationRule: "linear",
             value: 0
         }, options);
+
         super(canvasId, config);
     }
 }
+
+// ------------------------------------------------------------
+// ALC METER
+// ------------------------------------------------------------
 
 class ALCGauge extends Gauge {
     constructor(canvasId, options = {}) {
@@ -219,7 +257,6 @@ class ALCGauge extends Gauge {
                 { from: 230, to: 255, color: "rgba(255,0,0,.25)" }
             ],
             labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"],
-            _labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -251,11 +288,12 @@ class ALCGauge extends Gauge {
             animationRule: "linear",
             value: 0
         }, options);
+
         super(canvasId, config);
     }
 }
 
-// Export classes to window for use in inline scripts
+// Export classes globally
 window.Gauge = Gauge;
 window.SMeterGauge = SMeterGauge;
 window.PowerGauge = PowerGauge;
