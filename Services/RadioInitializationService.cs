@@ -86,19 +86,33 @@ namespace FTdx101_WebApp.Services
                 var faResponse = await multiplexer.SendCommandAsync("FA;", "Initialization", stoppingToken);
                 if (string.IsNullOrWhiteSpace(faResponse) || !faResponse.StartsWith("FA"))
                 {
-                    // Radio not responding - likely OFF. Stay on Index page, user can turn it on.
-                    logger.LogWarning("[RadioInitializationService] Radio not responding (probably OFF). User can power on via UI.");
-                    radioStateService.RadioPowerOn = false;
-                    AppStatus.InitializationStatus = "radio_off";
-                    await _hubContext.Clients.All.SendAsync("InitializationStatus", "radio_off");
+                    // Radio not responding - likely OFF. Attempt to power on.
+                    logger.LogWarning("[RadioInitializationService] Radio not responding to FA;. Attempting to power on...");
+                    await multiplexer.SendCommandAsync("PS1;", "Initialization", stoppingToken); // Power ON
+                    await Task.Delay(1200, stoppingToken); // Wait for radio to power up (empirical: 1.2s)
+                    logger.LogInformation("Retrying FA; after power on attempt...");
+                    faResponse = await multiplexer.SendCommandAsync("FA;", "Initialization", stoppingToken);
 
-                    // Open main page (not Settings) - user can turn radio on
-                    if (!Debugger.IsAttached && 
-                        string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                    if (string.IsNullOrWhiteSpace(faResponse) || !faResponse.StartsWith("FA"))
                     {
-                        _browserLauncher.OpenOnce("http://localhost:8080");
+                        // Still no response, treat as OFF
+                        logger.LogWarning("[RadioInitializationService] Radio still not responding after power on attempt. User can power on via UI.");
+                        radioStateService.RadioPowerOn = false;
+                        AppStatus.InitializationStatus = "radio_off";
+                        await _hubContext.Clients.All.SendAsync("InitializationStatus", "radio_off");
+
+                        // Open Settings page if radio is off
+                        if (!Debugger.IsAttached && 
+                            string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _browserLauncher.OpenOnce("http://localhost:8080/Settings");
+                        }
+                        return;
                     }
-                    return;
+                    else
+                    {
+                        logger.LogInformation("[RadioInitializationService] Radio responded to FA; after power on attempt: {Response}", faResponse);
+                    }
                 }
 
                 // Radio responded - it's ON
