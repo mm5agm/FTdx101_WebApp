@@ -201,7 +201,7 @@ class SWRGauge extends Gauge {
                 { from: 85, to: 128, color: "rgba(255,255,0,.25)" },
                 { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
+            labels: ["1.0", "1.2", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
