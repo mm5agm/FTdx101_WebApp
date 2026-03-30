@@ -14,25 +14,10 @@ cleanup code --
 You have my full permission to read and modify all files in this workspace for the duration of this session.
 
 PHASE 1 — FULL CLEANUP OF THE FTDX101 WEBAPP
+Completed but still debug info
+git reset --hard 5827ebe97dfd4831b0e3468f84770e72a18e3334 is fully working
 
-Perform a complete, architecture‑aware cleanup of the FTdx101 WebApp. Preserve the following modules as architectural anchors:
-- Unified calibration engine
-- Shared meter‑mapping module
-- CAT command mapping layer
-- Overlay rendering system
-- Modular workflow and UI state architecture
 
-Tasks for this phase:
-1. Remove unused code, unused components, unused pages, and dead files.
-2. Remove all debug logging, console messages, and temporary diagnostics.
-3. Refactor duplicated logic into clean, modular functions.
-4. Modernize and simplify code without changing behaviour.
-5. Ensure meters, overlays, and CAT routing remain empirically correct.
-6. Continue automatically until the cleanup is fully complete.
-   Do not ask for permission before making changes — just apply them.
-
-Work file-by-file and commit each set of changes when finished.
-Ask questions only if absolutely necessary to avoid breaking core behaviour.
 
 --------------------------------------------------------
 Phase 2

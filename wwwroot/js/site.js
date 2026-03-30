@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- SignalR connection setup and disconnect on page unload ---
     if (window.signalRConnection === undefined) {
         window.signalRConnection = new signalR.HubConnectionBuilder().withUrl("/radioHub").build();
-        window.signalRConnection.start().catch(function (err) { console.error("SignalR start error:", err); });
+        window.signalRConnection.start().catch(function (err) { });
         // Heartbeat: send every 5 seconds
         window.signalRHeartbeatInterval = setInterval(function () {
             if (window.signalRConnection && window.signalRConnection.invoke) {
@@ -388,14 +388,14 @@ function updatePowerSliderMax(maxPower) {
 // TX state updater - updates TX button and meters
 function updateTxIndicators(isTransmitting) {
     // Debug logging
-    console.log(`[TX Indicator] isTransmitting: ${isTransmitting}`);
+
 
     // Update state for meter display logic (if IIFE state is accessible)
     if (window.radioControl && window.radioControl._state) {
         window.radioControl._state.isTransmitting = isTransmitting;
-        console.log(`[TX Indicator] State updated: ${window.radioControl._state.isTransmitting}`);
+
     } else {
-        console.warn('[TX Indicator] radioControl._state not available yet');
+
     }
 
     if (!isTransmitting) {
@@ -417,20 +417,20 @@ function updateTxIndicators(isTransmitting) {
 async function setPower(receiver, watts) {
     const power = parseInt(watts);
     try {
-        console.log(`Setting ${receiver} power to ${power}W`);
+
         const response = await fetch(`/api/cat/power/${receiver.toLowerCase()}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ Watts: power })
         });
         if (!response.ok) {
-            console.error('Failed to set power:', await response.text());
+
         } else {
-            console.log(`Power set successfully: ${receiver} -> ${power}W`);
+
         }
         updatePowerDisplay(receiver, power);
     } catch (error) {
-        console.error('Error setting power:', error);
+
     }
 }
 
@@ -458,7 +458,7 @@ async function toggleRadioPower() {
 
     try {
         const newPowerState = !radioPowerOn;
-        console.log(`Toggling radio power to: ${newPowerState ? 'ON' : 'OFF'}`);
+
 
         const response = await fetch('/api/cat/radiopower', {
             method: 'POST',
@@ -470,12 +470,12 @@ async function toggleRadioPower() {
             const data = await response.json();
             radioPowerOn = data.powerOn;
             updateRadioPowerButton();
-            console.log(`Radio power ${radioPowerOn ? 'ON' : 'OFF'}`);
+
         } else {
-            console.error('Failed to toggle radio power:', await response.text());
+
         }
     } catch (error) {
-        console.error('Error toggling radio power:', error);
+
     } finally {
         btn.disabled = false;
         updateRadioPowerButton();
@@ -507,7 +507,7 @@ async function checkRadioPowerStatus() {
             updateRadioPowerButton();
         }
     } catch (error) {
-        console.error('Error checking radio power status:', error);
+
     }
 }
 
@@ -545,7 +545,7 @@ let txVfo = 0; // 0 = VFO A, 1 = VFO B
 
 async function toggleTx() {
     const newTxState = !isTransmitting;
-    console.log(`Toggling TX to: ${newTxState ? 'ON' : 'OFF'}`);
+
 
     try {
         const response = await fetch('/api/cat/tx', {
@@ -558,12 +558,12 @@ async function toggleTx() {
             const data = await response.json();
             isTransmitting = data.transmitting;
             updateTxButton();
-            console.log(`TX ${isTransmitting ? 'ON' : 'OFF'}`);
+
         } else {
-            console.error('Failed to toggle TX:', await response.text());
+
         }
     } catch (error) {
-        console.error('Error toggling TX:', error);
+
     }
 }
 
@@ -600,7 +600,7 @@ async function checkTxStatus() {
             updateTxButton();
         }
     } catch (error) {
-        console.error('Error checking TX status:', error);
+
     }
 }
 
@@ -629,11 +629,11 @@ function fetchPowerOutCalibrationPoints() {
         .then(response => response.json())
         .then(points => {
             powerOutCalibrationPoints = points.map(p => ({ label: p.label, value: Number(p.value) }));
-            console.log('[PowerMeter] Calibration points loaded:', powerOutCalibrationPoints);
+
         })
         .catch(err => {
             powerOutCalibrationPoints = null;
-            console.warn('[PowerMeter] Failed to load calibration points:', err);
+
         });
 }
 
@@ -654,7 +654,7 @@ function updateModeSelect(receiver, mode) {
     if (select) {
         select.value = mode;
     } else {
-        console.warn(`updateModeSelect: select element not found for modeSelect${receiver}`);
+
     }
 }
 
@@ -682,7 +682,7 @@ function updateMicGainLabel(mode) {
 // First SignalR RadioStateUpdate handler (outer scope).
 // Handles ModeA/B, FrequencyA/B, PowerA/B updates pushed from the backend.
 connection.on("RadioStateUpdate", function (update) {
-    console.log('[SignalR] Received RadioStateUpdate:', JSON.stringify(update));
+    // ...removed debug logging...
 
     // --- MODE CHANGE (THE BUG FIX) ---
     if (update.property === "ModeA") {
@@ -705,11 +705,11 @@ connection.on("RadioStateUpdate", function (update) {
 
     // --- BAND CHANGE ---
     if (update.property === "BandA") {
-        console.log(`[SignalR] Received BandA update: ${update.value}`);
+        // ...removed debug logging...
         updateBandButton('A', update.value);
     }
     if (update.property === "BandB") {
-        console.log(`[SignalR] Received BandB update: ${update.value}`);
+        // ...removed debug logging...
         updateBandButton('B', update.value);
     }
 
@@ -743,9 +743,9 @@ connection.on("RadioStateUpdate", function (update) {
         // Always update the IIFE's state for correct gauge behavior
         if (window.radioControl && window.radioControl._state) {
             window.radioControl._state.isTransmitting = update.value;
-            console.log('[SignalR] Set IIFE state.isTransmitting =', update.value);
+            // ...removed debug logging...
         } else {
-            console.warn('[SignalR] IIFE state not available to set isTransmitting');
+            // ...removed debug logging...
         }
         updateTxButton();
         updateTxIndicators(update.value);
@@ -765,7 +765,7 @@ connection.on("RadioStateUpdate", function (update) {
             txState = update.value.isTransmitting;
         }
         // Debug: log incoming PowerMeter update
-        console.warn('[DEBUG][SignalR] Received PowerMeter update:', JSON.stringify(update));
+        // ...removed debug logging...
         // Always sync the IIFE's state and global state
         if (window.radioControl && window.radioControl._state) {
             window.radioControl._state.isTransmitting = txState;
@@ -790,7 +790,7 @@ connection.on("RadioStateUpdate", function (update) {
         window.updatePAVoltage(update.value);
     }
     if (update.property === "Temperature") {
-        console.log('[SignalR] Temperature update received:', update.value);
+        // ...removed debug logging...
         if (typeof window.updatePATemperature === 'function') {
             window.updatePATemperature(update.value);
         }
@@ -831,7 +831,7 @@ async function pollInitStatus() {
             initPollingStopped = true;
             radioPowerOn = false;
             updateRadioPowerButton();
-            console.log('[Init] Radio is OFF - user can power on via the POWER button');
+            // ...removed debug logging...
         } else if (data.status === "error") {
             statusText.innerHTML = "COM port error. <a href='/Settings' class='text-white'>Go to Settings</a> to configure the serial port.";
             overlay.style.display = "block";
@@ -844,7 +844,7 @@ async function pollInitStatus() {
             setTimeout(pollInitStatus, 1000);
         }
     } catch (error) {
-        console.error('Error polling init status:', error);
+        // ...removed debug logging...
         if (!initPollingStopped) {
             setTimeout(pollInitStatus, 2000);
         }
@@ -894,36 +894,36 @@ async function updateBandButtonsFromBackend() {
             });
         }
     } catch (error) {
-        console.error('Error updating band buttons:', error);
+        // ...removed debug logging...
     }
 }
 
 
 // Update band button selection for a specific receiver (called via SignalR)
 function updateBandButton(receiver, band) {
-    console.log(`[Band] updateBandButton called: receiver=${receiver}, band=${band}`);
+    // ...removed debug logging...
     if (!band) {
-        console.warn('[Band] updateBandButton: band is null/undefined');
+        // ...removed debug logging...
         return;
     }
     const bandLower = band.toLowerCase();
     const inputs = document.querySelectorAll(`input[name="band-${receiver}"]`);
-    console.log(`[Band] Found ${inputs.length} band buttons for receiver ${receiver}`);
+    // ...removed debug logging...
 
     let foundMatch = false;
     inputs.forEach(radio => {
         const matches = (radio.value.toLowerCase() === bandLower);
         if (matches) {
             foundMatch = true;
-            console.log(`[Band] Setting checked=true for ${radio.value}`);
+            // ...removed debug logging...
         }
         radio.checked = matches;
     });
 
     if (!foundMatch) {
-        console.warn(`[Band] No matching band button found for band="${band}" (looked for "${bandLower}")`);
+        // ...removed debug logging...
     }
-    console.log(`[Band] Updated ${receiver} band button to: ${band}`);
+    // ...removed debug logging...
 }
 
 // Outer DOMContentLoaded - initial UI wiring
@@ -1008,14 +1008,14 @@ function sendAfGain(receiver, value) {
         body: JSON.stringify(value)
     }).then(r => {
         if (!r.ok) {
-            r.text().then(t => console.error('Failed to set AF Gain:', t));
+            // ...removed debug logging...
             slider.classList.remove('pending');
             afGainPendingValue[receiver] = null;
             if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
         }
         // On success, wait for backend confirmation via SignalR
     }).catch(e => {
-        console.error('Error setting AF Gain:', e);
+        // ...removed debug logging...
         slider.classList.remove('pending');
         afGainPendingValue[receiver] = null;
         if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
@@ -1081,7 +1081,7 @@ if (typeof connection !== 'undefined') {
 (function () {
     'use strict';
 
-    console.log('=== FTdx101 Control Interface Starting ===');
+    // ...removed debug logging...
 
     // Gauge instances (canvas-gauge RadialGauge)
     let gaugeA, gaugeB;
@@ -1199,7 +1199,7 @@ function interpolateLabel(points, raw) {
     function updateFrequencyDisplay(receiver, freqHz) {
         const display = document.getElementById('freq' + receiver);
         if (!display) {
-            console.warn(`Frequency display element not found: freq${receiver}`);
+            // ...removed debug logging...
             return;
         }
         let selIdx = state.selectedIdx[receiver];
@@ -1255,7 +1255,7 @@ function interpolateLabel(points, raw) {
     function initializeDigitInteraction(receiver) {
         const display = document.getElementById('freq' + receiver);
         if (!display) {
-            console.warn(`Cannot initialize digit interaction: freq${receiver} not found`);
+            // ...removed debug logging...
             return;
         }
         if (display._initialized) return;
@@ -1325,27 +1325,19 @@ function interpolateLabel(points, raw) {
 
     async function setFrequency(receiver, freqHz) {
         try {
-            console.log(`Setting ${receiver} frequency to ${freqHz} Hz`);
             const response = await fetch(`/api/cat/frequency/${receiver.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ frequencyHz: freqHz })
             });
-            if (!response.ok) {
-                console.error('Failed to set frequency:', await response.text());
-            } else {
-                console.log(`Frequency set successfully: ${receiver} -> ${freqHz} Hz`);
-            }
             updateFrequencyDisplay(receiver, freqHz);
         } catch (error) {
-            console.error('Error setting frequency:', error);
         }
     }
 
     async function setBand(receiver, band) {
         const didPause = pausePolling();
         try {
-            console.log(`Setting ${receiver} band to ${band}`);
             highlightButtons(receiver, band, state.lastMode[receiver], state.lastAntenna[receiver]);
             state.lastBand[receiver] = band;
             const response = await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
@@ -1353,13 +1345,7 @@ function interpolateLabel(points, raw) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ band })
             });
-            if (!response.ok) {
-                console.error('Failed to set band:', await response.text());
-            } else {
-                console.log(`Band set successfully: ${receiver} -> ${band}`);
-            }
         } catch (error) {
-            console.error('Error setting band:', error);
         } finally {
             if (didPause) {
                 resumePolling();
@@ -1370,26 +1356,18 @@ function interpolateLabel(points, raw) {
     async function setMode(receiver, mode) {
         const catCode = modeToCatCode[mode];
         if (!catCode) {
-            console.error("Unknown mode:", mode);
             return;
         }
-        console.log(`Setting ${receiver} mode to ${mode} (CAT code ${catCode})`);
         const response = await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: catCode })
         });
-        if (!response.ok) {
-            console.error('Failed to set mode:', await response.text());
-        } else {
-            console.log(`Mode set successfully: ${receiver} -> ${mode}`);
-        }
     }
 
     async function setAntenna(receiver, antenna) {
         const didPause = pausePolling();
         try {
-            console.log(`Setting ${receiver} antenna to ${antenna}`);
             highlightButtons(receiver, state.lastBand[receiver], state.lastMode[receiver], antenna);
             state.lastAntenna[receiver] = antenna;
             const response = await fetch(`/api/cat/antenna/${receiver.toLowerCase()}`, {
@@ -1397,13 +1375,7 @@ function interpolateLabel(points, raw) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ antenna })
             });
-            if (!response.ok) {
-                console.error('Failed to set antenna:', await response.text());
-            } else {
-                console.log(`Antenna set successfully: ${receiver} -> ${antenna}`);
-            }
         } catch (error) {
-            console.error('Error setting antenna:', error);
         } finally {
             if (didPause) {
                 resumePolling();
@@ -1437,7 +1409,6 @@ function interpolateLabel(points, raw) {
         const didPause = pausePolling();
 
         try {
-            console.log(`Setting ${receiver} roofing filter to ${filter}`);
             const response = await fetch(`/api/cat/roofingfilter/${receiver.toLowerCase()}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1447,25 +1418,20 @@ function interpolateLabel(points, raw) {
             const data = await response.json();
 
             if (!response.ok) {
-                console.error('Failed to set roofing filter:', data.error);
                 showMessageBox(`Failed to set roofing filter: ${data.error}`, 'Error');
                 return;
             }
 
             // Check if there's a warning (filter not installed)
             if (data.warning) {
-                console.warn(`Roofing filter warning: ${data.message}`);
                 showMessageBox(data.message, 'Roofing Filter');
                 // Update dropdown to show actual filter
                 const selectEl = document.getElementById(`roofingFilterSelect${receiver}`);
                 if (selectEl && data.filter) {
                     selectEl.value = data.filter;
                 }
-            } else {
-                console.log(`Roofing filter set successfully: ${receiver} -> ${data.filterName}`);
             }
         } catch (error) {
-            console.error('Error setting roofing filter:', error);
             showMessageBox('Error setting roofing filter. Check console for details.', 'Error');
         } finally {
             if (didPause) {
@@ -1477,10 +1443,8 @@ function interpolateLabel(points, raw) {
     function pausePolling() {
         if (state.pollingInterval && !state.operationInProgress) {
             state.operationInProgress = true;
-            console.log('Polling paused for operation');
             return true;
         }
-        console.log('Could not pause - operation already in progress');
         return false;
     }
 
@@ -1488,20 +1452,17 @@ function interpolateLabel(points, raw) {
         if (state.operationInProgress) {
             state.operationInProgress = false;
             setTimeout(fetchRadioStatus, 500);
-            console.log('Polling resumed');
         }
     }
 
     // Full status poll - updates frequencies, S-meter, band/mode/antenna buttons, and power
     async function fetchRadioStatus() {
         if (state.operationInProgress) {
-            console.log('Skipping poll - operation in progress');
             return;
         }
         try {
             const response = await fetch('/api/cat/status');
             if (!response.ok) {
-                console.error('Failed to fetch status:', response.status);
                 return;
             }
             const data = await response.json();
@@ -1564,10 +1525,6 @@ function interpolateLabel(points, raw) {
             updateSMeter('B', data.vfoB.sMeter);
 
             // Update band buttons from polling (fixes WSJT-X and radio band changes)
-            // Always log band data for debugging
-            console.log(`[Poll] Band data: A=${data.vfoA.band} (last=${state.lastBand.A}), B=${data.vfoB.band} (last=${state.lastBand.B})`);
-
-            // FORCE update band buttons every poll to test if DOM updates work
             if (data.vfoA.band) {
                 updateBandButton('A', data.vfoA.band);
                 state.lastBand.A = data.vfoA.band;
@@ -1621,7 +1578,6 @@ function interpolateLabel(points, raw) {
             attachAfGainSliderListeners();
 
         } catch (error) {
-            console.error('Error fetching radio status:', error);
         }
     }
 
@@ -1728,8 +1684,6 @@ let wasTransmittingSWR = false;
         if (window.radioControl && window.radioControl._state && typeof window.radioControl._state.isTransmitting !== 'undefined') {
             tx = tx || window.radioControl._state.isTransmitting;
         }
-        // Debug: log TX state and calibration
-        console.log('[PowerMeter] updatePowerMeter called. isTransmitting:', tx, 'raw value:', value, 'type:', typeof value, 'calibration:', powerOutCalibrationPoints);
         // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
         if (!tx) {
             value = 0;
@@ -1746,7 +1700,7 @@ let wasTransmittingSWR = false;
                 window.gaugePower.value = 0;
                 window.gaugePower.draw();
             } else {
-                console.warn('[PowerMeter] window.gaugePower is not defined when trying to set to 0');
+                // ...removed debug logging...
             }
             return;
         }
@@ -1783,14 +1737,13 @@ let wasTransmittingSWR = false;
                 if (typeof createGaugeLabels === 'function') {
                     createGaugeLabels(canvasId, powerConfig._labels);
                 }
-                console.log('[PowerMeter] Gauge re-initialized with maxValue:', maxW);
+                // ...removed debug logging...
             } catch (err) {
-                console.error('[GaugeInit] Error during gaugePower re-initialization:', err);
+                // ...removed debug logging...
             }
         }
         // Clamp value to [0, maxW]
         let clampedWatts = Math.max(0, Math.min(watts, maxW));
-        console.log('[PowerMeter] avgValue:', avgValue, 'watts:', watts, 'clampedWatts:', clampedWatts, 'gauge maxValue:', maxW);
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `Power Out ${clampedWatts}W`;
         // Update raw Power Out label with descriptive label
@@ -1798,16 +1751,16 @@ let wasTransmittingSWR = false;
         if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
         var canvas = document.getElementById('powerMeterCanvas');
         if (!canvas) {
-            console.warn('[PowerMeter] powerMeterCanvas not found in DOM');
+            // ...removed debug logging...
         } else {
-            console.log('[PowerMeter] powerMeterCanvas found, width:', canvas.width, 'height:', canvas.height, 'display:', getComputedStyle(canvas).display);
+            // ...removed debug logging...
         }
         if (window.gaugePower) {
             window.gaugePower.value = clampedWatts;
             window.gaugePower.draw();
-            console.log('[PowerMeter] gaugePower.value set to', clampedWatts, 'maxValue:', window.gaugePower.maxValue);
+            // ...removed debug logging...
         } else {
-            console.warn('[PowerMeter] window.gaugePower is not defined when trying to set value');
+            // ...removed debug logging...
         }
     }
 
