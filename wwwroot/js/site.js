@@ -155,15 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // own (better) versions.
 // ---------------------------------------------------------------------------
 
-// Outer state - used only by the outer helpers below.
-// The IIFE has its own richer state object that drives the real UI.
-const state = {
-    selectedIdx: { A: null, B: null },
-    editing: { A: false, B: false },
-    localFreq: { A: null, B: null },
-    lastBackendFreq: { A: null, B: null },
-    radioModel: 'FTdx101MP' // Default, will be updated from backend
-};
+
 
 // Frequency display renderer (outer version, used by outer updateFrequencyDisplay)
 function updateFrequencyDisplay(receiver, freqHz) {
@@ -171,10 +163,13 @@ function updateFrequencyDisplay(receiver, freqHz) {
     if (!display) {
         return;
     }
-    let selIdx = state.selectedIdx[receiver];
-    let freqToShow = (!state.editing[receiver] || state.localFreq[receiver] === null)
-        ? state.lastBackendFreq[receiver]
-        : state.localFreq[receiver];
+    let selIdx = window.radioControl && window.radioControl._state ? window.radioControl._state.selectedIdx[receiver] : null;
+    let editing = window.radioControl && window.radioControl._state ? window.radioControl._state.editing[receiver] : false;
+    let localFreq = window.radioControl && window.radioControl._state ? window.radioControl._state.localFreq[receiver] : null;
+    let lastBackendFreq = window.radioControl && window.radioControl._state ? window.radioControl._state.lastBackendFreq[receiver] : null;
+    let freqToShow = (!editing || localFreq === null)
+        ? lastBackendFreq
+        : localFreq;
     display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
 }
 
@@ -225,13 +220,13 @@ function initializeDigitInteraction(receiver) {
                 }
             });
         }
-        if (idx !== -1) {
+        if (idx !== -1 && window.radioControl && window.radioControl._state) {
             digits.forEach(d => d.classList.remove('selected'));
-            state.selectedIdx[receiver] = idx;
+            window.radioControl._state.selectedIdx[receiver] = idx;
             digits[idx].classList.add('selected');
-            state.editing[receiver] = true;
-            state.localFreq[receiver] = parseInt(digits.map(d => d.textContent).join(''));
-            updateFrequencyDisplay(receiver, state.localFreq[receiver]);
+            window.radioControl._state.editing[receiver] = true;
+            window.radioControl._state.localFreq[receiver] = parseInt(digits.map(d => d.textContent).join(''));
+            updateFrequencyDisplay(receiver, window.radioControl._state.localFreq[receiver]);
         }
         e.preventDefault();
     });
@@ -1602,7 +1597,6 @@ function interpolateLabel(points, raw) {
 
     async function setPower(receiver, watts) {
         try {
-            console.log(`Setting ${receiver} power to ${watts}W`);
             // Ensure state.lastPower is an object
             if (typeof state.lastPower !== 'object' || state.lastPower === null) {
                 state.lastPower = {};
@@ -1613,14 +1607,8 @@ function interpolateLabel(points, raw) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ Watts: parseInt(watts) })
             });
-            if (!response.ok) {
-                console.error('Failed to set power:', await response.text());
-            } else {
-                console.log(`Power set successfully: ${receiver} -> ${watts}W`);
-            }
             updatePowerDisplay(receiver, watts);
         } catch (error) {
-            console.error('Error setting power:', error);
         }
     }
 
@@ -2162,13 +2150,10 @@ let wasTransmittingSWR = false;
         // Initialize ALC Meter (if element exists)
         const alcMeterCanvas = document.getElementById('alcMeterCanvas');
         if (alcMeterCanvas) {
-            console.log('[Gauge] Initializing ALC meter...');
             const alcConfig = makeGaugeConfig('alcMeterCanvas', 'alc');
-            console.log('[Gauge] ALC config:', alcConfig);
             window.gaugeALC = new RadialGauge(alcConfig);
             window.gaugeALC.draw();
             createGaugeLabels('alcMeterCanvas', alcConfig._labels);
-            console.log('[Gauge] ALC meter initialized');
         }
     }
 
@@ -2379,7 +2364,7 @@ connection.on("RadioStateUpdate", function (update) {
 });
 
 connection.start().catch(function (err) {
-    return console.error(err.toString());
+    return;
 });
 
 // Show touch frequency controls on mobile
