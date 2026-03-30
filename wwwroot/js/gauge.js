@@ -10,7 +10,6 @@ class Gauge {
 
     render() {
         if (!window.RadialGauge) {
-            console.error('RadialGauge library not loaded.');
             return;
         }
 

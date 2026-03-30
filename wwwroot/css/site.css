@@ -98,19 +98,6 @@ body.fullscreen-mode main[role="main"] > .row:first-of-type > [class*=" col-"] {
     display: none !important;
 }
 
-/* Ensure gauge-wrapper fills vertical space in fullscreen */
-.fullscreen-mode .gauge-wrapper {
-    height: 100% !important;
-    min-height: 0 !important;
-    flex: 1 1 0 !important;
-    display: flex !important;
-    align-items: stretch !important;
-    justify-content: stretch !important;
-}
-.fullscreen-mode .gauge-labels-overlay {
-    height: 100% !important;
-    min-height: 0 !important;
-}
 
 /* Fullscreen main area: fill viewport vertically, restrict width to avoid horizontal scrollbar */
 .fullscreen-mode main[role="main"] {
@@ -141,23 +128,6 @@ body.fullscreen-mode main[role="main"] > .row:first-of-type > [class*=" col-"] {
 }
 .fullscreen-mode main[role="main"].pb-3 {
     padding-bottom: 0 !important;
-}
-/* Gauge label overlays for analog meters (restored from oldsite.css) */
-.gauge-labels-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-.gauge-labels-overlay .gauge-label {
-    position: absolute;
-    font-size: 12px;
-    font-weight: 600;
-    color: #333;
-    transform: translate(-50%, -50%);
-    white-space: nowrap;
 }
 html {
     font-size: 14px;
@@ -191,14 +161,6 @@ body {
     text-align: start;
 }
 
-.band-row-scroll {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    padding-bottom: 0.25rem;
-    overflow-x: unset;
-    white-space: normal;
-}
 
 .d-flex {
     display: flex;
@@ -208,9 +170,6 @@ body {
     flex-wrap: wrap;
 }
 
-.gap-2 {
-    gap: 0.4rem;
-}
 
 /* Ensure band buttons with negative margin aren't clipped */
 .flex-grow-1 {
@@ -253,11 +212,6 @@ body {
     border-color: #0d6efd;
 }
 
-.btn-outline-success.active {
-    background-color: #198754;
-    color: white;
-    border-color: #198754;
-}
 
     height: 18px;
     background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
@@ -308,23 +262,8 @@ body {
 }
 
 
-#tabletMessage {
-    pointer-events: none;
-    padding: 0.2em 0.5em;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    word-break: break-all;
-    max-width: 100vw;
-}
 
 /* TX Indicator Blink Animation */
-@keyframes tx-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-
-.tx-blink {
-    animation: tx-blink 0.8s ease-in-out infinite;
-}
 
 pre, code { tab-size: 4; }
 

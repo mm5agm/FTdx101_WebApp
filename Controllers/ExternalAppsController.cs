@@ -10,13 +10,13 @@ namespace FTdx101_WebApp.Controllers
     public class ExternalAppsController : ControllerBase
     {
         private readonly ISettingsService _settingsService;
-        private readonly ILogger<ExternalAppsController> _logger;
+        // Logger removed as part of cleanup
         private readonly ProcessStatusCacheService _processStatusCache;
 
         public ExternalAppsController(ISettingsService settingsService, ILogger<ExternalAppsController> logger, ProcessStatusCacheService processStatusCache)
         {
             _settingsService = settingsService;
-            _logger = logger;
+            // Logger removed
             _processStatusCache = processStatusCache;
         }
 
@@ -62,9 +62,7 @@ namespace FTdx101_WebApp.Controllers
             var existingProcesses = Process.GetProcessesByName(processName);
             if (existingProcesses.Length > 0)
             {
-                _logger.LogInformation("{AppName} is already running (PID: {Pid})", appName, existingProcesses[0].Id);
-
-                // Try to bring the existing window to the front
+                // Bring existing window to front (no debug logging)
                 try
                 {
                     foreach (var proc in existingProcesses)
@@ -73,15 +71,10 @@ namespace FTdx101_WebApp.Controllers
                         {
                             var hwnd = proc.MainWindowHandle;
                             BringWindowToFront(hwnd);
-                            _logger.LogInformation("Brought existing {AppName} window to front", appName);
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not bring {AppName} window to front", appName);
-                }
-
+                catch { /* Suppress diagnostics */ }
                 return Ok(new { launched = false, alreadyRunning = true });
             }
 
@@ -94,7 +87,6 @@ namespace FTdx101_WebApp.Controllers
 
             if (!System.IO.File.Exists(exe))
             {
-                _logger.LogWarning("{AppName} executable not found at: {Exe}", appName, exe);
                 return BadRequest(new { error = $"{appName} executable not found: {exe}" });
             }
 
@@ -107,46 +99,33 @@ namespace FTdx101_WebApp.Controllers
                     UseShellExecute = true,
                     WindowStyle = ProcessWindowStyle.Normal
                 };
-
                 var process = Process.Start(startInfo);
-                _logger.LogInformation("Launched {AppName}: {Exe} {Args}", appName, exe, args);
-
-                // Wait a moment for the window to be created, then ensure it's visible
                 if (process != null)
                 {
                     _ = Task.Run(async () =>
                     {
                         try
                         {
-                            // Wait up to 5 seconds for the main window to be created
                             for (int i = 0; i < 50; i++)
                             {
                                 await Task.Delay(100);
                                 process.Refresh();
-
                                 if (process.MainWindowHandle != IntPtr.Zero)
                                 {
                                     BringWindowToFront(process.MainWindowHandle);
-                                    _logger.LogInformation("Made {AppName} window visible and brought to front", appName);
                                     break;
                                 }
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Could not ensure {AppName} window visibility", appName);
-                        }
+                        catch { /* Suppress diagnostics */ }
                     });
                 }
-
-                // Invalidate cache so status check picks up the newly launched process
                 _processStatusCache.InvalidateCache(processName);
-
                 return Ok(new { launched = true, alreadyRunning = false });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to launch {AppName}", appName);
+                // Only log user-facing error
                 return StatusCode(500, new { error = ex.Message });
             }
         }

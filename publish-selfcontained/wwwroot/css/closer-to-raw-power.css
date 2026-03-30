@@ -1,9 +1,0 @@
-/* Move Power, Mic Gain, IDD, and PA Temp closer to Raw Power Out label */
-.closer-to-raw-power {
-    margin-top: -3.5rem !important; /* Even stronger negative margin */
-    margin-bottom: 0.1rem !important;
-    display: block !important;
-    width: 100% !important;
-    position: relative;
-    z-index: 2;
-}

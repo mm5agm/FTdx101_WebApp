@@ -5,7 +5,6 @@ fetch('/api/calibration/all')
         app.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
     })
     .catch(err => {
-        console.error(err);
         document.getElementById('calibration-app').innerText =
             "Failed to load calibration tables.";
     });

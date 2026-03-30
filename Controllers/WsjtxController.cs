@@ -37,14 +37,14 @@ namespace FTdx101_WebApp.Controllers
     public class WsjtxController : ControllerBase
     {
         private readonly ISettingsService _settingsService;
-        private readonly ILogger<WsjtxController> _logger;
+        // Logger removed as part of cleanup
         private readonly WsjtxUdpService _udpService;
         private readonly ProcessStatusCacheService _processStatusCache;
 
         public WsjtxController(ISettingsService settingsService, ILogger<WsjtxController> logger, WsjtxUdpService udpService, ProcessStatusCacheService processStatusCache)
         {
             _settingsService = settingsService;
-            _logger = logger;
+            // Logger removed
             _udpService = udpService;
             _processStatusCache = processStatusCache;
         }
@@ -56,9 +56,7 @@ namespace FTdx101_WebApp.Controllers
             var existingProcesses = Process.GetProcessesByName("wsjtx");
             if (existingProcesses.Length > 0)
             {
-                _logger.LogInformation("WSJT-X is already running (PID: {Pid})", existingProcesses[0].Id);
-
-                // Try to bring the existing window to the front
+                // Bring existing window to front (no debug logging)
                 try
                 {
                     foreach (var proc in existingProcesses)
@@ -66,34 +64,18 @@ namespace FTdx101_WebApp.Controllers
                         if (!proc.HasExited && proc.MainWindowHandle != IntPtr.Zero)
                         {
                             var hwnd = proc.MainWindowHandle;
-
-                            // Multi-step approach to force window to foreground
                             NativeMethods.ShowWindow(hwnd, NativeMethods.SW_RESTORE);
-
-                            // Make it topmost temporarily
                             NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_TOPMOST, 0, 0, 0, 0,
                                 NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_SHOWWINDOW);
-
-                            // Small delay
                             await Task.Delay(50);
-
-                            // Remove topmost flag
                             NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_NOTOPMOST, 0, 0, 0, 0,
                                 NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_SHOWWINDOW);
-
-                            // Bring to top and set foreground
                             NativeMethods.BringWindowToTop(hwnd);
                             NativeMethods.SetForegroundWindow(hwnd);
-
-                            _logger.LogInformation("Brought existing WSJT-X window to front");
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not bring WSJT-X window to front");
-                }
-
+                catch { /* Suppress diagnostics */ }
                 return Ok(new { launched = false, alreadyRunning = true });
             }
 
@@ -107,7 +89,6 @@ namespace FTdx101_WebApp.Controllers
 
             if (!System.IO.File.Exists(exe))
             {
-                _logger.LogWarning("WSJT-X executable not found at: {Exe}", exe);
                 return BadRequest(new { error = $"WSJT-X executable not found: {exe}" });
             }
 
@@ -118,12 +99,9 @@ namespace FTdx101_WebApp.Controllers
                     FileName = exe,
                     Arguments = args,
                     UseShellExecute = true,
-                    WindowStyle = ProcessWindowStyle.Normal  // Start visible, not minimized
+                    WindowStyle = ProcessWindowStyle.Normal
                 };
-
                 var process = Process.Start(startInfo);
-                _logger.LogInformation("Launched WSJT-X: {Exe} {Args}", exe, args);
-
                 // Wait a moment for the window to be created, then ensure it's visible
                 if (process != null)
                 {
@@ -131,57 +109,34 @@ namespace FTdx101_WebApp.Controllers
                     {
                         try
                         {
-                            // Wait up to 5 seconds for the main window to be created
                             for (int i = 0; i < 50; i++)
                             {
                                 await Task.Delay(100);
                                 process.Refresh();
-
                                 if (process.MainWindowHandle != IntPtr.Zero)
                                 {
                                     var hwnd = process.MainWindowHandle;
-
-                                    // Multi-step approach to force window to foreground
-                                    // 1. Show the window (not minimized)
                                     NativeMethods.ShowWindow(hwnd, NativeMethods.SW_SHOW);
-
-                                    // 2. Make it topmost temporarily to ensure visibility
                                     NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_TOPMOST, 0, 0, 0, 0, 
                                         NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_SHOWWINDOW);
-
-                                    // 3. Small delay to let Windows process the topmost change
                                     await Task.Delay(50);
-
-                                    // 4. Remove topmost flag so it behaves normally
                                     NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_NOTOPMOST, 0, 0, 0, 0,
                                         NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_SHOWWINDOW);
-
-                                    // 5. Bring to top of z-order
                                     NativeMethods.BringWindowToTop(hwnd);
-
-                                    // 6. Finally, set as foreground window
                                     NativeMethods.SetForegroundWindow(hwnd);
-
-                                    _logger.LogInformation("Made WSJT-X window visible and brought to front (Handle: {Handle})", hwnd);
                                     break;
                                 }
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Could not ensure WSJT-X window visibility");
-                        }
+                        catch { /* Suppress diagnostics */ }
                     });
                 }
-
-                // Invalidate cache so status check picks up the newly launched process
                 _processStatusCache.InvalidateCache("wsjtx");
-
                 return Ok(new { launched = true, alreadyRunning = false });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to launch WSJT-X");
+                // Only log user-facing error
                 return StatusCode(500, new { error = ex.Message });
             }
         }

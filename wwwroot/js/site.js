@@ -59,48 +59,8 @@ document.addEventListener('click', function (e) {
             }
         }
     }
-    if (isSave) {
-        // Enhanced debug logging
-        console.log('%c[Debug] Save button pressed!','color: white; background: green; font-size: 16px; padding: 2px 8px;', el);
-        console.log('[Debug] Event:', e);
-        console.log('[Debug] Element details:', {
-            tag: el.tagName,
-            id: el.id,
-            name: el.name,
-            className: el.className,
-            type: el.type,
-            value: el.value
-        });
-        // Log the text content of the page (first 500 chars)
-        let bodyText = document.body ? document.body.innerText : '';
-        console.log('[Debug] Page text (first 500 chars):', bodyText.substring(0, 500));
-        // Log any form data if inside a form
-        let form = el.closest && el.closest('form');
-        if (form) {
-            let formData = new FormData(form);
-            let obj = {};
-            for (let [k, v] of formData.entries()) obj[k] = v;
-            console.log('[Debug] Form data:', obj);
-        }
-        // Show a visible alert on the page for diagnostics
-        let existing = document.getElementById('save-debug-alert');
-        if (existing) existing.remove();
-        let alert = document.createElement('div');
-        alert.id = 'save-debug-alert';
-        alert.style.position = 'fixed';
-        alert.style.top = '20px';
-        alert.style.right = '20px';
-        alert.style.zIndex = 9999;
-        alert.style.background = '#28a745';
-        alert.style.color = 'white';
-        alert.style.padding = '12px 24px';
-        alert.style.borderRadius = '8px';
-        alert.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-        alert.style.fontSize = '18px';
-        alert.textContent = 'Save button pressed!';
-        document.body.appendChild(alert);
-        setTimeout(() => { if (alert.parentNode) alert.parentNode.removeChild(alert); }, 2000);
-    }
+    // Removed debug logging and diagnostic alert for production cleanup
+    // (No action needed on save button press)
 });
 // Style fix for Raw Power Out label
 document.addEventListener('DOMContentLoaded', function () {
@@ -209,7 +169,6 @@ const state = {
 function updateFrequencyDisplay(receiver, freqHz) {
     const display = document.getElementById('freq' + receiver);
     if (!display) {
-        console.warn(`Frequency display element not found: freq${receiver}`);
         return;
     }
     let selIdx = state.selectedIdx[receiver];
@@ -352,7 +311,6 @@ function initializeDigitInteraction(receiver) {
 // Outer band setter - called from Razor inline onchange on band buttons
 window.setBand = async function (receiver, band) {
     try {
-        console.log(`Setting ${receiver} band to ${band}`);
         if (window.highlightButtons) highlightButtons(receiver, band, state.lastMode ? state.lastMode[receiver] : undefined, state.lastAntenna ? state.lastAntenna[receiver] : undefined);
         if (state.lastBand) state.lastBand[receiver] = band;
         const response = await fetch(`/api/cat/band/${receiver.toLowerCase()}`, {
@@ -360,13 +318,9 @@ window.setBand = async function (receiver, band) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ band })
         });
-        if (!response.ok) {
-            console.error('Failed to set band:', await response.text());
-        } else {
-            console.log(`Band set successfully: ${receiver} -> ${band}`);
-        }
+        // No debug logging
     } catch (error) {
-        console.error('Error setting band:', error);
+        // No debug logging
     }
 };
 
@@ -377,27 +331,20 @@ window.setMode = async function (receiver, mode) {
     };
     const catCode = modeToCatCode[mode];
     if (!catCode) {
-        console.error("Unknown mode:", mode);
         return;
     }
-    console.log(`Setting ${receiver} mode to ${mode} (CAT code ${catCode})`);
     const response = await fetch(`/api/cat/mode/${receiver.toLowerCase()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: catCode })
     });
-    if (!response.ok) {
-        console.error('Failed to set mode:', await response.text());
-    } else {
-        console.log(`Mode set successfully: ${receiver} -> ${mode}`);
-    }
+    // No debug logging
 };
 
 // Outer antenna setter - called from Razor inline onchange on antenna buttons
 window.setAntenna = async function (receiver, antenna) {
     if (window.pausePolling) pausePolling();
     try {
-        console.log(`Setting ${receiver} antenna to ${antenna}`);
         if (window.highlightButtons) highlightButtons(receiver, state.lastBand ? state.lastBand[receiver] : undefined, state.lastMode ? state.lastMode[receiver] : undefined, antenna);
         if (state.lastAntenna) state.lastAntenna[receiver] = antenna;
         const response = await fetch(`/api/cat/antenna/${receiver.toLowerCase()}`, {
@@ -405,13 +352,9 @@ window.setAntenna = async function (receiver, antenna) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ antenna })
         });
-        if (!response.ok) {
-            console.error('Failed to set antenna:', await response.text());
-        } else {
-            console.log(`Antenna set successfully: ${receiver} -> ${antenna}`);
-        }
+        // No debug logging
     } catch (error) {
-        console.error('Error setting antenna:', error);
+        // No debug logging
     }
 };
 
@@ -955,6 +898,7 @@ async function updateBandButtonsFromBackend() {
     }
 }
 
+
 // Update band button selection for a specific receiver (called via SignalR)
 function updateBandButton(receiver, band) {
     console.log(`[Band] updateBandButton called: receiver=${receiver}, band=${band}`);
@@ -985,7 +929,7 @@ function updateBandButton(receiver, band) {
 // Outer DOMContentLoaded - initial UI wiring
 window.addEventListener('DOMContentLoaded', () => {
     pollInitStatus();
-    updateBandButtonsFromBackend();
+        updateBandButtonsFromBackend();
 
     // Event delegation for band button changes
     document.addEventListener('change', function(e) {

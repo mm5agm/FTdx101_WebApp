@@ -233,7 +233,7 @@ namespace FTdx101_WebApp.Services
         {
             if (string.IsNullOrEmpty(response) || response.Length < 20 || !response.StartsWith("IF"))
             {
-                Console.WriteLine($"IFCommandParser: Invalid response: [{response}]");
+                // Invalid response; return default
                 return (0, "UNKNOWN");
             }
 
@@ -241,13 +241,12 @@ namespace FTdx101_WebApp.Services
             {
                 string freqStr = response.Substring(5, 9);
                 long frequency = long.Parse(freqStr);
-                Console.WriteLine($"IFCommandParser: Parsed freq from [{response}] -> [{freqStr}] = {frequency} Hz");
                 string mode = "USB";
                 return (frequency, mode);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"IFCommandParser: Exception parsing [{response}]: {ex.Message}");
+                // Parsing failed; return default
                 return (0, "UNKNOWN");
             }
         }

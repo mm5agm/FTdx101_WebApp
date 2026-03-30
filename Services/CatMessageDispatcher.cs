@@ -6,17 +6,13 @@ namespace FTdx101_WebApp.Services
     public class CatMessageDispatcher
     {
         private readonly RadioStateService _stateService;
-        private readonly ILogger<CatMessageDispatcher> _logger;
 
         // Callback for initialization complete
         public Action? OnInitializationComplete { get; set; }
 
-        public CatMessageDispatcher(
-            RadioStateService stateService,
-            ILogger<CatMessageDispatcher> logger)
+        public CatMessageDispatcher(RadioStateService stateService)
         {
             _stateService = stateService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -24,14 +20,7 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public void DispatchMessage(string message)
         {
-            // TEMP: Log all incoming messages for debugging
-            _logger.LogInformation("[CatMessageDispatcher][TEMP] Incoming message: {Message}", message);
-            // Suppress logging RM messages (meter readings poll frequently)
-            // But DO log TX messages for debugging
-            if (!message.StartsWith("RM"))
-            {
-                _logger.LogInformation("[CatMessageDispatcher] Received: {Message}", message);
-            }
+            // Debug logging removed as part of cleanup
 
             if (string.IsNullOrEmpty(message) || message.Length < 3)
                 return;
@@ -108,7 +97,6 @@ namespace FTdx101_WebApp.Services
                         // Example: PC100; (100W)
                         if (message.Length >= 5 && int.TryParse(message.Substring(2, 3), out var watts))
                         {
-                            _logger.LogInformation("[Slider][CAT] Received PC command: watts={Watts}", watts);
                             _stateService.Power = watts;
                         }
                         break;
@@ -118,8 +106,6 @@ namespace FTdx101_WebApp.Services
                         {
                             var txStatus = message[2];
                             _stateService.IsTransmitting = (txStatus == '1' || txStatus == '2');
-                            _logger.LogInformation("[CatMessageDispatcher] TX status: {Status} (IsTransmitting={IsTransmitting})", 
-                                txStatus, _stateService.IsTransmitting);
                         }
                         break;
                     case "RF":
@@ -133,36 +119,25 @@ namespace FTdx101_WebApp.Services
                                 _stateService.RoofingFilterA = filterCode;
                             else if (vfo == '1')
                                 _stateService.RoofingFilterB = filterCode;
-                            _logger.LogInformation("[CatMessageDispatcher] Roofing filter VFO {Vfo}: {Filter}", 
-                                vfo == '0' ? "A" : "B", filterCode);
                         }
                         break;
                     // No debug logging for unhandled commands
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Optionally keep error logging
-                _logger.LogError(ex, "[CatMessageDispatcher] Error dispatching message: {Message}", message);
+                // Suppress diagnostics
             }
         }
 
         private void HandleInitialization(string message)
         {
-            _logger.LogWarning("[CatMessageDispatcher] HandleInitialization called with message: {Message}", message);
 
             // Only signal initialization complete for DT0; message
             if (message.StartsWith("DT0;") || message.StartsWith("DT0"))
             {
-                _logger.LogWarning("[CatMessageDispatcher] DT0 detected! Completing initialization...");
                 _stateService.CompleteInitialization(); // Optionally update radio state
-                _logger.LogWarning("[CatMessageDispatcher] About to invoke OnInitializationComplete callback");
                 OnInitializationComplete?.Invoke();     // Notify any listeners
-                _logger.LogWarning("[CatMessageDispatcher] OnInitializationComplete callback invoked");
-            }
-            else
-            {
-                _logger.LogWarning("[CatMessageDispatcher] Message did not match DT0 pattern: {Message}", message);
             }
         }
     }

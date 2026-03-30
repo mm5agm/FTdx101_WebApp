@@ -9,13 +9,11 @@ namespace FTdx101_WebApp.Services
     public class CatMessageBuffer
     {
         private readonly StringBuilder _buffer = new();
-        private readonly ILogger<CatMessageBuffer> _logger;
 
         public event EventHandler<CatMessageReceivedEventArgs>? MessageReceived;
 
         public CatMessageBuffer(ILogger<CatMessageBuffer> logger)
         {
-            _logger = logger;
         }
 
         /// <summary>
@@ -52,14 +50,7 @@ namespace FTdx101_WebApp.Services
                 // Dispatch message
                 if (message.Length >= 3) // Minimum: "XX;"
                 {
-                    if (!message.StartsWith("RM") && !message.StartsWith("SM"))
-                    {
-                        _logger.LogWarning("[received] {Message}", message.Trim());
-                    }
-                    if (message.StartsWith("DT"))
-                    {
-                        _logger.LogWarning("[CatMessageBuffer] >>> DT message received: {Message}", message);
-                    }
+                    // Debug logging removed as part of cleanup
                     OnMessageReceived(message);
                 }
             }
