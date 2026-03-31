@@ -2,8 +2,8 @@
 // Requires: canvas-gauge library loaded globally (RadialGauge)
 
 class Gauge {
-    static defaultWidth = 420;
-    static defaultHeight = 235;
+    static defaultWidth = 220;
+    static defaultHeight = 135;
 
     constructor(canvasId, config) {
         this.canvasId = canvasId;
@@ -20,6 +20,15 @@ class Gauge {
             return;
         }
 
+        // Set canvas size to match config
+        const canvas = document.getElementById(this.canvasId);
+        if (canvas) {
+            canvas.width = this.config.width;
+            canvas.height = this.config.height;
+            canvas.style.width = this.config.width + 'px';
+            canvas.style.height = this.config.height + 'px';
+        }
+
         // Create gauge
         this.gauge = new RadialGauge(this.config);
         this.gauge.draw();
@@ -34,9 +43,8 @@ class Gauge {
 
         const wrapper = canvas.parentNode;
         wrapper.style.position = "relative";
-        // Set the wrapper size to match the gauge config (SWR gauge size)
-        wrapper.style.width = this.config.width + 'px';  // Set wrapper width to match gauge config
-        wrapper.style.height = this.config.height + 'px'; // Set wrapper height to match gauge config
+        wrapper.style.width = this.config.width + 'px';
+        wrapper.style.height = this.config.height + 'px';
 
         // Remove any existing overlay (prevents stale labels)
         const existing = wrapper.querySelector('.gauge-labels-overlay');
@@ -55,9 +63,10 @@ class Gauge {
         // Use ONLY your own labels
         const labels = this.config.labels || [];
 
+        // Place labels in an arc above the gauge
         const centerX = this.config.width / 2;
-        const centerY = this.config.height - 64;
-        const radius = this.config.width * 0.17;
+        const centerY = this.config.height / 2 + 10; // slightly above center
+        const radius = this.config.width * 0.38; // arc radius
 
         const angleStep = 180 / (labels.length - 1);
 
@@ -75,8 +84,9 @@ class Gauge {
             span.style.left = `${x}px`;
             span.style.top = `${y}px`;
             span.style.transform = 'translate(-50%, -50%)';
-            span.style.fontSize = '0.7rem'; // Set label font size directly here
-
+            span.style.fontSize = '0.8rem';
+            span.style.fontWeight = 'bold';
+            span.style.color = '#333';
             labelsDiv.appendChild(span);
         });
 
@@ -142,6 +152,7 @@ class SMeterGauge extends Gauge {
 
 class PowerGauge extends Gauge {
     constructor(canvasId, options = {}) {
+        console.log('[PowerGauge] constructor called for', canvasId);
         const config = Object.assign({
             renderTo: canvasId,
             minValue: 0,
@@ -186,6 +197,11 @@ class PowerGauge extends Gauge {
         }, options);
 
         super(canvasId, config);
+    }
+
+    render() {
+        console.log('[PowerGauge] render called for', this.canvasId);
+        super.render();
     }
 }
 
@@ -295,9 +311,5 @@ class ALCGauge extends Gauge {
     }
 }
 
-// Export classes globally
-window.Gauge = Gauge;
-window.SMeterGauge = SMeterGauge;
-window.PowerGauge = PowerGauge;
-window.SWRGauge = SWRGauge;
-window.ALCGauge = ALCGauge;
+// Export classes as ES module
+export { Gauge, SMeterGauge, PowerGauge, SWRGauge, ALCGauge };

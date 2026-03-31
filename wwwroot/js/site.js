@@ -1711,25 +1711,6 @@ let wasTransmittingSWR = false;
             const lastNum = parseFloat(last.label);
             if (!isNaN(lastNum)) maxW = lastNum;
         }
-        if (!window.gaugePower || window.gaugePower.maxValue !== maxW) {
-            // Only re-initialize if maxValue changed
-            try {
-                const canvasId = 'powerMeterCanvas';
-                const powerConfig = makeGaugeConfig(canvasId, 'power');
-                powerConfig.maxValue = maxW;
-                if (window.gaugePower && window.gaugePower.destroy) {
-                    window.gaugePower.destroy();
-                }
-                window.gaugePower = new RadialGauge(powerConfig);
-                window.gaugePower.draw();
-                if (typeof createGaugeLabels === 'function') {
-                    createGaugeLabels(canvasId, powerConfig._labels);
-                }
-                // ...removed debug logging...
-            } catch (err) {
-                // ...removed debug logging...
-            }
-        }
         // Clamp value to [0, maxW]
         let clampedWatts = Math.max(0, Math.min(watts, maxW));
         const valueSpan = document.getElementById('powerMeterValue');
@@ -1737,18 +1718,9 @@ let wasTransmittingSWR = false;
         // Update raw Power Out label with descriptive label
         var rawPowerLabel = document.getElementById('raw-powerout-label');
         if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
-        var canvas = document.getElementById('powerMeterCanvas');
-        if (!canvas) {
-            // ...removed debug logging...
-        } else {
-            // ...removed debug logging...
-        }
         if (window.gaugePower) {
             window.gaugePower.value = clampedWatts;
-            window.gaugePower.draw();
-            // ...removed debug logging...
-        } else {
-            // ...removed debug logging...
+            window.gaugePower.render();
         }
     }
 
@@ -2132,13 +2104,7 @@ let wasTransmittingSWR = false;
             gaugeB.draw();
             createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
         }
-        // Initialize Power Meter (if element exists)
-        const powerMeterCanvas = document.getElementById('powerMeterCanvas');
-        if (powerMeterCanvas) {
-            // PowerGauge will be initialized by updatePowerMeter logic as needed
-            // Remove legacy RadialGauge instance
-            // createGaugeLabels('powerMeterCanvas', powerConfig._labels); // If needed, handled by PowerGauge
-        }
+        // PowerGauge is now initialized in the unified ES module factory logic only
         // Initialize SWR Meter (if element exists)
         const swrMeterCanvas = document.getElementById('swrMeterCanvas');
         if (swrMeterCanvas) {

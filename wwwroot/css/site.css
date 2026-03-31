@@ -1,3 +1,27 @@
+/* Gauge label overlays */
+.gauge-labels-overlay {
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+.gauge-label {
+    position: absolute;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #333;
+    text-shadow: 0 1px 2px #fff, 0 0 2px #fff;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+}
+/* Ensure analog meter containers allow overlays to position absolutely */
+.analog-meter-container {
+    position: relative;
+}
 /* Outline for gauge containers */
 .gauge-outline {
     border: 6px solid magenta !important;
@@ -414,9 +438,7 @@ pre, code { tab-size: 4; }
 }
 
 /* Shift band buttons and mode selector left (closer to S-meter) */
-.band-buttons-shifted {
-    margin-left: -16rem;
-}
+
 
 /* Move the power meter gauge closer to the SWR meter */
 .power-meter-container .gauge-wrapper {

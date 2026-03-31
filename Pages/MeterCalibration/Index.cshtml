@@ -33,12 +33,11 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/gauge.js?v=20260330a"></script>
-    <script src="~/js/site.js"></script>
-    <script>
+    <script type="module">
+        import { createSMeterGauge } from "/js/gaugeFactory.js";
         document.addEventListener('DOMContentLoaded', function () {
-            // Render the S-Meter gauge using the new class
-            const sMeterGauge = new SMeterGauge('meterCalibrationGauge');
+            // Render the S-Meter gauge using the new factory
+            const sMeterGauge = createSMeterGauge('meterCalibrationGauge');
             sMeterGauge.render();
         });
     </script>
