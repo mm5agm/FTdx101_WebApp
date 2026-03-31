@@ -27,6 +27,14 @@ class Gauge {
             canvas.height = this.config.height;
             canvas.style.width = this.config.width + 'px';
             canvas.style.height = this.config.height + 'px';
+            // If this is an S-meter, move the canvas right by half the width
+            if (this instanceof SMeterGauge) {
+                canvas.style.position = 'relative';
+                canvas.style.left = (this.config.width / 2) + 'px';
+            } else {
+                canvas.style.position = '';
+                canvas.style.left = '';
+            }
         }
 
         // Create gauge
@@ -64,9 +72,14 @@ class Gauge {
         const labels = this.config.labels || [];
 
         // Place labels in an arc above the gauge
-        const centerX = this.config.width / 2;
+        let centerX = this.config.width / 2;
         const centerY = this.config.height / 2 + 10; // slightly above center
         const radius = this.config.width * 0.38; // arc radius
+
+        // If this is an S-meter, shift overlay right by half the gauge width
+        if (this instanceof SMeterGauge) {
+            centerX += this.config.width / 2;
+        }
 
         const angleStep = 180 / (labels.length - 1);
 

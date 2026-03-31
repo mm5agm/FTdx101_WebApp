@@ -68,6 +68,14 @@ class MeterGauge extends HTMLElement {
         const height = this.clientHeight || 135;
         this.canvas.width = width;
         this.canvas.height = height;
+        // If S-meter, move canvas right by half the width
+        if ((this._type || '').toLowerCase() === 's-meter') {
+            this.canvas.style.position = 'relative';
+            this.canvas.style.left = (width / 2) + 'px';
+        } else {
+            this.canvas.style.position = '';
+            this.canvas.style.left = '';
+        }
 
         // Remove any previous gauge instance
         if (this.gauge && this.gauge.gauge && typeof this.gauge.gauge.destroy === 'function') {
@@ -127,12 +135,15 @@ class MeterGauge extends HTMLElement {
             labelsDiv.style.width = '100%';
             labelsDiv.style.height = '100%';
             labelsDiv.style.pointerEvents = 'none';
-            const centerX = width / 2;
+            let centerX = width / 2;
             const centerY = height - 64;
             // Use a larger radius for non-S-Meter gauges
             let radius = width * 0.17;
             if ((this._type || '').toLowerCase() !== 's-meter') {
                 radius = width * 0.23;
+            } else {
+                // For S-meter, shift overlay right by half the gauge width
+                centerX += width / 2;
             }
             const angleStep = 180 / (labels.length - 1);
             labels.forEach((label, index) => {
