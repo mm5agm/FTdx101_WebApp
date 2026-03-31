@@ -2,9 +2,16 @@
 // Requires: canvas-gauge library loaded globally (RadialGauge)
 
 class Gauge {
+    static defaultWidth = 420;
+    static defaultHeight = 235;
+
     constructor(canvasId, config) {
         this.canvasId = canvasId;
-        this.config = config;
+        // Use defaults if not provided
+        this.config = Object.assign({
+            width: Gauge.defaultWidth,
+            height: Gauge.defaultHeight
+        }, config);
         this.gauge = null;
     }
 
@@ -28,8 +35,8 @@ class Gauge {
         const wrapper = canvas.parentNode;
         wrapper.style.position = "relative";
         // Set the wrapper size to match the gauge config (SWR gauge size)
-        wrapper.style.width = this.config.width + 'px';
-        wrapper.style.height = this.config.height + 'px';
+        wrapper.style.width = this.config.width + 'px';  // Set wrapper width to match gauge config
+        wrapper.style.height = this.config.height + 'px'; // Set wrapper height to match gauge config
 
         // Remove any existing overlay (prevents stale labels)
         const existing = wrapper.querySelector('.gauge-labels-overlay');
@@ -85,8 +92,6 @@ class SMeterGauge extends Gauge {
     constructor(canvasId, options = {}) {
         const config = Object.assign({
             renderTo: canvasId,
-            width: 420,
-            height: 135,
             minValue: 0,
             maxValue: 255,
             majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
@@ -139,8 +144,6 @@ class PowerGauge extends Gauge {
     constructor(canvasId, options = {}) {
         const config = Object.assign({
             renderTo: canvasId,
-            width: 420,
-            height: 135, // Match SWR and ALC gauge height
             minValue: 0,
             maxValue: 200,
             majorTicks: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
@@ -194,8 +197,6 @@ class SWRGauge extends Gauge {
     constructor(canvasId, options = {}) {
         const config = Object.assign({
             renderTo: canvasId,
-            width: 420,
-            height: 135,
             minValue: 0,
             maxValue: 255,
             majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
@@ -249,8 +250,6 @@ class ALCGauge extends Gauge {
     constructor(canvasId, options = {}) {
         const config = Object.assign({
             renderTo: canvasId,
-            width: 420,
-            height: 135,
             minValue: 0,
             maxValue: 255,
             majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
