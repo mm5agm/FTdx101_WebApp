@@ -1,3 +1,15 @@
+/* Outline for gauge containers */
+.gauge-outline {
+    border: 6px solid magenta !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+    background: #fff !important;
+    box-shadow: 0 0 16px 2px magenta;
+    z-index: 1000 !important;
+    min-width: 220px;
+    min-height: 120px;
+    position: relative;
+}
 /* Stronger fullscreen override: target body.fullscreen-mode and descendants */
 body.fullscreen-mode,
 body.fullscreen-mode html,

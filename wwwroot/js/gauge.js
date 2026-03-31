@@ -27,6 +27,9 @@ class Gauge {
 
         const wrapper = canvas.parentNode;
         wrapper.style.position = "relative";
+        // Set the wrapper size to match the gauge config (SWR gauge size)
+        wrapper.style.width = this.config.width + 'px';
+        wrapper.style.height = this.config.height + 'px';
 
         // Remove any existing overlay (prevents stale labels)
         const existing = wrapper.querySelector('.gauge-labels-overlay');
@@ -137,7 +140,7 @@ class PowerGauge extends Gauge {
         const config = Object.assign({
             renderTo: canvasId,
             width: 420,
-            height: 135,
+            height: 135, // Match SWR and ALC gauge height
             minValue: 0,
             maxValue: 200,
             majorTicks: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],

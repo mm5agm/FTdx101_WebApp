@@ -279,14 +279,14 @@
                     <!-- Gauges row -->
                     <div class="d-flex justify-content-start align-items-start flex-wrap" style="margin-left: -7rem; gap: 0; margin-bottom: 0.2rem !important;">
                         <!-- SWR Meter -->
-                        <div class="text-center" style="position: relative;">
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
                             <div class="analog-meter-container">
-                                <canvas id="swrMeterCanvas"></canvas>
+                                <canvas id="swrMeterCanvas" style="border: 8px solid red !important; background: yellow !important;"></canvas>
                             </div>
                             <span id="swrMeterValue" class="badge bg-danger" style="position: absolute; bottom: 35px; left: calc(50% - 15px); transform: translateX(-50%); z-index: 100; white-space: nowrap;">SWR 1.0:1</span>
                         </div>
                         <!-- Power Meter -->
-                        <div class="text-center power-meter-container" style="position: relative;">
+                        <div class="text-center power-meter-container gauge-outline" style="position: relative; height: 135px; min-width: 220px; margin-left: 50px; margin: 0; padding: 0;">
                             <div class="analog-meter-container">
                                 <canvas id="powerMeterCanvas"></canvas>
                             </div>
@@ -296,7 +296,7 @@
                             </div>
                         </div>
                         <!-- ALC Meter -->
-                        <div class="text-center" style="position: relative; margin-left: -10rem;">
+                        <div class="text-center gauge-outline" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
                             <div class="analog-meter-container">
                                 <canvas id="alcMeterCanvas"></canvas>
                             </div>
