@@ -65,6 +65,7 @@ class Gauge {
             span.style.left = `${x}px`;
             span.style.top = `${y}px`;
             span.style.transform = 'translate(-50%, -50%)';
+            span.style.fontSize = '0.7rem'; // Set label font size directly here
 
             labelsDiv.appendChild(span);
         });

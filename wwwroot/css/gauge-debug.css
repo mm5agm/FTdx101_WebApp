@@ -1,0 +1,9 @@
+
+/* Make gauge label font smaller */
+.gauge-label {
+	font-size: 0.85rem;
+	font-family: inherit;
+	color: #222;
+	user-select: none;
+	white-space: nowrap;
+}
