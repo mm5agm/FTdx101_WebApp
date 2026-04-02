@@ -347,13 +347,12 @@ pre, code { tab-size: 4; }
     /* No fixed width or negative margin */
 }
 
-/* Mode select dropdown - constrain width to fit longest option */
+/* Mode select dropdown - sized to fit longest option (DATA-FM-N) */
 #modeSelectA,
 #modeSelectB,
 #antennaSelectA,
 #antennaSelectB {
     width: auto;
-    max-width: 150px;
     font-size: 0.9rem;
     font-weight: bold;
 }
@@ -368,12 +367,12 @@ pre, code { tab-size: 4; }
     gap: 0.25rem;
 }
 
-/* Compact band button grid layout - 3 columns on desktop, 4 on mobile/tablet */
+/* Compact band button grid layout - 4 columns, sized to content */
 .band-radio-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, auto);
+    justify-content: start;
     gap: 0.4rem;
-    max-width: 100%;
 }
 
 .band-radio-label {
@@ -423,11 +422,10 @@ pre, code { tab-size: 4; }
     color: #0f5132;
 }
 
-/* Responsive: stack on smaller screens */
+/* Responsive: 3 columns on smaller screens, still sized to content */
 @media (max-width: 768px) {
     .band-radio-grid {
-        grid-template-columns: repeat(3, 1fr);
-        max-width: 100%;
+        grid-template-columns: repeat(3, auto);
     }
 }
 

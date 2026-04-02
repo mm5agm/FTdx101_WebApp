@@ -71,10 +71,12 @@ class Gauge {
         // Use ONLY your own labels
         const labels = this.config.labels || [];
 
-        // Place labels in an arc above the gauge
+        // Canvas-gauges centres the radial gauge at (width/2, height/2).
+        // The label arc uses the same centre with a radius slightly inside
+        // the gauge arc radius (which is ~min(width,height)/2).
         let centerX = this.config.width / 2;
-        const centerY = this.config.height / 2 + 10; // slightly above center
-        const radius = this.config.width * 0.38; // arc radius
+        const centerY = this.config.height / 2;
+        const radius = this.config.width * 0.32;
 
         // If this is an S-meter, shift overlay right by half the gauge width
         if (this instanceof SMeterGauge) {
@@ -130,7 +132,7 @@ class SMeterGauge extends Gauge {
             strokeTicks: false,
             tickSide: "out",
             needleSide: "center",
-            colorPlate: "#ffffff",
+            colorPlate: "transparent",
             borders: false,
             needleShadow: false,
             colorMajorTicks: "#555555",
@@ -184,7 +186,7 @@ class PowerGauge extends Gauge {
             strokeTicks: false,
             tickSide: "out",
             needleSide: "center",
-            colorPlate: "#ffffff",
+            colorPlate: "transparent",
             borders: false,
             needleShadow: false,
             colorMajorTicks: "#555555",
@@ -242,7 +244,7 @@ class SWRGauge extends Gauge {
             strokeTicks: false,
             tickSide: "out",
             needleSide: "center",
-            colorPlate: "#ffffff",
+            colorPlate: "transparent",
             borders: false,
             needleShadow: false,
             colorMajorTicks: "#555555",
@@ -295,7 +297,7 @@ class ALCGauge extends Gauge {
             strokeTicks: false,
             tickSide: "out",
             needleSide: "center",
-            colorPlate: "#ffffff",
+            colorPlate: "transparent",
             borders: false,
             needleShadow: false,
             colorMajorTicks: "#555555",
