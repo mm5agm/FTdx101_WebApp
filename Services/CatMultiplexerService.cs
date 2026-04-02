@@ -16,7 +16,7 @@ namespace FTdx101_WebApp.Services
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private Task? _processingTask;
 
-        // NEW: Auto-Information support
+        // Auto-Information support
         private readonly CatMessageBuffer _messageBuffer;
         private readonly CatMessageDispatcher _messageDispatcher;
         private bool _autoInformationEnabled = false;
@@ -42,26 +42,31 @@ namespace FTdx101_WebApp.Services
         private void OnMessageReceived(object? sender, CatMessageReceivedEventArgs e)
         {
             var message = e.Message.Trim();
+
             // Suppress logging RM messages
             if (!message.StartsWith("RM"))
             {
                 _logger.LogInformation("[CatMultiplexerService] OnMessageReceived: {Message}", message);
             }
 
+            if (message.Length < 2) return;
+
             var prefix = message.Substring(0, 2);
 
-            // Always dispatch DT messages to CatMessageDispatcher
+            // DT messages always go to the dispatcher — never to _pendingResponses.
+            // This is the only path that triggers SignalInitializationComplete.
             if (prefix == "DT")
             {
-                _logger.LogWarning("[CatMultiplexerService] >>> Dispatching DT message to CatMessageDispatcher: {Message}", message);
+                _logger.LogWarning("[CatMultiplexerService] >>> Dispatching DT message: {Message}", message);
                 _messageDispatcher.DispatchMessage(message);
+                return; // Do not fall through to _pendingResponses
             }
 
             if (_pendingResponses.TryRemove(prefix, out var tcs))
             {
                 tcs.TrySetResult(message.TrimEnd(';'));
             }
-            else if (prefix != "DT") // Avoid double-dispatch for DT
+            else
             {
                 _messageDispatcher.DispatchMessage(message);
             }
@@ -102,7 +107,7 @@ namespace FTdx101_WebApp.Services
                 };
 
                 _serialPort.Open();
-                await Task.Delay(50); // Reduced from 200ms
+                await Task.Delay(50);
 
                 _logger.LogInformation("✓ Connected to {PortName} at {BaudRate} baud, 8-N-2", portName, baudRate);
 
@@ -113,9 +118,6 @@ namespace FTdx101_WebApp.Services
                     var data = _serialPort.ReadExisting();
                     _messageBuffer.AppendData(data);
                 };
-
-                // --- REMOVED: QueryInitialStateAsync call ---
-                // await QueryInitialStateAsync();
 
                 return true;
             }
@@ -135,9 +137,7 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public async Task EnableAutoInformationAsync()
         {
-            // Enable Auto Information (AI1;)
             await SendCommandAsync("AI1;", "System");
-            // Optionally, send Data Terminal Off (DT0;)
             await SendCommandAsync("DT0;", "System");
         }
 
@@ -146,7 +146,6 @@ namespace FTdx101_WebApp.Services
         /// </summary>
         public async Task DisableAutoInformationAsync()
         {
-            // Disable Auto Information (AI0;)
             await SendCommandAsync("AI0;", "System");
         }
 
@@ -180,7 +179,7 @@ namespace FTdx101_WebApp.Services
                     {
                         _messageDispatcher.DispatchMessage(response + ";");
                     }
-                    await Task.Delay(10); // Reduced from 50ms
+                    await Task.Delay(10);
                 }
                 catch (Exception ex)
                 {
@@ -198,7 +197,7 @@ namespace FTdx101_WebApp.Services
             _pendingResponses[prefix] = tcs;
             await SendToSerialPortAsync(command, cancellationToken);
 
-            var timeoutTask = Task.Delay(150, cancellationToken); // Reduced from 500ms
+            var timeoutTask = Task.Delay(150, cancellationToken);
             var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
             _pendingResponses.TryRemove(prefix, out _);
@@ -227,7 +226,7 @@ namespace FTdx101_WebApp.Services
                     }
                     else
                     {
-                        await Task.Delay(2, cancellationToken); // Reduced from 10ms
+                        await Task.Delay(2, cancellationToken);
                     }
                 }
                 catch (TaskCanceledException tce)
@@ -238,7 +237,7 @@ namespace FTdx101_WebApp.Services
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing command queue");
-                    await Task.Delay(20, cancellationToken); // Reduced from 100ms
+                    await Task.Delay(20, cancellationToken);
                 }
             }
 
@@ -262,18 +261,12 @@ namespace FTdx101_WebApp.Services
                     _serialPort.DiscardInBuffer();
                 }
 
-                // Send command
                 var fullCommand = request.Command.EndsWith(";") ? request.Command : request.Command + ";";
                 var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
 
                 _logger.LogDebug("[{ClientId}] >>> #{RequestId}: {Command}", request.ClientId, request.RequestId, fullCommand.TrimEnd(';'));
 
                 _serialPort.Write(commandBytes, 0, commandBytes.Length);
-
-                // No direct read here! The response will be handled by OnMessageReceived and _pendingResponses
-
-                // Optionally, you can set a timeout here if you want to handle cases where no response is received
-                // But the actual response will be set via the TaskCompletionSource in OnMessageReceived
 
                 _logger.LogDebug("[{ClientId}] <<< #{RequestId}: (response will be handled asynchronously)", request.ClientId, request.RequestId);
             }
@@ -299,7 +292,6 @@ namespace FTdx101_WebApp.Services
 
                 if (_serialPort?.IsOpen == true)
                 {
-                    // Disable AI mode before disconnect
                     if (_autoInformationEnabled)
                     {
                         try
@@ -354,21 +346,17 @@ namespace FTdx101_WebApp.Services
                 _messageDispatcher.DispatchMessage(response + ";");
             }
             if (delay > 0)
-                await Task.Delay(Math.Min(delay, 20)); // Cap delay to 20ms
+                await Task.Delay(Math.Min(delay, 20));
         }
 
         public async Task SendCommandPause(string command, bool processResult = false)
         {
-            // Always pause 20ms after sending
             await SendCommand(command, processResult, delay: 20);
         }
 
         public async Task GetInitialValues()
         {
-            // Enable Auto Information mode first
             await SendCommand("AI1;", true);
-
-            // The following is a direct translation of the original command sequence:
             await SendCommand("ID;", true);
             await SendCommand("AG0;", true);
             await SendCommand("AG1;", true);
@@ -487,8 +475,8 @@ namespace FTdx101_WebApp.Services
                 throw new InvalidOperationException("Serial port is not open.");
 
             const int batchSize = 10;
-            const int interCommandDelayMs = 10; // Minimal delay between commands
-            const int interBatchDelayMs = 50;   // Slightly longer pause between batches
+            const int interCommandDelayMs = 10;
+            const int interBatchDelayMs = 50;
 
             for (int i = 0; i < commands.Length; i++)
             {
@@ -498,10 +486,8 @@ namespace FTdx101_WebApp.Services
 
                 _serialPort.Write(commandBytes, 0, commandBytes.Length);
 
-                // Small delay between commands
                 await Task.Delay(interCommandDelayMs);
 
-                // Longer pause every batch to let the radio catch up
                 if ((i + 1) % batchSize == 0)
                 {
                     await Task.Delay(interBatchDelayMs);
@@ -512,33 +498,44 @@ namespace FTdx101_WebApp.Services
         public async Task InitializeRadioAsync()
         {
             _logger.LogWarning("[CatMultiplexerService] InitializeRadioAsync starting...");
-            _initializationCompletionSource = new TaskCompletionSource<bool>();
+            _initializationCompletionSource = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
             _logger.LogWarning("[CatMultiplexerService] Sending AI1 command...");
             await SendCommandAsync("AI1;", "Initialization", CancellationToken.None);
 
-            _logger.LogWarning("[CatMultiplexerService] Sending {Count} initialization commands (fast mode)...", CatCommands.InitializationCommands.Length);
-
-            // Use fire-and-forget for initialization commands - responses handled by Auto Information
+            _logger.LogWarning("[CatMultiplexerService] Sending {Count} initialization commands (fast mode)...",
+                CatCommands.InitializationCommands.Length);
             await SendInitializationCommandsFastAsync(CatCommands.InitializationCommands);
 
-            _logger.LogWarning("[CatMultiplexerService] Sending DT0 command...");
-            await SendCommandAsync("DT0;", "Initialization", CancellationToken.None);
+            // Settle time after the fast burst before sending DT0
+            await Task.Delay(100);
 
-            _logger.LogWarning("[CatMultiplexerService] Waiting for DT0 response (TaskCompletionSource)...");
+            _logger.LogWarning("[CatMultiplexerService] Sending DT0 command (raw)...");
 
-            // Add timeout to prevent hanging forever
+            // Send DT0 raw — do NOT use SendCommandAsync here.
+            // SendCommandAsync would register "DT" in _pendingResponses, which competes
+            // with OnMessageReceived dispatching to CatMessageDispatcher.
+            // We only want the dispatcher path: DT0 response → HandleInitialization
+            // → SignalInitializationComplete → _initializationCompletionSource.
+            var dt0Bytes = Encoding.ASCII.GetBytes("DT0;");
+            _serialPort!.Write(dt0Bytes, 0, dt0Bytes.Length);
+
+            _logger.LogWarning("[CatMultiplexerService] Waiting for DT0 response...");
+
             var completionTask = _initializationCompletionSource.Task;
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(3)); // Reduced from 10s
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
             var completedTask = await Task.WhenAny(completionTask, timeoutTask);
 
             if (completedTask == timeoutTask)
             {
-                _logger.LogError("[CatMultiplexerService] !!! TIMEOUT waiting for DT0 response after 10 seconds");
+                _logger.LogError("[CatMultiplexerService] !!! TIMEOUT waiting for DT0 response after 5 seconds");
                 throw new TimeoutException("Timeout waiting for DT0 response from radio");
             }
 
             _logger.LogWarning("[CatMultiplexerService] ✓ DT0 response received, initialization complete");
         }
+
         public async Task ShutdownRadioAsync()
         {
             // Implementation (if needed) or leave empty
@@ -567,7 +564,7 @@ namespace FTdx101_WebApp.Services
             var commandBytes = Encoding.ASCII.GetBytes(fullCommand);
 
             _serialPort.Write(commandBytes, 0, commandBytes.Length);
-            await Task.Delay(15, cancellationToken); // Reduced delay - 38400 baud is fast enough
+            await Task.Delay(15, cancellationToken);
         }
     }
 }

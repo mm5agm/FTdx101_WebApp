@@ -340,7 +340,7 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
-        import { createSMeterGauge, createPowerGauge, createSWRGauge, createALCGauge } from "/js/gaugeFactory.js";
+        import { createSMeterGauge, createPowerGauge, createSWRGauge, createALCGauge } from "/js/guages/gaugeFactory.js";
         // Initialize all gauges using the new factory
         document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('sMeterCanvasA')) {

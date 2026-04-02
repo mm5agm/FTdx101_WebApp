@@ -2,7 +2,7 @@
 // Connects WebSocket → Update Pipeline → MeterPanel.
 // No calibration logic, no formatting logic, no gauge logic.
 
-import { MeterPanel } from '../gauges/meter-panel.js';
+import { MeterPanel } from '../guages/meter-panel.js';
 import { WsConnection } from '../websocket/ws-connection.js';
 import { WsUpdatePipeline } from '../websocket/ws-update-pipeline.js';
 

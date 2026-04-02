@@ -2,16 +2,15 @@
 // Creates gauge instances based on a type string.
 // No layout logic, no DOM queries, no calibration logic.
 
-import { MeterGauge } from './meter-gauge.js';
-import { Gauge } from './gauge.js';
+import { SMeterGauge, PowerGauge, SWRGauge, ALCGauge } from './gauge.js';
 
 // Registry of gauge constructors.
 // Add new meter types here as your UI grows.
 const gaugeRegistry = {
-    smeter: MeterGauge,
-    power: MeterGauge,
-    swr: MeterGauge,
-    alc: MeterGauge
+    smeter: SMeterGauge,
+    power:  PowerGauge,
+    swr:    SWRGauge,
+    alc:    ALCGauge
 };
 
 /**
@@ -48,3 +47,10 @@ export function registerGauge(type, constructor) {
 
     gaugeRegistry[type] = constructor;
 }
+
+// Named factory functions — used by Index.cshtml and any page that
+// needs a specific gauge type without knowing the string key.
+export function createSMeterGauge(canvasId, options = {}) { return createGauge('smeter', canvasId, options); }
+export function createPowerGauge(canvasId, options = {})  { return createGauge('power',  canvasId, options); }
+export function createSWRGauge(canvasId, options = {})    { return createGauge('swr',    canvasId, options); }
+export function createALCGauge(canvasId, options = {})    { return createGauge('alc',    canvasId, options); }
