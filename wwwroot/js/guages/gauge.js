@@ -27,10 +27,10 @@ class Gauge {
             canvas.height = this.config.height;
             canvas.style.width = this.config.width + 'px';
             canvas.style.height = this.config.height + 'px';
-            // If this is an S-meter, move the canvas right by half the width
-            if (this instanceof SMeterGauge) {
+            const canvasOffset = this.getCanvasOffset();
+            if (canvasOffset) {
                 canvas.style.position = 'relative';
-                canvas.style.left = (this.config.width / 2) + 'px';
+                canvas.style.left = canvasOffset + 'px';
             } else {
                 canvas.style.position = '';
                 canvas.style.left = '';
@@ -44,6 +44,9 @@ class Gauge {
         // Create overlay labels
         this.createLabels();
     }
+
+    getCanvasOffset() { return 0; }
+    getLabelCenterXOffset() { return 0; }
 
     createLabels() {
         const canvas = document.getElementById(this.canvasId);
@@ -78,10 +81,7 @@ class Gauge {
         const centerY = this.config.height / 2;
         const radius = this.config.width * 0.32;
 
-        // If this is an S-meter, shift overlay right by half the gauge width
-        if (this instanceof SMeterGauge) {
-            centerX += this.config.width / 2;
-        }
+        centerX += this.getLabelCenterXOffset();
 
         const angleStep = 180 / (labels.length - 1);
 
@@ -159,6 +159,9 @@ class SMeterGauge extends Gauge {
 
         super(canvasId, config);
     }
+
+    getCanvasOffset() { return this.config.width / 2; }
+    getLabelCenterXOffset() { return this.config.width / 2; }
 }
 
 // ------------------------------------------------------------
