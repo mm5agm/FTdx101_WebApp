@@ -1854,7 +1854,6 @@ let wasTransmittingSWR = false;
         // Smoothing: ignore sudden jumps >5A, ignore 0 unless persists, clamp to 0-25A
         if (!window._iddLast) window._iddLast = 0;
        const amps = window.calibrationService.calibrateNumeric("IDD", value);
-        const iddDisplay = document.getElementById('iddDisplayValue');
         // Ignore 0 unless it persists for 2+ updates
         if (amps === 0) {
             window._iddZeroCount = (window._iddZeroCount || 0) + 1;
@@ -1867,17 +1866,6 @@ let wasTransmittingSWR = false;
             return;
         }
         window._iddLast = amps;
-        if (iddDisplay) {
-            iddDisplay.textContent = `${amps.toFixed(1)}A`;
-            iddDisplay.classList.remove('bg-primary', 'bg-warning', 'bg-danger', 'bg-success');
-            if (amps < 10) {
-                iddDisplay.classList.add('bg-success');
-            } else if (amps < 20) {
-                iddDisplay.classList.add('bg-primary');
-            } else {
-                iddDisplay.classList.add('bg-danger');
-            }
-        }
         const iddMeterValue = document.getElementById('iddMeterValue');
         if (iddMeterValue) {
             iddMeterValue.textContent = `${amps.toFixed(1)}`;
@@ -1916,18 +1904,6 @@ let wasTransmittingSWR = false;
             return;
         }
         window._vddLast = volts;
-        const voltageDisplay = document.getElementById('paVoltageValue');
-        if (voltageDisplay) {
-            voltageDisplay.textContent = `${volts.toFixed(1)}V`;
-            voltageDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
-            if (volts < 45) {
-                voltageDisplay.classList.add('bg-warning'); // Low voltage warning
-            } else if (volts <= 55) {
-                voltageDisplay.classList.add('bg-success'); // Normal range
-            } else {
-                voltageDisplay.classList.add('bg-danger'); // High voltage
-            }
-        }
         const vddMeterValue = document.getElementById('vddMeterValue');
         if (vddMeterValue) {
             vddMeterValue.textContent = `${volts.toFixed(1)}`;
