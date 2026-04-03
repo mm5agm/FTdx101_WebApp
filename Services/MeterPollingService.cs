@@ -93,20 +93,32 @@ namespace FTdx101_WebApp.Services
                     _logger.LogInformation("[MeterPolling][DebugSWR] TX={IsTransmitting} RM6 parsed value: {Value}", isTransmitting, swr);
                     _stateService.SWRMeter = swr;
 
+                    _logger.LogInformation("[MeterPolling][DEBUG] Polling Compression Meter...");
+                    var compResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterComp + ";", "MeterPoll", stoppingToken);
+                    _logger.LogInformation("[MeterPolling][DEBUG] Compression Meter response: {0}", compResponse);
+                    int compression = CatCommands.ParseMeterReading(compResponse ?? "");
+                    _stateService.CompressionMeter = compression;
+
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling IDD Meter...");
-                    var iddResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterALC + ";", "MeterPoll", stoppingToken);
+                    var iddResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterIDD + ";", "MeterPoll", stoppingToken);
                     _logger.LogInformation("[MeterPolling][DEBUG] IDD Meter response: {0}", iddResponse);
                     int idd = CatCommands.ParseMeterReading(iddResponse ?? "");
                     _stateService.IDDMeter = idd;
 
+                    _logger.LogInformation("[MeterPolling][DEBUG] Polling ALC Meter...");
+                    var alcResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterALC + ";", "MeterPoll", stoppingToken);
+                    _logger.LogInformation("[MeterPolling][DEBUG] ALC Meter response: {0}", alcResponse);
+                    int alc = CatCommands.ParseMeterReading(alcResponse ?? "");
+                    _stateService.ALCMeter = alc;
+
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling VDD Meter...");
-                    var vddResponse = await _multiplexer.SendCommandAsync("RM8;", "MeterPoll", stoppingToken);
+                    var vddResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterVDD + ";", "MeterPoll", stoppingToken);
                     _logger.LogInformation("[MeterPolling][DEBUG] VDD Meter response: {0}", vddResponse);
                     int vdd = CatCommands.ParseMeterReading(vddResponse ?? "");
                     _stateService.VDDMeter = vdd;
 
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling Temperature...");
-                    var tempResponse = await _multiplexer.SendCommandAsync("RM9;", "MeterPoll", stoppingToken);
+                    var tempResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterTemp + ";", "MeterPoll", stoppingToken);
                     _logger.LogInformation("[MeterPolling][DEBUG] Temperature response: {0}", tempResponse);
                     int temp = CatCommands.ParseMeterReading(tempResponse ?? "");
                     _stateService.Temperature = temp;

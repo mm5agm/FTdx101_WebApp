@@ -423,5 +423,185 @@ class TempGauge extends Gauge {
     }
 }
 
+// ------------------------------------------------------------
+// COMPRESSION METER
+// ------------------------------------------------------------
+
+class CompressionGauge extends Gauge {
+    constructor(canvasId, options = {}) {
+        const config = Object.assign({
+            renderTo: canvasId,
+            minValue: 0,
+            maxValue: 100,
+            majorTicks: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            highlights: [
+                { from: 0, to: 30, color: "rgba(0,255,0,.25)" },
+                { from: 30, to: 70, color: "rgba(255,255,0,.25)" },
+                { from: 70, to: 100, color: "rgba(255,0,0,.25)" }
+            ],
+            labels: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            startAngle: 90,
+            ticksAngle: 180,
+            valueBox: false,
+            minorTicks: 0,
+            strokeTicks: false,
+            tickSide: "out",
+            needleSide: "center",
+            colorPlate: "transparent",
+            borders: false,
+            needleShadow: false,
+            colorMajorTicks: "#555555",
+            colorMinorTicks: "transparent",
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorBarProgress: "#198754",
+            colorBarProgressEnd: "#dc3545",
+            colorBar: "#dddddd",
+            barShadow: 0,
+            barWidth: 10,
+            barStrokeWidth: 0,
+            needleType: "arrow",
+            needleWidth: 3,
+            needleCircleSize: 7,
+            needleCircleOuter: false,
+            needleCircleInner: true,
+            colorNeedleCircleInner: "#dc3545",
+            colorNeedleCircleInnerEnd: "#dc3545",
+            animationDuration: 400,
+            animationRule: "linear",
+            value: 0,
+            gaugeTitleShow: true,
+            gaugeTitle: 'Compression',
+            gaugeTitleId: 'compressionMeterValue',
+            gaugeTitleDefault: '0',
+            gaugeTitleSuffix: '%',
+            gaugeTitleBg: '#ffc107',
+            gaugeTitleColor: '#000000'
+        }, options);
+
+        super(canvasId, config);
+    }
+}
+
+// ------------------------------------------------------------
+// IDD METER
+// ------------------------------------------------------------
+
+class IDDGauge extends Gauge {
+    constructor(canvasId, options = {}) {
+        const config = Object.assign({
+            renderTo: canvasId,
+            minValue: 0,
+            maxValue: 25,
+            majorTicks: ["0", "3", "6", "9", "12", "16", "19", "22", "25"],
+            highlights: [
+                { from: 0, to: 10, color: "rgba(0,255,0,.25)" },
+                { from: 10, to: 20, color: "rgba(255,255,0,.25)" },
+                { from: 20, to: 25, color: "rgba(255,0,0,.25)" }
+            ],
+            labels: ["0", "3", "6", "9", "12", "16", "19", "22", "25"],
+            startAngle: 90,
+            ticksAngle: 180,
+            valueBox: false,
+            minorTicks: 0,
+            strokeTicks: false,
+            tickSide: "out",
+            needleSide: "center",
+            colorPlate: "transparent",
+            borders: false,
+            needleShadow: false,
+            colorMajorTicks: "#555555",
+            colorMinorTicks: "transparent",
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorBarProgress: "#198754",
+            colorBarProgressEnd: "#dc3545",
+            colorBar: "#dddddd",
+            barShadow: 0,
+            barWidth: 10,
+            barStrokeWidth: 0,
+            needleType: "arrow",
+            needleWidth: 3,
+            needleCircleSize: 7,
+            needleCircleOuter: false,
+            needleCircleInner: true,
+            colorNeedleCircleInner: "#dc3545",
+            colorNeedleCircleInnerEnd: "#dc3545",
+            animationDuration: 400,
+            animationRule: "linear",
+            value: 0,
+            gaugeTitleShow: true,
+            gaugeTitle: 'IDD',
+            gaugeTitleId: 'iddMeterValue',
+            gaugeTitleDefault: '0.0',
+            gaugeTitleSuffix: 'A',
+            gaugeTitleBg: '#0d6efd',
+            gaugeTitleColor: '#ffffff'
+        }, options);
+
+        super(canvasId, config);
+    }
+}
+
+// ------------------------------------------------------------
+// VDD METER
+// ------------------------------------------------------------
+
+class VDDGauge extends Gauge {
+    constructor(canvasId, options = {}) {
+        const config = Object.assign({
+            renderTo: canvasId,
+            minValue: 40,
+            maxValue: 55,
+            majorTicks: ["40", "42", "44", "46", "48", "50", "52", "54", "55"],
+            highlights: [
+                { from: 40, to: 45, color: "rgba(255,255,0,.25)" },
+                { from: 45, to: 52, color: "rgba(0,255,0,.25)" },
+                { from: 52, to: 55, color: "rgba(255,0,0,.25)" }
+            ],
+            labels: ["40", "42", "44", "46", "48", "50", "52", "54", "55"],
+            startAngle: 90,
+            ticksAngle: 180,
+            valueBox: false,
+            minorTicks: 0,
+            strokeTicks: false,
+            tickSide: "out",
+            needleSide: "center",
+            colorPlate: "transparent",
+            borders: false,
+            needleShadow: false,
+            colorMajorTicks: "#555555",
+            colorMinorTicks: "transparent",
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorBarProgress: "#198754",
+            colorBarProgressEnd: "#dc3545",
+            colorBar: "#dddddd",
+            barShadow: 0,
+            barWidth: 10,
+            barStrokeWidth: 0,
+            needleType: "arrow",
+            needleWidth: 3,
+            needleCircleSize: 7,
+            needleCircleOuter: false,
+            needleCircleInner: true,
+            colorNeedleCircleInner: "#dc3545",
+            colorNeedleCircleInnerEnd: "#dc3545",
+            animationDuration: 400,
+            animationRule: "linear",
+            value: 48,
+            gaugeTitleShow: true,
+            gaugeTitle: 'VDD',
+            gaugeTitleId: 'vddMeterValue',
+            gaugeTitleDefault: '48.0',
+            gaugeTitleSuffix: 'V',
+            gaugeTitleBg: '#198754',
+            gaugeTitleColor: '#ffffff'
+        }, options);
+
+        super(canvasId, config);
+    }
+}
+
 // Export classes as ES module
-export { Gauge, SMeterGauge, PowerGauge, SWRGauge, ALCGauge, TempGauge };
+export { Gauge, SMeterGauge, PowerGauge, SWRGauge, ALCGauge, TempGauge, CompressionGauge, IDDGauge, VDDGauge };

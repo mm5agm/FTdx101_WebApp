@@ -264,7 +264,9 @@ namespace FTdx101_WebApp.Controllers
                 },
                 micGain = _radioStateService.MicGain,
                 powerMeter = _radioStateService.PowerMeter ?? 0,
+                compressionMeter = _radioStateService.CompressionMeter ?? 0,
                 swrMeter = _radioStateService.SWRMeter ?? 0,
+                alcMeter = _radioStateService.ALCMeter ?? 0,
                 iddMeter = _radioStateService.IDDMeter ?? 0,
                 vddMeter = _radioStateService.VDDMeter ?? 0,
                 temperature = _radioStateService.Temperature ?? 0

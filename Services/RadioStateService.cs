@@ -262,6 +262,30 @@ namespace FTdx101_WebApp.Services
         private int? _powerMeter;
         public int? PowerMeter { get => _powerMeter; set => SetField(ref _powerMeter, value); }
 
+        private int? _compressionMeter;
+        public int? CompressionMeter
+        {
+            get => _compressionMeter;
+            set
+            {
+                if (value == null) return;
+                int clamped = Math.Clamp(value.Value, 0, 255);
+                SetField(ref _compressionMeter, clamped);
+            }
+        }
+
+        private int? _alcMeter;
+        public int? ALCMeter
+        {
+            get => _alcMeter;
+            set
+            {
+                if (value == null) return;
+                int clamped = Math.Clamp(value.Value, 0, 255);
+                SetField(ref _alcMeter, clamped);
+            }
+        }
+
         private int? _swrMeter;
         public int? SWRMeter
         {

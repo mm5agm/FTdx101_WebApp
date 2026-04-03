@@ -293,6 +293,12 @@
                                 Raw Power Out: <span id="rawPowerOutValue">0</span>
                             </div>
                         </div>
+                        <!-- Compression Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="compressionMeterCanvas"></canvas>
+                            </div>
+                        </div>
                         <!-- ALC Meter -->
                         <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
                             <div class="analog-meter-container">
@@ -303,6 +309,18 @@
                         <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
                             <div class="analog-meter-container">
                                 <canvas id="tempMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- IDD Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="iddMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- VDD Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="vddMeterCanvas"></canvas>
                             </div>
                         </div>
                     </div>
@@ -342,7 +360,7 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
-        import { createSMeterGauge, createPowerGauge, createSWRGauge, createALCGauge, createTempGauge } from "/js/guages/gaugeFactory.js";
+        import { createSMeterGauge, createPowerGauge, createSWRGauge, createCompressionGauge, createALCGauge, createTempGauge, createIDDGauge, createVDDGauge } from "/js/guages/gaugeFactory.js";
         // Initialize all gauges using the new factory
         document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('sMeterCanvasA')) {
@@ -361,6 +379,10 @@
                 window.swrGauge = createSWRGauge('swrMeterCanvas');
                 window.swrGauge.render();
             }
+            if (document.getElementById('compressionMeterCanvas')) {
+                window.compressionGauge = createCompressionGauge('compressionMeterCanvas');
+                window.compressionGauge.render();
+            }
             if (document.getElementById('alcMeterCanvas')) {
                 window.alcGauge = createALCGauge('alcMeterCanvas');
                 window.alcGauge.render();
@@ -368,6 +390,14 @@
             if (document.getElementById('tempMeterCanvas')) {
                 window.tempGauge = createTempGauge('tempMeterCanvas');
                 window.tempGauge.render();
+            }
+            if (document.getElementById('iddMeterCanvas')) {
+                window.iddGauge = createIDDGauge('iddMeterCanvas');
+                window.iddGauge.render();
+            }
+            if (document.getElementById('vddMeterCanvas')) {
+                window.vddGauge = createVDDGauge('vddMeterCanvas');
+                window.vddGauge.render();
             }
         });
         async function launchWsjtx() {

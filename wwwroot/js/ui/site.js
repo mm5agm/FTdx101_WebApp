@@ -778,6 +778,12 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "SWRMeter" && typeof window.updateSWRMeter === 'function') {
         window.updateSWRMeter(update.value);
     }
+    if (update.property === "CompressionMeter" && typeof window.updateCompressionMeter === 'function') {
+        window.updateCompressionMeter(update.value);
+    }
+    if (update.property === "ALCMeter" && typeof window.updateALCMeter === 'function') {
+        window.updateALCMeter(update.value);
+    }
     if (update.property === "IDDMeter" && typeof window.updateIDDMeter === 'function') {
         window.updateIDDMeter(update.value);
     }
@@ -1517,6 +1523,28 @@ function interpolateLabel(points, raw) {
             updateSMeter('A', data.vfoA.sMeter);
             updateSMeter('B', data.vfoB.sMeter);
 
+            if (typeof window.updatePowerMeter === 'function' && data.powerMeter !== undefined) {
+                window.updatePowerMeter(data.powerMeter);
+            }
+            if (typeof window.updateSWRMeter === 'function' && data.swrMeter !== undefined) {
+                window.updateSWRMeter(data.swrMeter);
+            }
+            if (typeof window.updateCompressionMeter === 'function' && data.compressionMeter !== undefined) {
+                window.updateCompressionMeter(data.compressionMeter);
+            }
+            if (typeof window.updateALCMeter === 'function' && data.alcMeter !== undefined) {
+                window.updateALCMeter(data.alcMeter);
+            }
+            if (typeof window.updateIDDMeter === 'function' && data.iddMeter !== undefined) {
+                window.updateIDDMeter(data.iddMeter);
+            }
+            if (typeof window.updatePAVoltage === 'function' && data.vddMeter !== undefined) {
+                window.updatePAVoltage(data.vddMeter);
+            }
+            if (typeof window.updatePATemperature === 'function' && data.temperature !== undefined) {
+                window.updatePATemperature(data.temperature);
+            }
+
             // Update band buttons from polling (fixes WSJT-X and radio band changes)
             if (data.vfoA.band) {
                 updateBandButton('A', data.vfoA.band);
@@ -1757,6 +1785,16 @@ let wasTransmittingSWR = false;
         }
     }
 
+    function updateCompressionMeter(value) {
+        const percent = Math.max(0, Math.min(100, Math.round((value / 255) * 100)));
+        const valueSpan = document.getElementById('compressionMeterValue');
+        if (valueSpan) valueSpan.textContent = `${percent}`;
+        if (window.compressionGauge && window.compressionGauge.gauge) {
+            window.compressionGauge.gauge.value = percent;
+            window.compressionGauge.gauge.draw();
+        }
+    }
+
     // ALC gauge (0-255 raw value)
     function updateALCMeter(value) {
         // When not transmitting, always show the bottom scale value (0%)
@@ -1840,6 +1878,14 @@ let wasTransmittingSWR = false;
                 iddDisplay.classList.add('bg-danger');
             }
         }
+        const iddMeterValue = document.getElementById('iddMeterValue');
+        if (iddMeterValue) {
+            iddMeterValue.textContent = `${amps.toFixed(1)}`;
+        }
+        if (window.iddGauge && window.iddGauge.gauge) {
+            window.iddGauge.gauge.value = Math.max(0, Math.min(amps, 25));
+            window.iddGauge.gauge.draw();
+        }
     }
 
     // Update PA Voltage display (0-255 raw value, display as volts)
@@ -1881,6 +1927,14 @@ let wasTransmittingSWR = false;
             } else {
                 voltageDisplay.classList.add('bg-danger'); // High voltage
             }
+        }
+        const vddMeterValue = document.getElementById('vddMeterValue');
+        if (vddMeterValue) {
+            vddMeterValue.textContent = `${volts.toFixed(1)}`;
+        }
+        if (window.vddGauge && window.vddGauge.gauge) {
+            window.vddGauge.gauge.value = Math.max(40, Math.min(volts, 55));
+            window.vddGauge.gauge.draw();
         }
     }
 
@@ -2182,6 +2236,7 @@ let wasTransmittingSWR = false;
     // Expose meter update functions globally for SignalR
     window.updatePowerMeter = updatePowerMeter;
     window.updateSWRMeter = updateSWRMeter;
+    window.updateCompressionMeter = updateCompressionMeter;
     window.updateALCMeter = updateALCMeter;
     window.updateIDDMeter = updateIDDMeter;
     window.updatePAVoltage = updatePAVoltage;

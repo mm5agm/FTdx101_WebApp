@@ -23,6 +23,9 @@ namespace FTdx101_WebApp.Services
         public const string MeterSWR = "RM6";      // SWR meter (0-255)
         public const string MeterALC = "RM4";      // ALC meter (0-255)
         public const string MeterComp = "RM3";     // Compression meter (0-255)
+        public const string MeterIDD = "RM7";      // IDD current meter (0-255)
+        public const string MeterVDD = "RM8";      // VDD supply meter (0-255)
+        public const string MeterTemp = "RM9";     // PA temperature meter (0-255)
         public const string MeterSMain = "RM1";    // S-meter MAIN band (0-255)
         public const string MeterSSub = "RM2";     // S-meter SUB band (0-255)
 
