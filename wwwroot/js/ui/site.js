@@ -1078,8 +1078,6 @@ if (typeof connection !== 'undefined') {
 
     // ...removed debug logging...
 
-    // Gauge instances (canvas-gauge RadialGauge)
-    let gaugeA, gaugeB;
 
     // Full inner state object - this is the authoritative state for the app
     const state = {
@@ -1643,14 +1641,13 @@ function interpolateLabel(points, raw) {
     }
 
     function updateSMeter(receiver, value) {
-        // Update only the analog gauge (text badges removed from UI)
-        if (receiver === 'A' && gaugeA) {
-            gaugeA.value = value;
-            gaugeA.draw();
+        if (receiver === 'A' && window.sMeterGaugeA && window.sMeterGaugeA.gauge) {
+            window.sMeterGaugeA.gauge.value = value;
+            window.sMeterGaugeA.gauge.draw();
             updateRawSMeterValueA(value);
-        } else if (receiver === 'B' && gaugeB) {
-            gaugeB.value = value;
-            gaugeB.draw();
+        } else if (receiver === 'B' && window.sMeterGaugeB && window.sMeterGaugeB.gauge) {
+            window.sMeterGaugeB.gauge.value = value;
+            window.sMeterGaugeB.gauge.draw();
         }
     }
 
@@ -1680,15 +1677,13 @@ let wasTransmittingSWR = false;
             powerHistory = [];
             wasTransmittingPower = false;
             const valueSpan = document.getElementById('powerMeterValue');
-            if (valueSpan) valueSpan.textContent = 'Power Out 0W';
+            if (valueSpan) valueSpan.textContent = '0';
             // Update raw Power Out label to 0 with descriptive label
             var rawPowerLabel = document.getElementById('raw-powerout-label');
             if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: 0';
-            if (window.gaugePower) {
-                window.gaugePower.value = 0;
-                window.gaugePower.draw();
-            } else {
-                // ...removed debug logging...
+            if (window.gaugePower && window.gaugePower.gauge) {
+                window.gaugePower.gauge.value = 0;
+                window.gaugePower.gauge.draw();
             }
             return;
         }
@@ -1714,13 +1709,13 @@ let wasTransmittingSWR = false;
         // Clamp value to [0, maxW]
         let clampedWatts = Math.max(0, Math.min(watts, maxW));
         const valueSpan = document.getElementById('powerMeterValue');
-        if (valueSpan) valueSpan.textContent = `Power Out ${clampedWatts}W`;
+        if (valueSpan) valueSpan.textContent = `${clampedWatts}`;
         // Update raw Power Out label with descriptive label
         var rawPowerLabel = document.getElementById('raw-powerout-label');
         if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
-        if (window.gaugePower) {
-            window.gaugePower.value = clampedWatts;
-            window.gaugePower.render();
+        if (window.gaugePower && window.gaugePower.gauge) {
+            window.gaugePower.gauge.value = clampedWatts;
+            window.gaugePower.gauge.draw();
         }
     }
 
@@ -1734,10 +1729,10 @@ let wasTransmittingSWR = false;
             swrHistory = [];
             wasTransmittingSWR = false;
             const valueSpan = document.getElementById('swrMeterValue');
-            if (valueSpan) valueSpan.textContent = 'SWR 1.0:1';
-            if (window.gaugeSWR) {
-                window.gaugeSWR.value = 0;
-                window.gaugeSWR.draw();
+            if (valueSpan) valueSpan.textContent = '1.0:1';
+            if (window.swrGauge && window.swrGauge.gauge) {
+                window.swrGauge.gauge.value = 0;
+                window.swrGauge.gauge.draw();
             }
             return;
         }
@@ -1754,11 +1749,11 @@ let wasTransmittingSWR = false;
 
         const swrClamped = Math.min(swr, 10.0);
         const valueSpan = document.getElementById('swrMeterValue');
-        if (valueSpan) valueSpan.textContent = `SWR ${swrClamped.toFixed(1)}:1`;
-        if (window.gaugeSWR) {
+        if (valueSpan) valueSpan.textContent = `${swrClamped.toFixed(1)}:1`;
+        if (window.swrGauge && window.swrGauge.gauge) {
             const gaugePosition = (swrClamped - 1.0) * 127.5;
-            window.gaugeSWR.value = gaugePosition;
-            window.gaugeSWR.draw();
+            window.swrGauge.gauge.value = gaugePosition;
+            window.swrGauge.gauge.draw();
         }
     }
 
@@ -1775,10 +1770,10 @@ let wasTransmittingSWR = false;
                 progressBar.className = 'progress-bar bg-success';
             }
             const alcMeterValue = document.getElementById('alcMeterValue');
-            if (alcMeterValue) alcMeterValue.textContent = 'ALC 0V';
-            if (window.gaugeALC) {
-                window.gaugeALC.value = 0;
-                window.gaugeALC.draw();
+            if (alcMeterValue) alcMeterValue.textContent = '0V';
+            if (window.alcGauge && window.alcGauge.gauge) {
+                window.alcGauge.gauge.value = 0;
+                window.alcGauge.gauge.draw();
             }
             return;
         }
@@ -1808,11 +1803,11 @@ let wasTransmittingSWR = false;
 
         // Update ALC gauge (pass raw 0-255 value directly, gauge uses 0-255 scale)
         const alcMeterValue = document.getElementById('alcMeterValue');
-        if (alcMeterValue) alcMeterValue.textContent = `ALC ${alcVolts.toFixed(0)}V`;
+        if (alcMeterValue) alcMeterValue.textContent = `${alcVolts.toFixed(0)}V`;
 
-        if (window.gaugeALC) {
-            window.gaugeALC.value = value;  // Raw 0-255 value
-            window.gaugeALC.draw();
+        if (window.alcGauge && window.alcGauge.gauge) {
+            window.alcGauge.gauge.value = value;  // Raw 0-255 value
+            window.alcGauge.gauge.draw();
         }
     }
 
@@ -2079,48 +2074,10 @@ let wasTransmittingSWR = false;
             wrapper.appendChild(canvas);
             wrapper.appendChild(labelsDiv);
 
-            // Add "S-Meter" label at the bottom for S-Meter gauges only
-            if (canvasId === 'sMeterCanvasA' || canvasId === 'sMeterCanvasB') {
-                const meterLabel = document.createElement('div');
-                // Positioned further right and higher up
-                meterLabel.style.cssText = 'position:absolute;bottom:40px;left:188px;font-size:14px;font-weight:normal;';
-                meterLabel.textContent = 'S-Meter';
-                wrapper.appendChild(meterLabel);
-            }
         }
 
-        // Only initialize gauges if the required canvas elements exist
-        const sMeterCanvasA = document.getElementById('sMeterCanvasA');
-        const sMeterCanvasB = document.getElementById('sMeterCanvasB');
-        if (sMeterCanvasA) {
-            const sMeterConfigA = makeGaugeConfig('sMeterCanvasA', 'smeter');
-            gaugeA = new RadialGauge(sMeterConfigA);
-            gaugeA.draw();
-            createGaugeLabels('sMeterCanvasA', sMeterConfigA._labels);
-        }
-        if (sMeterCanvasB) {
-            const sMeterConfigB = makeGaugeConfig('sMeterCanvasB', 'smeter');
-            gaugeB = new RadialGauge(sMeterConfigB);
-            gaugeB.draw();
-            createGaugeLabels('sMeterCanvasB', sMeterConfigB._labels);
-        }
-        // PowerGauge is now initialized in the unified ES module factory logic only
-        // Initialize SWR Meter (if element exists)
-        const swrMeterCanvas = document.getElementById('swrMeterCanvas');
-        if (swrMeterCanvas) {
-            const swrConfig = makeGaugeConfig('swrMeterCanvas', 'swr');
-            window.gaugeSWR = new RadialGauge(swrConfig);
-            window.gaugeSWR.draw();
-            createGaugeLabels('swrMeterCanvas', swrConfig._labels);
-        }
-        // Initialize ALC Meter (if element exists)
-        const alcMeterCanvas = document.getElementById('alcMeterCanvas');
-        if (alcMeterCanvas) {
-            const alcConfig = makeGaugeConfig('alcMeterCanvas', 'alc');
-            window.gaugeALC = new RadialGauge(alcConfig);
-            window.gaugeALC.draw();
-            createGaugeLabels('alcMeterCanvas', alcConfig._labels);
-        }
+        // All gauges are initialised by the ES module factory in Index.cshtml.
+        // Needle updates use window.sMeterGaugeA/B.gauge, window.swrGauge.gauge, etc.
     }
 
 

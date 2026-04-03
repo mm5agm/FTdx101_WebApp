@@ -105,6 +105,20 @@ class Gauge {
             labelsDiv.appendChild(span);
         });
 
+        // Title label: purpose text + live value, centred below the gauge pivot point
+        if (this.config.gaugeTitleShow !== false && this.config.gaugeTitle) {
+            const bg     = this.config.gaugeTitleBg    || '#6c757d';
+            const fg     = this.config.gaugeTitleColor || '#ffffff';
+            const suffix = this.config.gaugeTitleSuffix || '';
+            const defVal = this.config.gaugeTitleDefault || '';
+            const valId  = this.config.gaugeTitleId || '';
+
+            const titleDiv = document.createElement('div');
+            titleDiv.style.cssText = `position:absolute;left:${centerX}px;top:${centerY + 10}px;transform:translateX(-50%);white-space:nowrap;background:${bg};color:${fg};padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold;z-index:100;`;
+            titleDiv.innerHTML = `${this.config.gaugeTitle} <span id="${valId}">${defVal}</span>${suffix}`;
+            labelsDiv.appendChild(titleDiv);
+        }
+
         wrapper.appendChild(labelsDiv);
     }
 }
@@ -154,7 +168,8 @@ class SMeterGauge extends Gauge {
             colorNeedleCircleInnerEnd: "#dc3545",
             animationDuration: 400,
             animationRule: "linear",
-            value: 0
+            value: 0,
+            gaugeTitleShow: false
         }, options);
 
         super(canvasId, config);
@@ -211,7 +226,14 @@ class PowerGauge extends Gauge {
             colorNeedleCircleInnerEnd: "#dc3545",
             animationDuration: 400,
             animationRule: "linear",
-            value: 0
+            value: 0,
+            gaugeTitleShow: true,
+            gaugeTitle: 'Power Out',
+            gaugeTitleId: 'powerMeterValue',
+            gaugeTitleDefault: '0',
+            gaugeTitleSuffix: 'W',
+            gaugeTitleBg: '#dc3545',
+            gaugeTitleColor: '#ffffff'
         }, options);
 
         super(canvasId, config);
@@ -269,7 +291,13 @@ class SWRGauge extends Gauge {
             colorNeedleCircleInnerEnd: "#dc3545",
             animationDuration: 400,
             animationRule: "linear",
-            value: 0
+            value: 0,
+            gaugeTitleShow: true,
+            gaugeTitle: 'SWR',
+            gaugeTitleId: 'swrMeterValue',
+            gaugeTitleDefault: '1.0:1',
+            gaugeTitleBg: '#dc3545',
+            gaugeTitleColor: '#ffffff'
         }, options);
 
         super(canvasId, config);
@@ -322,7 +350,13 @@ class ALCGauge extends Gauge {
             colorNeedleCircleInnerEnd: "#dc3545",
             animationDuration: 400,
             animationRule: "linear",
-            value: 0
+            value: 0,
+            gaugeTitleShow: true,
+            gaugeTitle: 'ALC',
+            gaugeTitleId: 'alcMeterValue',
+            gaugeTitleDefault: '0V',
+            gaugeTitleBg: '#0dcaf0',
+            gaugeTitleColor: '#000000'
         }, options);
 
         super(canvasId, config);

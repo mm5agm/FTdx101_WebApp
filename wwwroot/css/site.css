@@ -442,9 +442,6 @@ pre, code { tab-size: 4; }
 .power-meter-container .gauge-wrapper {
     margin-left: -200px !important;
 }
-#powerMeterValue {
-    margin-left: -110px !important;
-}
 #powerSliderA {
     width: 260px !important;
     height: 18px;
