@@ -2,14 +2,14 @@
 Almost a complete re-write 1st April 2026
 
 
-![FTdx101 WebApp Screenshot](pictures/DevelopScreen.png)
+![FTdx101 WebApp Main Page](pictures/DevelopScreen.png)
 
 
-![FTdx101 WebApp Screenshot](pictures/Calibration.pngpng)
+![Calibration Page](pictures/Calibration.pngpng)
 
 
 
-![FTdx101 WebApp Screenshot](pictures/Calibration2.png)
+![THe rest of the Calibration Page](pictures/Calibration2.png)
 
 
 ## Windows Smart App Control Example
