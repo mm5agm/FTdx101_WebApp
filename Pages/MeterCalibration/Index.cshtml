@@ -4,113 +4,422 @@
     ViewData["Title"] = "Meter Calibration";
 }
 
-
-<div class="meter-calibration-container">
-    <h2>S-Meter</h2>
-    <div class="gauge-section">
-        <canvas id="meterCalibrationGauge" width="420" height="135"></canvas>
-    </div>
-    <div class="current-value-label">
-        Current RM Value: <span id="currentMeterRM">@Model.CurrentRawValue</span>
-    </div>
-    <div class="calibration-labels">
-        <span>Label</span> / <span>Raw Value</span>
-    </div>
-    <form method="post">
-        <div class="calibration-points-list">
-            @for (int i = 0; i < Model.Calibration.Points.Count; i++)
-            {
-                <div class="calibration-point-row">
-                    <input type="text" name="Calibration.Points[@i].Label" value="@Model.Calibration.Points[i].Label" placeholder="Label" class="calibration-label-input" />
-                    <input type="number" name="Calibration.Points[@i].Raw" value="@Model.Calibration.Points[i].Raw" step="1" class="calibration-raw-input" />
-                    <button type="submit" name="delete" value="@i" class="delete-point-btn">×</button>
-                </div>
-            }
+<div class="calibration-page">
+    <div class="calibration-header">
+        <h2>Meter Calibration</h2>
+        <p class="save-target">Save Target: <span id="saveTargetPath">Loading...</span></p>
+        <div class="header-actions">
+            <button id="saveAllBtn" class="btn-save">Save Calibration</button>
+            <button id="resetViewBtn" class="btn-secondary">Reload From File</button>
+            <span id="saveStatus" class="save-status"></span>
         </div>
-        <button type="submit" name="add" value="1" class="add-point-btn">Add Point</button>
-        <button type="submit" class="save-btn">Save Calibration</button>
-    </form>
+    </div>
+
+    <div id="meterCards" class="meter-grid"></div>
 </div>
 
 @section Scripts {
     <script type="module">
-        import { createSMeterGauge } from "/js/guages/gaugeFactory.js";
-        document.addEventListener('DOMContentLoaded', function () {
-            // Render the S-Meter gauge using the new factory
-            const sMeterGauge = createSMeterGauge('meterCalibrationGauge');
-            sMeterGauge.render();
-        });
+        import {
+            createSMeterGauge,
+            createPowerGauge,
+            createSWRGauge,
+            createCompressionGauge,
+            createALCGauge,
+            createTempGauge,
+            createIDDGauge,
+            createVDDGauge
+        } from "/js/guages/gaugeFactory.js";
+
+        const meterUiConfig = [
+            { name: "S-Meter", title: "S-Meter", type: "s_meter", statusPath: ["vfoA", "sMeter"], creator: createSMeterGauge },
+            { name: "PWR", title: "Power", type: "numeric", statusPath: ["powerMeter"], creator: createPowerGauge },
+            { name: "SWR", title: "SWR", type: "numeric", statusPath: ["swrMeter"], creator: createSWRGauge },
+            { name: "Compression", title: "Compression", type: "numeric", statusPath: ["compressionMeter"], creator: createCompressionGauge },
+            { name: "ALC", title: "ALC", type: "numeric", statusPath: ["alcMeter"], creator: createALCGauge },
+            { name: "TPA", title: "PA Temperature", type: "numeric", statusPath: ["temperature"], creator: createTempGauge },
+            { name: "IDD", title: "IDD", type: "numeric", statusPath: ["iddMeter"], creator: createIDDGauge },
+            { name: "VPA", title: "VDD", type: "numeric", statusPath: ["vddMeter"], creator: createVDDGauge }
+        ];
+
+        let calibrationFile = { meters: [] };
+        let gaugeInstances = {};
+        let currentRaw = {};
+
+        function getByPath(source, path) {
+            return path.reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : null), source);
+        }
+
+        function toNumber(value, fallback = 0) {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : fallback;
+        }
+
+        function interpolate(points, raw) {
+            const sorted = [...points].sort((a, b) => toNumber(a.raw) - toNumber(b.raw));
+            if (sorted.length === 0) return 0;
+            if (sorted.length === 1) return toNumber(sorted[0].Radio, raw);
+
+            if (raw <= toNumber(sorted[0].raw)) return toNumber(sorted[0].Radio, raw);
+            if (raw >= toNumber(sorted[sorted.length - 1].raw)) return toNumber(sorted[sorted.length - 1].Radio, raw);
+
+            for (let i = 1; i < sorted.length; i++) {
+                const a = sorted[i - 1];
+                const b = sorted[i];
+                const ax = toNumber(a.raw);
+                const bx = toNumber(b.raw);
+                if (raw <= bx) {
+                    const ay = toNumber(a.Radio, ax);
+                    const by = toNumber(b.Radio, bx);
+                    const t = (raw - ax) / (bx - ax);
+                    return ay + t * (by - ay);
+                }
+            }
+
+            return toNumber(sorted[sorted.length - 1].Radio, raw);
+        }
+
+        function calibrateValue(meter, raw) {
+            const points = meter.points || [];
+            if (meter.type === "s_meter") {
+                if (points.length === 0) return raw.toFixed(0);
+                const sorted = [...points].sort((a, b) => toNumber(a.raw) - toNumber(b.raw));
+                let selected = sorted[0];
+                for (const point of sorted) {
+                    if (raw < toNumber(point.raw)) break;
+                    selected = point;
+                }
+                return selected.Radio || "";
+            }
+
+            return interpolate(points, raw).toFixed(1);
+        }
+
+        function updateGaugeNeedle(meterName, raw, calibrated) {
+            const gauge = gaugeInstances[meterName]?.gauge;
+            if (!gauge) return;
+
+            const numericCal = toNumber(calibrated, raw);
+            let needle = raw;
+
+            if (meterName === "PWR") needle = numericCal;
+            else if (meterName === "SWR") needle = Math.max(0, Math.min(255, (numericCal - 1.0) * 127.5));
+            else if (meterName === "Compression") needle = numericCal;
+            else if (meterName === "TPA") needle = numericCal;
+            else if (meterName === "IDD") needle = numericCal;
+            else if (meterName === "VPA") needle = numericCal;
+            else if (meterName === "ALC") needle = raw;
+            else if (meterName === "S-Meter") needle = raw;
+
+            gauge.value = needle;
+            gauge.draw();
+        }
+
+        function renderPointRows(meter, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            meter.points.sort((a, b) => toNumber(a.raw) - toNumber(b.raw));
+
+            meter.points.forEach((point, idx) => {
+                const row = document.createElement("div");
+                row.className = "point-row";
+
+                const rawInput = document.createElement("input");
+                rawInput.type = "number";
+                rawInput.step = "1";
+                rawInput.value = point.raw;
+                rawInput.placeholder = "Raw";
+                rawInput.addEventListener("input", e => {
+                    point.raw = toNumber(e.target.value);
+                    refreshCard(meter.name);
+                });
+
+                const radioInput = document.createElement("input");
+                radioInput.type = "text";
+                radioInput.value = point.Radio || "";
+                radioInput.placeholder = "Radio";
+                radioInput.addEventListener("input", e => {
+                    point.Radio = e.target.value;
+                    refreshCard(meter.name);
+                });
+
+                const deleteBtn = document.createElement("button");
+                deleteBtn.type = "button";
+                deleteBtn.textContent = "Remove";
+                deleteBtn.className = "btn-remove";
+                deleteBtn.addEventListener("click", () => {
+                    meter.points.splice(idx, 1);
+                    renderPointRows(meter, containerId);
+                    refreshCard(meter.name);
+                });
+
+                row.appendChild(rawInput);
+                row.appendChild(radioInput);
+                row.appendChild(deleteBtn);
+                container.appendChild(row);
+            });
+        }
+
+        function refreshCard(meterName) {
+            const meter = calibrationFile.meters.find(m => m.name === meterName);
+            if (!meter) return;
+
+            const raw = currentRaw[meterName] ?? 0;
+            const calibrated = calibrateValue(meter, raw);
+
+            const rawEl = document.getElementById(`raw-${meterName}`);
+            const calEl = document.getElementById(`cal-${meterName}`);
+            if (rawEl) rawEl.textContent = raw.toFixed(0);
+            if (calEl) calEl.textContent = calibrated;
+
+            const titleValueId = {
+                "S-Meter": "",
+                "PWR": "powerMeterValue",
+                "SWR": "swrMeterValue",
+                "Compression": "compressionMeterValue",
+                "ALC": "alcMeterValue",
+                "TPA": "paTemperatureValue",
+                "IDD": "iddMeterValue",
+                "VPA": "vddMeterValue"
+            }[meterName];
+
+            if (titleValueId) {
+                const titleValueEl = document.getElementById(titleValueId);
+                if (titleValueEl) {
+                    if (meterName === "SWR") titleValueEl.textContent = `${toNumber(calibrated).toFixed(1)}:1`;
+                    else titleValueEl.textContent = calibrated;
+                }
+            }
+
+            updateGaugeNeedle(meterName, raw, calibrated);
+        }
+
+        function buildCard(meter, ui) {
+            const key = meter.name;
+            const card = document.createElement("section");
+            card.className = "meter-card";
+            card.innerHTML = `
+                <h3>${ui.title}</h3>
+                <div class="gauge-wrap"><canvas id="gauge-${key}" width="220" height="135"></canvas></div>
+                <div class="meter-values">
+                    <div>Raw: <span id="raw-${key}">0</span></div>
+                    <div>Calibrated: <span id="cal-${key}">0</span></div>
+                </div>
+                <div class="point-header"><span>Raw Value</span><span>Radio Value</span><span></span></div>
+                <div id="rows-${key}" class="point-list"></div>
+                <div class="card-actions">
+                    <button type="button" class="btn-secondary" id="add-${key}">Add Point</button>
+                    <button type="button" class="btn-save" id="save-${key}">Save</button>
+                    <span id="savestatus-${key}" class="card-save-status"></span>
+                </div>
+            `;
+
+            document.getElementById("meterCards").appendChild(card);
+
+            gaugeInstances[key] = ui.creator(`gauge-${key}`);
+            gaugeInstances[key].render();
+
+            document.getElementById(`add-${key}`).addEventListener("click", () => {
+                const maxRaw = meter.points.length > 0 ? Math.max(...meter.points.map(p => toNumber(p.raw))) + 1 : 0;
+                meter.points.push({ raw: maxRaw, Radio: "0" });
+                renderPointRows(meter, `rows-${key}`);
+                refreshCard(key);
+            });
+
+            document.getElementById(`save-${key}`).addEventListener("click", () => {
+                saveCalibration(document.getElementById(`savestatus-${key}`));
+            });
+
+            renderPointRows(meter, `rows-${key}`);
+            refreshCard(key);
+        }
+
+        async function pollRawMeters() {
+            try {
+                const response = await fetch("/api/cat/status");
+                if (!response.ok) return;
+                const status = await response.json();
+
+                for (const ui of meterUiConfig) {
+                    const raw = toNumber(getByPath(status, ui.statusPath), 0);
+                    currentRaw[ui.name] = raw;
+                    refreshCard(ui.name);
+                }
+            } catch (_) {
+            }
+        }
+
+        async function saveCalibration(statusEl) {
+            const saveStatus = statusEl ?? document.getElementById("saveStatus");
+            saveStatus.textContent = "Saving...";
+
+            calibrationFile.meters.forEach(m => {
+                m.points = (m.points || []).map(p => ({
+                    raw: toNumber(p.raw),
+                    Radio: `${p.Radio ?? ""}`.trim()
+                })).filter(p => p.Radio !== "");
+            });
+
+            const response = await fetch("/api/calibration/file", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(calibrationFile)
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById("saveTargetPath").textContent = data.saveTargetPath;
+                saveStatus.textContent = "Saved";
+                setTimeout(() => saveStatus.textContent = "", 2000);
+                return;
+            }
+
+            saveStatus.textContent = "Save failed";
+        }
+
+        async function loadCalibration() {
+            const response = await fetch("/api/calibration/file");
+            const data = await response.json();
+            calibrationFile = data.calibration;
+            document.getElementById("saveTargetPath").textContent = data.saveTargetPath;
+
+            const meterCards = document.getElementById("meterCards");
+            meterCards.innerHTML = "";
+            gaugeInstances = {};
+
+            for (const ui of meterUiConfig) {
+                const meter = calibrationFile.meters.find(m => m.name === ui.name);
+                if (!meter) continue;
+                buildCard(meter, ui);
+            }
+
+            await pollRawMeters();
+        }
+
+        document.getElementById("saveAllBtn").addEventListener("click", saveCalibration);
+        document.getElementById("resetViewBtn").addEventListener("click", loadCalibration);
+
+        await loadCalibration();
+        setInterval(pollRawMeters, 750);
     </script>
 }
 
 <style>
-.meter-calibration-container {
-    border: 2px solid #4f8cff;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    margin: 2rem auto;
-    max-width: 500px;
-    background: #f8f9fa;
+.calibration-page {
+    padding: 1rem;
 }
-.gauge-section {
-    text-align: center;
+
+.calibration-header {
     margin-bottom: 1rem;
 }
-.current-value-label {
-    font-weight: bold;
-    margin-bottom: 0.5rem;
+
+.save-target {
+    margin: 0.25rem 0 0.75rem;
+    font-weight: 600;
 }
-.calibration-labels {
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.save-status {
+    min-width: 5rem;
+    font-weight: 700;
+    color: #198754;
+}
+
+.meter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+}
+
+.meter-card {
+    border: 1px solid #cfe2ff;
+    border-radius: 0.8rem;
+    padding: 0.8rem;
+    background: #f8fbff;
+}
+
+.meter-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.gauge-wrap {
+    height: 145px;
+}
+
+.meter-values {
     display: flex;
     justify-content: space-between;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin: 0.3rem 0 0.6rem;
 }
-.calibration-points-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-.calibration-point-row {
-    display: flex;
-    gap: 0.5rem;
+
+.point-header,
+.point-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.4rem;
     align-items: center;
 }
-.calibration-label-input, .calibration-raw-input {
-    flex: 1 1 0;
-    padding: 0.3rem 0.5rem;
-    border-radius: 0.3rem;
-    border: 1px solid #bcd;
-    font-size: 1rem;
+
+.point-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
 }
-.delete-point-btn {
-    background: #ef4444;
-    color: #fff;
+
+.point-list {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.point-row input {
+    width: 100%;
+    border: 1px solid #b6d4fe;
+    border-radius: 0.35rem;
+    padding: 0.3rem 0.45rem;
+}
+
+.card-actions {
+    margin-top: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.card-save-status {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #198754;
+}
+
+.btn-save,
+.btn-secondary,
+.btn-remove {
     border: none;
-    border-radius: 0.3rem;
-    font-size: 1.2rem;
-    width: 2rem;
-    height: 2rem;
+    border-radius: 0.35rem;
+    padding: 0.38rem 0.65rem;
     cursor: pointer;
 }
-.add-point-btn {
-    background: #4f8cff;
+
+.btn-save {
+    background: #198754;
     color: #fff;
-    border: none;
-    border-radius: 0.3rem;
-    padding: 0.5rem 1.2rem;
-    font-size: 1rem;
-    margin-right: 0.5rem;
-    cursor: pointer;
 }
-.save-btn {
-    background: #22c55e;
+
+.btn-secondary {
+    background: #0d6efd;
     color: #fff;
-    border: none;
-    border-radius: 0.3rem;
-    padding: 0.5rem 1.2rem;
-    font-size: 1rem;
-    cursor: pointer;
+}
+
+.btn-remove {
+    background: #dc3545;
+    color: #fff;
 }
 </style>

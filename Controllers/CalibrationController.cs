@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using FTdx101_WebApp.Services;
 using FTdx101_WebApp.Models.Calibration;
 
@@ -19,5 +18,33 @@ public class CalibrationController : ControllerBase
     {
         var all = _service.GetAllCalibrationTables();
         return Ok(all);
+    }
+
+    [HttpGet("file")]
+    public IActionResult GetCalibrationFile()
+    {
+        return Ok(new
+        {
+            calibration = _service.Current,
+            saveTargetPath = _service.GetSavePath(),
+            mode = _service.IsDevelopmentMode ? "development" : "user"
+        });
+    }
+
+    [HttpPost("file")]
+    public IActionResult SaveCalibrationFile([FromBody] CalibrationFile file)
+    {
+        if (file == null)
+        {
+            return BadRequest(new { error = "Calibration file payload is required." });
+        }
+
+        _service.Save(file);
+        return Ok(new
+        {
+            ok = true,
+            saveTargetPath = _service.GetSavePath(),
+            mode = _service.IsDevelopmentMode ? "development" : "user"
+        });
     }
 }

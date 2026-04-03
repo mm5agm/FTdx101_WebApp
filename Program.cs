@@ -7,6 +7,7 @@ using FTdx101_WebApp.Hubs; // Adjust namespace as needed
 using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<CalibrationStorage>();
 builder.Services.AddSingleton<ICalibrationService, CalibrationService>();
 
 // ADD SIGNALR EARLY (before services that depend on IHubContext):
