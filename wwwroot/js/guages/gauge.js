@@ -175,8 +175,8 @@ class SMeterGauge extends Gauge {
         super(canvasId, config);
     }
 
-    getCanvasOffset() { return this.config.width / 2; }
-    getLabelCenterXOffset() { return this.config.width / 2; }
+    getCanvasOffset() { return 0; }
+    getLabelCenterXOffset() { return 0; }
 }
 
 // ------------------------------------------------------------

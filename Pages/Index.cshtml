@@ -563,5 +563,12 @@
             updateAfGainFill('afGainSliderA');
             updateAfGainFill('afGainSliderB');
         });
+
+        // Expose functions called from HTML onclick/onchange attributes
+        window.launchWsjtx  = launchWsjtx;
+        window.launchJtalert = launchJtalert;
+        window.launchLog4om  = launchLog4om;
+        window.setMicGain    = setMicGain;
+        window.updateAfGainFill = updateAfGainFill;
     </script>
 }
