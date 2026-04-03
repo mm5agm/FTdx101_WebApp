@@ -11,6 +11,7 @@
         <div class="header-actions">
             <button id="saveAllBtn" class="btn-save">Save Calibration</button>
             <button id="resetViewBtn" class="btn-secondary">Reload From File</button>
+            <button id="txBtn" class="btn-tx">TX</button>
             <span id="saveStatus" class="save-status"></span>
         </div>
     </div>
@@ -300,6 +301,41 @@
         document.getElementById("saveAllBtn").addEventListener("click", saveCalibration);
         document.getElementById("resetViewBtn").addEventListener("click", loadCalibration);
 
+        // TX button
+        let _isTx = false;
+        const txBtn = document.getElementById("txBtn");
+
+        function updateTxBtn(transmitting) {
+            _isTx = transmitting;
+            if (transmitting) {
+                txBtn.textContent = "TX ON";
+                txBtn.classList.add("btn-tx-active");
+            } else {
+                txBtn.textContent = "TX";
+                txBtn.classList.remove("btn-tx-active");
+            }
+        }
+
+        async function syncTxState() {
+            try {
+                const r = await fetch("/api/cat/tx");
+                if (r.ok) { const d = await r.json(); updateTxBtn(d.transmitting); }
+            } catch (_) {}
+        }
+
+        txBtn.addEventListener("click", async () => {
+            try {
+                const r = await fetch("/api/cat/tx", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ transmit: !_isTx })
+                });
+                if (r.ok) { const d = await r.json(); updateTxBtn(d.transmitting); }
+            } catch (_) {}
+        });
+
+        await syncTxState();
+
         await loadCalibration();
         setInterval(pollRawMeters, 750);
     </script>
@@ -401,7 +437,8 @@
 
 .btn-save,
 .btn-secondary,
-.btn-remove {
+.btn-remove,
+.btn-tx {
     border: none;
     border-radius: 0.35rem;
     padding: 0.38rem 0.65rem;
@@ -419,6 +456,18 @@
 }
 
 .btn-remove {
+    background: #dc3545;
+    color: #fff;
+}
+
+.btn-tx {
+    background: #ffc107;
+    color: #000;
+    font-weight: 700;
+    min-width: 4.5rem;
+}
+
+.btn-tx.btn-tx-active {
     background: #dc3545;
     color: #fff;
 }

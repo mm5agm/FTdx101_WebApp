@@ -4,6 +4,14 @@ Almost a complete re-write 1st April 2026
 
 ![FTdx101 WebApp Screenshot](pictures/DevelopScreen.png)
 
+
+![FTdx101 WebApp Screenshot](pictures/Calibration.pngpng)
+
+
+
+![FTdx101 WebApp Screenshot](pictures/Calibration2.png)
+
+
 ## Windows Smart App Control Example
 ![Smart App Control Screenshot](pictures/SmartAppControl.png)
 
@@ -18,7 +26,7 @@ I also use this application on my tablet, which provides a portable control pane
 
 ## 🌱 Why Sponsorship Matters
 
-I’m retired and maintain this project on a limited income, funding all development tools personally. AI‑assisted coding has been invaluable for building features quickly, but it isn’t free — I’ve spent roughly **$150 USD** so far, and with only a **Copilot Pro** subscription I often hit my monthly token limit within a week. That slows down progress until the next cycle resets.
+I’m retired and maintain this project on a limited income, funding all development tools personally. AI‑assisted coding has been invaluable for building features quickly, but it isn’t free — I’ve spent roughly **$300 USD** so far, and I have now moved from **Copilot Pro** to **Claude Pro**. That change helps, but costs still add up and can slow development.
 
 If this project has helped you, please consider sponsoring it. Even small contributions make a real difference and help keep the development tools running.
 
@@ -30,75 +38,52 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 
 ---
 
-## ⚠️ Limitations
+## Release Notes
 
-- **Windows Only:** Serial port requires Windows. (Linux users report success with Wine)
-- **Unsigned App:** Windows Smart App Control may block it - allow through the warning screen (see screenshot above)
-- **Touch Frequency Tuning:** Not yet implemented for touch devices
-- **Single Radio:** Designed for one radio at a time
-- **Not Implemented:** Per-band memory, filter controls, antenna change detection from radio
+## 2026-04-01 - Major Rewrite Foundation
 
----
+This release marks a near-complete rewrite of the application.
 
-## 🚀 Features
+### Changed
 
-### Radio Control
-- **CAT Control:** Full control over frequency, mode, band, and antenna (ANT 1/2/3)
-- **Radio Power On/Off:** Power the radio directly from the web interface
-- **TX Button:** Toggle transmit from VFO header - updates automatically with WSJT-X
-- **Dual VFO Support:** Independent control of VFO A and VFO B
-- **Band Selection:** Quick access to all bands (160m - 4m, UK-centric)
-- **Power & Gain:** Adjustable power (5-200W MP, 5 - 100W D ) and MIC Gain (switches to Data Out Gain in DATA modes) - settings persist across restarts
-- **Mode Selection:** USB, LSB, CW-U, CW_L, RTTY-L, RTTY-U, DATA-L, DATA-U, DATA-FM, DATA-FM-N, PSK, AM, AM-N, FM, FM-N
-- **Filter selection** (width only at present. Shift to de added)
-### Metering
-- **S-Meter:** Real-time analog-style signal strength display
-- **TX Meters:** Live Power, SWR, and ALC gauges during transmit
-- **PA Monitoring:** IDD current, and temperature
+- Front-end architecture migrated to ES module-based structure.
+- Gauge rendering moved to class/factory modules for clearer extension points.
+- UI behavior split into focused modules to reduce monolithic script complexity.
 
-### Integration
-- **Built-in CAT Multiplexer:** The app is the only process that opens the serial port - no conflicts!
-- **TCP Server (rigctld):** Log4OM, GridTracker, and Hamlib tools connect over TCP
-- **WSJT-X UDP:** Full UDP integration with WSJT-X, JTAlert, and Log4OM
-- **No Virtual COM Ports:** Eliminates need for com0com or VSPE, but user can also use a virtual COM port if they prefer to communicate with other software that way.
-- **External App Launchers:** Configure up to 3 app buttons (e.g., WSJT-X, JTAlert, Log4OM)
+### Improved
 
-### Real-Time Updates from radio
-Uses **Auto Information Mode (AI1;)** - the radio streams status changes to the app automatically. Only S-meters are polled. Result: instant, responsive UI.
+- Clearer separation between CAT polling, UI rendering, and calibration logic.
+- Better maintainability for adding new controls and gauges.
+- Lower risk of regressions when updating individual UI features.
 
-> * credit: Martin G8MAB*
+## 2026-04-03 - Meter and Calibration Updates
 
----
+### Added
 
-## 🔧 What's Next
+- New gauges: Compression, IDD, and VDD.
+- Full multi-gauge calibration editor page with per-gauge cards.
+- Per-gauge Save buttons in addition to global Save Calibration.
+- TX control button on the Meter Calibration page.
 
-If there's interest in this program, I'm open to suggestions for additional controls to add, such as:
+### Changed
 
-- Touch-friendly frequency tuning for tablets
-- Per-band memory (frequency, mode, antenna, power)
-- Noise blanker controls
-- AGC settings
-- Clarifier/RIT controls
-- Split operation
-- Memory management
+- Lower-row gauge order updated to: SWR, Power, Compression, ALC, Temp, IDD, VDD.
+- Calibration schema normalized to use `Radio` point values consistently.
+- Calibration storage routing now supports:
+	- Development save target: `wwwroot/calibration.default.json`
+	- User save target: `%APPDATA%\\MM5AGM\\FTdx101\\WebApp\\calibration.user.json`
 
-Suggestions welcome! Open an issue or discussion.
+### Fixed
 
----
+- IDD meter polling corrected to dedicated CAT command path.
+- Power display rounding now uses integer output (no decimal noise).
+- Gauge title/value width stability improved to prevent label width jumping.
+- Compression/ALC behavior aligned to TX state to reduce idle-mode jumping.
+- AF Gain confirmation tolerance and timeout adjusted to reduce false revert alerts.
 
-## 🏗️ Technology Stack
+## Next Up
 
-| Component | Technology |
-|-----------|------------|
-| Backend | ASP.NET Core Razor Pages (.NET 10) |
-| Frontend | Bootstrap 5, JavaScript, HTML5 Canvas |
-| CAT | Serial port + FTdx101 protocol |
-| Gauges | Canvas-Gauges library |
-| Platform | Windows (serial port requirement) |
-
----
-
-## ⚙️ Configuration
-
-Settings are stored in "C:\Users\your_user_name\AppData\Roaming\MM5AGM\FTdx101 WebApp\
+- Continue meter smoothing and stability tuning during TX/RX transitions.
+- Continue migration and cleanup of remaining legacy paths.
+- Make a release and hopefully get some feedback - it's very quiet here :).
 

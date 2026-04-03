@@ -1002,7 +1002,7 @@ function sendAfGain(receiver, value) {
             afGainPendingValue[receiver] = null;
             alert('AF Gain not confirmed by radio. Reverted.');
         }
-    }, 2000); // 2 seconds
+    }, 3500); // 3.5 seconds
     fetch(`/api/cat/afgain/${receiver.toLowerCase()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1063,7 +1063,7 @@ if (typeof connection !== 'undefined') {
             // If pending and backend confirms, clear pending
             if (
                 afGainPendingValue[receiver] !== null &&
-                String(update.value) === String(afGainPendingValue[receiver])
+                Math.abs(Number(update.value) - Number(afGainPendingValue[receiver])) <= 2
             ) {
                 slider.value = update.value;
                 slider.classList.remove('pending');
@@ -1734,8 +1734,8 @@ let wasTransmittingSWR = false;
             const lastNum = parseFloat(last.label);
             if (!isNaN(lastNum)) maxW = lastNum;
         }
-        // Clamp value to [0, maxW]
-        let clampedWatts = Math.max(0, Math.min(watts, maxW));
+        // Clamp value to [0, maxW] and round to integer
+        let clampedWatts = Math.round(Math.max(0, Math.min(watts, maxW)));
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `${clampedWatts}`;
         // Update raw Power Out label with descriptive label
@@ -1786,7 +1786,7 @@ let wasTransmittingSWR = false;
     }
 
     function updateCompressionMeter(value) {
-        const percent = Math.max(0, Math.min(100, Math.round((value / 255) * 100)));
+        const percent = state.isTransmitting ? Math.max(0, Math.min(100, Math.round((value / 255) * 100))) : 0;
         const valueSpan = document.getElementById('compressionMeterValue');
         if (valueSpan) valueSpan.textContent = `${percent}`;
         if (window.compressionGauge && window.compressionGauge.gauge) {

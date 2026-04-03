@@ -115,7 +115,7 @@ class Gauge {
 
             const titleDiv = document.createElement('div');
             titleDiv.style.cssText = `position:absolute;left:${centerX}px;top:${centerY + 10}px;transform:translateX(-50%);white-space:nowrap;background:${bg};color:${fg};padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold;z-index:100;`;
-            titleDiv.innerHTML = `${this.config.gaugeTitle} <span id="${valId}">${defVal}</span>${suffix}`;
+            titleDiv.innerHTML = `${this.config.gaugeTitle} <span id="${valId}" style="display:inline-block;min-width:3ch;text-align:right;">${defVal}</span>${suffix}`;
             labelsDiv.appendChild(titleDiv);
         }
 
@@ -196,7 +196,7 @@ class PowerGauge extends Gauge {
                 { from: 150, to: 175, color: "rgba(255,255,0,.25)" },
                 { from: 175, to: 200, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
+            labels: ["5", "25", "50", "75", "100", "125", "150", "175", "200"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,

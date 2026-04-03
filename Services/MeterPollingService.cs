@@ -1,24 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System.Threading.Tasks;
-/*
-| Function | EX Command | What It Returns | Notes |
-| --- | --- | --- | --- |
-| **S‑Meter (Main VFO)** | ``EX01020300`` | S‑meter level (0–255) | Most‑polled meter value. |
-| **S‑Meter (Sub VFO)** | ``EX01020301`` | Sub‑receiver S‑meter | Only valid if SUB RX enabled. |
-| **PO – Power Output** | ``EX01020400`` | TX power output (0–255) | Scaled to rig’s power range. |
-| **ALC Level** | ``EX01020500`` | ALC meter reading | Useful for digital mode monitoring. |
-| **SWR** | ``EX01020600`` | Standing Wave Ratio | Returns raw meter value, not SWR ratio. |
-| **ID – Current Draw** | ``EX01020700`` | Current consumption | Raw ADC value. |
-| **VDD – Supply Voltage** | ``EX01020800`` | DC input voltage | Good for PSU monitoring. |
-| **Temperature (PA Unit)** | ``EX01020900`` | PA temperature | Raw value; rises under TX load. |
-| **COMP – Speech Compression** | ``EX01020A00`` | Compression level | Only active in SSB with COMP on. |
-| **MIC – Mic Level** | ``EX01020B00`` | Mic input level | Useful for audio diagnostics. |
-| **RF – RF Drive Level** | ``EX01020C00`` | RF drive meter | Reflects drive setting. |
-| **IF Width / Shift Meter** | ``EX01020D00`` | IF DSP meter | Rarely used by logging software. |
-| **AGC Meter** | ``EX01020E00`` | AGC action level | Useful for DSP behaviour analysis. |
-| **NB Level** | ``EX01020F00`` | Noise blanker meter | Shows NB activity. |
-*/
+
 namespace FTdx101_WebApp.Services
 {
     /// <summary>
@@ -97,7 +80,15 @@ namespace FTdx101_WebApp.Services
                     var compResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterComp + ";", "MeterPoll", stoppingToken);
                     _logger.LogInformation("[MeterPolling][DEBUG] Compression Meter response: {0}", compResponse);
                     int compression = CatCommands.ParseMeterReading(compResponse ?? "");
-                    _stateService.CompressionMeter = compression;
+                    if (isTransmitting)
+                    {
+                        _stateService.CompressionMeter = compression;
+                    }
+                    else
+                    {
+                        if (_stateService.CompressionMeter != 0)
+                            _stateService.CompressionMeter = 0;
+                    }
 
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling IDD Meter...");
                     var iddResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterIDD + ";", "MeterPoll", stoppingToken);
@@ -109,7 +100,15 @@ namespace FTdx101_WebApp.Services
                     var alcResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterALC + ";", "MeterPoll", stoppingToken);
                     _logger.LogInformation("[MeterPolling][DEBUG] ALC Meter response: {0}", alcResponse);
                     int alc = CatCommands.ParseMeterReading(alcResponse ?? "");
-                    _stateService.ALCMeter = alc;
+                    if (isTransmitting)
+                    {
+                        _stateService.ALCMeter = alc;
+                    }
+                    else
+                    {
+                        if (_stateService.ALCMeter != 0)
+                            _stateService.ALCMeter = 0;
+                    }
 
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling VDD Meter...");
                     var vddResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterVDD + ";", "MeterPoll", stoppingToken);
