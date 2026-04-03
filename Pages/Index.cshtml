@@ -299,6 +299,12 @@
                                 <canvas id="alcMeterCanvas"></canvas>
                             </div>
                         </div>
+                        <!-- PA Temperature Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="tempMeterCanvas"></canvas>
+                            </div>
+                        </div>
                     </div>
                     <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
                     <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
@@ -328,7 +334,6 @@
                     <!-- IDD (Drain Current) and PA Temp Display (side by side) -->
                     <div class="mb-2 closer-to-raw-power d-flex align-items-center gap-3">
                         <label class="mb-0">IDD (Drain Current): <span id="iddDisplayValue" class="fw-bold badge bg-primary">0.0A</span></label>
-                        <label class="mb-0">PA Temp: <span id="paTemperatureValue" class="fw-bold badge bg-secondary">--°C</span></label>
                     </div>
                 </div>
             </div>
@@ -337,7 +342,7 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
-        import { createSMeterGauge, createPowerGauge, createSWRGauge, createALCGauge } from "/js/guages/gaugeFactory.js";
+        import { createSMeterGauge, createPowerGauge, createSWRGauge, createALCGauge, createTempGauge } from "/js/guages/gaugeFactory.js";
         // Initialize all gauges using the new factory
         document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('sMeterCanvasA')) {
@@ -359,6 +364,10 @@
             if (document.getElementById('alcMeterCanvas')) {
                 window.alcGauge = createALCGauge('alcMeterCanvas');
                 window.alcGauge.render();
+            }
+            if (document.getElementById('tempMeterCanvas')) {
+                window.tempGauge = createTempGauge('tempMeterCanvas');
+                window.tempGauge.render();
             }
         });
         async function launchWsjtx() {

@@ -43,7 +43,7 @@ namespace FTdx101_WebApp.Services
         {
             var message = e.Message.Trim();
 
-            // Suppress logging RM messages
+            // Suppress high-frequency RM meter poll responses from logs
             if (!message.StartsWith("RM"))
             {
                 _logger.LogInformation("[CatMultiplexerService] OnMessageReceived: {Message}", message);

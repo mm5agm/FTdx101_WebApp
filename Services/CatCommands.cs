@@ -174,16 +174,13 @@ namespace FTdx101_WebApp.Services
 
             int semicolonIndex = response.IndexOf(';');
             if (semicolonIndex > 0)
-            {
                 response = response.Substring(0, semicolonIndex);
-            }
+
             if (response.Length >= 5)
             {
                 string valueStr = response.Substring(3);
                 if (int.TryParse(valueStr, out int value))
-                {
                     return value;
-                }
             }
             return 0;
         }
@@ -196,26 +193,18 @@ namespace FTdx101_WebApp.Services
             //   P2 = left meter value (3 digits: 000-255)
             //   P3 = right meter value (3 digits: usually 000)
             // Example: RM5072000; means meter type 5 (power), value 072 (72 out of 255)
-
             if (string.IsNullOrEmpty(response) || !response.StartsWith("RM"))
                 return 0;
 
             int semicolonIndex = response.IndexOf(';');
             if (semicolonIndex > 0)
-            {
                 response = response.Substring(0, semicolonIndex);
-            }
 
-            // Response format: RM + 1 digit meter type + 3 digit value + 3 digit right value
-            // Minimum length: RM (2) + type (1) + value (3) = 6 characters
             if (response.Length >= 6)
             {
-                // Extract the 3-digit left meter value (positions 3-5, after "RM" and meter type)
                 string valueStr = response.Substring(3, 3);
                 if (int.TryParse(valueStr, out int value))
-                {
                     return value;
-                }
             }
             return 0;
         }

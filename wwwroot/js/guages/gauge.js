@@ -363,5 +363,65 @@ class ALCGauge extends Gauge {
     }
 }
 
+// ------------------------------------------------------------
+// PA TEMPERATURE METER
+// ------------------------------------------------------------
+
+class TempGauge extends Gauge {
+    constructor(canvasId, options = {}) {
+        const config = Object.assign({
+            renderTo: canvasId,
+            minValue: 0,
+            maxValue: 100,
+            majorTicks: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            highlights: [
+                { from: 0,  to: 40,  color: "rgba(0,255,0,.25)" },
+                { from: 40, to: 60,  color: "rgba(255,255,0,.25)" },
+                { from: 60, to: 100, color: "rgba(255,0,0,.25)" }
+            ],
+            labels: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            startAngle: 90,
+            ticksAngle: 180,
+            valueBox: false,
+            minorTicks: 0,
+            strokeTicks: false,
+            tickSide: "out",
+            needleSide: "center",
+            colorPlate: "transparent",
+            borders: false,
+            needleShadow: false,
+            colorMajorTicks: "#555555",
+            colorMinorTicks: "transparent",
+            colorNumbers: "transparent",
+            fontNumbersSize: 0,
+            colorBarProgress: "#198754",
+            colorBarProgressEnd: "#dc3545",
+            colorBar: "#dddddd",
+            barShadow: 0,
+            barWidth: 10,
+            barStrokeWidth: 0,
+            needleType: "arrow",
+            needleWidth: 3,
+            needleCircleSize: 7,
+            needleCircleOuter: false,
+            needleCircleInner: true,
+            colorNeedleCircleInner: "#dc3545",
+            colorNeedleCircleInnerEnd: "#dc3545",
+            animationDuration: 400,
+            animationRule: "linear",
+            value: 0,
+            gaugeTitleShow: true,
+            gaugeTitle: 'PA Temp',
+            gaugeTitleId: 'paTemperatureValue',
+            gaugeTitleDefault: '--',
+            gaugeTitleSuffix: '°C',
+            gaugeTitleBg: '#198754',
+            gaugeTitleColor: '#ffffff'
+        }, options);
+
+        super(canvasId, config);
+    }
+}
+
 // Export classes as ES module
-export { Gauge, SMeterGauge, PowerGauge, SWRGauge, ALCGauge };
+export { Gauge, SMeterGauge, PowerGauge, SWRGauge, ALCGauge, TempGauge };

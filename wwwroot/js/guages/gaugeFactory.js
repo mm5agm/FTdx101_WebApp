@@ -2,7 +2,7 @@
 // Creates gauge instances based on a type string.
 // No layout logic, no DOM queries, no calibration logic.
 
-import { SMeterGauge, PowerGauge, SWRGauge, ALCGauge } from './gauge.js';
+import { SMeterGauge, PowerGauge, SWRGauge, ALCGauge, TempGauge } from './gauge.js';
 
 // Registry of gauge constructors.
 // Add new meter types here as your UI grows.
@@ -10,7 +10,8 @@ const gaugeRegistry = {
     smeter: SMeterGauge,
     power:  PowerGauge,
     swr:    SWRGauge,
-    alc:    ALCGauge
+    alc:    ALCGauge,
+    temp:   TempGauge
 };
 
 /**
@@ -54,3 +55,4 @@ export function createSMeterGauge(canvasId, options = {}) { return createGauge('
 export function createPowerGauge(canvasId, options = {})  { return createGauge('power',  canvasId, options); }
 export function createSWRGauge(canvasId, options = {})    { return createGauge('swr',    canvasId, options); }
 export function createALCGauge(canvasId, options = {})    { return createGauge('alc',    canvasId, options); }
+export function createTempGauge(canvasId, options = {})   { return createGauge('temp',   canvasId, options); }

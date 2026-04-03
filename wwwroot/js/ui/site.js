@@ -1887,7 +1887,7 @@ let wasTransmittingSWR = false;
     // Update PA Temperature display (value is directly in °C from IF command)
     function updatePATemperature(tempC) {
         // Smoothing: ignore sudden jumps >10°C, ignore 0 unless persists
-        if (!window._paTempLast) window._paTempLast = 25;
+        if (!window._paTempLast) window._paTempLast = 0;
         if (!window._paTempZeroCount) window._paTempZeroCount = 0;
         if (tempC === 0) {
             window._paTempZeroCount++;
@@ -1899,17 +1899,15 @@ let wasTransmittingSWR = false;
             return;
         }
        window._paTempLast = window.calibrationService.calibrateNumeric("TPA", tempC);
+        // Update gauge needle
+        if (window.tempGauge && window.tempGauge.gauge) {
+            window.tempGauge.gauge.value = tempC;
+            window.tempGauge.gauge.draw();
+        }
+        // Update gauge overlay value span
         const tempDisplay = document.getElementById('paTemperatureValue');
         if (tempDisplay) {
-            tempDisplay.textContent = `${tempC}°C`;
-            tempDisplay.classList.remove('bg-secondary', 'bg-success', 'bg-warning', 'bg-danger');
-            if (tempC < 40) {
-                tempDisplay.classList.add('bg-success'); // Cool - normal
-            } else if (tempC < 60) {
-                tempDisplay.classList.add('bg-warning'); // Warm - caution
-            } else {
-                tempDisplay.classList.add('bg-danger'); // Hot - warning
-            }
+            tempDisplay.textContent = `${tempC}`;
         }
     }
 
