@@ -24,6 +24,12 @@
         // Replace defaults with any user-saved calibration from the backend.
         loadFromBackend({ 'S-Meter': 'SMETER_LABELS' });
     </script>
+
+    <!-- Meter formatters — exposes window.MeterFormatters for site.js -->
+    <script type="module">
+        import { MeterFormatters } from '/js/ui/meter-formatters.js';
+        window.MeterFormatters = MeterFormatters;
+    </script>
 </head>
 <body>
     <header>

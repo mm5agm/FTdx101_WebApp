@@ -377,7 +377,7 @@ function updatePowerSliderMax(maxPower) {
         actualMax = 100;
     }
     if (slider) slider.max = actualMax;
-    if (labelMax) labelMax.textContent = actualMax + 'W';
+    if (labelMax) labelMax.textContent = window.MeterFormatters.powerLabel(actualMax);
 }
 
 // TX state updater - updates TX button and meters
@@ -434,7 +434,7 @@ window.updatePowerDisplay = function(receiver, watts) {
     // Find the power value display element
     const powerValue = document.getElementById('powerValue');
     if (powerValue) {
-        powerValue.innerText = `${watts}W`;
+        powerValue.innerText = window.MeterFormatters.powerLabel(watts);
     }
 };
 
@@ -525,9 +525,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const display = document.getElementById('powerValue');
     if (slider && display) {
         // Initialize label to slider value on page load
-        display.textContent = slider.value + 'W';
+        display.textContent = window.MeterFormatters.powerLabel(slider.value);
         slider.addEventListener('input', function () {
-            display.textContent = slider.value + 'W';
+            display.textContent = window.MeterFormatters.powerLabel(slider.value);
         });
     }
 });
@@ -1526,7 +1526,7 @@ if (typeof connection !== 'undefined') {
         const display = document.getElementById('powerValue');
         const slider = document.getElementById('powerSlider');
         if (display && slider) {
-            display.textContent = slider.value + 'W';
+            display.textContent = window.MeterFormatters.powerLabel(slider.value);
         }
     }
 
@@ -1574,7 +1574,7 @@ if (typeof connection !== 'undefined') {
             slider.min = actualMin;
             updateSliderFill(slider);
         }
-        if (labelMax) labelMax.textContent = actualMax + 'W';
+        if (labelMax) labelMax.textContent = window.MeterFormatters.powerLabel(actualMax);
     }
 
     function updateSMeter(receiver, value) {
@@ -1637,7 +1637,7 @@ let wasTransmittingSWR = false;
         let watts = window.calibrationEngine.calibrateNumeric("PWR", avgValue);
         let clampedWatts = Math.round(Math.max(0, Math.min(watts, 200)));
         const valueSpan = document.getElementById('powerMeterValue');
-        if (valueSpan) valueSpan.textContent = `${clampedWatts}`;
+        if (valueSpan) valueSpan.textContent = window.MeterFormatters.powerOverlay(clampedWatts);
         // Update raw Power Out label with descriptive label
         var rawPowerLabel = document.getElementById('raw-powerout-label');
         if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
@@ -1674,7 +1674,7 @@ let wasTransmittingSWR = false;
 
         const swrClamped = Math.min(swr, 10.0);
         const valueSpan = document.getElementById('swrMeterValue');
-        if (valueSpan) valueSpan.textContent = `${swrClamped.toFixed(1)}:1`;
+        if (valueSpan) valueSpan.textContent = window.MeterFormatters.swr(swrClamped);
         if (window.swrGauge && window.swrGauge.gauge) {
             const gaugePosition = (swrClamped - 1.0) * 127.5;
             window.swrGauge.gauge.value = gaugePosition;
@@ -1685,7 +1685,7 @@ let wasTransmittingSWR = false;
     function updateCompressionMeter(value) {
         const percent = state.isTransmitting ? Math.max(0, Math.min(100, Math.round((value / 255) * 100))) : 0;
         const valueSpan = document.getElementById('compressionMeterValue');
-        if (valueSpan) valueSpan.textContent = `${percent}`;
+        if (valueSpan) valueSpan.textContent = window.MeterFormatters.compressionOverlay(percent);
         if (window.compressionGauge && window.compressionGauge.gauge) {
             window.compressionGauge.gauge.value = percent;
             window.compressionGauge.gauge.draw();
@@ -1698,14 +1698,14 @@ let wasTransmittingSWR = false;
         if (!state.isTransmitting) {
             const valueSpan = document.getElementById('alcValue');
             const progressBar = document.getElementById('alcBar');
-            if (valueSpan) valueSpan.textContent = '0%';
+            if (valueSpan) valueSpan.textContent = window.MeterFormatters.percent(0);
             if (progressBar) {
                 progressBar.style.width = '0%';
                 progressBar.setAttribute('aria-valuenow', 0);
                 progressBar.className = 'progress-bar bg-success';
             }
             const alcMeterValue = document.getElementById('alcMeterValue');
-            if (alcMeterValue) alcMeterValue.textContent = '0V';
+            if (alcMeterValue) alcMeterValue.textContent = window.MeterFormatters.alcVolts(0);
             if (window.alcGauge && window.alcGauge.gauge) {
                 window.alcGauge.gauge.value = 0;
                 window.alcGauge.gauge.draw();
@@ -1713,14 +1713,12 @@ let wasTransmittingSWR = false;
             return;
         }
 
-        // FTdx101 ALC calibration: 50V corresponds to a raw value of 178
-        // So we scale the 0-255 raw value to a 0-50V range for display
         const alcVolts = window.calibrationEngine.calibrateNumeric("ALC", value);
         const percentage = Math.round((value / 255) * 100);
         const valueSpan = document.getElementById('alcValue');
         const progressBar = document.getElementById('alcBar');
 
-        if (valueSpan) valueSpan.textContent = `${percentage}%`;
+        if (valueSpan) valueSpan.textContent = window.MeterFormatters.percent(percentage);
         if (progressBar) {
             progressBar.style.width = `${percentage}%`;
             progressBar.setAttribute('aria-valuenow', percentage);
@@ -1738,7 +1736,7 @@ let wasTransmittingSWR = false;
 
         // Update ALC gauge (pass raw 0-255 value directly, gauge uses 0-255 scale)
         const alcMeterValue = document.getElementById('alcMeterValue');
-        if (alcMeterValue) alcMeterValue.textContent = `${alcVolts.toFixed(0)}V`;
+        if (alcMeterValue) alcMeterValue.textContent = window.MeterFormatters.alcVolts(alcVolts);
 
         if (window.alcGauge && window.alcGauge.gauge) {
             window.alcGauge.gauge.value = value;  // Raw 0-255 value
@@ -1765,7 +1763,7 @@ let wasTransmittingSWR = false;
         window._iddLast = amps;
         const iddMeterValue = document.getElementById('iddMeterValue');
         if (iddMeterValue) {
-            iddMeterValue.textContent = `${amps.toFixed(1)}`;
+            iddMeterValue.textContent = window.MeterFormatters.iddOverlay(amps);
         }
         if (window.iddGauge && window.iddGauge.gauge) {
             window.iddGauge.gauge.value = Math.max(0, Math.min(amps, 25));
@@ -1803,7 +1801,7 @@ let wasTransmittingSWR = false;
         window._vddLast = volts;
         const vddMeterValue = document.getElementById('vddMeterValue');
         if (vddMeterValue) {
-            vddMeterValue.textContent = `${volts.toFixed(1)}`;
+            vddMeterValue.textContent = window.MeterFormatters.vddOverlay(volts);
         }
         if (window.vddGauge && window.vddGauge.gauge) {
             window.vddGauge.gauge.value = Math.max(40, Math.min(volts, 55));
@@ -1834,7 +1832,7 @@ let wasTransmittingSWR = false;
         // Update gauge overlay value span
         const tempDisplay = document.getElementById('paTemperatureValue');
         if (tempDisplay) {
-            tempDisplay.textContent = `${tempC}`;
+            tempDisplay.textContent = window.MeterFormatters.tempOverlay(tempC);
         }
     }
 
@@ -1844,7 +1842,7 @@ let wasTransmittingSWR = false;
         const valueSpan = document.getElementById('micValue');
         const progressBar = document.getElementById('micBar');
 
-        if (valueSpan) valueSpan.textContent = `${percentage}%`;
+        if (valueSpan) valueSpan.textContent = window.MeterFormatters.percent(percentage);
         if (progressBar) {
             progressBar.style.width = `${percentage}%`;
             progressBar.setAttribute('aria-valuenow', percentage);
@@ -2061,7 +2059,7 @@ let wasTransmittingSWR = false;
         // Set editingPower true on any user interaction
         powerSlider.addEventListener('input', function () {
             window.editingPower = true;
-            powerDisplay.textContent = powerSlider.value + 'W';
+            powerDisplay.textContent = window.MeterFormatters.powerLabel(powerSlider.value);
         });
         powerSlider.addEventListener('mousedown', function () {
             window.editingPower = true;

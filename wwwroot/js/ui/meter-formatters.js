@@ -1,54 +1,82 @@
 // FTdx101 WebApp – Meter Formatters
-// UI-only formatting helpers for calibrated values.
-// No calibration, no gauge logic, no WebSocket logic.
+// Pure UI formatting helpers. No calibration, no DOM, no gauge logic, no side effects.
+//
+// Method naming convention:
+//   Gauge overlay spans: the gauge config supplies the unit suffix, so formatters
+//   return only the numeric string (e.g. "47.5") and the suffix is appended by the DOM.
+//   Freestanding labels / bars: the formatter includes the unit (e.g. "47.5V", "35%").
 
 export const MeterFormatters = {
 
-    // S-METER (calibrated 0–60)
-    formatS(value) {
-        if (value < 1) return "S0";
-        if (value < 3) return "S1";
-        if (value < 5) return "S3";
-        if (value < 7) return "S5";
-        if (value < 9) return "S7";
-        if (value < 20) return "S9";
-        if (value < 40) return "S9+20";
-        if (value < 60) return "S9+40";
-        return "+60";
+    // ----------------------------------------------------------------
+    // POWER
+    // ----------------------------------------------------------------
+
+    // Gauge overlay value (PowerGauge appends 'W' as gaugeTitleSuffix).
+    powerOverlay(watts) {
+        return String(Math.round(watts));
     },
 
-    // POWER (calibrated watts)
-    formatPower(value) {
-        return `${Math.round(value)} W`;
+    // Slider label and any freestanding power display (unit included).
+    powerLabel(watts) {
+        return `${Math.round(watts)}W`;
     },
 
-    // SWR (calibrated 1.0–3.0)
-    formatSWR(value) {
-        return value.toFixed(1);
+    // ----------------------------------------------------------------
+    // SWR  (SWRGauge has no gaugeTitleSuffix — full text goes in span)
+    // ----------------------------------------------------------------
+
+    swr(ratio) {
+        return `${ratio.toFixed(1)}:1`;
     },
 
-    // ALC (calibrated 0–100)
-    formatALC(value) {
-        return `${Math.round(value)}%`;
+    // ----------------------------------------------------------------
+    // ALC  (ALCGauge has no gaugeTitleSuffix — full text goes in span)
+    // ----------------------------------------------------------------
+
+    // Gauge overlay — calibrated volts display.
+    alcVolts(volts) {
+        return `${Math.round(volts)}V`;
     },
 
-    // TEMP (raw 0–255 → °C)
-    formatTemp(raw) {
-        const tempC = Math.round((raw / 255) * 100);
-        return `${tempC}°C`;
+    // ----------------------------------------------------------------
+    // COMPRESSION  (CompressionGauge appends '%' as gaugeTitleSuffix)
+    // ----------------------------------------------------------------
+
+    compressionOverlay(percent) {
+        return String(Math.round(percent));
     },
 
-    // IDD (raw 0–255 → 0–40A)
-    formatIDD(raw) {
-        const amps = ((raw / 255) * 40).toFixed(1);
-        return `${amps} A`;
+    // ----------------------------------------------------------------
+    // IDD — drain current  (IDDGauge appends 'A' as gaugeTitleSuffix)
+    // ----------------------------------------------------------------
+
+    iddOverlay(amps) {
+        return amps.toFixed(1);
     },
 
-    // Generic linear formatter
-    createLinearFormatter(maxRaw, maxDisplay, unit = "") {
-        return function(raw) {
-            const scaled = (raw / maxRaw) * maxDisplay;
-            return unit ? `${scaled.toFixed(1)} ${unit}` : scaled.toFixed(1);
-        };
+    // ----------------------------------------------------------------
+    // VDD — supply voltage  (VDDGauge appends 'V' as gaugeTitleSuffix)
+    // ----------------------------------------------------------------
+
+    vddOverlay(volts) {
+        return volts.toFixed(1);
+    },
+
+    // ----------------------------------------------------------------
+    // PA TEMPERATURE  (TempGauge appends '°C' as gaugeTitleSuffix)
+    // ----------------------------------------------------------------
+
+    tempOverlay(tempC) {
+        return String(Math.round(tempC));
+    },
+
+    // ----------------------------------------------------------------
+    // GENERIC PERCENTAGE — used for ALC bar, MIC bar, compression bar
+    // Takes an already-computed 0–100 percentage value.
+    // ----------------------------------------------------------------
+
+    percent(pct) {
+        return `${Math.round(pct)}%`;
     }
 };
