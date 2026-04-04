@@ -1,5 +1,5 @@
 ﻿
-## This is a test release
+## This is a test release It will have bugs and Gauges will jump about till calibrated properly
 Trigger release-please
 
 ## FTdx101 WebApp Main Page
