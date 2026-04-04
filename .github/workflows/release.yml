@@ -1,11 +1,16 @@
 name: Build and Release Installer
 
 on:
+  # Automatically run when release-please creates a new GitHub Release
+  release:
+    types: [created]
+
+  # Still allow manual runs for testing
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to create/upload to (e.g. v0.5.1)'
-        required: true
+        description: 'Release tag to create/upload to (e.g. v0.7.0)'
+        required: false
 
 jobs:
   build:
@@ -26,12 +31,12 @@ jobs:
         run: choco install nsis --yes
         shell: pwsh
 
-      - name: Publish app
+      - name: Publish 64-bit self-contained app
         run: |
           dotnet publish FTdx101_WebApp.csproj `
             --configuration Release `
-            --runtime win-x86 `
-            --self-contained false `
+            --runtime win-x64 `
+            --self-contained true `
             --output publish
         shell: pwsh
 
@@ -69,12 +74,18 @@ jobs:
           Write-Host "OK: $('{0:N0}' -f (Get-Item FTdx101_WebApp_Setup.exe).Length) bytes"
         shell: pwsh
 
-      - name: Create or update GitHub Release and upload asset
+      - name: Upload installer to GitHub Release
         run: |
-          # Try to delete existing release first (if it exists)
-          gh release delete "${{ github.event.inputs.tag }}" --yes 2>$null
-          # Create new release
-          gh release create "${{ github.event.inputs.tag }}" FTdx101_WebApp_Setup.exe --title "${{ github.event.inputs.tag }}" --notes "Automated release" --prerelease
+          # Determine tag: use release tag if triggered by release, otherwise manual input
+          if ("${{ github.event_name }}" -eq "release") {
+            $tag = $env:GITHUB_REF_NAME
+          } else {
+            $tag = "${{ github.event.inputs.tag }}"
+          }
+
+          Write-Host "Uploading installer to release: $tag"
+
+          gh release upload "$tag" "FTdx101_WebApp_Setup.exe" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
