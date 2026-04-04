@@ -398,10 +398,7 @@ function updateTxIndicators(isTransmitting) {
         if (typeof window.updatePowerMeter === 'function') {
             window.updatePowerMeter(0);
         }
-        if (typeof window.gaugePower !== 'undefined' && window.gaugePower) {
-            window.gaugePower.value = 0;
-            window.gaugePower.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('power', 0);
         if (typeof window.updateSWRMeter === 'function') {
             window.updateSWRMeter(0);
         }
@@ -1578,13 +1575,11 @@ if (typeof connection !== 'undefined') {
     }
 
     function updateSMeter(receiver, value) {
-        if (receiver === 'A' && window.sMeterGaugeA && window.sMeterGaugeA.gauge) {
-            window.sMeterGaugeA.gauge.value = value;
-            window.sMeterGaugeA.gauge.draw();
+        if (receiver === 'A') {
+            if (window.meterPanel) window.meterPanel.update('smeterA', value);
             updateRawSMeterValueA(value);
-        } else if (receiver === 'B' && window.sMeterGaugeB && window.sMeterGaugeB.gauge) {
-            window.sMeterGaugeB.gauge.value = value;
-            window.sMeterGaugeB.gauge.draw();
+        } else if (receiver === 'B') {
+            if (window.meterPanel) window.meterPanel.update('smeterB', value);
         }
     }
 
@@ -1618,10 +1613,7 @@ let wasTransmittingSWR = false;
             // Update raw Power Out label to 0 with descriptive label
             var rawPowerLabel = document.getElementById('raw-powerout-label');
             if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: 0';
-            if (window.gaugePower && window.gaugePower.gauge) {
-                window.gaugePower.gauge.value = 0;
-                window.gaugePower.gauge.draw();
-            }
+            if (window.meterPanel) window.meterPanel.update('power', 0);
             return;
         }
         // Only update on TX
@@ -1641,10 +1633,7 @@ let wasTransmittingSWR = false;
         // Update raw Power Out label with descriptive label
         var rawPowerLabel = document.getElementById('raw-powerout-label');
         if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
-        if (window.gaugePower && window.gaugePower.gauge) {
-            window.gaugePower.gauge.value = clampedWatts;
-            window.gaugePower.gauge.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('power', clampedWatts);
     }
 
     function updateSWRMeter(value) {
@@ -1655,10 +1644,7 @@ let wasTransmittingSWR = false;
             wasTransmittingSWR = false;
             const valueSpan = document.getElementById('swrMeterValue');
             if (valueSpan) valueSpan.textContent = '1.0:1';
-            if (window.swrGauge && window.swrGauge.gauge) {
-                window.swrGauge.gauge.value = 0;
-                window.swrGauge.gauge.draw();
-            }
+            if (window.meterPanel) window.meterPanel.update('swr', 0);
             return;
         }
         if (!wasTransmittingSWR) {
@@ -1675,21 +1661,14 @@ let wasTransmittingSWR = false;
         const swrClamped = Math.min(swr, 10.0);
         const valueSpan = document.getElementById('swrMeterValue');
         if (valueSpan) valueSpan.textContent = window.MeterFormatters.swr(swrClamped);
-        if (window.swrGauge && window.swrGauge.gauge) {
-            const gaugePosition = (swrClamped - 1.0) * 127.5;
-            window.swrGauge.gauge.value = gaugePosition;
-            window.swrGauge.gauge.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('swr', (swrClamped - 1.0) * 127.5);
     }
 
     function updateCompressionMeter(value) {
         const percent = state.isTransmitting ? Math.max(0, Math.min(100, Math.round((value / 255) * 100))) : 0;
         const valueSpan = document.getElementById('compressionMeterValue');
         if (valueSpan) valueSpan.textContent = window.MeterFormatters.compressionOverlay(percent);
-        if (window.compressionGauge && window.compressionGauge.gauge) {
-            window.compressionGauge.gauge.value = percent;
-            window.compressionGauge.gauge.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('compression', percent);
     }
 
     // ALC gauge (0-255 raw value)
@@ -1706,10 +1685,7 @@ let wasTransmittingSWR = false;
             }
             const alcMeterValue = document.getElementById('alcMeterValue');
             if (alcMeterValue) alcMeterValue.textContent = window.MeterFormatters.alcVolts(0);
-            if (window.alcGauge && window.alcGauge.gauge) {
-                window.alcGauge.gauge.value = 0;
-                window.alcGauge.gauge.draw();
-            }
+            if (window.meterPanel) window.meterPanel.update('alc', 0);
             return;
         }
 
@@ -1738,10 +1714,7 @@ let wasTransmittingSWR = false;
         const alcMeterValue = document.getElementById('alcMeterValue');
         if (alcMeterValue) alcMeterValue.textContent = window.MeterFormatters.alcVolts(alcVolts);
 
-        if (window.alcGauge && window.alcGauge.gauge) {
-            window.alcGauge.gauge.value = value;  // Raw 0-255 value
-            window.alcGauge.gauge.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('alc', value);
     }
 
     // Update IDD display (0-255 raw value, display as amps)
@@ -1765,10 +1738,7 @@ let wasTransmittingSWR = false;
         if (iddMeterValue) {
             iddMeterValue.textContent = window.MeterFormatters.iddOverlay(amps);
         }
-        if (window.iddGauge && window.iddGauge.gauge) {
-            window.iddGauge.gauge.value = Math.max(0, Math.min(amps, 25));
-            window.iddGauge.gauge.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('idd', Math.max(0, Math.min(amps, 25)));
     }
 
     // Update PA Voltage display (0-255 raw value, display as volts)
@@ -1803,10 +1773,7 @@ let wasTransmittingSWR = false;
         if (vddMeterValue) {
             vddMeterValue.textContent = window.MeterFormatters.vddOverlay(volts);
         }
-        if (window.vddGauge && window.vddGauge.gauge) {
-            window.vddGauge.gauge.value = Math.max(40, Math.min(volts, 55));
-            window.vddGauge.gauge.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('vdd', Math.max(40, Math.min(volts, 55)));
     }
 
     // Update PA Temperature display (value is directly in °C from IF command)
@@ -1824,11 +1791,7 @@ let wasTransmittingSWR = false;
             return;
         }
        window._paTempLast = window.calibrationEngine.calibrateNumeric("TPA", tempC);
-        // Update gauge needle
-        if (window.tempGauge && window.tempGauge.gauge) {
-            window.tempGauge.gauge.value = tempC;
-            window.tempGauge.gauge.draw();
-        }
+        if (window.meterPanel) window.meterPanel.update('temp', tempC);
         // Update gauge overlay value span
         const tempDisplay = document.getElementById('paTemperatureValue');
         if (tempDisplay) {
@@ -1856,154 +1819,6 @@ let wasTransmittingSWR = false;
             }
         }
     }
-
-    // Unified gauge configuration - supports S-Meter, Power, and SWR
-    function makeGaugeConfig(canvasId, type = 'smeter', options = {}) {
-        const configs = {
-            smeter: {
-                minValue: 0,
-                maxValue: 255,
-                majorTicks: ["0", "4", "30", "65", "95", "130", "171", "212", "255"],
-                highlights: [
-                    { from: 0, to: 130, color: "rgba(0,255,0,.25)" },
-                    { from: 130, to: 255, color: "rgba(255,0,0,.25)" }
-                ],
-                // Classic S-Meter labels: 0, S1-S9, +20, +40, +60
-                labels: ["0", "S1", "S3", "S5", "S7", "S9", "+20", "+40", "+60"]
-            },
-            power: {
-                minValue: 0,
-                maxValue: 200,
-                majorTicks: ["0", "25", "50", "75", "100", "125", "150", "175", "200"],
-                highlights: [
-                    { from: 0, to: 150, color: "rgba(0,255,0,.25)" },
-                    { from: 150, to: 175, color: "rgba(255,255,0,.25)" },
-                    { from: 175, to: 200, color: "rgba(255,0,0,.25)" }
-                ],
-                labels: ["0", "25", "50", "75", "100", "125", "150", "175", "200"]
-            },
-            swr: {
-                minValue: 0,
-                maxValue: 255,
-                majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
-                highlights: [
-                    { from: 0, to: 85, color: "rgba(0,255,0,.25)" },
-                    { from: 85, to: 128, color: "rgba(255,255,0,.25)" },
-                    { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
-                ],
-                labels: ["1.0", "1.3", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"]
-            },
-            alc: {
-                minValue: 0,
-                maxValue: 255,
-                majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
-                highlights: [
-                    { from: 0, to: 178, color: "rgba(0,255,0,.25)" },
-                    { from: 178, to: 230, color: "rgba(255,255,0,.25)" },
-                    { from: 230, to: 255, color: "rgba(255,0,0,.25)" }
-                ],
-                labels: ["0", "6", "12", "19", "25", "31", "37", "44", "50"]
-            }
-        };
-
-        const config = configs[type] || configs.smeter;
-
-        return {
-            renderTo: canvasId,
-            width: options.width || 420,    // Reduced from 560 (25% smaller)
-            height: options.height || 135,  // Reduced from 180 (25% smaller)
-            units: "",
-            minValue: config.minValue,
-            maxValue: config.maxValue,
-            startAngle: 90,
-            ticksAngle: 180,
-            valueBox: false,
-            majorTicks: config.majorTicks,
-            minorTicks: 0,
-            strokeTicks: false,
-            tickSide: "out",
-            needleSide: "center",
-            highlights: config.highlights,
-            colorPlate: "#ffffff",
-            borderShadowWidth: 0,
-            borders: false,
-            needleShadow: false,
-            colorMajorTicks: "#555555",
-            colorMinorTicks: "transparent",
-            colorNumbers: "transparent",
-            fontNumbersSize: 0,
-            colorBarProgress: "#198754",
-            colorBarProgressEnd: "#198754",
-            colorBar: "#dddddd",
-            barShadow: 0,
-            barWidth: 10,
-            barStrokeWidth: 0,
-            needleType: "arrow",
-            needleWidth: 3,
-            needleCircleSize: 7,
-            needleCircleOuter: false,
-            needleCircleInner: true,
-            colorNeedleCircleInner: "#dc3545",
-            colorNeedleCircleInnerEnd: "#dc3545",
-            animationDuration: 400,
-            animationRule: "linear",
-            value: 0,
-            _labels: config.labels  // Store labels for later use
-        };
-    }
-
-    function initializeGauges() {
-        const gaugeWidth = 420;   // Updated from 560 (25% smaller)
-        const gaugeHeight = 135;  // Updated from 180 (25% smaller)
-
-        // Overlay readable labels on top of the canvas gauge
-        function createGaugeLabels(canvasId, labels) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas || canvas.nextElementSibling?.classList.contains('gauge-labels-overlay')) {
-                return;
-            }
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'gauge-wrapper';
-            // Apply left transform only to S-meter canvases
-            const translateX = (canvasId === 'sMeterCanvasA' || canvasId === 'sMeterCanvasB') ? ';transform:translateX(-120px)' : '';
-            wrapper.style.cssText = `position:relative;display:block;width:${gaugeWidth}px;height:${gaugeHeight}px;margin-left:0${translateX}`;
-
-            const labelsDiv = document.createElement('div');
-            labelsDiv.className = 'gauge-labels-overlay';
-
-            const centerX = gaugeWidth / 2;
-            const centerY = gaugeHeight - 64;  // Adjusted from 85 (75% of original)
-            const isSMeter = (canvasId === 'sMeterCanvasA' || canvasId === 'sMeterCanvasB');
-            // Use classic radius for all meters for label placement
-            const radius = gaugeWidth * 0.17;
-            const angleStep = 180 / (labels.length - 1);
-
-            labels.forEach((label, index) => {
-                const angle = 180 - (angleStep * index);
-                const radians = (angle * Math.PI) / 180;
-                const x = centerX + radius * Math.cos(radians);
-                const y = centerY - radius * Math.sin(radians);
-
-                const span = document.createElement('span');
-                span.className = 'gauge-label';
-                span.textContent = label;
-                span.style.left = x + 'px';
-                span.style.top = y + 'px';
-                labelsDiv.appendChild(span);
-            });
-
-            canvas.parentNode.insertBefore(wrapper, canvas);
-            wrapper.appendChild(canvas);
-            wrapper.appendChild(labelsDiv);
-
-        }
-
-        // All gauges are initialised by the ES module factory in Index.cshtml.
-        // Needle updates use window.sMeterGaugeA/B.gauge, window.swrGauge.gauge, etc.
-    }
-
-
 
     // Attach AF Gain slider event listeners only once, when data is available
     function attachAfGainSliderListeners() {
@@ -2044,7 +1859,6 @@ let wasTransmittingSWR = false;
     }
 
     // Kick everything off
-    initializeGauges();
     initializeDigitInteraction('A');
     initializeDigitInteraction('B');
     const s = document.getElementById('powerSlider'); if (s) updateSliderFill(s);

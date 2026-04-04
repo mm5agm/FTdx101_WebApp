@@ -351,45 +351,19 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
-        import { createSMeterGauge, createPowerGauge, createSWRGauge, createCompressionGauge, createALCGauge, createTempGauge, createIDDGauge, createVDDGauge } from "/js/guages/gaugeFactory.js";
-        // Initialize all gauges using the new factory
+        import { MeterPanel } from "/js/guages/meter-panel.js";
         document.addEventListener('DOMContentLoaded', function () {
-            if (document.getElementById('sMeterCanvasA')) {
-                window.sMeterGaugeA = createSMeterGauge('sMeterCanvasA');
-                window.sMeterGaugeA.render();
-            }
-            if (document.getElementById('sMeterCanvasB')) {
-                window.sMeterGaugeB = createSMeterGauge('sMeterCanvasB');
-                window.sMeterGaugeB.render();
-            }
-            if (document.getElementById('powerMeterCanvas')) {
-                window.gaugePower = createPowerGauge('powerMeterCanvas');
-                window.gaugePower.render();
-            }
-            if (document.getElementById('swrMeterCanvas')) {
-                window.swrGauge = createSWRGauge('swrMeterCanvas');
-                window.swrGauge.render();
-            }
-            if (document.getElementById('compressionMeterCanvas')) {
-                window.compressionGauge = createCompressionGauge('compressionMeterCanvas');
-                window.compressionGauge.render();
-            }
-            if (document.getElementById('alcMeterCanvas')) {
-                window.alcGauge = createALCGauge('alcMeterCanvas');
-                window.alcGauge.render();
-            }
-            if (document.getElementById('tempMeterCanvas')) {
-                window.tempGauge = createTempGauge('tempMeterCanvas');
-                window.tempGauge.render();
-            }
-            if (document.getElementById('iddMeterCanvas')) {
-                window.iddGauge = createIDDGauge('iddMeterCanvas');
-                window.iddGauge.render();
-            }
-            if (document.getElementById('vddMeterCanvas')) {
-                window.vddGauge = createVDDGauge('vddMeterCanvas');
-                window.vddGauge.render();
-            }
+            window.meterPanel = new MeterPanel({
+                smeterA:     { type: 'smeter', canvasId: 'sMeterCanvasA' },
+                smeterB:     { type: 'smeter', canvasId: 'sMeterCanvasB' },
+                power:       { canvasId: 'powerMeterCanvas' },
+                swr:         { canvasId: 'swrMeterCanvas' },
+                compression: { canvasId: 'compressionMeterCanvas' },
+                alc:         { canvasId: 'alcMeterCanvas' },
+                temp:        { canvasId: 'tempMeterCanvas' },
+                idd:         { canvasId: 'iddMeterCanvas' },
+                vdd:         { canvasId: 'vddMeterCanvas' }
+            });
         });
         async function launchWsjtx() {
             try {

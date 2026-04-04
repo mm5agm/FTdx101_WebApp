@@ -20,21 +20,64 @@
             @for (int i = 0; i < Model.Calibration.Points.Count; i++)
             {
                 <div class="calibration-point-row">
-                    <input type="text" name="Calibration.Points[@i].Label" value="@Model.Calibration.Points[i].Label" placeholder="Label" class="calibration-label-input" />
+                    <input type="text" name="Calibration.Points[@i].Radio" value="@(Model.Calibration.Points[i].Radio ?? Model.Calibration.Points[i].Label)" placeholder="Label" class="calibration-label-input" />
                     <input type="number" name="Calibration.Points[@i].Raw" value="@Model.Calibration.Points[i].Raw" step="1" class="calibration-raw-input" />
                     <button type="submit" name="delete" value="@i" class="delete-point-btn">×</button>
                 </div>
             }
         </div>
         <button type="submit" name="add" value="1" class="add-point-btn">Add Point</button>
-        <button type="submit" class="save-btn">Save Calibration</button>
+        <button type="button" id="saveCalibrationBtn" class="save-btn">Save Calibration</button>
+        <div id="saveCalibrationMsg" class="save-message" style="display:none"></div>
     </form>
 </div>
 
 @section Scripts {
-    <script src="~/js/ui/site.js"></script>
     <script>
-        // JS to render the gauge in calibration context
+        document.getElementById('saveCalibrationBtn').addEventListener('click', function () {
+            const rows = document.querySelectorAll('.calibration-point-row');
+            const points = [];
+            rows.forEach(function (row) {
+                const label = row.querySelector('.calibration-label-input').value.trim();
+                const raw = parseFloat(row.querySelector('.calibration-raw-input').value);
+                if (!isNaN(raw)) {
+                    points.push({ label: label, raw: raw });
+                }
+            });
+
+            const payload = {
+                meters: [{
+                    name: 'S-Meter',
+                    type: 's_meter',
+                    isGauge: true,
+                    units: 'S-units',
+                    points: points
+                }]
+            };
+
+            const msgEl = document.getElementById('saveCalibrationMsg');
+            msgEl.style.display = 'none';
+
+            fetch('/api/calibration/file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function () {
+                msgEl.textContent = 'Calibration saved.';
+                msgEl.style.color = '#16a34a';
+                msgEl.style.display = 'block';
+            })
+            .catch(function (err) {
+                msgEl.textContent = 'Save failed: ' + err.message;
+                msgEl.style.color = '#dc2626';
+                msgEl.style.display = 'block';
+            });
+        });
     </script>
 }
 
@@ -107,5 +150,10 @@
     padding: 0.5rem 1.2rem;
     font-size: 1rem;
     cursor: pointer;
+}
+.save-message {
+    margin-top: 0.75rem;
+    color: #16a34a;
+    font-weight: 600;
 }
 </style>

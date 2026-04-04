@@ -1,12 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using FTdx101_WebApp.Models.Calibration;
+using FTdx101_WebApp.Services;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FTdx101_WebApp.Pages.Calibration
 {
     public class MeterCalibrationModel : PageModel
     {
+        private readonly ICalibrationService _calibrationService;
+
+        public MeterCalibrationModel(ICalibrationService calibrationService)
+        {
+            _calibrationService = calibrationService;
+        }
+
         [BindProperty]
         public FTdx101_WebApp.Models.Calibration.MeterCalibration Calibration { get; set; } = new FTdx101_WebApp.Models.Calibration.MeterCalibration
         {
@@ -20,9 +29,16 @@ namespace FTdx101_WebApp.Pages.Calibration
         [BindProperty]
         public double CurrentRawValue { get; set; } = 0;
 
+        public string? SaveMessage { get; set; }
+
         public void OnGet()
         {
-            // TODO: Load existing calibration data if available
+            var existing = _calibrationService.Current.Meters
+                .FirstOrDefault(m => m.Name == "S-Meter");
+            if (existing != null)
+            {
+                Calibration = existing;
+            }
         }
 
         public IActionResult OnPost(string add, string delete)
@@ -30,12 +46,32 @@ namespace FTdx101_WebApp.Pages.Calibration
             if (!string.IsNullOrEmpty(add))
             {
                 Calibration.Points.Add(new CalibrationPoint { Label = "", Raw = 0 });
+                return Page();
             }
+
             if (!string.IsNullOrEmpty(delete) && int.TryParse(delete, out int idx) && idx >= 0 && idx < Calibration.Points.Count)
             {
                 Calibration.Points.RemoveAt(idx);
+                return Page();
             }
-            // TODO: Save logic would go here
+
+            // Save button — rebuild the file, replacing/adding the S-Meter entry.
+            var file = new CalibrationFile
+            {
+                Meters = _calibrationService.Current.Meters
+                    .Where(m => m.Name != "S-Meter")
+                    .ToList()
+            };
+            file.Meters.Add(new FTdx101_WebApp.Models.Calibration.MeterCalibration
+            {
+                Name = "S-Meter",
+                Type = "s_meter",
+                IsGauge = true,
+                Units = "S-units",
+                Points = Calibration.Points
+            });
+            _calibrationService.Save(file);
+            SaveMessage = "Calibration saved.";
             return Page();
         }
     }
