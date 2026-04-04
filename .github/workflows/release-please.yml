@@ -1,15 +1,20 @@
-name: Automated Release
+name: release-please
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  release:
+  release-please:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
           release-type: simple
-          token: ${{ secrets.GITHUB_TOKEN }}
+          manifest-file: .release-please-manifest.json
+
