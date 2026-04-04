@@ -1745,25 +1745,17 @@ let wasTransmittingSWR = false;
     // Filter out noisy readings - PA voltage should be stable around 48V
     let lastValidVDD = 204; // Default to ~48V
     function updatePAVoltage(value) {
-        // Smoothing: ignore sudden jumps >3V, ignore 0 unless persists, clamp to 40-55V
-        const minRaw = 170;  // ~40V
+        // minRaw=175 (~41.2V) not 170 (~40V): keeps a margin above the gauge
+        // minimum so a threshold reading can never pin the needle to the bottom.
+        const minRaw = 175;  // ~41.2V
         const maxRaw = 235;  // ~55V
         if (!window._vddLast) window._vddLast = 48;
-        if (!window._vddZeroCount) window._vddZeroCount = 0;
         if (value >= minRaw && value <= maxRaw) {
             lastValidVDD = value;
         } else {
-            // Ignore noisy reading
             return;
         }
-     const volts = window.calibrationEngine.calibrateNumeric("VPA", lastValidVDD);
-        // Ignore 0 unless it persists for 2+ updates
-        if (volts === 0) {
-            window._vddZeroCount++;
-            if (window._vddZeroCount < 2) return;
-        } else {
-            window._vddZeroCount = 0;
-        }
+        const volts = window.calibrationEngine.calibrateNumeric("VPA", lastValidVDD);
         // Ignore sudden jumps >3V
         if (Math.abs(volts - window._vddLast) > 3 && window._vddLast !== 0) {
             return;

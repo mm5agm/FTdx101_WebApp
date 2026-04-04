@@ -1,0 +1,39 @@
+name: Build MSI Installer
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish app
+        run: dotnet publish FTdx101_WebApp.csproj -c Release -r win-x86 --self-contained false -o publish
+
+      - name: Install WixSharp tool
+        run: dotnet tool install --global WixSharp.wix
+
+      - name: Build MSI
+        working-directory: installer
+        env:
+          APP_VERSION: ${{ github.event.release.tag_name }}
+        run: dotnet run --project Installer.csproj
+
+      - name: Upload MSI to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer/bin/Debug/net8.0/*.msi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
