@@ -1,6 +1,4 @@
 ﻿
-## Almost a complete re-write 1st April 2026
-
 ## FTdx101 WebApp Main Page
 ![FTdx101 WebApp Main Page](pictures/DevelopScreen.png)
 
