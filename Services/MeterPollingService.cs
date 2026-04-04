@@ -121,12 +121,18 @@ namespace FTdx101_WebApp.Services
                     _logger.LogInformation("[MeterPolling][DEBUG] Temperature response: {0}", tempResponse);
                     int temp = CatCommands.ParseMeterReading(tempResponse ?? "");
                     _stateService.Temperature = temp;
+
+                    await Task.Delay(500, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "[MeterPolling][FATAL] Exception in polling loop: {Message}\nStackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                    try { await Task.Delay(500, stoppingToken); } catch (OperationCanceledException) { break; }
                 }
-                await Task.Delay(500, stoppingToken); // Poll every 500ms
             }
         }
     }
