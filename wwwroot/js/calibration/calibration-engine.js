@@ -1,69 +1,104 @@
 // FTdx101 WebApp – Calibration Engine
-// Pure functions only. No DOM, no UI, no gauge logic.
-// Single source of truth for all meter calibration data and functions.
+// Pure functions only. No DOM, no UI, no gauge logic, no side effects.
+//
+// This is the single source of truth for all meter calibration.
+// Usage:
+//   import { calibrateNumeric, calibrateSMeterLabel, loadFromBackend } from './calibration-engine.js';
+//
+// At startup call loadFromBackend() once to replace default tables with
+// user-saved calibration data from the server.  All subsequent calls to
+// calibrateNumeric / calibrateSMeterLabel will use the loaded data.
 
-// ------------------------------------------------------------
-// Calibration tables
-// Each entry maps a raw radio value to a calibrated display value.
-// ------------------------------------------------------------
+import { defaultTables } from './calibration-tables.js';
 
-const smeterTable = [
-    { raw: 0,   value: 0  },
-    { raw: 40,  value: 1  },
-    { raw: 80,  value: 3  },
-    { raw: 120, value: 5  },
-    { raw: 160, value: 7  },
-    { raw: 200, value: 9  },
-    { raw: 240, value: 20 },
-    { raw: 255, value: 60 }
-];
-
-const powerTable = [
-    { raw: 0,   value: 0   },
-    { raw: 64,  value: 25  },
-    { raw: 128, value: 50  },
-    { raw: 192, value: 100 },
-    { raw: 255, value: 200 }
-];
-
-const swrTable = [
-    { raw: 0,   value: 1.0 },
-    { raw: 128, value: 1.5 },
-    { raw: 200, value: 2.0 },
-    { raw: 255, value: 3.0 }
-];
-
-const alcTable = [
-    { raw: 0,   value: 0   },
-    { raw: 128, value: 50  },
-    { raw: 255, value: 100 }
-];
-
-// ------------------------------------------------------------
-// Interpolation helper (linear interpolation between table points)
-// ------------------------------------------------------------
-
-function interpolate(table, rawValue) {
-    if (rawValue <= table[0].raw) return table[0].value;
-    if (rawValue >= table[table.length - 1].raw) return table[table.length - 1].value;
-
-    for (let i = 1; i < table.length; i++) {
-        if (rawValue <= table[i].raw) {
-            const prev = table[i - 1];
-            const next = table[i];
-            const t = (rawValue - prev.raw) / (next.raw - prev.raw);
-            return prev.value + t * (next.value - prev.value);
-        }
-    }
-
-    return table[table.length - 1].value;
+// Live tables — initialised from defaults, replaced by loadFromBackend().
+// Copied so the imported defaults are never mutated.
+const tables = {};
+for (const [key, rows] of Object.entries(defaultTables)) {
+    tables[key] = rows.map(r => ({ ...r }));
 }
 
 // ------------------------------------------------------------
-// Public calibration functions
+// Internal helpers
 // ------------------------------------------------------------
 
-export function calibrateSMeter(raw) { return interpolate(smeterTable, raw); }
-export function calibratePower(raw)  { return interpolate(powerTable,  raw); }
-export function calibrateSWR(raw)    { return interpolate(swrTable,    raw); }
-export function calibrateALC(raw)    { return interpolate(alcTable,    raw); }
+// Linear interpolation between adjacent calibration points.
+function interpolate(table, raw) {
+    if (raw <= table[0].raw) return table[0].value;
+    if (raw >= table[table.length - 1].raw) return table[table.length - 1].value;
+    for (let i = 1; i < table.length; i++) {
+        if (raw <= table[i].raw) {
+            const prev = table[i - 1];
+            const next = table[i];
+            const t = (raw - prev.raw) / (next.raw - prev.raw);
+            return prev.value + t * (next.value - prev.value);
+        }
+    }
+    return table[table.length - 1].value;
+}
+
+// Snap to the nearest lower-or-equal raw entry (used for S-meter labels).
+function snapLabel(table, raw) {
+    let last = table[0];
+    for (const pt of table) {
+        if (raw < pt.raw) break;
+        last = pt;
+    }
+    return last.label;
+}
+
+// ------------------------------------------------------------
+// Public API
+// ------------------------------------------------------------
+
+/**
+ * Calibrate a raw ADC meter reading to a display value.
+ * Falls back to the raw value (identity) when no table exists for meterName.
+ *
+ * @param {string} meterName  Key matching an entry in calibration-tables.js
+ *                            e.g. 'PWR', 'SWR', 'ALC', 'IDD', 'VPA', 'TPA'
+ * @param {number} raw        Raw 0–255 ADC value from the radio
+ * @returns {number}          Calibrated display value
+ */
+export function calibrateNumeric(meterName, raw) {
+    const table = tables[meterName];
+    if (!table || table.length === 0) return raw;
+    return interpolate(table, raw);
+}
+
+/**
+ * Return the S-meter label string for a raw S-meter reading.
+ *
+ * @param {number} raw  Raw 0–255 ADC value
+ * @returns {string}    Label such as 'S7', '+10', '+40'
+ */
+export function calibrateSMeterLabel(raw) {
+    return snapLabel(tables.SMETER_LABELS, raw);
+}
+
+/**
+ * Load backend calibration data and replace the live tables.
+ * Safe to call at startup; silently falls back to defaults on any error.
+ *
+ * The backend returns a dictionary keyed by meter name (e.g. 'S-Meter').
+ * backendNameMap translates those names to the table keys used here.
+ *
+ * @param {Object} backendNameMap  e.g. { 'S-Meter': 'SMETER_LABELS' }
+ */
+export async function loadFromBackend(backendNameMap = {}) {
+    try {
+        const response = await fetch('/api/calibration/all');
+        if (!response.ok) return;
+        const data = await response.json();
+        for (const [backendName, points] of Object.entries(data)) {
+            const key = backendNameMap[backendName] ?? backendName;
+            if (!(key in tables)) continue;
+            tables[key] = points.map(p => ({
+                raw:   p.Raw   ?? p.raw   ?? 0,
+                value: p.Value ?? p.value ?? p.Label ?? p.label ?? (p.Raw ?? p.raw ?? 0)
+            }));
+        }
+    } catch (e) {
+        console.warn('[CalibrationEngine] Backend load failed, using defaults:', e.message);
+    }
+}

@@ -1,6 +1,7 @@
 // FTdx101Calibration.js
-// Unified calibration engine for FTdx101 meters
-// Loads calibration JSON, normalizes fields, supports numeric and s_meter types, interpolates, and caches
+// DEPRECATED — superseded by calibration-engine.js + calibration-tables.js.
+// This file is no longer loaded or called. Kept for reference only.
+// Do not add new code here.
 
 class FTdx101Calibration {
     static _calibrationData = null;

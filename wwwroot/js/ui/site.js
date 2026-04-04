@@ -615,26 +615,8 @@ connection.on("ShowSettingsPage", function () {
 
 
 
-// S-Meter label interpolation using only dynamic calibration data
-// --- Power Out Calibration Points (for PowerMeter gauge/label) ---
-let powerOutCalibrationPoints = null;
-
-function fetchPowerOutCalibrationPoints() {
-    fetch('/api/calibration/powerout')
-        .then(response => response.json())
-        .then(points => {
-            powerOutCalibrationPoints = points.map(p => ({ label: p.label, value: Number(p.value) }));
-
-        })
-        .catch(err => {
-            powerOutCalibrationPoints = null;
-
-        });
-}
-
-document.addEventListener('DOMContentLoaded', fetchPowerOutCalibrationPoints);
 function sMeterLabel(val) {
-    return window.calibrationService.calibrateSMeterLabel(val);
+    return window.calibrationEngine.calibrateSMeterLabel(val);
 }
 
 
@@ -1103,79 +1085,6 @@ if (typeof connection !== 'undefined') {
         operationInProgress: false,
         isTransmitting: false  // Track TX state for meter display
     };
-// --- Calibration Service (JS side, backed by JSON from backend) ---
-const calibrationService = (function () {
-    const tables = {}; // meterName -> array of { raw, value, label? }
-
-    function calibrateNumeric(meterName, raw) {
-        const table = tables[meterName];
-        if (!table || table.length === 0) return raw; // fallback: identity
-        return interpolateNumeric(table, raw);
-    }
-
-    function calibrateSMeterLabel(raw) {
-        let table = tables["SMETER"];
-        // If no calibration, use default S-Meter points
-        if (!table || table.length === 0) {
-            table = [
-                { raw: 0, label: "S1" },
-                { raw: 20, label: "S3" },
-                { raw: 40, label: "S5" },
-                { raw: 80, label: "S7" },
-                { raw: 120, label: "S9" },
-                { raw: 160, label: "+10" },
-                { raw: 200, label: "+20" },
-                { raw: 240, label: "+40" }
-            ];
-        }
-        return interpolateLabel(table, raw);
-    }
-
-    return {
-        _tables: tables,
-        calibrateNumeric,
-        calibrateSMeterLabel
-    };
-})();
-
-// Expose globally for meter functions
-window.calibrationService = calibrationService;
-function interpolateNumeric(points, raw) {
-    // points: [{ raw: number, value: number }, ...] sorted by raw
-    if (points.length === 1) return points[0].value;
-
-    if (raw <= points[0].raw) return points[0].value;
-    if (raw >= points[points.length - 1].raw) return points[points.length - 1].value;
-
-    for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const next = points[i];
-        if (raw <= next.raw) {
-            const frac = (raw - prev.raw) / (next.raw - prev.raw);
-            return prev.value + frac * (next.value - prev.value);
-        }
-    }
-    return points[points.length - 1].value;
-}
-
-function interpolateLabel(points, raw) {
-    // points: [{ raw: number, label: string }, ...] sorted by raw
-    if (points.length === 1) return points[0].label;
-
-    if (raw <= points[0].raw) return points[0].label;
-    if (raw >= points[points.length - 1].raw) return points[points.length - 1].label;
-
-    for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const next = points[i];
-        if (raw <= next.raw) {
-            // For now: snap to the closer label
-            const mid = (prev.raw + next.raw) / 2;
-            return raw <= mid ? prev.label : next.label;
-        }
-    }
-    return points[points.length - 1].label;
-}
 
     function renderFrequencyDigits(freq, selIdx) {
         if (!freq || freq < 1000) {
@@ -1725,17 +1634,8 @@ let wasTransmittingSWR = false;
             powerHistory.shift();
         }
         const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
-        // Use calibration points for Watts
-        let watts = window.calibrationService.calibrateNumeric("PWR", avgValue);
-        // Clamp watts to gauge maxValue
-        let maxW = 200;
-        if (Array.isArray(powerOutCalibrationPoints) && powerOutCalibrationPoints.length > 1) {
-            const last = powerOutCalibrationPoints[powerOutCalibrationPoints.length-1];
-            const lastNum = parseFloat(last.label);
-            if (!isNaN(lastNum)) maxW = lastNum;
-        }
-        // Clamp value to [0, maxW] and round to integer
-        let clampedWatts = Math.round(Math.max(0, Math.min(watts, maxW)));
+        let watts = window.calibrationEngine.calibrateNumeric("PWR", avgValue);
+        let clampedWatts = Math.round(Math.max(0, Math.min(watts, 200)));
         const valueSpan = document.getElementById('powerMeterValue');
         if (valueSpan) valueSpan.textContent = `${clampedWatts}`;
         // Update raw Power Out label with descriptive label
@@ -1748,9 +1648,6 @@ let wasTransmittingSWR = false;
     }
 
     function updateSWRMeter(value) {
-                // Store last raw value globally for calibration reloads and debugging
-                window.lastSWRMeterRawValue = value;
-        // Store last raw value globally for calibration reloads and debugging
         window.lastSWRMeterRawValue = value;
         // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
         if (!state.isTransmitting) {
@@ -1773,7 +1670,7 @@ let wasTransmittingSWR = false;
             swrHistory.shift();
         }
         const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
-      const swr = window.calibrationService.calibrateNumeric("SWR", avgValue);
+      const swr = window.calibrationEngine.calibrateNumeric("SWR", avgValue);
 
         const swrClamped = Math.min(swr, 10.0);
         const valueSpan = document.getElementById('swrMeterValue');
@@ -1818,7 +1715,7 @@ let wasTransmittingSWR = false;
 
         // FTdx101 ALC calibration: 50V corresponds to a raw value of 178
         // So we scale the 0-255 raw value to a 0-50V range for display
-        const alcVolts = window.calibrationService.calibrateNumeric("ALC", value);
+        const alcVolts = window.calibrationEngine.calibrateNumeric("ALC", value);
         const percentage = Math.round((value / 255) * 100);
         const valueSpan = document.getElementById('alcValue');
         const progressBar = document.getElementById('alcBar');
@@ -1853,7 +1750,7 @@ let wasTransmittingSWR = false;
     function updateIDDMeter(value) {
         // Smoothing: ignore sudden jumps >5A, ignore 0 unless persists, clamp to 0-25A
         if (!window._iddLast) window._iddLast = 0;
-       const amps = window.calibrationService.calibrateNumeric("IDD", value);
+       const amps = window.calibrationEngine.calibrateNumeric("IDD", value);
         // Ignore 0 unless it persists for 2+ updates
         if (amps === 0) {
             window._iddZeroCount = (window._iddZeroCount || 0) + 1;
@@ -1891,7 +1788,7 @@ let wasTransmittingSWR = false;
             // Ignore noisy reading
             return;
         }
-     const volts = window.calibrationService.calibrateNumeric("VPA", lastValidVDD);
+     const volts = window.calibrationEngine.calibrateNumeric("VPA", lastValidVDD);
         // Ignore 0 unless it persists for 2+ updates
         if (volts === 0) {
             window._vddZeroCount++;
@@ -1928,7 +1825,7 @@ let wasTransmittingSWR = false;
         if (Math.abs(tempC - window._paTempLast) > 10 && window._paTempLast !== 0) {
             return;
         }
-       window._paTempLast = window.calibrationService.calibrateNumeric("TPA", tempC);
+       window._paTempLast = window.calibrationEngine.calibrateNumeric("TPA", tempC);
         // Update gauge needle
         if (window.tempGauge && window.tempGauge.gauge) {
             window.tempGauge.gauge.value = tempC;
