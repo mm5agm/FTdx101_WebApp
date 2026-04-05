@@ -1,4 +1,4 @@
-﻿
+
 ## This is a test release It will have bugs and Gauges will jump about till calibrated properly
 Trigger release-please
 
@@ -42,6 +42,14 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 ---
 
 ## Release Notes
+
+## 2026-04-05 - v0.7.2
+
+### Changed
+
+- Refactor frontend: consolidate SignalR handlers and add orchestrators layer
+- Release script works
+
 
 ## 2026-04-01 - Major Rewrite Foundation
 
