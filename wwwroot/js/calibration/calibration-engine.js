@@ -93,10 +93,16 @@ export async function loadFromBackend(backendNameMap = {}) {
         for (const [backendName, points] of Object.entries(data)) {
             const key = backendNameMap[backendName] ?? backendName;
             if (!(key in tables)) continue;
-            tables[key] = points.map(p => ({
-                raw:   p.Raw   ?? p.raw   ?? 0,
-                value: p.Value ?? p.value ?? p.Label ?? p.label ?? (p.Raw ?? p.raw ?? 0)
-            }));
+            tables[key] = points.map(p => {
+                const rawVal = p.Raw ?? p.raw ?? 0;
+                // CalibrationPoint serialises the display value as "Radio" (a numeric string).
+                // Fall back through legacy field names before using raw as identity.
+                const radioStr = p.Radio ?? p.Value ?? p.value ?? p.Label ?? p.label;
+                const value = (radioStr !== undefined && radioStr !== null && radioStr !== '')
+                    ? Number(radioStr)
+                    : rawVal;
+                return { raw: rawVal, value: isNaN(value) ? rawVal : value };
+            });
         }
     } catch (e) {
         console.warn('[CalibrationEngine] Backend load failed, using defaults:', e.message);

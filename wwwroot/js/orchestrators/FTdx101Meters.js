@@ -1,0 +1,189 @@
+// FTdx101 WebApp – Meter Orchestrator
+// Connects calibration-engine → MeterPanel.
+// No DOM queries, no SignalR, no string formatting.
+// Owns TX state, smoothing, noise filtering, calibration, and gauge updates.
+// Returns plain numeric displayValue objects so the caller can format and update DOM labels.
+
+export class FTdx101Meters {
+    /**
+     * @param {object} meterPanel        An initialised MeterPanel instance
+     * @param {object} calibrationEngine An object exposing calibrateNumeric(key, raw)
+     */
+    constructor(meterPanel, calibrationEngine) {
+        this._meterPanel   = meterPanel;
+        this._calibration  = calibrationEngine;
+
+        // TX state
+        this._isTransmitting = false;
+
+        // Smoothing: 7-reading rolling average for power and SWR
+        this._powerHistory        = [];
+        this._swrHistory          = [];
+        this._historyLength       = 7;
+        this._wasTransmittingPower = false;
+        this._wasTransmittingSWR   = false;
+
+        // IDD filter state
+        this._iddLast      = 0;
+        this._iddZeroCount = 0;
+
+        // VDD filter state
+        this._lastValidVDD = 204;  // ~48 V default
+        this._vddLast      = 48;
+
+        // Temperature filter state
+        this._paTempLast      = 0;
+        this._paTempZeroCount = 0;
+    }
+
+    // ----------------------------------------------------------------
+    // TX state
+    // ----------------------------------------------------------------
+
+    /**
+     * Notify the orchestrator that TX state has changed.
+     * Must be called whenever IsTransmitting updates before the next meter update.
+     * @param {boolean} value
+     */
+    setTransmitting(value) {
+        this._isTransmitting = value;
+    }
+
+    // ----------------------------------------------------------------
+    // Public entry point
+    // ----------------------------------------------------------------
+
+    /**
+     * Route a single meter update from SignalR through processing to the gauge.
+     *
+     * @param {string} property   SignalR property name, e.g. 'PowerMeter'
+     * @param {number} rawValue   Raw ADC value from the radio (0–255)
+     * @returns {{ skip: boolean, gaugeKey: string, displayValue: object } | null}
+     *   null   — property is not a known meter
+     *   skip   — filtered/debounced reading; caller should not update DOM
+     *   Otherwise displayValue contains plain numeric fields ready for formatting
+     */
+    handleMeterUpdate(property, rawValue) {
+        switch (property) {
+            case 'PowerMeter':       return this._processPower(rawValue);
+            case 'SWRMeter':         return this._processSWR(rawValue);
+            case 'CompressionMeter': return this._processCompression(rawValue);
+            case 'ALCMeter':         return this._processALC(rawValue);
+            case 'IDDMeter':         return this._processIDD(rawValue);
+            case 'VDDMeter':         return this._processVDD(rawValue);
+            case 'Temperature':      return this._processTemp(rawValue);
+            default:                 return null;
+        }
+    }
+
+    /**
+     * Returns true if the given property name is handled by handleMeterUpdate.
+     * @param {string} property
+     */
+    isMeterProperty(property) {
+        return ['PowerMeter', 'SWRMeter', 'CompressionMeter', 'ALCMeter',
+                'IDDMeter', 'VDDMeter', 'Temperature'].includes(property);
+    }
+
+    // ----------------------------------------------------------------
+    // Per-meter processors
+    // ----------------------------------------------------------------
+
+    _processPower(raw) {
+        if (!this._isTransmitting) {
+            this._powerHistory        = [];
+            this._wasTransmittingPower = false;
+            this._meterPanel.update('power', 0);
+            return { skip: false, gaugeKey: 'power', displayValue: { watts: 0, rawAvg: 0 } };
+        }
+        if (!this._wasTransmittingPower) {
+            this._powerHistory = [];
+        }
+        this._wasTransmittingPower = true;
+        this._powerHistory.push(raw);
+        if (this._powerHistory.length > this._historyLength) this._powerHistory.shift();
+        const rawAvg      = this._powerHistory.reduce((s, v) => s + v, 0) / this._powerHistory.length;
+        const watts       = this._calibration.calibrateNumeric('PWR', rawAvg);
+        const clampedWatts = Math.round(Math.max(0, Math.min(watts, 200)));
+        this._meterPanel.update('power', clampedWatts);
+        return { skip: false, gaugeKey: 'power', displayValue: { watts: clampedWatts, rawAvg } };
+    }
+
+    _processSWR(raw) {
+        if (!this._isTransmitting) {
+            this._swrHistory        = [];
+            this._wasTransmittingSWR = false;
+            this._meterPanel.update('swr', 0);
+            return { skip: false, gaugeKey: 'swr', displayValue: { swr: 1.0 } };
+        }
+        if (!this._wasTransmittingSWR) {
+            this._swrHistory = [];
+        }
+        this._wasTransmittingSWR = true;
+        this._swrHistory.push(raw);
+        if (this._swrHistory.length > this._historyLength) this._swrHistory.shift();
+        const rawAvg    = this._swrHistory.reduce((s, v) => s + v, 0) / this._swrHistory.length;
+        const swr       = this._calibration.calibrateNumeric('SWR', rawAvg);
+        const swrClamped = Math.min(swr, 10.0);
+        this._meterPanel.update('swr', (swrClamped - 1.0) * 127.5);
+        return { skip: false, gaugeKey: 'swr', displayValue: { swr: swrClamped } };
+    }
+
+    _processCompression(raw) {
+        const percent = this._isTransmitting
+            ? Math.max(0, Math.min(100, Math.round((raw / 255) * 100)))
+            : 0;
+        this._meterPanel.update('compression', percent);
+        return { skip: false, gaugeKey: 'compression', displayValue: { percent } };
+    }
+
+    _processALC(raw) {
+        if (!this._isTransmitting) {
+            this._meterPanel.update('alc', 0);
+            return { skip: false, gaugeKey: 'alc', displayValue: { percent: 0, alcVolts: 0, rawValue: 0 } };
+        }
+        const alcVolts = this._calibration.calibrateNumeric('ALC', raw);
+        const percent  = Math.round((raw / 255) * 100);
+        this._meterPanel.update('alc', raw);  // gauge uses raw 0–255 scale
+        return { skip: false, gaugeKey: 'alc', displayValue: { percent, alcVolts, rawValue: raw } };
+    }
+
+    _processIDD(raw) {
+        const amps = this._calibration.calibrateNumeric('IDD', raw);
+        if (amps === 0) {
+            this._iddZeroCount++;
+            if (this._iddZeroCount < 2) return { skip: true };
+        } else {
+            this._iddZeroCount = 0;
+        }
+        if (Math.abs(amps - this._iddLast) > 5 && this._iddLast !== 0) return { skip: true };
+        this._iddLast = amps;
+        this._meterPanel.update('idd', Math.max(0, Math.min(amps, 25)));
+        return { skip: false, gaugeKey: 'idd', displayValue: { amps } };
+    }
+
+    _processVDD(raw) {
+        const minRaw = 175;  // ~41.2 V — margin above gauge minimum
+        const maxRaw = 235;  // ~55 V
+        if (raw < minRaw || raw > maxRaw) return { skip: true };
+        this._lastValidVDD = raw;
+        const volts = this._calibration.calibrateNumeric('VPA', this._lastValidVDD);
+        if (Math.abs(volts - this._vddLast) > 3 && this._vddLast !== 0) return { skip: true };
+        this._vddLast = volts;
+        this._meterPanel.update('vdd', Math.max(40, Math.min(volts, 55)));
+        return { skip: false, gaugeKey: 'vdd', displayValue: { volts } };
+    }
+
+    _processTemp(tempC) {
+        if (tempC === 0) {
+            this._paTempZeroCount++;
+            if (this._paTempZeroCount < 2) return { skip: true };
+        } else {
+            this._paTempZeroCount = 0;
+        }
+        if (Math.abs(tempC - this._paTempLast) > 10 && this._paTempLast !== 0) return { skip: true };
+        this._paTempLast = tempC;
+        this._meterPanel.update('temp', tempC);
+        return { skip: false, gaugeKey: 'temp', displayValue: { tempC } };
+    }
+}

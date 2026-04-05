@@ -1,4 +1,4 @@
-﻿
+
 ## This is a test release It will have bugs and Gauges will jump about till calibrated properly
 Trigger release-please
 
@@ -8,14 +8,17 @@ Trigger release-please
 ## Calibration Page
 ![Calibration Page](pictures/Calibration.png)
 
-## The Rest of the Calibration Page
-![The rest of the Calibration Page](pictures/Calibration2.png)
-
 
 ## Windows Smart App Control Example
 ![Smart App Control Screenshot](pictures/SmartAppControl.png)
 
 # FTdx101 WebApp
+
+## ⚠️ Warning
+
+This software interacts with radio hardware. Incorrect use, misconfiguration, or software bugs could damage your device. Use entirely at your own risk. The author accepts no liability for any hardware damage. Always verify transmit frequencies, power levels, and settings before use.
+
+---
 
 ## 📖 Why This Application Exists
 I wrote this application because I can't see the FTdx101MP controls without using a magnifying glass. As a ham who uses WSJT-X, JTAlert, and Log4OM, there are many controls on the radio that I simply never touch. This web-based interface gives me a clean, large, easy-to-read control panel for the functions I actually use day-to-day.
@@ -39,6 +42,14 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 ---
 
 ## Release Notes
+
+## 2026-04-05 - v0.7.2
+
+### Changed
+
+- Refactor frontend: consolidate SignalR handlers and add orchestrators layer
+- Release script works
+
 
 ## 2026-04-01 - Major Rewrite Foundation
 
