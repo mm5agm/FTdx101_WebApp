@@ -27,6 +27,14 @@ I also use this application on my tablet, which provides a portable control pane
 
 ---
 
+## 💬 Community
+
+Join the discussion group for announcements, bug reports, and feedback:
+
+- **Groups.io:** [ftdx101-webapp](https://groups.io/g/ftdx101-webapp/topics)
+
+---
+
 ## 🌱 Why Sponsorship Matters
 
 I’m retired and maintain this project on a limited income, funding all development tools personally. AI‑assisted coding has been invaluable for building features quickly, but it isn’t free — I’ve spent roughly **$300 USD** so far, and I have now moved from **Copilot Pro** to **Claude Pro**. That change helps, but costs still add up and can slow development.
