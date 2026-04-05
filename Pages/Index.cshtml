@@ -6,6 +6,8 @@
         "LSB", "USB", "CW-U", "CW-L", "FM", "FM-N", "AM", "AM-N", "RTTY-L", "RTTY-U",
         "DATA-L", "DATA-U", "DATA-FM", "DATA-FM-N", "PSK"
     };
+    // Display label shown in the dropdown — value stays as the CAT mode string.
+    string ModeLabel(string m) => m == "DATA-FM-N" ? "D-FM-N" : m;
 }
 
 <!-- Cache-busted CSS reference -->
@@ -118,11 +120,11 @@
                                 {
                                     @if (Model.RadioState.ModeA == mode)
                                     {
-                                        <option value="@mode" selected>@mode</option>
+                                        <option value="@mode" selected>@ModeLabel(mode)</option>
                                     }
                                     else
                                     {
-                                        <option value="@mode">@mode</option>
+                                        <option value="@mode">@ModeLabel(mode)</option>
                                     }
                                 }
                             </select>
@@ -213,11 +215,11 @@
                                 {
                                     @if (Model.RadioState.ModeB == mode)
                                     {
-                                        <option value="@mode" selected>@mode</option>
+                                        <option value="@mode" selected>@ModeLabel(mode)</option>
                                     }
                                     else
                                     {
-                                        <option value="@mode">@mode</option>
+                                        <option value="@mode">@ModeLabel(mode)</option>
                                     }
                                 }
                             </select>

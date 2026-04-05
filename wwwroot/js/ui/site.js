@@ -382,25 +382,76 @@ function updatePowerSliderMax(maxPower) {
 
 // TX state updater - updates TX button and meters
 function updateTxIndicators(isTransmitting) {
-    // Debug logging
-
-
-    // Update state for meter display logic (if IIFE state is accessible)
     if (window.radioControl && window.radioControl._state) {
         window.radioControl._state.isTransmitting = isTransmitting;
-
-    } else {
-
     }
-
+    if (window.ftdx101Meters) {
+        window.ftdx101Meters.setTransmitting(isTransmitting);
+    }
     if (!isTransmitting) {
-        // Zero the meters when not transmitting
-        if (typeof window.updatePowerMeter === 'function') {
-            window.updatePowerMeter(0);
+        // Force gauges to zero immediately when TX stops
+        if (window.meterPanel) {
+            window.meterPanel.update('power', 0);
+            window.meterPanel.update('swr', 0);
         }
-        if (window.meterPanel) window.meterPanel.update('power', 0);
-        if (typeof window.updateSWRMeter === 'function') {
-            window.updateSWRMeter(0);
+        updateMeterDomLabel('PowerMeter', { skip: false, displayValue: { watts: 0, rawAvg: 0 } });
+        updateMeterDomLabel('SWRMeter',   { skip: false, displayValue: { swr: 1.0 } });
+    }
+}
+
+// Update DOM labels for a single meter using the result from ftdx101Meters.handleMeterUpdate().
+// Formatting is done here (UI layer) — the orchestrator returns plain numeric values.
+function updateMeterDomLabel(property, result) {
+    if (!result || result.skip) return;
+    const dv = result.displayValue;
+    switch (property) {
+        case 'PowerMeter': {
+            const el = document.getElementById('powerMeterValue');
+            if (el) el.textContent = window.MeterFormatters.powerOverlay(dv.watts);
+            const rawEl = document.getElementById('raw-powerout-label');
+            if (rawEl) rawEl.textContent = 'Raw Power Out: ' + Math.round(dv.rawAvg);
+            break;
+        }
+        case 'SWRMeter': {
+            const el = document.getElementById('swrMeterValue');
+            if (el) el.textContent = window.MeterFormatters.swr(dv.swr);
+            break;
+        }
+        case 'CompressionMeter': {
+            const el = document.getElementById('compressionMeterValue');
+            if (el) el.textContent = window.MeterFormatters.compressionOverlay(dv.percent);
+            break;
+        }
+        case 'ALCMeter': {
+            const el  = document.getElementById('alcValue');
+            const bar = document.getElementById('alcBar');
+            const meterEl = document.getElementById('alcMeterValue');
+            if (el) el.textContent = window.MeterFormatters.percent(dv.percent);
+            if (bar) {
+                bar.style.width = `${dv.percent}%`;
+                bar.setAttribute('aria-valuenow', dv.percent);
+                bar.className = 'progress-bar';
+                if (dv.percent < 70)      bar.classList.add('bg-success');
+                else if (dv.percent < 90) bar.classList.add('bg-warning');
+                else                      bar.classList.add('bg-danger');
+            }
+            if (meterEl) meterEl.textContent = window.MeterFormatters.alcVolts(dv.alcVolts);
+            break;
+        }
+        case 'IDDMeter': {
+            const el = document.getElementById('iddMeterValue');
+            if (el) el.textContent = window.MeterFormatters.iddOverlay(dv.amps);
+            break;
+        }
+        case 'VDDMeter': {
+            const el = document.getElementById('vddMeterValue');
+            if (el) el.textContent = window.MeterFormatters.vddOverlay(dv.volts);
+            break;
+        }
+        case 'Temperature': {
+            const el = document.getElementById('paTemperatureValue');
+            if (el) el.textContent = window.MeterFormatters.tempOverlay(dv.tempC);
+            break;
         }
     }
 }
@@ -730,50 +781,17 @@ connection.on("RadioStateUpdate", function (update) {
     }
 
     // --- METER UPDATES ---
-    if (update.property === "PowerMeter" && typeof window.updatePowerMeter === 'function') {
-        // Support new format: update.value = { value, isTransmitting }
-        let powerValue = update.value;
-        let txState = isTransmitting;
-        if (typeof update.value === 'object' && update.value !== null && 'value' in update.value && 'isTransmitting' in update.value) {
-            powerValue = update.value.value;
-            txState = update.value.isTransmitting;
+    if (window.ftdx101Meters) {
+        // PowerMeter is sent as { value, isTransmitting } — unpack it and sync TX state.
+        let meterValue = update.value;
+        if (update.property === "PowerMeter" &&
+            typeof update.value === 'object' && update.value !== null &&
+            'value' in update.value && 'isTransmitting' in update.value) {
+            meterValue = update.value.value;
+            window.ftdx101Meters.setTransmitting(update.value.isTransmitting);
         }
-        // Debug: log incoming PowerMeter update
-        // ...removed debug logging...
-        // Always sync the IIFE's state and global state
-        if (window.radioControl && window.radioControl._state) {
-            window.radioControl._state.isTransmitting = txState;
-        }
-        if (typeof state !== 'undefined') {
-            state.isTransmitting = txState;
-        }
-        // Zero the meter if not transmitting, as in old logic
-        if (!txState) {
-            window.updatePowerMeter(0);
-        } else {
-            window.updatePowerMeter(powerValue);
-        }
-    }
-    if (update.property === "SWRMeter" && typeof window.updateSWRMeter === 'function') {
-        window.updateSWRMeter(update.value);
-    }
-    if (update.property === "CompressionMeter" && typeof window.updateCompressionMeter === 'function') {
-        window.updateCompressionMeter(update.value);
-    }
-    if (update.property === "ALCMeter" && typeof window.updateALCMeter === 'function') {
-        window.updateALCMeter(update.value);
-    }
-    if (update.property === "IDDMeter" && typeof window.updateIDDMeter === 'function') {
-        window.updateIDDMeter(update.value);
-    }
-    if (update.property === "VDDMeter" && typeof window.updatePAVoltage === 'function') {
-        window.updatePAVoltage(update.value);
-    }
-    if (update.property === "Temperature") {
-        // ...removed debug logging...
-        if (typeof window.updatePATemperature === 'function') {
-            window.updatePATemperature(update.value);
-        }
+        const result = window.ftdx101Meters.handleMeterUpdate(update.property, meterValue);
+        if (result) updateMeterDomLabel(update.property, result);
     }
 
     // --- ROOFING FILTER ---
@@ -1432,26 +1450,22 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSMeter('A', data.vfoA.sMeter);
             updateSMeter('B', data.vfoB.sMeter);
 
-            if (typeof window.updatePowerMeter === 'function' && data.powerMeter !== undefined) {
-                window.updatePowerMeter(data.powerMeter);
-            }
-            if (typeof window.updateSWRMeter === 'function' && data.swrMeter !== undefined) {
-                window.updateSWRMeter(data.swrMeter);
-            }
-            if (typeof window.updateCompressionMeter === 'function' && data.compressionMeter !== undefined) {
-                window.updateCompressionMeter(data.compressionMeter);
-            }
-            if (typeof window.updateALCMeter === 'function' && data.alcMeter !== undefined) {
-                window.updateALCMeter(data.alcMeter);
-            }
-            if (typeof window.updateIDDMeter === 'function' && data.iddMeter !== undefined) {
-                window.updateIDDMeter(data.iddMeter);
-            }
-            if (typeof window.updatePAVoltage === 'function' && data.vddMeter !== undefined) {
-                window.updatePAVoltage(data.vddMeter);
-            }
-            if (typeof window.updatePATemperature === 'function' && data.temperature !== undefined) {
-                window.updatePATemperature(data.temperature);
+            if (window.ftdx101Meters) {
+                const metersFromState = {
+                    PowerMeter:       data.powerMeter,
+                    SWRMeter:         data.swrMeter,
+                    CompressionMeter: data.compressionMeter,
+                    ALCMeter:         data.alcMeter,
+                    IDDMeter:         data.iddMeter,
+                    VDDMeter:         data.vddMeter,
+                    Temperature:      data.temperature,
+                };
+                for (const [prop, value] of Object.entries(metersFromState)) {
+                    if (value !== undefined) {
+                        const result = window.ftdx101Meters.handleMeterUpdate(prop, value);
+                        updateMeterDomLabel(prop, result);
+                    }
+                }
             }
 
             // Update band buttons from polling (fixes WSJT-X and radio band changes)
@@ -1586,214 +1600,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Smoothing buffers for meters (reduce jumpiness)
-    let powerHistory = [];
-let swrHistory = [];
-const historyLength = 7; // Average last 7 readings for smoother display
-let wasTransmittingPower = false;
-let wasTransmittingSWR = false;
-
-    function updatePowerMeter(value) {
-        // Store last raw value globally for calibration reloads
-        window.lastPowerMeterRawValue = value;
-        // Robust TX state detection: check both global and IIFE state
-        let tx = false;
-        if (typeof state !== 'undefined' && typeof state.isTransmitting !== 'undefined') {
-            tx = state.isTransmitting;
-        }
-        if (window.radioControl && window.radioControl._state && typeof window.radioControl._state.isTransmitting !== 'undefined') {
-            tx = tx || window.radioControl._state.isTransmitting;
-        }
-        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
-        if (!tx) {
-            value = 0;
-        }
-        if (!tx) {
-            powerHistory = [];
-            wasTransmittingPower = false;
-            const valueSpan = document.getElementById('powerMeterValue');
-            if (valueSpan) valueSpan.textContent = '0';
-            // Update raw Power Out label to 0 with descriptive label
-            var rawPowerLabel = document.getElementById('raw-powerout-label');
-            if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: 0';
-            if (window.meterPanel) window.meterPanel.update('power', 0);
-            return;
-        }
-        // Only update on TX
-        if (!wasTransmittingPower) {
-            powerHistory = [];
-        }
-        wasTransmittingPower = true;
-        powerHistory.push(value);
-        if (powerHistory.length > historyLength) {
-            powerHistory.shift();
-        }
-        const avgValue = powerHistory.reduce((sum, v) => sum + v, 0) / powerHistory.length;
-        let watts = window.calibrationEngine.calibrateNumeric("PWR", avgValue);
-        let clampedWatts = Math.round(Math.max(0, Math.min(watts, 200)));
-        const valueSpan = document.getElementById('powerMeterValue');
-        if (valueSpan) valueSpan.textContent = window.MeterFormatters.powerOverlay(clampedWatts);
-        // Update raw Power Out label with descriptive label
-        var rawPowerLabel = document.getElementById('raw-powerout-label');
-        if (rawPowerLabel) rawPowerLabel.textContent = 'Raw Power Out: ' + Math.round(avgValue);
-        if (window.meterPanel) window.meterPanel.update('power', clampedWatts);
-    }
-
-    function updateSWRMeter(value) {
-        window.lastSWRMeterRawValue = value;
-        // Always enforce: if not transmitting, meter is zero and does not animate, regardless of incoming value
-        if (!state.isTransmitting) {
-            swrHistory = [];
-            wasTransmittingSWR = false;
-            const valueSpan = document.getElementById('swrMeterValue');
-            if (valueSpan) valueSpan.textContent = '1.0:1';
-            if (window.meterPanel) window.meterPanel.update('swr', 0);
-            return;
-        }
-        if (!wasTransmittingSWR) {
-            swrHistory = [];
-        }
-        wasTransmittingSWR = true;
-        swrHistory.push(value);
-        if (swrHistory.length > historyLength) {
-            swrHistory.shift();
-        }
-        const avgValue = swrHistory.reduce((sum, v) => sum + v, 0) / swrHistory.length;
-      const swr = window.calibrationEngine.calibrateNumeric("SWR", avgValue);
-
-        const swrClamped = Math.min(swr, 10.0);
-        const valueSpan = document.getElementById('swrMeterValue');
-        if (valueSpan) valueSpan.textContent = window.MeterFormatters.swr(swrClamped);
-        if (window.meterPanel) window.meterPanel.update('swr', (swrClamped - 1.0) * 127.5);
-    }
-
-    function updateCompressionMeter(value) {
-        const percent = state.isTransmitting ? Math.max(0, Math.min(100, Math.round((value / 255) * 100))) : 0;
-        const valueSpan = document.getElementById('compressionMeterValue');
-        if (valueSpan) valueSpan.textContent = window.MeterFormatters.compressionOverlay(percent);
-        if (window.meterPanel) window.meterPanel.update('compression', percent);
-    }
-
-    // ALC gauge (0-255 raw value)
-    function updateALCMeter(value) {
-        // When not transmitting, always show the bottom scale value (0%)
-        if (!state.isTransmitting) {
-            const valueSpan = document.getElementById('alcValue');
-            const progressBar = document.getElementById('alcBar');
-            if (valueSpan) valueSpan.textContent = window.MeterFormatters.percent(0);
-            if (progressBar) {
-                progressBar.style.width = '0%';
-                progressBar.setAttribute('aria-valuenow', 0);
-                progressBar.className = 'progress-bar bg-success';
-            }
-            const alcMeterValue = document.getElementById('alcMeterValue');
-            if (alcMeterValue) alcMeterValue.textContent = window.MeterFormatters.alcVolts(0);
-            if (window.meterPanel) window.meterPanel.update('alc', 0);
-            return;
-        }
-
-        const alcVolts = window.calibrationEngine.calibrateNumeric("ALC", value);
-        const percentage = Math.round((value / 255) * 100);
-        const valueSpan = document.getElementById('alcValue');
-        const progressBar = document.getElementById('alcBar');
-
-        if (valueSpan) valueSpan.textContent = window.MeterFormatters.percent(percentage);
-        if (progressBar) {
-            progressBar.style.width = `${percentage}%`;
-            progressBar.setAttribute('aria-valuenow', percentage);
-
-            // Color coding: green < 70%, yellow < 90%, red >= 90%
-            progressBar.className = 'progress-bar';
-            if (percentage < 70) {
-                progressBar.classList.add('bg-success');
-            } else if (percentage < 90) {
-                progressBar.classList.add('bg-warning');
-            } else {
-                progressBar.classList.add('bg-danger');
-            }
-        }
-
-        // Update ALC gauge (pass raw 0-255 value directly, gauge uses 0-255 scale)
-        const alcMeterValue = document.getElementById('alcMeterValue');
-        if (alcMeterValue) alcMeterValue.textContent = window.MeterFormatters.alcVolts(alcVolts);
-
-        if (window.meterPanel) window.meterPanel.update('alc', value);
-    }
-
-    // Update IDD display (0-255 raw value, display as amps)
-    function updateIDDMeter(value) {
-        // Smoothing: ignore sudden jumps >5A, ignore 0 unless persists, clamp to 0-25A
-        if (!window._iddLast) window._iddLast = 0;
-       const amps = window.calibrationEngine.calibrateNumeric("IDD", value);
-        // Ignore 0 unless it persists for 2+ updates
-        if (amps === 0) {
-            window._iddZeroCount = (window._iddZeroCount || 0) + 1;
-            if (window._iddZeroCount < 2) return;
-        } else {
-            window._iddZeroCount = 0;
-        }
-        // Ignore sudden jumps >5A
-        if (Math.abs(amps - window._iddLast) > 5 && window._iddLast !== 0) {
-            return;
-        }
-        window._iddLast = amps;
-        const iddMeterValue = document.getElementById('iddMeterValue');
-        if (iddMeterValue) {
-            iddMeterValue.textContent = window.MeterFormatters.iddOverlay(amps);
-        }
-        if (window.meterPanel) window.meterPanel.update('idd', Math.max(0, Math.min(amps, 25)));
-    }
-
-    // Update PA Voltage display (0-255 raw value, display as volts)
-    // Filter out noisy readings - PA voltage should be stable around 48V
-    let lastValidVDD = 204; // Default to ~48V
-    function updatePAVoltage(value) {
-        // minRaw=175 (~41.2V) not 170 (~40V): keeps a margin above the gauge
-        // minimum so a threshold reading can never pin the needle to the bottom.
-        const minRaw = 175;  // ~41.2V
-        const maxRaw = 235;  // ~55V
-        if (!window._vddLast) window._vddLast = 48;
-        if (value >= minRaw && value <= maxRaw) {
-            lastValidVDD = value;
-        } else {
-            return;
-        }
-        const volts = window.calibrationEngine.calibrateNumeric("VPA", lastValidVDD);
-        // Ignore sudden jumps >3V
-        if (Math.abs(volts - window._vddLast) > 3 && window._vddLast !== 0) {
-            return;
-        }
-        window._vddLast = volts;
-        const vddMeterValue = document.getElementById('vddMeterValue');
-        if (vddMeterValue) {
-            vddMeterValue.textContent = window.MeterFormatters.vddOverlay(volts);
-        }
-        if (window.meterPanel) window.meterPanel.update('vdd', Math.max(40, Math.min(volts, 55)));
-    }
-
-    // Update PA Temperature display (value is directly in °C from IF command)
-    function updatePATemperature(tempC) {
-        // Smoothing: ignore sudden jumps >10°C, ignore 0 unless persists
-        if (!window._paTempLast) window._paTempLast = 0;
-        if (!window._paTempZeroCount) window._paTempZeroCount = 0;
-        if (tempC === 0) {
-            window._paTempZeroCount++;
-            if (window._paTempZeroCount < 2) return;
-        } else {
-            window._paTempZeroCount = 0;
-        }
-        if (Math.abs(tempC - window._paTempLast) > 10 && window._paTempLast !== 0) {
-            return;
-        }
-       window._paTempLast = window.calibrationEngine.calibrateNumeric("TPA", tempC);
-        if (window.meterPanel) window.meterPanel.update('temp', tempC);
-        // Update gauge overlay value span
-        const tempDisplay = document.getElementById('paTemperatureValue');
-        if (tempDisplay) {
-            tempDisplay.textContent = window.MeterFormatters.tempOverlay(tempC);
-        }
-    }
-
     // Update MIC bar meter (0-255 raw value)
     function updateMICMeter(value) {
         const percentage = Math.round((value / 255) * 100);
@@ -1913,14 +1719,6 @@ let wasTransmittingSWR = false;
         setPower: setPower
     };
 
-    // Expose meter update functions globally for SignalR
-    window.updatePowerMeter = updatePowerMeter;
-    window.updateSWRMeter = updateSWRMeter;
-    window.updateCompressionMeter = updateCompressionMeter;
-    window.updateALCMeter = updateALCMeter;
-    window.updateIDDMeter = updateIDDMeter;
-    window.updatePAVoltage = updatePAVoltage;
-    window.updatePATemperature = updatePATemperature;
     window.updateMICMeter = updateMICMeter;
 
     // --- Raw Meter Label Visibility State (S-Meter and Power Out) ---

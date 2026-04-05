@@ -347,12 +347,17 @@ pre, code { tab-size: 4; }
     /* No fixed width or negative margin */
 }
 
-/* Mode select dropdown - sized to fit longest option (DATA-FM-N) */
+/* Mode select dropdown - sized to fit longest option (D-FM-N) */
 #modeSelectA,
-#modeSelectB,
+#modeSelectB {
+    width: 7rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
 #antennaSelectA,
 #antennaSelectB {
-    width: auto;
+    width: 7rem;
     font-size: 0.9rem;
     font-weight: bold;
 }

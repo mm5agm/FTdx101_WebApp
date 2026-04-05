@@ -1,53 +1,130 @@
 # create-release.ps1
-# Creates a new GitHub release and triggers the build workflow.
-# Usage: .\scripts\create-release.ps1 -Tag v0.8.0 -Notes "What's new in this release"
+# Full automated release from develop branch.
+# Run with no arguments: .\scripts\create-release.ps1
+#
+# What it does:
+#   1. Auto-increments the patch version (e.g. v0.7.1 -> v0.7.2)
+#   2. Commits any pending changes in develop
+#   3. Updates README.md with release notes built from git log
+#   4. Commits the README update in develop and pushes
+#   5. Merges develop -> main and pushes
+#   6. Creates the GitHub release (triggers the build workflow)
 
-param(
-    [Parameter(Mandatory=$true)]
-    [string]$Tag,
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-    [Parameter(Mandatory=$false)]
-    [string]$Notes = "Release $Tag"
-)
-
-# Ensure gh CLI is available
+# Prerequisites
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     Write-Error "GitHub CLI (gh) is not installed. Download from https://cli.github.com/"
     exit 1
 }
 
-# Ensure we are on main and up to date
+# Must be on develop
 $branch = git rev-parse --abbrev-ref HEAD
-if ($branch -ne "main") {
-    Write-Error "You must be on the main branch to create a release. Currently on: $branch"
+if ($branch -ne "develop") {
+    Write-Error "Must be on the develop branch to create a release. Currently on: $branch"
     exit 1
 }
 
+# Fetch latest from origin
+Write-Host "Fetching from origin..." -ForegroundColor Cyan
 git fetch origin
-$localHash  = git rev-parse HEAD
-$remoteHash = git rev-parse origin/main
-if ($localHash -ne $remoteHash) {
-    Write-Error "Local main is not in sync with origin/main. Run: git pull origin main"
+
+# Compute next version tag
+$latestTag = git tag --sort=-version:refname | Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } | Select-Object -First 1
+
+if (-not $latestTag) {
+    Write-Error "No version tags found (expected e.g. v0.7.1). Create the first release manually."
     exit 1
 }
 
-Write-Host "Creating release $Tag..." -ForegroundColor Cyan
+$parts  = $latestTag.TrimStart('v') -split '\.'
+$newTag = "v$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
 
-# Create the GitHub release — this triggers release.yml automatically
-gh release create $Tag `
-    --title $Tag `
-    --notes $Notes `
+Write-Host "Last release : $latestTag" -ForegroundColor Yellow
+Write-Host "New  release : $newTag"    -ForegroundColor Green
+
+# Build release notes from git log since last tag
+$commits = git log "$latestTag..HEAD" --pretty=format:"- %s" --no-merges |
+    Where-Object { $_ -notmatch 'Co-Authored-By|^\s*$' }
+
+if (-not $commits) {
+    $commits = @("- Minor fixes and improvements")
+}
+
+$commitBlock = $commits -join "`n"
+
+# Commit any pending changes in develop
+$pending = git status --porcelain
+if ($pending) {
+    Write-Host "Committing pending changes in develop..." -ForegroundColor Yellow
+    git add .
+    git commit -m "Pre-release: pending changes for $newTag"
+}
+
+# Update README.md with release notes
+$today      = Get-Date -Format "yyyy-MM-dd"
+$readmePath = (Join-Path $PSScriptRoot "..\README.md" | Resolve-Path).Path
+
+$lines  = [System.IO.File]::ReadAllLines($readmePath)
+$marker = "## Release Notes"
+$match  = $lines | Select-String -SimpleMatch $marker | Select-Object -First 1
+
+if ($null -eq $match) {
+    Write-Warning "Could not find '$marker' in README.md - skipping README update."
+}
+else {
+    $idx = $match.LineNumber - 1
+
+    $newSection = @(
+        "",
+        "## $today - $newTag",
+        "",
+        "### Changed",
+        "",
+        $commitBlock,
+        ""
+    )
+
+    $updated = $lines[0..$idx] + $newSection + $lines[($idx + 1)..($lines.Length - 1)]
+    [System.IO.File]::WriteAllLines($readmePath, $updated)
+
+    Write-Host "README.md updated." -ForegroundColor Green
+
+    git add README.md
+    git commit -m "Release notes: $newTag"
+}
+
+# Push develop
+Write-Host "Pushing develop..." -ForegroundColor Cyan
+git push origin develop
+
+# Merge develop -> main
+Write-Host "Merging develop into main..." -ForegroundColor Cyan
+git checkout main
+git pull origin main
+git merge develop --no-ff -m "Release $newTag"
+git push origin main
+
+# Return to develop
+git checkout develop
+
+# Create GitHub release
+$releaseNotes = "Release $newTag - please send bug reports to mm5agm@outlook.com"
+
+Write-Host "Creating GitHub release $newTag..." -ForegroundColor Cyan
+gh release create $newTag `
+    --title $newTag `
+    --notes $releaseNotes `
     --latest
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to create release $Tag"
+    Write-Error "Failed to create GitHub release $newTag"
     exit 1
 }
 
 Write-Host ""
-Write-Host "Release $Tag created." -ForegroundColor Green
-Write-Host "The build workflow is now running on GitHub Actions." -ForegroundColor Green
-Write-Host "Monitor progress at:" -ForegroundColor Cyan
-gh browse --no-browser 2>$null
-Write-Host "  https://github.com/mm5agm/FTdx101_WebApp/actions" -ForegroundColor Yellow
+Write-Host "Release $newTag created successfully." -ForegroundColor Green
+Write-Host "Build workflow running at:"            -ForegroundColor Cyan
+Write-Host "  https://github.com/mm5agm/FTdx101_WebApp/actions"  -ForegroundColor Yellow
 Write-Host "  https://github.com/mm5agm/FTdx101_WebApp/releases" -ForegroundColor Yellow
