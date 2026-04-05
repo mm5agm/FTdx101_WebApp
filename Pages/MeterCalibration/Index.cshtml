@@ -12,6 +12,7 @@
             <button id="saveAllBtn" class="btn-save">Save Calibration</button>
             <button id="resetViewBtn" class="btn-secondary">Reload From File</button>
             <button id="txBtn" class="btn-tx">TX</button>
+            <button id="helpBtn" class="btn-help">? Help</button>
             <span id="saveStatus" class="save-status"></span>
         </div>
     </div>
@@ -236,6 +237,22 @@
             refreshCard(key);
         }
 
+        // VDD filter state — mirrors the orchestrator to keep calibration page stable
+        let _vddLastValid = 204;
+        let _vddLastVolts = 48;
+
+        function filterVDD(raw, meter) {
+            const minRaw = 175;  // ~41.2V — margin above gauge minimum
+            const maxRaw = 235;  // ~55V
+            if (raw < minRaw || raw > maxRaw) return null;  // out of range — discard
+            _vddLastValid = raw;
+            const points = meter ? meter.points : [];
+            const volts = points.length > 0 ? toNumber(interpolate(points, raw)) : raw;
+            if (Math.abs(volts - _vddLastVolts) > 3 && _vddLastVolts !== 0) return null;  // sudden jump — discard
+            _vddLastVolts = volts;
+            return raw;
+        }
+
         async function pollRawMeters() {
             try {
                 const response = await fetch("/api/cat/status");
@@ -243,7 +260,20 @@
                 const status = await response.json();
 
                 for (const ui of meterUiConfig) {
-                    const raw = toNumber(getByPath(status, ui.statusPath), 0);
+                    let raw = toNumber(getByPath(status, ui.statusPath), 0);
+
+                    if (ui.name === "VPA") {
+                        const meter = calibrationFile.meters.find(m => m.name === "VPA");
+                        const filtered = filterVDD(raw, meter);
+                        if (filtered === null) continue;  // discard noisy reading
+                        raw = filtered;
+                    }
+
+                    // IDD should read 0 when not transmitting
+                    if (ui.name === "IDD" && !_isTx) {
+                        raw = 0;
+                    }
+
                     currentRaw[ui.name] = raw;
                     refreshCard(ui.name);
                 }
@@ -300,6 +330,12 @@
 
         document.getElementById("saveAllBtn").addEventListener("click", () => saveCalibration());
         document.getElementById("resetViewBtn").addEventListener("click", loadCalibration);
+
+        // Help modal
+        const helpModal = document.getElementById("helpModal");
+        document.getElementById("helpBtn").addEventListener("click", () => helpModal.classList.add("open"));
+        document.getElementById("helpClose").addEventListener("click", () => helpModal.classList.remove("open"));
+        helpModal.addEventListener("click", e => { if (e.target === helpModal) helpModal.classList.remove("open"); });
 
         // TX button
         let _isTx = false;
@@ -481,4 +517,170 @@
     background: #dc3545;
     color: #fff;
 }
+
+.btn-help {
+    background: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.help-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem 1rem;
+}
+
+.help-modal-backdrop.open {
+    display: flex;
+}
+
+.help-modal {
+    background: #fff;
+    border-radius: 0.5rem;
+    max-width: 680px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.help-modal h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+}
+
+.help-modal h3 {
+    font-size: 1rem;
+    margin-top: 1.2rem;
+}
+
+.help-modal p, .help-modal li {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.help-modal table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+}
+
+.help-modal th, .help-modal td {
+    border: 1px solid #dee2e6;
+    padding: 0.3rem 0.5rem;
+    text-align: left;
+}
+
+.help-modal th {
+    background: #f0f4ff;
+}
+
+.help-modal blockquote {
+    background: #f8f9fa;
+    border-left: 3px solid #0d6efd;
+    margin: 0.5rem 0;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.help-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+    color: #666;
+}
 </style>
+
+<!-- Calibration Help Modal -->
+<div class="help-modal-backdrop" id="helpModal">
+    <div class="help-modal">
+        <button class="help-close" id="helpClose">&times;</button>
+        <h2>Meter Calibration Help</h2>
+
+        <h3>Overview</h3>
+        <p>Each meter has a calibration table that maps the raw values your radio reports (0&ndash;255) to real-world display values. The app interpolates between your calibration points to give smooth, accurate readings across the full scale.</p>
+
+        <h3>The Calibration Page</h3>
+        <p>Each meter card shows:</p>
+        <ul>
+            <li><strong>Gauge</strong> &mdash; live needle updated from the radio every 750ms</li>
+            <li><strong>Raw</strong> &mdash; the raw value (0&ndash;255) currently reported by the radio</li>
+            <li><strong>Calibrated</strong> &mdash; the display value your current calibration produces</li>
+            <li><strong>Calibration points</strong> &mdash; a table of Raw Value / Radio Value pairs</li>
+            <li><strong>Add Point</strong> &mdash; adds a new calibration point</li>
+            <li><strong>&times;</strong> &mdash; removes a calibration point</li>
+            <li><strong>Save</strong> &mdash; saves this individual meter</li>
+        </ul>
+
+        <h3>How Calibration Works</h3>
+        <table>
+            <tr><th>Raw Value</th><th>Radio Value</th></tr>
+            <tr><td>Number the radio reports (0&ndash;255)</td><td>Real-world value you want displayed</td></tr>
+        </table>
+        <p>The app draws a straight line between adjacent points. The more points you add, the more accurately it follows your meter's curve.</p>
+
+        <h3>Calibrating the Power Meter</h3>
+        <ol>
+            <li>Set your radio to a known power level (e.g. 5W)</li>
+            <li>Press <strong>TX</strong> on this page to transmit</li>
+            <li>Note the <strong>Raw</strong> value shown on the Power card</li>
+            <li>Press <strong>TX</strong> again to stop</li>
+            <li>Enter that Raw value and <strong>5</strong> as the Radio Value</li>
+            <li>Repeat at several power levels to build a curve</li>
+            <li>Click <strong>Save</strong> on the Power card</li>
+        </ol>
+
+        <h3>Calibrating the S-Meter</h3>
+        <p>Radio Values for the S-Meter are labels (S1, S2 &hellip; S9, +10, +20, +40) rather than numbers.</p>
+        <p>The easiest method uses the <strong>RF/SQL control</strong> &mdash; the outer ring on the knob next to the Multi knob on the FTdx101MP. Rotating this ring lets you smoothly reduce the S-meter reading and stop the needle at any point.</p>
+        <p>First reduce background noise as much as possible:</p>
+        <ul>
+            <li><strong>Best:</strong> Connect the radio to a dummy load</li>
+            <li><strong>Next best:</strong> Disconnect the antenna</li>
+            <li><strong>Worst:</strong> Find the quietest frequency you can</li>
+        </ul>
+        <ol>
+            <li>Rotate the RF/SQL outer ring slowly &mdash; watch the <strong>Raw</strong> value on the S-Meter card drop</li>
+            <li>Stop when the radio's front panel S-meter shows a known level (e.g. S1)</li>
+            <li>Enter that Raw value and <strong>S1</strong> as the Radio Value</li>
+            <li>Rotate to the next S-meter step and repeat</li>
+            <li>Work through S1, S2 &hellip; S9, and +10, +20, +40 if achievable</li>
+            <li>Click <strong>Save</strong> on the S-Meter card when done</li>
+        </ol>
+
+        <h3>Calibrating SWR, ALC, IDD, VDD, Temperature</h3>
+        <p>The process is the same for all numeric meters: transmit or observe the radio's front panel, note the Raw value, enter it with the known real-world value, and save.</p>
+
+        <h3>Tips</h3>
+        <ul>
+            <li>The app ships with default calibration points &mdash; only adjust them if readings are inaccurate</li>
+            <li>Always have a point near Raw=0 and one near the maximum you expect, to avoid off-scale readings</li>
+            <li>Always transmit into a dummy load or antenna &mdash; never without a load connected</li>
+            <li><strong>Reload From File</strong> discards unsaved changes and reloads the last saved calibration</li>
+            <li><strong>Save Calibration</strong> (top button) saves all meters at once</li>
+        </ul>
+
+        <h3>Where Calibration Data Is Saved</h3>
+        <ul>
+            <li><strong>Installed app:</strong> %APPDATA%\MM5AGM\FTdx101\WebApp\calibration.user.json</li>
+            <li><strong>Development:</strong> wwwroot/calibration.default.json</li>
+        </ul>
+        <p>The save path is shown at the top of this page.</p>
+    </div>
+</div>

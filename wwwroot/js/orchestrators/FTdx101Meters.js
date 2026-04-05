@@ -149,6 +149,12 @@ export class FTdx101Meters {
     }
 
     _processIDD(raw) {
+        if (!this._isTransmitting) {
+            this._iddLast = 0;
+            this._iddZeroCount = 0;
+            this._meterPanel.update('idd', 0);
+            return { skip: false, gaugeKey: 'idd', displayValue: { amps: 0 } };
+        }
         const amps = this._calibration.calibrateNumeric('IDD', raw);
         if (amps === 0) {
             this._iddZeroCount++;
@@ -183,7 +189,8 @@ export class FTdx101Meters {
         }
         if (Math.abs(tempC - this._paTempLast) > 10 && this._paTempLast !== 0) return { skip: true };
         this._paTempLast = tempC;
-        this._meterPanel.update('temp', tempC);
-        return { skip: false, gaugeKey: 'temp', displayValue: { tempC } };
+        const calibrated = this._calibration.calibrateNumeric('TPA', tempC);
+        this._meterPanel.update('temp', calibrated);
+        return { skip: false, gaugeKey: 'temp', displayValue: { tempC: calibrated } };
     }
 }
