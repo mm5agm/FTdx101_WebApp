@@ -352,6 +352,7 @@
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
         import { MeterPanel } from "/js/guages/meter-panel.js";
+        import { FTdx101Meters } from "/js/orchestrators/FTdx101Meters.js";
         document.addEventListener('DOMContentLoaded', function () {
             window.meterPanel = new MeterPanel({
                 smeterA:     { type: 'smeter', canvasId: 'sMeterCanvasA' },
@@ -364,6 +365,7 @@
                 idd:         { canvasId: 'iddMeterCanvas' },
                 vdd:         { canvasId: 'vddMeterCanvas' }
             });
+            window.ftdx101Meters = new FTdx101Meters(window.meterPanel, window.calibrationEngine);
         });
         async function launchWsjtx() {
             try {

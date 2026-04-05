@@ -1,50 +1,51 @@
 // FTdx101 WebApp – WebSocket Update Pipeline
-// No DOM, no UI, no gauge logic. Pure data flow only.
-
-import {
-    calibrateSMeter,
-    calibratePower,
-    calibrateSWR,
-    calibrateALC
-} from '../calibration/calibration-engine.js';
-
-// The pipeline is event-driven: it receives raw CAT data,
-// runs calibration, and emits calibrated values via callbacks.
+// Pure routing only. No DOM, no UI, no gauge logic, no calibration.
+// Receives { property, value } messages and dispatches to registered handlers.
 
 export class WsUpdatePipeline {
     constructor(options = {}) {
-        this.onSMeter = options.onSMeter || null;
-        this.onPower = options.onPower || null;
-        this.onSWR = options.onSWR || null;
-        this.onALC = options.onALC || null;
+        // Handlers keyed by SignalR property name
+        this._handlers = {};
+
+        // Register any handlers supplied at construction time
+        if (options.handlers && typeof options.handlers === 'object') {
+            for (const [property, fn] of Object.entries(options.handlers)) {
+                this.register(property, fn);
+            }
+        }
+
         this.onUnknown = options.onUnknown || null;
     }
 
-    // Entry point for raw WebSocket messages (string or object)
+    /**
+     * Register a handler for a specific property name.
+     * @param {string}   property  SignalR property name, e.g. 'PowerMeter'
+     * @param {Function} handler   Called with (value, property)
+     */
+    register(property, handler) {
+        this._handlers[property] = handler;
+    }
+
+    /**
+     * Entry point for incoming messages.
+     * Accepts either a raw JSON string or a pre-parsed { property, value } object.
+     * @param {string|Object} message
+     */
     handleMessage(message) {
-        const payload = this._normaliseMessage(message);
-        if (!payload || typeof payload !== 'object') {
+        const payload = this._normalise(message);
+        if (!payload || typeof payload.property !== 'string' || payload.value === undefined) {
             return;
         }
 
-        // Example expected payload shape (adjust to your backend):
-        // {
-        //   type: 'meter',
-        //   smeter: <raw>,
-        //   power: <raw>,
-        //   swr: <raw>,
-        //   alc: <raw>
-        // }
-
-        if (payload.type === 'meter') {
-            this._handleMeterPayload(payload);
-        } else {
-            this._emitUnknown(payload);
+        const handler = this._handlers[payload.property];
+        if (handler) {
+            handler(payload.value, payload.property);
+        } else if (this.onUnknown) {
+            this.onUnknown(payload);
         }
     }
 
-    // Normalise incoming message into a JS object
-    _normaliseMessage(message) {
+    _normalise(message) {
         if (typeof message === 'string') {
             try {
                 return JSON.parse(message);
@@ -52,39 +53,9 @@ export class WsUpdatePipeline {
                 return null;
             }
         }
-
         if (typeof message === 'object' && message !== null) {
             return message;
         }
-
         return null;
-    }
-
-    _handleMeterPayload(payload) {
-        if (typeof payload.smeter === 'number' && this.onSMeter) {
-            const calibrated = calibrateSMeter(payload.smeter);
-            this.onSMeter(calibrated, payload.smeter);
-        }
-
-        if (typeof payload.power === 'number' && this.onPower) {
-            const calibrated = calibratePower(payload.power);
-            this.onPower(calibrated, payload.power);
-        }
-
-        if (typeof payload.swr === 'number' && this.onSWR) {
-            const calibrated = calibrateSWR(payload.swr);
-            this.onSWR(calibrated, payload.swr);
-        }
-
-        if (typeof payload.alc === 'number' && this.onALC) {
-            const calibrated = calibrateALC(payload.alc);
-            this.onALC(calibrated, payload.alc);
-        }
-    }
-
-    _emitUnknown(payload) {
-        if (this.onUnknown) {
-            this.onUnknown(payload);
-        }
     }
 }

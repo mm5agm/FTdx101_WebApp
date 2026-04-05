@@ -775,6 +775,36 @@ connection.on("RadioStateUpdate", function (update) {
             window.updatePATemperature(update.value);
         }
     }
+
+    // --- ROOFING FILTER ---
+    if (update.property === "RoofingFilterA") {
+        const selectEl = document.getElementById('roofingFilterSelectA');
+        if (selectEl) selectEl.value = update.value;
+    }
+    if (update.property === "RoofingFilterB") {
+        const selectEl = document.getElementById('roofingFilterSelectB');
+        if (selectEl) selectEl.value = update.value;
+    }
+
+    // --- AF GAIN ---
+    if (update.property === "AfGainA" || update.property === "AfGainB") {
+        const receiver = update.property === "AfGainA" ? 'A' : 'B';
+        const slider = document.getElementById(`afGainSlider${receiver}`);
+        if (slider) {
+            afGainLastConfirmed[receiver] = update.value;
+            if (
+                afGainPendingValue[receiver] !== null &&
+                Math.abs(Number(update.value) - Number(afGainPendingValue[receiver])) <= 2
+            ) {
+                slider.value = update.value;
+                slider.classList.remove('pending');
+                afGainPendingValue[receiver] = null;
+                if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
+            } else if (afGainPendingValue[receiver] === null && !afGainDragging[receiver]) {
+                slider.value = update.value;
+            }
+        }
+    }
 });
 
 // SignalR connection is started once below (after the IIFE) with a .catch() error handler.
@@ -1030,33 +1060,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupAfGainSlider('B');
 });
 
-// SignalR handler: update AF Gain slider on backend confirmation
-if (typeof connection !== 'undefined') {
-    connection.on("RadioStateUpdate", function (update) {
-        if (update.property === "AfGainA" || update.property === "AfGainB") {
-            const receiver = update.property === "AfGainA" ? 'A' : 'B';
-            const slider = document.getElementById(`afGainSlider${receiver}`);
-            if (!slider) return;
-            // Always record last confirmed value
-            afGainLastConfirmed[receiver] = update.value;
-            // If pending and backend confirms, clear pending
-            if (
-                afGainPendingValue[receiver] !== null &&
-                Math.abs(Number(update.value) - Number(afGainPendingValue[receiver])) <= 2
-            ) {
-                slider.value = update.value;
-                slider.classList.remove('pending');
-                afGainPendingValue[receiver] = null;
-                if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
-            }
-            // If not pending, allow normal backend updates (e.g., from other sources)
-            else if (afGainPendingValue[receiver] === null && !afGainDragging[receiver]) {
-                slider.value = update.value;
-            }
-            // Otherwise, ignore intermediate confirmations
-        }
-    });
-}
 
 (function () {
     'use strict';
@@ -1979,42 +1982,6 @@ let wasTransmittingSWR = false;
     });
 })();
 
-// ===========================================================================
-// Second SignalR RadioStateUpdate handler (post-IIFE)
-// ===========================================================================
-connection.on("RadioStateUpdate", function (update) {
-    if (update.property && update.value !== undefined) {
-        if (update.property === "FrequencyA") {
-            updateFrequencyDisplay('A', update.value);
-        }
-        if (update.property === "FrequencyB") {
-            updateFrequencyDisplay('B', update.value);
-        }
-        // Mode dropdown updates
-        if (update.property === "ModeA") {
-            updateModeSelect('A', update.value);
-        }
-        if (update.property === "ModeB") {
-            updateModeSelect('B', update.value);
-        }
-        // Band button updates
-        if (update.property === "BandA") {
-            updateBandButton('A', update.value);
-        }
-        if (update.property === "BandB") {
-            updateBandButton('B', update.value);
-        }
-        // Roofing filter updates
-        if (update.property === "RoofingFilterA") {
-            const selectEl = document.getElementById('roofingFilterSelectA');
-            if (selectEl) selectEl.value = update.value;
-        }
-        if (update.property === "RoofingFilterB") {
-            const selectEl = document.getElementById('roofingFilterSelectB');
-            if (selectEl) selectEl.value = update.value;
-        }
-    }
-});
 
 connection.start().catch(function (err) {
     return;
