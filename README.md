@@ -51,6 +51,13 @@ The project has seen **602 clones from 139 unique cloners** in the last two week
 
 ## Release Notes
 
+## 2026-04-05 - v0.7.3
+
+### Changed
+
+- Add groups.io community link to README
+
+
 ## 2026-04-05 - v0.7.2
 
 ### Changed
