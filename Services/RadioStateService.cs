@@ -115,6 +115,43 @@ namespace FTdx101_WebApp.Services
         private int? _agcSub;
         public int? AGCSub { get => _agcSub; set => SetField(ref _agcSub, value); }
 
+        // GT command AGC select: "0"=OFF "1"=FAST "2"=MID "3"=SLOW "4"=AUTO
+        // Values 5/6 (AUTO-FAST/MID/SLOW) are read-only radio states, mapped to "4" in the UI.
+        private string _agcA = "2";
+        public string AgcA { get => _agcA; set => SetField(ref _agcA, value); }
+        private string _agcB = "2";
+        public string AgcB { get => _agcB; set => SetField(ref _agcB, value); }
+
+        // PA command IPO/AMP: "0"=IPO "1"=AMP1 "2"=AMP2
+        private string _ipoA = "0";
+        public string IpoA { get => _ipoA; set => SetField(ref _ipoA, value); }
+        private string _ipoB = "0";
+        public string IpoB { get => _ipoB; set => SetField(ref _ipoB, value); }
+
+        // BC command Auto Notch: "0"=OFF "1"=ON
+        private string _autoNotchA = "0";
+        public string AutoNotchA { get => _autoNotchA; set => SetField(ref _autoNotchA, value); }
+        private string _autoNotchB = "0";
+        public string AutoNotchB { get => _autoNotchB; set => SetField(ref _autoNotchB, value); }
+
+        // NR command Noise Reduction: "0"=OFF "1"=NR1 "2"=NR2
+        private string _nrA = "0";
+        public string NrA { get => _nrA; set => SetField(ref _nrA, value); }
+        private string _nrB = "0";
+        public string NrB { get => _nrB; set => SetField(ref _nrB, value); }
+
+        // RA command Attenuator: "00"=OFF "06"=6dB "12"=12dB "18"=18dB
+        private string _attA = "00";
+        public string AttA { get => _attA; set => SetField(ref _attA, value); }
+        private string _attB = "00";
+        public string AttB { get => _attB; set => SetField(ref _attB, value); }
+
+        // BP command Manual Notch on/off: "0"=OFF "1"=ON
+        private string _manualNotchA = "0";
+        public string ManualNotchA { get => _manualNotchA; set => SetField(ref _manualNotchA, value); }
+        private string _manualNotchB = "0";
+        public string ManualNotchB { get => _manualNotchB; set => SetField(ref _manualNotchB, value); }
+
         private int? _rfMain;
         public int? RFMain { get => _rfMain; set => SetField(ref _rfMain, value); }
         private int? _rfSub;

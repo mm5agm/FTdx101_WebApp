@@ -347,29 +347,48 @@ pre, code { tab-size: 4; }
     /* No fixed width or negative margin */
 }
 
-/* Mode select dropdown - sized to fit longest option (D-FM-N) */
-#modeSelectA,
-#modeSelectB {
+/* Mode select - sized to fit longest option (D-FM-N), sits below band buttons */
+.vfo-mode-select {
     width: 7rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: bold;
 }
 
-#antennaSelectA,
-#antennaSelectB {
-    width: 7rem;
-    font-size: 0.9rem;
+/* Antenna select - compact, sits beside mode select */
+.vfo-ant-select {
+    width: 6rem;
+    font-size: 0.85rem;
     font-weight: bold;
 }
 
-/* Mode select container - stack mode and antenna dropdowns vertically */
-.mode-select-container {
-    margin-left: -0.6rem;
-    position: relative;
-    z-index: 10;
+/* Right-hand controls column — 2-column grid of label+select pairs */
+.vfo-controls-column {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem 0.4rem;
+    align-content: start;
+}
+
+.vfo-control-item {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.1rem;
+}
+
+.vfo-control-item select {
+    font-size: 0.78rem;
+    font-weight: bold;
+    padding: 0.1rem 0.2rem;
+}
+
+.vfo-control-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #6c757d;
+    margin-bottom: 0;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 /* Compact band button grid layout - 4 columns, sized to content */

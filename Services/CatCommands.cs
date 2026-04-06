@@ -36,7 +36,8 @@ namespace FTdx101_WebApp.Services
         public const string TxPower = "PC";
 
         // AGC COMMANDS
-        public const string Agc = "GT0";
+        public const string Agc    = "GT0";   // Main (VFO A)
+        public const string AgcSub = "GT1";   // Sub  (VFO B)
 
         // FILTER COMMANDS
         public const string FilterHigh = "SH0";

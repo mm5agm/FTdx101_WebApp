@@ -121,6 +121,75 @@ namespace FTdx101_WebApp.Services
                                 _stateService.RoofingFilterB = filterCode;
                         }
                         break;
+                    case "GT":
+                        // GT0P2; or GT1P2; — P2: 0=OFF 1=FAST 2=MID 3=SLOW 4=AUTO 5/6=AUTO variant
+                        // Values 5 and 6 (AUTO-FAST / AUTO-MID / AUTO-SLOW) are read-only settled
+                        // states; normalise them to "4" (AUTO) so the UI dropdown stays consistent.
+                        if (message.Length >= 4)
+                        {
+                            var agcVfo = message[2];
+                            var agcCode = message[3].ToString();
+                            if (agcCode == "5" || agcCode == "6") agcCode = "4";
+                            if (agcVfo == '0') _stateService.AgcA = agcCode;
+                            else if (agcVfo == '1') _stateService.AgcB = agcCode;
+                        }
+                        break;
+                    case "PA":
+                        // PA{vfo}{code}; — vfo: 0=Main 1=Sub; code: 0=IPO 1=AMP1 2=AMP2
+                        if (message.Length >= 4)
+                        {
+                            var vfo = message[2];
+                            var code = message[3].ToString();
+                            if (vfo == '0') _stateService.IpoA = code;
+                            else if (vfo == '1') _stateService.IpoB = code;
+                        }
+                        break;
+                    case "BC":
+                        // BC{vfo}{code}; — vfo: 0=Main 1=Sub; code: 0=OFF 1=ON
+                        if (message.Length >= 4)
+                        {
+                            var vfo = message[2];
+                            var code = message[3].ToString();
+                            if (vfo == '0') _stateService.AutoNotchA = code;
+                            else if (vfo == '1') _stateService.AutoNotchB = code;
+                        }
+                        break;
+                    case "NR":
+                        // NR{vfo}{code}; — vfo: 0=Main 1=Sub; code: 0=OFF 1=NR1 2=NR2
+                        if (message.Length >= 4)
+                        {
+                            var vfo = message[2];
+                            var code = message[3].ToString();
+                            if (vfo == '0') _stateService.NrA = code;
+                            else if (vfo == '1') _stateService.NrB = code;
+                        }
+                        break;
+                    case "RA":
+                        // RA{vfo}{nn}; — vfo: 0=Main 1=Sub; nn: 00=OFF 06=6dB 12=12dB 18=18dB
+                        if (message.Length >= 5)
+                        {
+                            var vfo = message[2];
+                            var code = message.Substring(3, 2);
+                            if (vfo == '0') _stateService.AttA = code;
+                            else if (vfo == '1') _stateService.AttB = code;
+                        }
+                        break;
+                    case "BP":
+                        // BP{vfo}{param}{val1}{val2}{val3}; — param 0=on/off, 1=freq
+                        // On/off: BP{vfo}0{000|001}; — 000=OFF 001=ON
+                        if (message.Length >= 7)
+                        {
+                            var vfo = message[2];
+                            var param = message[3];
+                            if (param == '0')
+                            {
+                                var val = message.Substring(4, 3);
+                                var isOn = val == "001" ? "1" : "0";
+                                if (vfo == '0') _stateService.ManualNotchA = isOn;
+                                else if (vfo == '1') _stateService.ManualNotchB = isOn;
+                            }
+                        }
+                        break;
                     // No debug logging for unhandled commands
                 }
             }
