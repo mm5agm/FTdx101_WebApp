@@ -2,9 +2,76 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FTdx101_WebApp.Services;
-using Microsoft.AspNetCore.SignalR;
-using FTdx101_WebApp.Hubs; // Adjust namespace as needed
 using System.Diagnostics;
+using System.Windows.Forms;
+
+// ── Single-instance guard ────────────────────────────────────────────────────
+const string MutexName = "Global\\FTdx101_WebApp_SingleInstance";
+var mutex = new Mutex(initiallyOwned: true, name: MutexName, out bool createdNew);
+
+if (!createdNew)
+{
+#pragma warning disable CA1416
+    var choice = MessageBox.Show(
+        "FTdx101 WebApp is already running.\n\nClick OK to open the control panel in your browser.",
+        "Already Running",
+        MessageBoxButtons.OKCancel,
+        MessageBoxIcon.Information,
+        MessageBoxDefaultButton.Button1);
+#pragma warning restore CA1416
+
+    if (choice == DialogResult.OK)
+        Process.Start(new ProcessStartInfo("http://localhost:8080") { UseShellExecute = true });
+
+    mutex.Dispose();
+    return;
+}
+
+// Keep the mutex alive for the lifetime of the process
+AppDomain.CurrentDomain.ProcessExit += (_, _) => { try { mutex.ReleaseMutex(); } catch { } mutex.Dispose(); };
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+static bool IsPortInUseException(Exception ex)
+{
+    var full = ex.ToString();
+    return full.Contains("address already in use", StringComparison.OrdinalIgnoreCase)
+        || full.Contains("Only one usage of each socket address", StringComparison.OrdinalIgnoreCase)
+        || full.Contains("WSAEADDRINUSE", StringComparison.OrdinalIgnoreCase);
+}
+
+static string? GetPortOwner(int port)
+{
+    try
+    {
+        using var proc = Process.Start(new ProcessStartInfo
+        {
+            FileName               = "netstat",
+            Arguments              = "-ano",
+            UseShellExecute        = false,
+            RedirectStandardOutput = true,
+            CreateNoWindow         = true
+        });
+        if (proc is null) return null;
+
+        var output = proc.StandardOutput.ReadToEnd();
+        proc.WaitForExit();
+
+        foreach (var line in output.Split('\n'))
+        {
+            if (line.Contains($":{port}") && line.Contains("LISTENING", StringComparison.OrdinalIgnoreCase))
+            {
+                var parts = line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 1 && int.TryParse(parts[^1], out int pid))
+                {
+                    try   { return $"{Process.GetProcessById(pid).ProcessName} (PID {pid})"; }
+                    catch { return $"PID {pid}"; }
+                }
+            }
+        }
+    }
+    catch { }
+    return null;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<CalibrationStorage>();
@@ -129,11 +196,27 @@ catch (Exception ex)
 {
     var msg = $"[FATAL] Application failed to start: {ex.Message}\n{ex.StackTrace}";
     Console.Error.WriteLine(msg);
-    try
+    try { File.AppendAllText("fatal_startup_error.log", $"{DateTime.Now:u} {msg}\n"); } catch { }
+
+#pragma warning disable CA1416
+    if (IsPortInUseException(ex))
     {
-        System.IO.File.AppendAllText("fatal_startup_error.log", $"{DateTime.Now:u} {msg}\n");
+        var owner = GetPortOwner(8080);
+        var portMsg = owner is not null
+            ? $"Port 8080 is already in use by {owner}.\n\nClose that application and try again."
+            : "Port 8080 is already in use by another application.\n\nClose that application and try again.";
+        MessageBox.Show(portMsg, "Port In Use", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
-    catch { }
+    else
+    {
+        MessageBox.Show(
+            $"FTdx101 WebApp failed to start:\n\n{ex.Message}",
+            "Startup Error",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
+    }
+#pragma warning restore CA1416
+
     throw;
 }
 

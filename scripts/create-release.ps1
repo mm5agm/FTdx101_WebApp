@@ -54,6 +54,14 @@ if (-not $commits) {
 
 $commitBlock = $commits -join "`n"
 
+# Update installer.nsi version
+$newVersion = $newTag.TrimStart('v')
+$installerPath = (Join-Path $PSScriptRoot "..\installer.nsi" | Resolve-Path).Path
+$installerContent = [System.IO.File]::ReadAllText($installerPath)
+$installerContent = $installerContent -replace '!define VERSION "[^"]*"', "!define VERSION `"$newVersion`""
+[System.IO.File]::WriteAllText($installerPath, $installerContent)
+Write-Host "installer.nsi version set to $newVersion" -ForegroundColor Green
+
 # Commit any pending changes in develop
 $pending = git status --porcelain
 if ($pending) {
