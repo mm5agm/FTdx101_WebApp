@@ -52,6 +52,13 @@ If this project has helped you, please consider sponsoring it. Even small contri
 
 ## 2026-04-06 - v0.7.5
 
+### Changed
+
+- AGC etc added.This is before moving Freq down and shifting Bands accross
+
+
+## 2026-04-06 - v0.7.5
+
 ### Added
 
 - **VFO controls panel** — new two-column controls section alongside the band buttons for both VFO A and VFO B:
