@@ -50,12 +50,18 @@ If this project has helped you, please consider sponsoring it. Even small contri
 
 ## Release Notes
 
-## 2026-04-06 - v0.7.5
+## 2026-04-06 - v0.7.6
 
 ### Changed
 
-- AGC etc added.This is before moving Freq down and shifting Bands accross
+- Minor fixes and improvements
 
+
+## 2026-04-06 - v0.7.6
+
+### Changed
+
+- Updated main page screenshot to reflect new VFO controls layout.
 
 ## 2026-04-06 - v0.7.5
 
