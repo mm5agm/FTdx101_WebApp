@@ -1,4 +1,4 @@
-
+﻿
 ## This is a test release It will have bugs and Gauges will jump about till calibrated properly
 Trigger release-please
 
@@ -37,11 +37,10 @@ Join the discussion group for announcements, bug reports, and feedback:
 
 ## 🌱 Why Sponsorship Matters
 
-I’m retired and maintain this project on a limited income, funding all development tools personally. AI‑assisted coding has been invaluable for building features quickly, but it isn’t free — I’ve spent roughly **$300 USD** so far, and I have now moved from **Copilot Pro** to **Claude Pro**. That change helps, but costs still add up and can slow development.
+I’m retired and maintain this project on a limited income, funding all development tools personally. AI‑assisted coding has been invaluable for building features quickly, but it isn’t free. 
 
 If this project has helped you, please consider sponsoring it. Even small contributions make a real difference and help keep the development tools running.
 
-The project has seen **602 clones from 139 unique cloners** in the last two weeks, which shows there’s genuine interest. Community support helps me keep the momentum going.
 
 ---
 

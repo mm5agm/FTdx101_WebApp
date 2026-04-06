@@ -78,9 +78,12 @@ export const defaultTables = {
         { raw: 255, value: 60 }
     ],
 
-    // PA temperature — RM9 (raw value is already in °C for the FTdx101)
+    // PA temperature — RM9 (0-255 ADC → 0-100 °C, linear per FTdx101 CAT manual)
     TPA: [
         { raw: 0,   value: 0   },
-        { raw: 100, value: 100 }
+        { raw: 64,  value: 25  },
+        { raw: 128, value: 50  },
+        { raw: 192, value: 75  },
+        { raw: 255, value: 100 }
     ]
 };

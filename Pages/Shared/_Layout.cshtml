@@ -17,8 +17,9 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-gauges@2.1.7/gauge.min.js"></script>
 
     <!-- Calibration engine — exposes window.calibrationEngine for site.js -->
+    <!-- v=8: bump this when calibration-engine.js or calibration-tables.js changes -->
     <script type="module">
-        import { calibrateNumeric, calibrateSMeterLabel, loadFromBackend } from '/js/calibration/calibration-engine.js';
+        import { calibrateNumeric, calibrateSMeterLabel, loadFromBackend } from '/js/calibration/calibration-engine.js?v=8';
         // Expose immediately with default tables so site.js never gets undefined.
         window.calibrationEngine = { calibrateNumeric, calibrateSMeterLabel };
         // Replace defaults with any user-saved calibration from the backend.
@@ -27,7 +28,7 @@
 
     <!-- Meter formatters — exposes window.MeterFormatters for site.js -->
     <script type="module">
-        import { MeterFormatters } from '/js/ui/meter-formatters.js';
+        import { MeterFormatters } from '/js/ui/meter-formatters.js?v=8';
         window.MeterFormatters = MeterFormatters;
     </script>
 </head>
@@ -52,7 +53,7 @@
                             <a class="nav-link text-dark" asp-area="" asp-page="/ApplicationSetup">Application Setup</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="/MeterCalibration" target="_blank" rel="noopener">Meter Calibration</a>
+                            <a class="nav-link text-dark" href="/MeterCalibration">Meter Calibration</a>
                         </li>
                     </ul>
                 </div>

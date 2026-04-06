@@ -9,7 +9,7 @@
 // user-saved calibration data from the server.  All subsequent calls to
 // calibrateNumeric / calibrateSMeterLabel will use the loaded data.
 
-import { defaultTables } from './calibration-tables.js';
+import { defaultTables } from './calibration-tables.js?v=8';
 
 // Live tables — initialised from defaults, replaced by loadFromBackend().
 // Copied so the imported defaults are never mutated.
