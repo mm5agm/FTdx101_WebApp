@@ -824,9 +824,194 @@ namespace FTdx101_WebApp.Controllers
             public bool Transmit { get; set; }
         }
 
-        public class RoofingFilterRequest 
-        { 
-            public string Filter { get; set; } = string.Empty; 
+        public class RoofingFilterRequest
+        {
+            public string Filter { get; set; } = string.Empty;
+        }
+
+        public class AgcRequest        { public string Code { get; set; } = string.Empty; }
+        public class IpoRequest         { public string Code { get; set; } = string.Empty; }
+        public class AutoNotchRequest   { public string Code { get; set; } = string.Empty; }
+        public class NrRequest          { public string Code { get; set; } = string.Empty; }
+        public class AttenuatorRequest  { public string Code { get; set; } = string.Empty; }
+        public class ManualNotchRequest { public string Enabled { get; set; } = "0"; }
+
+        [HttpPost("agc/{receiver}")]
+        public async Task<IActionResult> SetAgc(string receiver, [FromBody] AgcRequest request)
+        {
+            var validCodes = new[] { "0", "1", "2", "3", "4" };
+            if (!validCodes.Contains(request.Code))
+                return BadRequest(new { error = $"Invalid AGC code: {request.Code}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                await _catClient.SendCommandAsync($"GT{vfo}{request.Code};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.AgcA = request.Code;
+                else            _radioStateService.AgcB = request.Code;
+
+                return Ok(new { message = $"AGC {receiver} set to {request.Code}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting AGC");
+                return StatusCode(500, new { error = "Failed to set AGC" });
+            }
+            finally
+            {
+                _requestSemaphore.Release();
+            }
+        }
+
+        [HttpPost("ipo/{receiver}")]
+        public async Task<IActionResult> SetIpo(string receiver, [FromBody] IpoRequest request)
+        {
+            var validCodes = new[] { "0", "1", "2" };
+            if (!validCodes.Contains(request.Code))
+                return BadRequest(new { error = $"Invalid IPO/AMP code: {request.Code}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                await _catClient.SendCommandAsync($"PA{vfo}{request.Code};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.IpoA = request.Code;
+                else            _radioStateService.IpoB = request.Code;
+
+                return Ok(new { message = $"IPO/AMP {receiver} set to {request.Code}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting IPO/AMP");
+                return StatusCode(500, new { error = "Failed to set IPO/AMP" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("autonotch/{receiver}")]
+        public async Task<IActionResult> SetAutoNotch(string receiver, [FromBody] AutoNotchRequest request)
+        {
+            var validCodes = new[] { "0", "1" };
+            if (!validCodes.Contains(request.Code))
+                return BadRequest(new { error = $"Invalid Auto Notch code: {request.Code}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                await _catClient.SendCommandAsync($"BC{vfo}{request.Code};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.AutoNotchA = request.Code;
+                else            _radioStateService.AutoNotchB = request.Code;
+
+                return Ok(new { message = $"Auto Notch {receiver} set to {request.Code}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Auto Notch");
+                return StatusCode(500, new { error = "Failed to set Auto Notch" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("nr/{receiver}")]
+        public async Task<IActionResult> SetNr(string receiver, [FromBody] NrRequest request)
+        {
+            var validCodes = new[] { "0", "1", "2" };
+            if (!validCodes.Contains(request.Code))
+                return BadRequest(new { error = $"Invalid NR code: {request.Code}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                await _catClient.SendCommandAsync($"NR{vfo}{request.Code};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.NrA = request.Code;
+                else            _radioStateService.NrB = request.Code;
+
+                return Ok(new { message = $"NR {receiver} set to {request.Code}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Noise Reduction");
+                return StatusCode(500, new { error = "Failed to set Noise Reduction" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("attenuator/{receiver}")]
+        public async Task<IActionResult> SetAttenuator(string receiver, [FromBody] AttenuatorRequest request)
+        {
+            var validCodes = new[] { "00", "06", "12", "18" };
+            if (!validCodes.Contains(request.Code))
+                return BadRequest(new { error = $"Invalid attenuator code: {request.Code}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                await _catClient.SendCommandAsync($"RA{vfo}{request.Code};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.AttA = request.Code;
+                else            _radioStateService.AttB = request.Code;
+
+                return Ok(new { message = $"Attenuator {receiver} set to {request.Code}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Attenuator");
+                return StatusCode(500, new { error = "Failed to set Attenuator" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("manualnotch/{receiver}")]
+        public async Task<IActionResult> SetManualNotch(string receiver, [FromBody] ManualNotchRequest request)
+        {
+            var validValues = new[] { "0", "1" };
+            if (!validValues.Contains(request.Enabled))
+                return BadRequest(new { error = $"Invalid Manual Notch value: {request.Enabled}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                var val = request.Enabled == "1" ? "001" : "000";
+                await _catClient.SendCommandAsync($"BP{vfo}0{val};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.ManualNotchA = request.Enabled;
+                else            _radioStateService.ManualNotchB = request.Enabled;
+
+                return Ok(new { message = $"Manual Notch {receiver} set to {request.Enabled}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Manual Notch");
+                return StatusCode(500, new { error = "Failed to set Manual Notch" });
+            }
+            finally { _requestSemaphore.Release(); }
         }
 
         [HttpPost("reinitialize")]

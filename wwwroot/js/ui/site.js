@@ -804,6 +804,68 @@ connection.on("RadioStateUpdate", function (update) {
         if (selectEl) selectEl.value = update.value;
     }
 
+    // --- AGC ---
+    if (update.property === "AgcA") {
+        const selectEl = document.getElementById('agcSelectA');
+        // Values 5/6 (AUTO-FAST/MID/SLOW) are normalised to 4 (AUTO) by the dispatcher,
+        // but guard here too in case of a race.
+        if (selectEl) selectEl.value = (update.value === "5" || update.value === "6") ? "4" : update.value;
+    }
+    if (update.property === "AgcB") {
+        const selectEl = document.getElementById('agcSelectB');
+        if (selectEl) selectEl.value = (update.value === "5" || update.value === "6") ? "4" : update.value;
+    }
+
+    // --- IPO/AMP ---
+    if (update.property === "IpoA") {
+        const el = document.getElementById('ipoSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "IpoB") {
+        const el = document.getElementById('ipoSelectB');
+        if (el) el.value = update.value;
+    }
+
+    // --- ATTENUATOR ---
+    if (update.property === "AttA") {
+        const el = document.getElementById('attSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "AttB") {
+        const el = document.getElementById('attSelectB');
+        if (el) el.value = update.value;
+    }
+
+    // --- NOISE REDUCTION ---
+    if (update.property === "NrA") {
+        const el = document.getElementById('nrSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "NrB") {
+        const el = document.getElementById('nrSelectB');
+        if (el) el.value = update.value;
+    }
+
+    // --- AUTO NOTCH ---
+    if (update.property === "AutoNotchA") {
+        const el = document.getElementById('autoNotchSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "AutoNotchB") {
+        const el = document.getElementById('autoNotchSelectB');
+        if (el) el.value = update.value;
+    }
+
+    // --- MANUAL NOTCH ---
+    if (update.property === "ManualNotchA") {
+        const el = document.getElementById('manualNotchSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "ManualNotchB") {
+        const el = document.getElementById('manualNotchSelectB');
+        if (el) el.value = update.value;
+    }
+
     // --- AF GAIN ---
     if (update.property === "AfGainA" || update.property === "AfGainB") {
         const receiver = update.property === "AfGainA" ? 'A' : 'B';
@@ -890,13 +952,37 @@ function isTouchDevice() {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
-// Interim radioControl - overwritten by the Iife below once it executes
+// Interim radioControl - overwritten by the IIFE below once it executes
 window.radioControl = {
     setBand: window.setBand,
     setMode: window.setMode,
     setAntenna: window.setAntenna,
     setPower: window.setPower,
-    updatePowerDisplay: window.updatePowerDisplay
+    updatePowerDisplay: window.updatePowerDisplay,
+    setAgc: async function (receiver, code) {
+        await fetch(`/api/cat/agc/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    },
+    setIpo: async function (receiver, code) {
+        await fetch(`/api/cat/ipo/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    },
+    setAutoNotch: async function (receiver, code) {
+        await fetch(`/api/cat/autonotch/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    },
+    setNr: async function (receiver, code) {
+        await fetch(`/api/cat/nr/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    },
+    setAttenuator: async function (receiver, code) {
+        await fetch(`/api/cat/attenuator/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    },
+    setManualNotch: async function (receiver, enabled) {
+        await fetch(`/api/cat/manualnotch/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
+    }
 };
 
 // Fetch and apply band button state from the backend on page load
@@ -1331,6 +1417,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    async function setAgc(receiver, code) {
+        try {
+            await fetch(`/api/cat/agc/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) {
+            console.error('setAgc error:', e);
+        }
+    }
+
+    async function setIpo(receiver, code) {
+        try {
+            await fetch(`/api/cat/ipo/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) { console.error('setIpo error:', e); }
+    }
+
+    async function setAutoNotch(receiver, code) {
+        try {
+            await fetch(`/api/cat/autonotch/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) { console.error('setAutoNotch error:', e); }
+    }
+
+    async function setNr(receiver, code) {
+        try {
+            await fetch(`/api/cat/nr/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) { console.error('setNr error:', e); }
+    }
+
+    async function setAttenuator(receiver, code) {
+        try {
+            await fetch(`/api/cat/attenuator/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) { console.error('setAttenuator error:', e); }
+    }
+
+    async function setManualNotch(receiver, enabled) {
+        try {
+            await fetch(`/api/cat/manualnotch/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+        } catch (e) { console.error('setManualNotch error:', e); }
+    }
+
     async function setRoofingFilter(receiver, filter) {
         const didPause = pausePolling();
 
@@ -1714,12 +1862,23 @@ document.addEventListener('DOMContentLoaded', function() {
         setMode,
         setAntenna,
         setRoofingFilter,
+        setAgc,
+        setIpo,
+        setAutoNotch,
+        setNr,
+        setAttenuator,
+        setManualNotch,
         _state: state,  // Expose state for TX indicator updates
         updatePowerDisplay: updatePowerDisplay,
         setPower: setPower
     };
 
     window.updateMICMeter = updateMICMeter;
+
+    // Blur VFO control selects immediately after change so they don't stay highlighted
+    document.querySelectorAll('.vfo-control-item select').forEach(function (sel) {
+        sel.addEventListener('change', function () { this.blur(); });
+    });
 
     // --- Raw Meter Label Visibility State (S-Meter and Power Out) ---
     // Use localStorage to sync across tabs/pages

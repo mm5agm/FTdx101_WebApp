@@ -11,7 +11,7 @@
 }
 
 <!-- Cache-busted CSS reference -->
-<link rel="stylesheet" href="~/css/site.css?v=20260226n" />
+<link rel="stylesheet" href="~/css/site.css?v=20260406a" />
 <link rel="stylesheet" href="~/css/closer-to-raw-power.css?v=20260226n" />
 
 <!-- Message Box Modal (Windows-style) -->
@@ -70,7 +70,11 @@
                 </button>
             </div>
         }
-        <div class="col-auto ms-auto">
+        <div class="col-auto ms-auto d-flex gap-2 align-items-center">
+            <a href="https://paypal.me/mm5agm" target="_blank" rel="noopener noreferrer"
+               class="btn btn-warning btn-sm" title="Support this project via PayPal">
+                <i class="bi bi-cup-hot-fill"></i> Buy Me a Coffee
+            </a>
             <button id="radioPowerBtn" class="btn btn-danger btn-sm"
                     onclick="toggleRadioPower()" title="Radio Power On/Off">
                 <i class="bi bi-power"></i> POWER
@@ -92,56 +96,114 @@
                 </div>
                 <div class="card-body">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
-                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-2 align-items-start">
-                        <!-- Left: S-Meter and Frequency stacked -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-1 gap-2 align-items-start">
+                        <!-- Left: S-Meter only -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
                                 <canvas id="sMeterCanvasA"></canvas>
                             </div>
-                            <!-- Frequency display below S-Meter -->
-                            <div class="d-flex align-items-center" style="margin-top: -5px;">
-                                <span id="freqA" class="fw-bold frequency-display digit-display"></span>
-                                <span class="frequency-display digit-display ms-1">MHz</span>
-                                <div id="freqA-controls" class="ms-2" style="display:none;">
-                                    <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
-                                    <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
-                                </div>
+                        </div>
+                        <!-- Middle: Band buttons + Mode/Antenna below -->
+                        <div class="flex-grow-1 d-flex flex-column gap-1">
+                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
+                            <div class="d-flex gap-2 mt-1">
+                                <select class="form-select form-select-sm vfo-mode-select" id="modeSelectA"
+                                        onchange="setMode('A', this.value)">
+                                    @foreach (var mode in allModes)
+                                    {
+                                        @if (Model.RadioState.ModeA == mode)
+                                        {
+                                            <option value="@mode" selected>@ModeLabel(mode)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@mode">@ModeLabel(mode)</option>
+                                        }
+                                    }
+                                </select>
+                                <select class="form-select form-select-sm vfo-ant-select" id="antennaSelectA"
+                                        onchange="window.radioControl.setAntenna('A', this.value)">
+                                    @foreach (var ant in new[] { "1", "2", "3" })
+                                    {
+                                        @if (Model.RadioState.AntennaA == ant)
+                                        {
+                                            <option value="@ant" selected>ANT @ant</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@ant">ANT @ant</option>
+                                        }
+                                    }
+                                </select>
                             </div>
                         </div>
-                        <!-- Middle: Band buttons in compact 3-row grid -->
-                        <div class="flex-grow-1">
-                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "A", Model.SelectedBandA))
+                        <!-- Right: Controls column (2-column grid) -->
+                        <div class="vfo-controls-column">
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">AGC</label>
+                                <select class="form-select form-select-sm" id="agcSelectA"
+                                        onchange="window.radioControl.setAgc('A', this.value)">
+                                    <option value="0">OFF</option>
+                                    <option value="1">FAST</option>
+                                    <option value="2" selected>MID</option>
+                                    <option value="3">SLOW</option>
+                                    <option value="4">AUTO</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">IPO/AMP</label>
+                                <select class="form-select form-select-sm" id="ipoSelectA"
+                                        onchange="window.radioControl.setIpo('A', this.value)">
+                                    <option value="0" selected>IPO</option>
+                                    <option value="1">AMP1</option>
+                                    <option value="2">AMP2</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">ATT</label>
+                                <select class="form-select form-select-sm" id="attSelectA"
+                                        onchange="window.radioControl.setAttenuator('A', this.value)">
+                                    <option value="00" selected>OFF</option>
+                                    <option value="06">6 dB</option>
+                                    <option value="12">12 dB</option>
+                                    <option value="18">18 dB</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">NR</label>
+                                <select class="form-select form-select-sm" id="nrSelectA"
+                                        onchange="window.radioControl.setNr('A', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">NR1</option>
+                                    <option value="2">NR2</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">Auto Notch</label>
+                                <select class="form-select form-select-sm" id="autoNotchSelectA"
+                                        onchange="window.radioControl.setAutoNotch('A', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">ON</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">Man Notch</label>
+                                <select class="form-select form-select-sm" id="manualNotchSelectA"
+                                        onchange="window.radioControl.setManualNotch('A', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">ON</option>
+                                </select>
+                            </div>
                         </div>
-                        <!-- Right: Mode and Antenna selects -->
-                        <div class="mode-select-container">
-                            <select class="form-select mb-1" id="modeSelectA" 
-                                    onchange="setMode('A', this.value)">
-                                @foreach (var mode in allModes)
-                                {
-                                    @if (Model.RadioState.ModeA == mode)
-                                    {
-                                        <option value="@mode" selected>@ModeLabel(mode)</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@mode">@ModeLabel(mode)</option>
-                                    }
-                                }
-                            </select>
-                            <select class="form-select" id="antennaSelectA" 
-                                    onchange="window.radioControl.setAntenna('A', this.value)">
-                                @foreach (var ant in new[] { "1", "2", "3" })
-                                {
-                                    @if (Model.RadioState.AntennaA == ant)
-                                    {
-                                        <option value="@ant" selected>ANT @ant</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@ant">ANT @ant</option>
-                                    }
-                                }
-                            </select>
+                    </div>
+
+                    <!-- Frequency display (below controls row) -->
+                    <div class="d-flex align-items-center mb-2" style="margin-top: -4px;">
+                        <span id="freqA" class="fw-bold frequency-display digit-display"></span>
+                        <span class="frequency-display digit-display ms-1">MHz</span>
+                        <div id="freqA-controls" class="ms-2" style="display:none;">
+                            <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
+                            <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
                         </div>
                     </div>
 
@@ -187,56 +249,114 @@
                 </div>
                 <div class="card-body">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
-                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
-                        <!-- Left: S-Meter and Frequency stacked -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-1 gap-2 align-items-start">
+                        <!-- Left: S-Meter only -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
                                 <canvas id="sMeterCanvasB"></canvas>
                             </div>
-                            <!-- Frequency display below S-Meter -->
-                            <div class="d-flex align-items-center" style="margin-top: -5px;">
-                                <span id="freqB" class="fw-bold frequency-display digit-display"></span>
-                                <span class="frequency-display digit-display ms-1">MHz</span>
-                                <div id="freqB-controls" class="ms-2" style="display:none;">
-                                    <button id="freqB-up" class="btn btn-secondary btn-sm">▲</button>
-                                    <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
-                                </div>
+                        </div>
+                        <!-- Middle: Band buttons + Mode/Antenna below -->
+                        <div class="flex-grow-1 band-buttons-shifted d-flex flex-column gap-1">
+                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
+                            <div class="d-flex gap-2 mt-1">
+                                <select class="form-select form-select-sm vfo-mode-select" id="modeSelectB"
+                                        onchange="setMode('B', this.value)">
+                                    @foreach (var mode in allModes)
+                                    {
+                                        @if (Model.RadioState.ModeB == mode)
+                                        {
+                                            <option value="@mode" selected>@ModeLabel(mode)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@mode">@ModeLabel(mode)</option>
+                                        }
+                                    }
+                                </select>
+                                <select class="form-select form-select-sm vfo-ant-select" id="antennaSelectB"
+                                        onchange="window.radioControl.setAntenna('B', this.value)">
+                                    @foreach (var ant in new[] { "1", "2", "3" })
+                                    {
+                                        @if (Model.RadioState.AntennaB == ant)
+                                        {
+                                            <option value="@ant" selected>ANT @ant</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@ant">ANT @ant</option>
+                                        }
+                                    }
+                                </select>
                             </div>
                         </div>
-                        <!-- Middle: Band buttons in compact 3-row grid -->
-                        <div class="flex-grow-1 band-buttons-shifted">
-                            @await Html.PartialAsync("_BandButtonsPartial", Tuple.Create("unused", "B", Model.SelectedBandB))
+                        <!-- Right: Controls column (2-column grid) -->
+                        <div class="vfo-controls-column">
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">AGC</label>
+                                <select class="form-select form-select-sm" id="agcSelectB"
+                                        onchange="window.radioControl.setAgc('B', this.value)">
+                                    <option value="0">OFF</option>
+                                    <option value="1">FAST</option>
+                                    <option value="2" selected>MID</option>
+                                    <option value="3">SLOW</option>
+                                    <option value="4">AUTO</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">IPO/AMP</label>
+                                <select class="form-select form-select-sm" id="ipoSelectB"
+                                        onchange="window.radioControl.setIpo('B', this.value)">
+                                    <option value="0" selected>IPO</option>
+                                    <option value="1">AMP1</option>
+                                    <option value="2">AMP2</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">ATT</label>
+                                <select class="form-select form-select-sm" id="attSelectB"
+                                        onchange="window.radioControl.setAttenuator('B', this.value)">
+                                    <option value="00" selected>OFF</option>
+                                    <option value="06">6 dB</option>
+                                    <option value="12">12 dB</option>
+                                    <option value="18">18 dB</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">NR</label>
+                                <select class="form-select form-select-sm" id="nrSelectB"
+                                        onchange="window.radioControl.setNr('B', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">NR1</option>
+                                    <option value="2">NR2</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">Auto Notch</label>
+                                <select class="form-select form-select-sm" id="autoNotchSelectB"
+                                        onchange="window.radioControl.setAutoNotch('B', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">ON</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
+                                <label class="vfo-control-label">Man Notch</label>
+                                <select class="form-select form-select-sm" id="manualNotchSelectB"
+                                        onchange="window.radioControl.setManualNotch('B', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">ON</option>
+                                </select>
+                            </div>
                         </div>
-                        <!-- Right: Mode and Antenna selects -->
-                        <div class="mode-select-container">
-                            <select class="form-select mb-1" id="modeSelectB" 
-                                    onchange="setMode('B', this.value)">
-                                @foreach (var mode in allModes)
-                                {
-                                    @if (Model.RadioState.ModeB == mode)
-                                    {
-                                        <option value="@mode" selected>@ModeLabel(mode)</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@mode">@ModeLabel(mode)</option>
-                                    }
-                                }
-                            </select>
-                            <select class="form-select" id="antennaSelectB" 
-                                    onchange="window.radioControl.setAntenna('B', this.value)">
-                                @foreach (var ant in new[] { "1", "2", "3" })
-                                {
-                                    @if (Model.RadioState.AntennaB == ant)
-                                    {
-                                        <option value="@ant" selected>ANT @ant</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@ant">ANT @ant</option>
-                                    }
-                                }
-                            </select>
+                    </div>
+
+                    <!-- Frequency display (below controls row) -->
+                    <div class="d-flex align-items-center mb-2" style="margin-top: -4px;">
+                        <span id="freqB" class="fw-bold frequency-display digit-display"></span>
+                        <span class="frequency-display digit-display ms-1">MHz</span>
+                        <div id="freqB-controls" class="ms-2" style="display:none;">
+                            <button id="freqB-up" class="btn btn-secondary btn-sm">▲</button>
+                            <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
                         </div>
                     </div>
 

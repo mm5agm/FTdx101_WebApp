@@ -12,16 +12,12 @@ var mutex = new Mutex(initiallyOwned: true, name: MutexName, out bool createdNew
 if (!createdNew)
 {
 #pragma warning disable CA1416
-    var choice = MessageBox.Show(
-        "FTdx101 WebApp is already running.\n\nClick OK to open the control panel in your browser.",
+    MessageBox.Show(
+        "FTdx101 WebApp is already running.",
         "Already Running",
-        MessageBoxButtons.OKCancel,
-        MessageBoxIcon.Information,
-        MessageBoxDefaultButton.Button1);
+        MessageBoxButtons.OK,
+        MessageBoxIcon.Information);
 #pragma warning restore CA1416
-
-    if (choice == DialogResult.OK)
-        Process.Start(new ProcessStartInfo("http://localhost:8080") { UseShellExecute = true });
 
     mutex.Dispose();
     return;
