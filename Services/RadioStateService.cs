@@ -452,6 +452,18 @@ namespace FTdx101_WebApp.Services
             AfGainA = state.AfGainA;
             AfGainB = state.AfGainB;
             MicGain = state.MicGain;
+            AgcA = state.AgcA ?? "2";
+            AgcB = state.AgcB ?? "2";
+            IpoA = state.IpoA ?? "0";
+            IpoB = state.IpoB ?? "0";
+            AttA = state.AttA ?? "00";
+            AttB = state.AttB ?? "00";
+            NrA = state.NrA ?? "0";
+            NrB = state.NrB ?? "0";
+            AutoNotchA = state.AutoNotchA ?? "0";
+            AutoNotchB = state.AutoNotchB ?? "0";
+            ManualNotchA = state.ManualNotchA ?? "0";
+            ManualNotchB = state.ManualNotchB ?? "0";
         }
 
         public RadioState ToRadioState()
@@ -471,7 +483,19 @@ namespace FTdx101_WebApp.Services
                 Power = Power,
                 AfGainA = AfGainA,
                 AfGainB = AfGainB,
-                MicGain = MicGain
+                MicGain = MicGain,
+                AgcA = AgcA,
+                AgcB = AgcB,
+                IpoA = IpoA,
+                IpoB = IpoB,
+                AttA = AttA,
+                AttB = AttB,
+                NrA = NrA,
+                NrB = NrB,
+                AutoNotchA = AutoNotchA,
+                AutoNotchB = AutoNotchB,
+                ManualNotchA = ManualNotchA,
+                ManualNotchB = ManualNotchB
             };
         }
     }

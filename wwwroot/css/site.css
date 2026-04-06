@@ -372,22 +372,23 @@ pre, code { tab-size: 4; }
 
 .vfo-control-item {
     display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.3rem;
 }
 
 .vfo-control-item select {
     font-size: 0.78rem;
     font-weight: bold;
     padding: 0.1rem 0.2rem;
+    flex: 1;
 }
 
 .vfo-control-label {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     font-weight: 700;
-    color: #6c757d;
+    color: #212529;
     margin-bottom: 0;
-    line-height: 1.2;
     white-space: nowrap;
 }
 

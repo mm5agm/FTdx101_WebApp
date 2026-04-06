@@ -11,7 +11,7 @@
 }
 
 <!-- Cache-busted CSS reference -->
-<link rel="stylesheet" href="~/css/site.css?v=20260226n" />
+<link rel="stylesheet" href="~/css/site.css?v=20260406a" />
 <link rel="stylesheet" href="~/css/closer-to-raw-power.css?v=20260226n" />
 
 <!-- Message Box Modal (Windows-style) -->
@@ -96,20 +96,11 @@
                 </div>
                 <div class="card-body">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
-                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-2 align-items-start">
-                        <!-- Left: S-Meter and Frequency stacked -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-1 gap-2 align-items-start">
+                        <!-- Left: S-Meter only -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
                                 <canvas id="sMeterCanvasA"></canvas>
-                            </div>
-                            <!-- Frequency display below S-Meter -->
-                            <div class="d-flex align-items-center" style="margin-top: -5px;">
-                                <span id="freqA" class="fw-bold frequency-display digit-display"></span>
-                                <span class="frequency-display digit-display ms-1">MHz</span>
-                                <div id="freqA-controls" class="ms-2" style="display:none;">
-                                    <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
-                                    <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
-                                </div>
                             </div>
                         </div>
                         <!-- Middle: Band buttons + Mode/Antenna below -->
@@ -206,6 +197,16 @@
                         </div>
                     </div>
 
+                    <!-- Frequency display (below controls row) -->
+                    <div class="d-flex align-items-center mb-2" style="margin-top: -4px;">
+                        <span id="freqA" class="fw-bold frequency-display digit-display"></span>
+                        <span class="frequency-display digit-display ms-1">MHz</span>
+                        <div id="freqA-controls" class="ms-2" style="display:none;">
+                            <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
+                            <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
+                        </div>
+                    </div>
+
                     <!-- Other controls below -->
                     <div>
                         <!-- Roofing Filter A -->
@@ -248,20 +249,11 @@
                 </div>
                 <div class="card-body">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
-                    <div class="receiver-controls-group d-flex flex-nowrap mb-3 gap-3 align-items-start">
-                        <!-- Left: S-Meter and Frequency stacked -->
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-1 gap-2 align-items-start">
+                        <!-- Left: S-Meter only -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
                                 <canvas id="sMeterCanvasB"></canvas>
-                            </div>
-                            <!-- Frequency display below S-Meter -->
-                            <div class="d-flex align-items-center" style="margin-top: -5px;">
-                                <span id="freqB" class="fw-bold frequency-display digit-display"></span>
-                                <span class="frequency-display digit-display ms-1">MHz</span>
-                                <div id="freqB-controls" class="ms-2" style="display:none;">
-                                    <button id="freqB-up" class="btn btn-secondary btn-sm">▲</button>
-                                    <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
-                                </div>
                             </div>
                         </div>
                         <!-- Middle: Band buttons + Mode/Antenna below -->
@@ -355,6 +347,16 @@
                                     <option value="1">ON</option>
                                 </select>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Frequency display (below controls row) -->
+                    <div class="d-flex align-items-center mb-2" style="margin-top: -4px;">
+                        <span id="freqB" class="fw-bold frequency-display digit-display"></span>
+                        <span class="frequency-display digit-display ms-1">MHz</span>
+                        <div id="freqB-controls" class="ms-2" style="display:none;">
+                            <button id="freqB-up" class="btn btn-secondary btn-sm">▲</button>
+                            <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
                         </div>
                     </div>
 

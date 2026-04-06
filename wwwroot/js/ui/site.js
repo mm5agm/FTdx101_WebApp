@@ -1875,6 +1875,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.updateMICMeter = updateMICMeter;
 
+    // Blur VFO control selects immediately after change so they don't stay highlighted
+    document.querySelectorAll('.vfo-control-item select').forEach(function (sel) {
+        sel.addEventListener('change', function () { this.blur(); });
+    });
+
     // --- Raw Meter Label Visibility State (S-Meter and Power Out) ---
     // Use localStorage to sync across tabs/pages
     function getShowRawMeterLabels() {

@@ -50,6 +50,27 @@ If this project has helped you, please consider sponsoring it. Even small contri
 
 ## Release Notes
 
+## 2026-04-06 - v0.7.5
+
+### Added
+
+- **VFO controls panel** — new two-column controls section alongside the band buttons for both VFO A and VFO B:
+  - **AGC** — OFF / FAST / MID / SLOW / AUTO
+  - **IPO/AMP** — IPO / AMP1 / AMP2
+  - **ATT** (Attenuator) — OFF / 6 dB / 12 dB / 18 dB
+  - **NR** (Noise Reduction) — OFF / NR1 / NR2
+  - **Auto Notch** — OFF / ON
+  - **Man Notch** (Manual Notch) — OFF / ON
+- All six controls are **fully two-way**: changes made on the radio front panel are reflected in the app automatically via CAT AI mode.
+- Control values are **persisted** and restored on startup.
+- **Buy Me a Coffee** donate button added to the toolbar (PayPal).
+
+### Changed
+
+- Frequency display moved below the S-meter/band buttons row to free up horizontal space for the new controls panel.
+- VFO controls layout uses a compact two-column grid with bold labels and values.
+- Selects return to normal appearance immediately after a value is changed (no lingering highlight).
+
 ## 2026-04-06 - v0.7.4
 
 ### Changed

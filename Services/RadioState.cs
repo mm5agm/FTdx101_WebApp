@@ -77,6 +77,42 @@ namespace FTdx101_WebApp.Services
         public string RoofingFilterB { get; set; } = "";
 
         /// <summary>
+        /// AGC setting per VFO: "0"=OFF "1"=FAST "2"=MID "3"=SLOW "4"=AUTO
+        /// </summary>
+        public string AgcA { get; set; } = "2";
+        public string AgcB { get; set; } = "2";
+
+        /// <summary>
+        /// IPO/AMP per VFO: "0"=IPO "1"=AMP1 "2"=AMP2
+        /// </summary>
+        public string IpoA { get; set; } = "0";
+        public string IpoB { get; set; } = "0";
+
+        /// <summary>
+        /// Attenuator per VFO: "00"=OFF "06"=6dB "12"=12dB "18"=18dB
+        /// </summary>
+        public string AttA { get; set; } = "00";
+        public string AttB { get; set; } = "00";
+
+        /// <summary>
+        /// Noise Reduction per VFO: "0"=OFF "1"=NR1 "2"=NR2
+        /// </summary>
+        public string NrA { get; set; } = "0";
+        public string NrB { get; set; } = "0";
+
+        /// <summary>
+        /// Auto Notch per VFO: "0"=OFF "1"=ON
+        /// </summary>
+        public string AutoNotchA { get; set; } = "0";
+        public string AutoNotchB { get; set; } = "0";
+
+        /// <summary>
+        /// Manual Notch per VFO: "0"=OFF "1"=ON
+        /// </summary>
+        public string ManualNotchA { get; set; } = "0";
+        public string ManualNotchB { get; set; } = "0";
+
+        /// <summary>
         /// Additional controls and settings (for future expansion)
         /// </summary>
         public Dictionary<string, object> Controls { get; set; } = new();
