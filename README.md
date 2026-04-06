@@ -1,4 +1,4 @@
-﻿
+
 ## This is a test release It will have bugs and Gauges will jump about till calibrated properly
 Trigger release-please
 
@@ -49,6 +49,13 @@ If this project has helped you, please consider sponsoring it. Even small contri
 ---
 
 ## Release Notes
+
+## 2026-04-06 - v0.7.4
+
+### Changed
+
+- Minor fixes and improvements
+
 
 ## 2026-04-05 - v0.7.3
 
