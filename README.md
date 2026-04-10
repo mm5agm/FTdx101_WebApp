@@ -50,11 +50,21 @@ If this project has helped you, please consider sponsoring it. Even small contri
 
 ## Release Notes
 
+## 2026-04-10 - v0.7.7
+
+### Changed
+
+- All working. Gauges moved to above VFO container
+- All working. Now about to move gauges container
+
+
 ## 2026-04-06 - v0.7.6
 
 ### Changed
 
 - Minor fixes and improvements
+
+- Ctrl + F goes to full screen, ESC to get back to normal
 
 
 ## 2026-04-06 - v0.7.6

@@ -81,6 +81,87 @@
             </button>
         </div>
     </div>
+    <!-- Power and SWR Meters -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card border-secondary">
+                <div class="card-body py-2">
+                    <!-- Gauges row -->
+                    <div class="d-flex justify-content-start align-items-start flex-wrap" style="margin-left: 0; gap: 0; margin-bottom: 0.2rem !important;">
+                        <!-- SWR Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="swrMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- Power Meter -->
+                        <div class="text-center power-meter-container" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="powerMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- Compression Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="compressionMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- ALC Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="alcMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- PA Temperature Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="tempMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- IDD Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="iddMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                        <!-- VDD Meter -->
+                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
+                            <div class="analog-meter-container">
+                                <canvas id="vddMeterCanvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
+                    <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
+                        <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
+                        <input type="range" class="form-range" id="powerSlider"
+                               min="5"
+                               max="200"
+                               step="5"
+                               value="@Model.RadioState.Power"
+                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
+                               oninput="window.radioControl.updatePowerDisplay(window.txVfo === 1 ? 'B' : 'A', this.value)"
+                               onchange="window.radioControl.setPower(window.txVfo === 1 ? 'B' : 'A', this.value)">
+                    </div>
+                    <!-- MIC Gain / Data Out Level -->
+                    <div class="mb-3 closer-to-raw-power">
+                        <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
+                        <input type="range" class="form-range power-slider"
+                               id="micGainSlider"
+                               min="0"
+                               max="100"
+                               step="1"
+                               value="@Model.MicGain"
+                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
+                               oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
+                               onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-3 flex-wrap">
         <!-- VFO A Panel -->
         <div class="col-lg-6 col-12">
@@ -389,87 +470,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Power and SWR Meters -->
-    <div class="row mt-3">
-        <div class="col-12">
-            <div class="card border-secondary">
-                <div class="card-body py-2">
-                    <!-- Gauges row -->
-                    <div class="d-flex justify-content-start align-items-start flex-wrap" style="margin-left: 0; gap: 0; margin-bottom: 0.2rem !important;">
-                        <!-- SWR Meter -->
-                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
-                            <div class="analog-meter-container">
-                                <canvas id="swrMeterCanvas"></canvas>
-                            </div>
-                        </div>
-                        <!-- Power Meter -->
-                        <div class="text-center power-meter-container" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
-                            <div class="analog-meter-container">
-                                <canvas id="powerMeterCanvas"></canvas>
-                            </div>
-                        </div>
-                        <!-- Compression Meter -->
-                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
-                            <div class="analog-meter-container">
-                                <canvas id="compressionMeterCanvas"></canvas>
-                            </div>
-                        </div>
-                        <!-- ALC Meter -->
-                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
-                            <div class="analog-meter-container">
-                                <canvas id="alcMeterCanvas"></canvas>
-                            </div>
-                        </div>
-                        <!-- PA Temperature Meter -->
-                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
-                            <div class="analog-meter-container">
-                                <canvas id="tempMeterCanvas"></canvas>
-                            </div>
-                        </div>
-                        <!-- IDD Meter -->
-                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
-                            <div class="analog-meter-container">
-                                <canvas id="iddMeterCanvas"></canvas>
-                            </div>
-                        </div>
-                        <!-- VDD Meter -->
-                        <div class="text-center" style="position: relative; height: 135px; min-width: 220px; margin: 0; padding: 0;">
-                            <div class="analog-meter-container">
-                                <canvas id="vddMeterCanvas"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
-                    <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
-                        <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
-                        <input type="range" class="form-range" id="powerSlider"
-                               min="5"
-                               max="200"
-                               step="5"
-                               value="@Model.RadioState.Power"
-                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
-                               oninput="window.radioControl.updatePowerDisplay(window.txVfo === 1 ? 'B' : 'A', this.value)"
-                               onchange="window.radioControl.setPower(window.txVfo === 1 ? 'B' : 'A', this.value)">
-                    </div>
-                    <!-- MIC Gain / Data Out Level -->
-                    <div class="mb-3 closer-to-raw-power">
-                        <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
-                        <input type="range" class="form-range power-slider"
-                               id="micGainSlider"
-                               min="0"
-                               max="100"
-                               step="1"
-                               value="@Model.MicGain"
-                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
-                               oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
-                               onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
