@@ -56,6 +56,8 @@ If this project has helped you, please consider sponsoring it. Even small contri
 
 - Minor fixes and improvements
 
+- Ctrl + F goes to full screen, ESC to get back to normal
+
 
 ## 2026-04-06 - v0.7.6
 
