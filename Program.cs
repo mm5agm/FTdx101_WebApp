@@ -102,6 +102,9 @@ builder.Services.AddSingleton<ISettingsService, SettingsService>();
 // Add after existing service registrations
 builder.Services.AddHostedService<MeterPollingService>();
 
+// SDR spectrum display — reads IQ samples, computes FFT, broadcasts via SignalR
+builder.Services.AddHostedService<FTdx101_WebApp.Services.Sdr.SdrBackgroundService>();
+
 // Register the radio state service — reuse the same singleton instance as RadioStateService
 builder.Services.AddSingleton<IRadioStateService>(sp => sp.GetRequiredService<RadioStateService>());
 

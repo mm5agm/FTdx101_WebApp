@@ -162,6 +162,21 @@
         </div>
     </div>
 
+    <!-- Spectrum Display — hidden until SdrBackgroundService reports "streaming" -->
+    <div id="spectrumContainer" class="row mt-3" style="display:none;">
+        <div class="col-12">
+            <div class="card border-dark">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-1">
+                    <span class="small fw-bold"><i class="bi bi-broadcast-pin me-1"></i>Spectrum</span>
+                    <span id="spectrumStatusBadge" class="badge bg-secondary small">—</span>
+                </div>
+                <div class="card-body p-0">
+                    <canvas id="spectrumCanvas" style="display:block; width:100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-3 flex-wrap">
         <!-- VFO A Panel -->
         <div class="col-lg-6 col-12">
@@ -473,8 +488,10 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
-        import { MeterPanel } from "/js/guages/meter-panel.js";
-        import { FTdx101Meters } from "/js/orchestrators/FTdx101Meters.js";
+        import { MeterPanel }           from "/js/guages/meter-panel.js";
+        import { FTdx101Meters }        from "/js/orchestrators/FTdx101Meters.js";
+        import { SdrSpectrumPipeline }  from "/js/sdr/sdr-spectrum-pipeline.js";
+        import { SpectrumPanel }        from "/js/sdr/spectrum-panel.js";
         document.addEventListener('DOMContentLoaded', function () {
             window.meterPanel = new MeterPanel({
                 smeterA:     { type: 'smeter', canvasId: 'sMeterCanvasA' },
@@ -488,6 +505,39 @@
                 vdd:         { canvasId: 'vddMeterCanvas' }
             });
             window.ftdx101Meters = new FTdx101Meters(window.meterPanel, window.calibrationEngine);
+
+            // ── Spectrum display ─────────────────────────────────────────────
+            // SpectrumPanel owns the canvas and all DOM for the spectrum display.
+            // SdrSpectrumPipeline is pure transport/routing — no DOM, no canvas.
+            const spectrumPanel = new SpectrumPanel(
+                'spectrumCanvas',
+                'spectrumContainer',
+                @Model.RadioState.FrequencyA   // server-rendered initial VFO A frequency
+            );
+
+            const spectrumPipeline = new SdrSpectrumPipeline();
+
+            spectrumPipeline.onSpectrumUpdate(data  => spectrumPanel.update(data));
+            spectrumPipeline.onStatusChange(status  => {
+                spectrumPanel.setStatus(status);
+                const badge = document.getElementById('spectrumStatusBadge');
+                if (badge) {
+                    const labels = {
+                        unconfigured: ['secondary', 'No SDR'],
+                        connecting:   ['warning',   'Connecting…'],
+                        streaming:    ['success',   'Live'],
+                        disconnected: ['danger',    'Disconnected'],
+                        nodll:        ['danger',    'No SoapySDR'],
+                    };
+                    const [colour, text] = labels[status] ?? ['secondary', status];
+                    badge.className = `badge bg-${colour} small`;
+                    badge.textContent = text;
+                }
+            });
+            spectrumPipeline.onFrequencyA(hz => spectrumPanel.setVfoFrequency(hz));
+
+            spectrumPipeline.connect();
+            window.spectrumPanel = spectrumPanel;
         });
         async function launchWsjtx() {
             try {
