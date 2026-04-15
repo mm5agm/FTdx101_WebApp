@@ -32,7 +32,27 @@ namespace FTdx101_WebApp.Services.Sdr
         // ── P/Invoke declarations ────────────────────────────────────────────────
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl,
-            EntryPoint = "SoapySDR_enumerate")]
+            EntryPoint = "SoapySDR_getRootPath")]
+        private static extern IntPtr NativeGetRootPath();
+
+        // Returns a char** array; free with NativeStringsClear.
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl,
+            EntryPoint = "SoapySDR_listSearchPaths")]
+        private static extern IntPtr NativeListSearchPaths(out nuint length);
+
+        // Returns a char** array of full module paths; free with NativeStringsClear.
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl,
+            EntryPoint = "SoapySDR_listModules")]
+        private static extern IntPtr NativeListModules(out nuint length);
+
+        // Frees a char** array returned by listSearchPaths / listModules.
+        // C signature: void SoapySDRStrings_clear(char ***elems, size_t length)
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl,
+            EntryPoint = "SoapySDRStrings_clear")]
+        private static extern void NativeStringsClear(ref IntPtr elems, nuint length);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl,
+            EntryPoint = "SoapySDRDevice_enumerate")]
         private static extern IntPtr NativeEnumerate(IntPtr args, out nuint length);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl,
@@ -110,37 +130,34 @@ namespace FTdx101_WebApp.Services.Sdr
 
         /// <summary>
         /// Returns all detected SoapySDR devices.
-        /// Returns an empty list (without throwing) when SoapySDR.dll is not installed.
+        /// Throws <see cref="DllNotFoundException"/> when SoapySDR.dll (or one of its
+        /// own dependencies) cannot be loaded — the caller decides how to report it.
         /// </summary>
         public static IReadOnlyList<SdrDeviceInfo> EnumerateDevices()
         {
             var devices = new List<SdrDeviceInfo>();
-            try
+
+            IntPtr listPtr = NativeEnumerate(IntPtr.Zero, out nuint count);
+            if (listPtr == IntPtr.Zero || count == 0)
+                return devices;
+
+            int kwargsSize = Marshal.SizeOf<SoapySDRKwargsNative>();
+
+            for (nuint i = 0; i < count; i++)
             {
-                IntPtr listPtr = NativeEnumerate(IntPtr.Zero, out nuint count);
-                if (listPtr == IntPtr.Zero || count == 0)
-                    return devices;
+                IntPtr itemPtr = listPtr + (int)((ulong)i * (ulong)kwargsSize);
+                IntPtr strPtr  = NativeKwargsToString(itemPtr);
+                string kwargs  = Marshal.PtrToStringAnsi(strPtr) ?? string.Empty;
+                NativeFree(strPtr);
 
-                int kwargsSize = Marshal.SizeOf<SoapySDRKwargsNative>();
+                var pairs     = ParseKwargs(kwargs);
+                string driver = pairs.GetValueOrDefault("driver", "unknown");
+                string label  = pairs.GetValueOrDefault("label",  kwargs);
 
-                for (nuint i = 0; i < count; i++)
-                {
-                    IntPtr itemPtr = listPtr + (int)((ulong)i * (ulong)kwargsSize);
-                    IntPtr strPtr  = NativeKwargsToString(itemPtr);
-                    string kwargs  = Marshal.PtrToStringAnsi(strPtr) ?? string.Empty;
-                    NativeFree(strPtr);
-
-                    var pairs  = ParseKwargs(kwargs);
-                    string driver = pairs.GetValueOrDefault("driver", "unknown");
-                    string label  = pairs.GetValueOrDefault("label",  kwargs);
-
-                    devices.Add(new SdrDeviceInfo(Key: kwargs, Label: label, Driver: driver));
-                }
-
-                NativeKwargsListClear(listPtr, count);
+                devices.Add(new SdrDeviceInfo(Key: kwargs, Label: label, Driver: driver));
             }
-            catch (DllNotFoundException) { /* SoapySDR not installed */ }
 
+            NativeKwargsListClear(listPtr, count);
             return devices;
         }
 
@@ -242,7 +259,56 @@ namespace FTdx101_WebApp.Services.Sdr
             NativeCloseStream(device, stream);
         }
 
+        /// <summary>
+        /// Returns a plain-English summary of where SoapySDR is searching for
+        /// device plugins and which plugins it actually found.  Useful for
+        /// diagnosing "no devices found" when the core DLL loads correctly.
+        /// </summary>
+        public static string GetPluginDiagnostics()
+        {
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+
+                string root = Marshal.PtrToStringAnsi(NativeGetRootPath()) ?? "(unknown)";
+                sb.AppendLine($"SoapySDR root: {root}");
+
+                IntPtr searchPtr = NativeListSearchPaths(out nuint searchCount);
+                var searchPaths  = ReadStringArray(searchPtr, searchCount);
+                NativeStringsClear(ref searchPtr, searchCount);
+                sb.AppendLine(searchPaths.Length == 0
+                    ? "Plugin search paths: (none)"
+                    : $"Plugin search paths: {string.Join(", ", searchPaths)}");
+
+                IntPtr modPtr = NativeListModules(out nuint modCount);
+                var modules   = ReadStringArray(modPtr, modCount);
+                NativeStringsClear(ref modPtr, modCount);
+                sb.AppendLine(modules.Length == 0
+                    ? "Modules found: (none — copy SoapySDRPlay3.dll into one of the search paths above)"
+                    : $"Modules found: {string.Join(", ", modules.Select(System.IO.Path.GetFileName))}");
+
+                return sb.ToString().Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd();
+            }
+            catch (Exception ex)
+            {
+                return $"Diagnostic error: {ex.Message}";
+            }
+        }
+
         // ── Helpers ──────────────────────────────────────────────────────────────
+
+        // Reads a native char** array into a managed string[].
+        private static string[] ReadStringArray(IntPtr ptr, nuint count)
+        {
+            if (ptr == IntPtr.Zero || count == 0) return [];
+            var result = new string[(int)count];
+            for (int i = 0; i < (int)count; i++)
+            {
+                IntPtr strPtr = Marshal.ReadIntPtr(ptr, i * IntPtr.Size);
+                result[i] = Marshal.PtrToStringAnsi(strPtr) ?? string.Empty;
+            }
+            return result;
+        }
 
         // Parses "key=val,key=val" into a case-insensitive dictionary.
         private static Dictionary<string, string> ParseKwargs(string kwargs)

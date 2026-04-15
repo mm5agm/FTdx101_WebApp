@@ -32,62 +32,55 @@ namespace FTdx101_WebApp.Controllers
             var notes = new List<string>();
 
             // ── SDRplay (sdrplay_api.dll) ────────────────────────────────────────
-            try
+            var sdrplay = SdrplayDevice.EnumerateDevices(out string? sdrplayNote);
+            if (sdrplay.Count > 0)
             {
-                var sdrplay = SdrplayDevice.EnumerateDevices();
-                if (sdrplay.Count > 0)
-                {
-                    all.AddRange(sdrplay);
-                    _logger.LogDebug("SDR: Found {Count} SDRplay device(s)", sdrplay.Count);
-                }
-                else
-                {
-                    // DLL loaded but enumeration found nothing — likely the API service
-                    // is not running or no device is connected.
-                    notes.Add("SDRplay API loaded but no devices found. " +
-                              "Ensure the SDRplay RSP is plugged in and the " +
-                              "SDRplay API Service is running.");
-                }
+                all.AddRange(sdrplay);
+                _logger.LogDebug("SDR: Found {Count} SDRplay device(s)", sdrplay.Count);
             }
-            catch (DllNotFoundException)
+            else if (sdrplayNote != null)
             {
-                notes.Add("sdrplay_api.dll not found. " +
-                          "Download and install the official SDRplay API from " +
-                          "www.sdrplay.com/softwaredownloads/ — this also enables " +
-                          "SoapySDR support for SDRplay devices via SoapySDRPlay3.");
-                _logger.LogDebug("SDR: sdrplay_api.dll not present");
-            }
-            catch (Exception ex)
-            {
-                notes.Add($"SDRplay API error: {ex.Message}");
-                _logger.LogWarning(ex, "SDR: SDRplay enumeration failed");
+                notes.Add(sdrplayNote);
+                _logger.LogWarning("SDR: SDRplay — {Note}", sdrplayNote);
             }
 
             // ── SoapySDR (SoapySDR.dll) ──────────────────────────────────────────
             try
             {
                 var soapy = SoapySdrInterop.EnumerateDevices();
-                if (soapy.Count > 0)
+
+                // If the direct SDRplay path already found devices, suppress SoapySDR's
+                // sdrplay-driver entries — they are the same physical hardware via an
+                // inferior code path and would show as duplicates in the dropdown.
+                var soapyFiltered = sdrplay.Count > 0
+                    ? soapy.Where(d => !d.Driver.Equals("sdrplay", StringComparison.OrdinalIgnoreCase)).ToList()
+                    : soapy;
+
+                if (soapyFiltered.Count > 0)
                 {
-                    all.AddRange(soapy);
-                    _logger.LogDebug("SDR: Found {Count} SoapySDR device(s)", soapy.Count);
+                    all.AddRange(soapyFiltered);
+                    _logger.LogDebug("SDR: Found {Count} SoapySDR device(s)", soapyFiltered.Count);
                 }
-                else
+                else if (soapy.Count == 0 && all.Count == 0)
                 {
-                    // DLL found but no devices — the device isn't plugged in or the
-                    // device-specific SoapySDR plugin (e.g. SoapySDRPlay3) is missing.
-                    notes.Add("SoapySDR loaded but no devices found. " +
-                              "Check your SDR is plugged in and the device-specific " +
-                              "SoapySDR plugin is installed (e.g. SoapySDRPlay3 for SDRplay).");
+                    // No devices found via any path — tell the user what SoapySDR searched.
+                    string diag = SoapySdrInterop.GetPluginDiagnostics();
+                    notes.Add("No SDR devices detected. " +
+                              "Plugin details: | " + diag.Replace("\n", " | "));
+                    _logger.LogWarning("SDR: SoapySDR no devices. {Diag}", diag);
                 }
             }
-            catch (DllNotFoundException)
+            catch (DllNotFoundException ex)
             {
-                notes.Add("SoapySDR.dll not found. " +
-                          "SoapySDR enables support for RTL-SDR, SDRplay, Airspy, HackRF, " +
-                          "and 20+ other devices. Install it via CubicSDR or SDRangel " +
-                          "(both include SoapySDR and device plugins in their Windows installers).");
-                _logger.LogDebug("SDR: SoapySDR.dll not present");
+                bool missingDependency = ex.Message.Contains("dependencies",
+                    StringComparison.OrdinalIgnoreCase);
+
+                notes.Add(missingDependency
+                    ? "SoapySDR.dll loaded but a dependency it needs is missing. " +
+                      "Try re-installing the application — the installer bundles all required DLLs."
+                    : "SoapySDR.dll not found. Try re-installing the application — the installer " +
+                      "should have placed SoapySDR\\bin\\SoapySDR.dll in the application folder.");
+                _logger.LogWarning("SDR: SoapySDR DllNotFoundException — {Msg}", ex.Message);
             }
             catch (Exception ex)
             {

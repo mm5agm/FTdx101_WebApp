@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FTdx101_WebApp.Services;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 // ── Single-instance guard ────────────────────────────────────────────────────
@@ -68,6 +69,27 @@ static string? GetPortOwner(int port)
     catch { }
     return null;
 }
+
+// ── SoapySDR native library resolver ────────────────────────────────────────
+// .NET P/Invoke on Windows does not search PATH directories by default.
+// Resolve SoapySDR.dll explicitly from its install location so the P/Invoke
+// declarations in SoapySdrInterop are satisfied without relying on PATH.
+NativeLibrary.SetDllImportResolver(
+    System.Reflection.Assembly.GetExecutingAssembly(),
+    static (name, _, _) =>
+    {
+        if (name == "SoapySDR")
+        {
+            // Installed layout: <app>\SoapySDR\bin\SoapySDR.dll
+            var path = Path.Combine(AppContext.BaseDirectory, "SoapySDR", "bin", "SoapySDR.dll");
+            // Developer fallback: C:\SoapySDR\bin\SoapySDR.dll (build machine only)
+            if (!File.Exists(path))
+                path = @"C:\SoapySDR\bin\SoapySDR.dll";
+            if (File.Exists(path) && NativeLibrary.TryLoad(path, out IntPtr h))
+                return h;
+        }
+        return IntPtr.Zero;   // fall back to default resolution for all other DLLs
+    });
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<CalibrationStorage>();

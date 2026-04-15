@@ -141,17 +141,36 @@ namespace FTdx101_WebApp.Services.Sdr
 
         // ── Public API ────────────────────────────────────────────────────────────
 
+        // Common installation paths for the official SDRplay API on Windows x64.
+        private static readonly string[] _knownDllPaths =
+        [
+            @"C:\Program Files\SDRplay\API\x64\sdrplay_api.dll",
+            @"C:\Program Files (x86)\SDRplay\API\x64\sdrplay_api.dll",
+        ];
+
         /// <summary>
-        /// Returns all connected SDRplay devices, or an empty list when
-        /// sdrplay_api.dll is not found or the API is already in use.
+        /// Returns all connected SDRplay devices.
+        /// <paramref name="diagnosticNote"/> receives a plain-English explanation
+        /// of any problem encountered (DLL missing, service not running, etc.).
         /// </summary>
-        public static IReadOnlyList<SdrDeviceInfo> EnumerateDevices()
+        public static IReadOnlyList<SdrDeviceInfo> EnumerateDevices(out string? diagnosticNote)
         {
+            diagnosticNote = null;
             var devices = new List<SdrDeviceInfo>();
             try
             {
                 int err = sdrplay_api_Open();
-                if (err != 0) return devices;   // API busy or unavailable
+                if (err != 0)
+                {
+                    diagnosticNote =
+                        $"sdrplay_api.dll loaded but sdrplay_api_Open() returned error {err}. " +
+                        "This usually means the SDRplay API Service is not running. " +
+                        "Open Windows Services (services.msc) and check that " +
+                        "'SDRplay API Service' (or 'SDRPlayService') is started. " +
+                        "Also close SDR Console or any other SDR app before scanning — " +
+                        "only one application can hold the API open at a time.";
+                    return devices;
+                }
 
                 try
                 {
@@ -160,15 +179,52 @@ namespace FTdx101_WebApp.Services.Sdr
                     {
                         uint count = 0;
                         err = sdrplay_api_GetDevices(deviceArray, ref count, MaxDevices);
-                        if (err == 0 && count > 0)
+                        if (err != 0)
+                        {
+                            diagnosticNote =
+                                $"sdrplay_api_GetDevices() returned error {err}. " +
+                                "The device may be in use by another application.";
+                        }
+                        else if (count == 0)
+                        {
+                            diagnosticNote =
+                                "SDRplay API opened successfully but found 0 devices. " +
+                                "Check the RSP1 is plugged in to a USB port and that the " +
+                                "SDRplay USB driver is installed (Device Manager should show " +
+                                "'SDRplay RSP1' under 'Software Defined Radio', not under " +
+                                "'Unknown devices' or with a yellow warning icon).";
+                        }
+                        else
+                        {
                             ReadDeviceList(deviceArray, count, devices);
+                        }
                     }
                     finally { Marshal.FreeHGlobal(deviceArray); }
                 }
                 finally { sdrplay_api_Close(); }
             }
-            catch (DllNotFoundException) { /* sdrplay_api.dll not installed */ }
-            catch (Exception) { /* API unavailable for any other reason */ }
+            catch (DllNotFoundException)
+            {
+                // Check whether the DLL exists somewhere we know about but isn't in PATH.
+                string? found = Array.Find(_knownDllPaths, File.Exists);
+                if (found != null)
+                {
+                    diagnosticNote =
+                        $"sdrplay_api.dll is installed at '{found}' but is not on the " +
+                        $"system PATH, so the app cannot load it. Copy it to the app output " +
+                        $"folder: {AppContext.BaseDirectory}";
+                }
+                else
+                {
+                    diagnosticNote =
+                        "sdrplay_api.dll not found. Install the official SDRplay API from " +
+                        "www.sdrplay.com/softwaredownloads/ then restart the app.";
+                }
+            }
+            catch (Exception ex)
+            {
+                diagnosticNote = $"SDRplay API unexpected error: {ex.GetType().Name} — {ex.Message}";
+            }
 
             return devices;
         }
