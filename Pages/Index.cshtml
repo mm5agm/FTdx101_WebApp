@@ -41,11 +41,11 @@
     </div>
 </div>
 
-<div class="row mb-3">
+<div class="row mb-1" style="padding-top: 2px; padding-bottom: 2px;">
         @if (Model.ShowApp1Button)
         {
             <div class="col-auto">
-                <button id="wsjtxBtn" class="btn btn-secondary btn-sm"
+                <button id="wsjtxBtn" class="btn btn-secondary btn-sm" style="padding-top: 1px; padding-bottom: 1px;"
                         onclick="launchWsjtx()" title="Launch @Model.App1Name">
                     @Model.App1Name
                     <span id="wsjtxTxBadge" class="badge bg-danger ms-1" style="display:none;">TX</span>
@@ -55,7 +55,7 @@
         @if (Model.ShowApp2Button)
         {
             <div class="col-auto">
-                <button id="jtalertBtn" class="btn btn-secondary btn-sm"
+                <button id="jtalertBtn" class="btn btn-secondary btn-sm" style="padding-top: 1px; padding-bottom: 1px;"
                         onclick="launchJtalert()" title="Launch @Model.App2Name">
                     @Model.App2Name
                 </button>
@@ -64,7 +64,7 @@
         @if (Model.ShowApp3Button)
         {
             <div class="col-auto">
-                <button id="log4omBtn" class="btn btn-secondary btn-sm"
+                <button id="log4omBtn" class="btn btn-secondary btn-sm" style="padding-top: 1px; padding-bottom: 1px;"
                         onclick="launchLog4om()" title="Launch @Model.App3Name">
                     @Model.App3Name
                 </button>
@@ -72,11 +72,11 @@
         }
         <div class="col-auto ms-auto d-flex gap-2 align-items-center">
             <a href="https://paypal.me/mm5agm" target="_blank" rel="noopener noreferrer"
-               class="btn btn-warning btn-sm" title="Support this project via PayPal">
+               class="btn btn-warning btn-sm" style="padding-top: 1px; padding-bottom: 1px;" title="Support this project via PayPal">
                 <i class="bi bi-cup-hot-fill"></i> Buy Me a Coffee
             </a>
             <button id="radioPowerBtn" class="btn btn-danger btn-sm"
-                    onclick="toggleRadioPower()" title="Radio Power On/Off">
+                    onclick="toggleRadioPower()" style="padding-top: 1px; padding-bottom: 1px;" title="Radio Power On/Off">
                 <i class="bi bi-power"></i> POWER
             </button>
         </div>
@@ -131,32 +131,48 @@
                             </div>
                         </div>
                     </div>
-                    <!-- POWER CONTROL FOR RECEIVER A (now below gauges) -->
-                    <div class="mb-1 closer-to-raw-power" style="margin-top: -18px !important;">
-                        <label>Power: <span id="powerValue" class="fw-bold">0W</span></label>
-                        <input type="range" class="form-range" id="powerSlider"
-                               min="5"
-                               max="200"
-                               step="5"
+                    <!-- Power and MIC Gain on one row -->
+                    <div class="d-flex align-items-center gap-2 mb-2 closer-to-raw-power" style="margin-top: -18px !important; flex-wrap: nowrap;">
+                        <label class="mb-0 text-nowrap">Power: <span id="powerValue" class="fw-bold">0W</span></label>
+                        <input type="range" class="form-range flex-shrink-0" id="powerSlider"
+                               min="5" max="200" step="5"
                                value="@Model.RadioState.Power"
-                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
+                               style="width: 150px; height: 18px;"
                                oninput="window.radioControl.updatePowerDisplay(window.txVfo === 1 ? 'B' : 'A', this.value)"
                                onchange="window.radioControl.setPower(window.txVfo === 1 ? 'B' : 'A', this.value)">
-                    </div>
-                    <!-- MIC Gain / Data Out Level -->
-                    <div class="mb-3 closer-to-raw-power">
-                        <label><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
-                        <input type="range" class="form-range power-slider"
+                        <label class="mb-0 text-nowrap ms-2"><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
+                        <input type="range" class="form-range power-slider flex-shrink-0"
                                id="micGainSlider"
-                               min="0"
-                               max="100"
-                               step="1"
+                               min="0" max="100" step="1"
                                value="@Model.MicGain"
-                               style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle;"
-                               oninput="document.getElementById('micGainValue').innerText = this.value; console.log('MIC Gain slider input:', this.value);"
-                               onchange="console.log('MIC Gain slider change:', this.value); setMicGain(this.value);">
+                               style="width: 150px; height: 18px;"
+                               oninput="document.getElementById('micGainValue').innerText = this.value;"
+                               onchange="setMicGain(this.value);">
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spectrum Display — hidden until SdrBackgroundService reports "streaming" -->
+    <div id="spectrumContainer" class="row mt-3" style="display:none;">
+        <div class="col-12">
+            <div class="card border-dark">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-1">
+                    <span class="small fw-bold"><i class="bi bi-broadcast-pin me-1"></i>Spectrum</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Spectrum span">
+                            <button type="button" class="btn btn-outline-light btn-sm span-btn @(Model.SdrSampleRateHz == 250_000 ? "active" : "")" data-hz="250000">250k</button>
+                            <button type="button" class="btn btn-outline-light btn-sm span-btn @(Model.SdrSampleRateHz == 500_000 ? "active" : "")" data-hz="500000">500k</button>
+                            <button type="button" class="btn btn-outline-light btn-sm span-btn @(Model.SdrSampleRateHz == 1_024_000 ? "active" : "")" data-hz="1024000">1M</button>
+                            <button type="button" class="btn btn-outline-light btn-sm span-btn @(Model.SdrSampleRateHz == 2_048_000 ? "active" : "")" data-hz="2048000">2M</button>
+                        </div>
+                        <span id="spectrumStatusBadge" class="badge bg-secondary small">—</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <canvas id="spectrumCanvas" style="display:block; width:100%;"></canvas>
                 </div>
             </div>
         </div>
@@ -166,18 +182,18 @@
         <!-- VFO A Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-primary h-100 receiver-card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-1">
+                    <h5 class="mb-0">
                         <span id="receiverAHeading">VFO A</span>
-                    </h3>
+                    </h5>
                     <button id="txButtonA" class="btn btn-warning btn-sm" style="display:none;"
                             onclick="toggleTx()" title="Toggle Transmit">
                         <i class="bi bi-broadcast"></i> TX
                     </button>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-2">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
-                    <div class="receiver-controls-group d-flex flex-nowrap mb-1 gap-2 align-items-start">
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-0 gap-2 align-items-start">
                         <!-- Left: S-Meter only -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
@@ -279,7 +295,7 @@
                     </div>
 
                     <!-- Frequency display (below controls row) -->
-                    <div class="d-flex align-items-center mb-2" style="margin-top: -4px;">
+                    <div class="d-flex align-items-center mb-1" style="margin-top: -2px;">
                         <span id="freqA" class="fw-bold frequency-display digit-display"></span>
                         <span class="frequency-display digit-display ms-1">MHz</span>
                         <div id="freqA-controls" class="ms-2" style="display:none;">
@@ -290,10 +306,10 @@
 
                     <!-- Other controls below -->
                     <div>
-                        <!-- Roofing Filter A -->
-                        <div class="d-flex align-items-center mt-2 mb-2">
-                            <label class="me-2 mb-0">Roofing Filter:</label>
-                            <select class="form-select form-select-sm fw-bold" id="roofingFilterSelectA" 
+                        <!-- Roofing Filter A and AF Gain A on one row -->
+                        <div class="d-flex align-items-center gap-2 mt-1 mb-0" style="flex-wrap: nowrap;">
+                            <label class="mb-0 text-nowrap">Roofing:</label>
+                            <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectA"
                                     style="width: auto;"
                                     onchange="window.radioControl.setRoofingFilter('A', this.value)">
                                 <option value="6">12 kHz</option>
@@ -302,14 +318,11 @@
                                 <option value="9">600 Hz</option>
                                 <option value="A">300 Hz</option>
                             </select>
-                        </div>
-                        <!-- AF Gain A -->
-                        <div class="mb-3 mt-2">
-                            <label>AF Gain: <span id="afGainValueA" class="fw-bold">0</span></label>
-                            <input type="range" class="form-range afgain-slider"
+                            <label class="mb-0 text-nowrap ms-2">AF Gain: <span id="afGainValueA" class="fw-bold">0</span></label>
+                            <input type="range" class="form-range afgain-slider flex-shrink-0"
                                    id="afGainSliderA"
                                    min="0" max="255" step="1" value="0"
-                                   style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
+                                   style="width: 150px; height: 18px;"
                                    oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
                         </div>
                     </div>
@@ -319,18 +332,18 @@
                     <!-- VFO B Panel -->
         <div class="col-lg-6 col-12">
             <div class="card border-success h-100 receiver-card">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-1">
+                    <h5 class="mb-0">
                         <span id="receiverBHeading">VFO B</span>
-                    </h3>
+                    </h5>
                     <button id="txButtonB" class="btn btn-warning btn-sm" style="display:none;"
                             onclick="toggleTx()" title="Toggle Transmit">
                         <i class="bi bi-broadcast"></i> TX
                     </button>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-2">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->
-                    <div class="receiver-controls-group d-flex flex-nowrap mb-1 gap-2 align-items-start">
+                    <div class="receiver-controls-group d-flex flex-nowrap mb-0 gap-2 align-items-start">
                         <!-- Left: S-Meter only -->
                         <div class="flex-shrink-0">
                             <div class="analog-meter-container">
@@ -432,7 +445,7 @@
                     </div>
 
                     <!-- Frequency display (below controls row) -->
-                    <div class="d-flex align-items-center mb-2" style="margin-top: -4px;">
+                    <div class="d-flex align-items-center mb-1" style="margin-top: -2px;">
                         <span id="freqB" class="fw-bold frequency-display digit-display"></span>
                         <span class="frequency-display digit-display ms-1">MHz</span>
                         <div id="freqB-controls" class="ms-2" style="display:none;">
@@ -443,10 +456,10 @@
 
                     <!-- Other controls below -->
                     <div>
-                        <!-- Roofing Filter B -->
-                        <div class="d-flex align-items-center mt-2 mb-2">
-                            <label class="me-2 mb-0">Roofing Filter:</label>
-                            <select class="form-select form-select-sm fw-bold" id="roofingFilterSelectB" 
+                        <!-- Roofing Filter B and AF Gain B on one row -->
+                        <div class="d-flex align-items-center gap-2 mt-1 mb-0" style="flex-wrap: nowrap;">
+                            <label class="mb-0 text-nowrap">Roofing:</label>
+                            <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectB"
                                     style="width: auto;"
                                     onchange="window.radioControl.setRoofingFilter('B', this.value)">
                                 <option value="6">12 kHz</option>
@@ -455,14 +468,11 @@
                                 <option value="9">600 Hz</option>
                                 <option value="A">300 Hz</option>
                             </select>
-                        </div>
-                        <!-- AF Gain B -->
-                        <div class="mb-3 mt-2">
-                            <label>AF Gain: <span id="afGainValueB" class="fw-bold">0</span></label>
-                            <input type="range" class="form-range afgain-slider"
+                            <label class="mb-0 text-nowrap ms-2">AF Gain: <span id="afGainValueB" class="fw-bold">0</span></label>
+                            <input type="range" class="form-range afgain-slider flex-shrink-0"
                                    id="afGainSliderB"
                                    min="0" max="255" step="1" value="0"
-                                   style="width: 260px; height: 18px; margin-left: 8px; vertical-align: middle; display: inline-block;"
+                                   style="width: 150px; height: 18px;"
                                    oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
                         </div>
                     </div>
@@ -473,8 +483,10 @@
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script type="module">
-        import { MeterPanel } from "/js/guages/meter-panel.js";
-        import { FTdx101Meters } from "/js/orchestrators/FTdx101Meters.js";
+        import { MeterPanel }           from "/js/guages/meter-panel.js";
+        import { FTdx101Meters }        from "/js/orchestrators/FTdx101Meters.js";
+        import { SdrSpectrumPipeline }  from "/js/sdr/sdr-spectrum-pipeline.js";
+        import { SpectrumPanel }        from "/js/sdr/spectrum-panel.js";
         document.addEventListener('DOMContentLoaded', function () {
             window.meterPanel = new MeterPanel({
                 smeterA:     { type: 'smeter', canvasId: 'sMeterCanvasA' },
@@ -488,6 +500,54 @@
                 vdd:         { canvasId: 'vddMeterCanvas' }
             });
             window.ftdx101Meters = new FTdx101Meters(window.meterPanel, window.calibrationEngine);
+
+            // ── Spectrum display ─────────────────────────────────────────────
+            // SpectrumPanel owns the canvas and all DOM for the spectrum display.
+            // SdrSpectrumPipeline is pure transport/routing — no DOM, no canvas.
+            const spectrumPanel = new SpectrumPanel(
+                'spectrumCanvas',
+                'spectrumContainer',
+                @Model.RadioState.FrequencyA   // server-rendered initial VFO A frequency
+            );
+
+            const spectrumPipeline = new SdrSpectrumPipeline();
+
+            spectrumPipeline.onSpectrumUpdate(data  => spectrumPanel.update(data));
+            spectrumPipeline.onStatusChange(status  => {
+                spectrumPanel.setStatus(status);
+                const badge = document.getElementById('spectrumStatusBadge');
+                if (badge) {
+                    const labels = {
+                        unconfigured: ['secondary', 'No SDR'],
+                        connecting:   ['warning',   'Connecting…'],
+                        streaming:    ['success',   'Live'],
+                        disconnected: ['danger',    'Disconnected'],
+                        nodll:        ['danger',    'No SoapySDR'],
+                    };
+                    const [colour, text] = labels[status] ?? ['secondary', status];
+                    badge.className = `badge bg-${colour} small`;
+                    badge.textContent = text;
+                }
+            });
+            spectrumPipeline.onFrequencyA(hz => spectrumPanel.setVfoFrequency(hz));
+            spectrumPipeline.onError(detail => spectrumPanel.setError(detail));
+
+            spectrumPipeline.connect();
+            window.spectrumPanel = spectrumPanel;
+
+            // Span selector — POST new sample rate and restart the SDR stream.
+            document.querySelectorAll('.span-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const hz = btn.dataset.hz;
+                    try {
+                        const res = await fetch(`/api/sdr/span?hz=${hz}`, { method: 'POST' });
+                        if (res.ok) {
+                            document.querySelectorAll('.span-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                        }
+                    } catch { /* network error — ignore */ }
+                });
+            });
         });
         async function launchWsjtx() {
             try {

@@ -32,6 +32,14 @@ namespace FTdx101_WebApp.Models
 
         // Last Radio State (persisted between sessions)
         public RadioState LastRadioState { get; set; } = new();
+
+        // SDR Spectrum Display
+        // SdrDeviceKey: the SoapySDR args string identifying the device (e.g. "driver=rtlsdr,serial=00000001").
+        // Empty string means no SDR configured; the spectrum display is hidden.
+        public string SdrDeviceKey { get; set; } = string.Empty;
+        public double SdrSampleRateHz { get; set; } = 2_048_000;
+        public long SdrIfFrequencyHz { get; set; } = 9_000_000;
+        public int SdrFftSize { get; set; } = 1024;
     }
 
     public class RadioState

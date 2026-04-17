@@ -1,12 +1,7 @@
 ﻿@page
 @model FTdx101_WebApp.Pages.SettingsModel
 
-<div style="color: red; font-weight: bold; margin-bottom: 1em;">
-    If this page appeared when you started the program it means that, either your rig isn't switched on, or your COM port settings are wrong!
-</div>
-
 <div class="mt-4">
-    <h1 class="display-4 mb-4">Settings</h1>
 
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
@@ -110,18 +105,29 @@
                         </dd>
                         <dt class="col-sm-4">Web Port:</dt>
                         <dd class="col-sm-8"><code>8080</code></dd>
+                        <dt class="col-sm-4">SDR Device:</dt>
+                        <dd class="col-sm-8">
+                            @if (string.IsNullOrEmpty(Model.Settings.SdrDeviceKey))
+                            {
+                                <span class="text-muted">None</span>
+                            }
+                            else
+                            {
+                                <code>@Model.Settings.SdrDeviceKey</code>
+                            }
+                        </dd>
                     </dl>
                 </div>
             </div>
         </div>
     </div>
 
+    <form method="post">
     <div class="card">
         <div class="card-header">
             <h3>Configuration</h3>
         </div>
         <div class="card-body">
-            <form method="post">
                 <div class="row">
                     <div class="col-md-6">
                         <h5 class="mb-3">Radio Connection</h5>
@@ -200,65 +206,327 @@
                         </div>
                     </div>
                 </div>
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-save"></i> Save Settings
-                        </button>
-                        <button type="button" class="btn btn-success btn-lg ms-2" onclick="testConnection()">
-                            <i class="bi bi-plug"></i> Test Connection
-                        </button>
-                        <a asp-page="/Index" class="btn btn-secondary btn-lg ms-2">
-                            <i class="bi bi-x-circle"></i> Cancel
-                        </a>
-                    </div>
-                </div>
-            </form>
         </div>
     </div>
+    <!-- SDR Spectrum Display -->
     <div class="card mt-4">
-        <div class="card-header">
-            <h4>Current Configuration</h4>
+        <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between">
+            <h4 class="mb-0"><i class="bi bi-broadcast-pin"></i> SDR Spectrum Display</h4>
+            <button type="button" class="btn btn-outline-light btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#sdrHelpModal">
+                <i class="bi bi-question-circle"></i> Help
+            </button>
         </div>
         <div class="card-body">
-            <dl class="row">
-                <dt class="col-sm-3">Radio Model:</dt>
-                <dd class="col-sm-9">
-                    <code>@Model.Settings.RadioModel</code>
-                    @if (Model.Settings.RadioModel == "FTdx101MP")
-                    {
-                        <span class="badge bg-primary">200W Output</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-info">100W Output</span>
-                    }
-                </dd>
-                <dt class="col-sm-3">Serial Port:</dt>
-                <dd class="col-sm-9"><code>@Model.Settings.SerialPort</code></dd>
-                <dt class="col-sm-3">Baud Rate:</dt>
-                <dd class="col-sm-9"><code>@Model.Settings.BaudRate</code></dd>
-                <dt class="col-sm-3">Network Interface:</dt>
-                <dd class="col-sm-9">
-                    <code>@Model.Settings.WebAddress</code>
-                    @if (Model.Settings.WebAddress == "0.0.0.0")
-                    {
-                        <span class="badge bg-success">All Interfaces</span>
-                    }
-                    else if (Model.Settings.WebAddress == "localhost")
-                    {
-                        <span class="badge bg-secondary">Local Only</span>
-                    }
-                </dd>
-                <dt class="col-sm-3">Web Port:</dt>
-                <dd class="col-sm-9"><code>8080</code></dd>
-            </dl>
+            <p class="text-muted mb-3">
+                Connect your radio's <strong>IF output (RCA)</strong> to an SDR receiver. The spectrum
+                display shows the band around your current VFO frequency in real time.
+            </p>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">SDR Device</label>
+                        <div class="input-group">
+                            <select class="form-select" id="sdrDeviceDropdown">
+                                <option value="">— click Scan to detect devices —</option>
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" id="sdrScanBtn"
+                                    onclick="scanSdrDevices()">
+                                <i class="bi bi-search"></i> Scan
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            Plug in your SDR before scanning. The selected device key is saved below.
+                        </div>
+                        <!-- Hidden field that binds to ApplicationSettings.SdrDeviceKey on POST -->
+                        <input type="hidden" asp-for="Settings.SdrDeviceKey" id="sdrDeviceKeyInput" />
+                        <div id="sdrDeviceKeyDisplay" class="mt-1 font-monospace small text-muted"></div>
+                        <div id="sdrScanNotes" class="mt-2"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Settings.SdrIfFrequencyHz" class="form-label fw-bold">IF Frequency (Hz)</label>
+                        <input asp-for="Settings.SdrIfFrequencyHz" class="form-control" type="number"
+                               min="1000000" max="100000000" step="1000" />
+                        <div class="form-text">
+                            The radio's IF output frequency. <strong>FTdx101 series: 9,000,000 Hz.</strong>
+                            ELAD FDM-DUO via USB: set to match the device's IQ centre frequency.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="Settings.SdrSampleRateHz" class="form-label fw-bold">Sample Rate (Hz)</label>
+                        <select asp-for="Settings.SdrSampleRateHz" class="form-select">
+                            <option value="250000">250,000 — 250 kHz span</option>
+                            <option value="500000">500,000 — 500 kHz span</option>
+                            <option value="1024000">1,024,000 — 1 MHz span</option>
+                            <option value="2048000">2,048,000 — 2 MHz span (recommended)</option>
+                            <option value="2500000">2,500,000 — 2.5 MHz span</option>
+                            <option value="3200000">3,200,000 — 3.2 MHz span</option>
+                        </select>
+                        <div class="form-text">
+                            Higher rates give a wider visible span but require more CPU.
+                            Not all devices support all rates.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Settings.SdrFftSize" class="form-label fw-bold">FFT Size</label>
+                        <select asp-for="Settings.SdrFftSize" class="form-select">
+                            <option value="512">512 — faster, less frequency resolution</option>
+                            <option value="1024">1024 — recommended</option>
+                            <option value="2048">2048 — higher resolution, more CPU</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                onclick="clearSdrDevice()">
+                            <i class="bi bi-x-circle"></i> Disable SDR / Clear Device
+                        </button>
+                        <div class="form-text">Removes the saved device; the spectrum panel will be hidden.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 mb-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-save"></i> Save Settings
+        </button>
+        <button type="button" class="btn btn-success btn-lg ms-2" onclick="testConnection()">
+            <i class="bi bi-plug"></i> Test Connection
+        </button>
+        <a asp-page="/Index" class="btn btn-secondary btn-lg ms-2">
+            <i class="bi bi-x-circle"></i> Cancel
+        </a>
+    </div>
+    </form>
+</div>
+
+<!-- SDR Help Modal -->
+<div class="modal fade" id="sdrHelpModal" tabindex="-1" aria-labelledby="sdrHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="sdrHelpModalLabel">
+                    <i class="bi bi-broadcast-pin me-2"></i>SDR Spectrum Display — Help
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <h6 class="fw-bold">How it works</h6>
+                <p>
+                    Connect the <strong>IF output (rear-panel RCA socket)</strong> of your FTdx101 to the
+                    antenna input of your SDR receiver using a coax cable with an RCA-to-SMA adapter.
+                    The app tunes the SDR to the radio's IF frequency (9 MHz for the FTdx101 series) and
+                    displays the surrounding band as a live spectrum waterfall.
+                </p>
+
+                <h6 class="fw-bold mt-3">Supported SDR hardware</h6>
+                <p>Support for the following devices is built in — no additional software installation required:</p>
+                <table class="table table-sm table-bordered">
+                    <thead class="table-dark">
+                        <tr><th>Device</th><th>Notes</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>RTL-SDR</strong></td>
+                            <td>Any RTL2832U-based dongle (RTL-SDR Blog v3/v4, Nooelec, etc.). Plug in and scan.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Airspy</strong></td>
+                            <td>Airspy Mini, Airspy R2. Plug in and scan.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>HackRF One</strong></td>
+                            <td>Plug in and scan.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SDRplay RSP1 / RSP1A / RSP1B / RSP2 / RSPduo / RSPdx</strong></td>
+                            <td>Requires the SDRplay API — see below.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h6 class="fw-bold mt-3"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>SDRplay — additional step required</h6>
+                <p>
+                    SDRplay devices use a background Windows service provided by SDRplay Ltd.
+                    You must install the <strong>SDRplay API</strong> before the device will be detected:
+                </p>
+                <ol>
+                    <li>
+                        Go to <a href="https://www.sdrplay.com/downloads/" target="_blank" rel="noopener">www.sdrplay.com/downloads/</a>
+                        and download the latest <strong>SDRplay API/Hardware Driver</strong> for Windows.
+                    </li>
+                    <li>Run the installer. It installs the USB driver and starts the <em>SDRplay API Service</em>.</li>
+                    <li>Plug in your RSP device, then click <strong>Scan</strong> on this page.</li>
+                </ol>
+                <p class="text-muted small">
+                    Only one application can use the SDRplay API at a time.
+                    If SDR Console or another SDR app is open, close it before scanning.
+                </p>
+
+                <h6 class="fw-bold mt-3">Troubleshooting</h6>
+                <ul>
+                    <li><strong>No devices found after scan</strong> — check the device is plugged in and that Windows Device Manager shows it without a yellow warning icon.</li>
+                    <li><strong>SDRplay not detected</strong> — open <em>services.msc</em> and confirm <em>SDRplay API Service</em> is running.</li>
+                    <li><strong>Spectrum looks wrong / distorted</strong> — check your IF frequency setting matches the radio (FTdx101: 9,000,000 Hz).</li>
+                </ul>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script type="module">
+        // Derives a human-readable label from a saved device key without needing a scan.
+        // sdrplay:0000000001  →  "SDRplay (0000000001) [sdrplay]"
+        // driver=rtlsdr,label=Generic RTL2832U,...  →  "Generic RTL2832U [rtlsdr]"
+        function keyToLabel(key) {
+            if (!key) return '';
+            if (key.startsWith('sdrplay:')) {
+                const serial = key.slice('sdrplay:'.length);
+                return `SDRplay (${serial}) [sdrplay]`;
+            }
+            let label = '', driver = '';
+            for (const pair of key.split(',')) {
+                const eq = pair.indexOf('=');
+                if (eq < 1) continue;
+                const k = pair.slice(0, eq).trim().toLowerCase();
+                const v = pair.slice(eq + 1).trim();
+                if (k === 'label')  label  = v;
+                if (k === 'driver') driver = v;
+            }
+            return label ? `${label}${driver ? ' [' + driver + ']' : ''}` : key;
+        }
+
+        // Initialise the SDR device dropdown from the saved key on page load.
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedKey = document.getElementById('sdrDeviceKeyInput').value;
+            if (savedKey) {
+                const dropdown = document.getElementById('sdrDeviceDropdown');
+                dropdown.innerHTML = '';
+                const noneOpt = document.createElement('option');
+                noneOpt.value = '';
+                noneOpt.textContent = '— Disabled (no spectrum display) —';
+                dropdown.appendChild(noneOpt);
+                const opt = document.createElement('option');
+                opt.value = savedKey;
+                opt.textContent = keyToLabel(savedKey);
+                opt.selected = true;
+                dropdown.appendChild(opt);
+            }
+            updateDeviceKeyDisplay(savedKey);
+        });
+
+        // Populate the SDR dropdown by calling the device enumeration API.
+        window.scanSdrDevices = async function () {
+            const btn      = document.getElementById('sdrScanBtn');
+            const dropdown = document.getElementById('sdrDeviceDropdown');
+            const notesDiv = document.getElementById('sdrScanNotes');
+            const savedKey = document.getElementById('sdrDeviceKeyInput').value;
+
+            btn.disabled   = true;
+            btn.innerHTML  = '<span class="spinner-border spinner-border-sm me-1"></span>Scanning…';
+            notesDiv.innerHTML = '';
+
+            try {
+                const resp                = await fetch('/api/sdr/devices');
+                const { devices, notes }  = await resp.json();
+
+                dropdown.innerHTML = '';
+
+                // Always offer an explicit "disable" option at the top.
+                const noneOpt = document.createElement('option');
+                noneOpt.value       = '';
+                noneOpt.textContent = '— Disabled (no spectrum display) —';
+                dropdown.appendChild(noneOpt);
+
+                if (devices.length > 0) {
+                    let matched = false;
+                    devices.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value       = d.key;
+                        opt.textContent = `${d.label} [${d.driver}]`;
+                        if (d.key === savedKey) { opt.selected = true; matched = true; }
+                        dropdown.appendChild(opt);
+                    });
+
+                    // Saved key not in scan results — append it so the user's choice isn't lost.
+                    if (savedKey && !matched) {
+                        const opt = document.createElement('option');
+                        opt.value       = savedKey;
+                        opt.textContent = `${keyToLabel(savedKey)} (not found in scan)`;
+                        opt.selected    = true;
+                        matched         = true;
+                        dropdown.appendChild(opt);
+                    }
+
+                    // Nothing previously saved — auto-select the first found device.
+                    if (!matched) {
+                        dropdown.options[1].selected = true;
+                        document.getElementById('sdrDeviceKeyInput').value = dropdown.options[1].value;
+                        updateDeviceKeyDisplay(dropdown.options[1].value);
+                    }
+                } else if (savedKey) {
+                    // Scan found no devices at all but we have a saved key — keep it visible.
+                    const opt = document.createElement('option');
+                    opt.value       = savedKey;
+                    opt.textContent = `${keyToLabel(savedKey)} (not found in scan)`;
+                    opt.selected    = true;
+                    dropdown.appendChild(opt);
+                }
+
+                // Show any installation notes returned by the server.
+                if (notes && notes.length > 0) {
+                    const ul = document.createElement('ul');
+                    ul.className = 'mb-0 ps-3';
+                    notes.forEach(msg => {
+                        const li = document.createElement('li');
+                        li.textContent = msg;
+                        ul.appendChild(li);
+                    });
+                    const wrapper = document.createElement('div');
+                    wrapper.className = devices.length === 0
+                        ? 'alert alert-warning py-2 small'
+                        : 'alert alert-info py-2 small';
+                    wrapper.appendChild(ul);
+                    notesDiv.appendChild(wrapper);
+                }
+
+            } catch (e) {
+                dropdown.innerHTML = '<option value="">Error contacting scan API</option>';
+            } finally {
+                btn.disabled  = false;
+                btn.innerHTML = '<i class="bi bi-search"></i> Scan';
+            }
+        };
+
+        // When the user picks a device in the dropdown, update the hidden input.
+        document.getElementById('sdrDeviceDropdown').addEventListener('change', function () {
+            document.getElementById('sdrDeviceKeyInput').value = this.value;
+            updateDeviceKeyDisplay(this.value);
+        });
+
+window.clearSdrDevice = function () {
+            document.getElementById('sdrDeviceKeyInput').value = '';
+            document.getElementById('sdrDeviceDropdown').innerHTML =
+                '<option value="" selected>— Disabled (no spectrum display) —</option>';
+            document.getElementById('sdrScanNotes').innerHTML = '';
+            updateDeviceKeyDisplay('');
+        };
+
+        function updateDeviceKeyDisplay(key) {
+            const el = document.getElementById('sdrDeviceKeyDisplay');
+            el.textContent = key ? `Saved key: ${key}` : 'No device saved.';
+        }
+    </script>
     <script>
         function copyToClipboard(elementId) {
             const element = document.getElementById(elementId);

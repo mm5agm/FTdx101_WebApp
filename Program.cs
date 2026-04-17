@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FTdx101_WebApp.Services;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 // ── Single-instance guard ────────────────────────────────────────────────────
@@ -69,6 +70,27 @@ static string? GetPortOwner(int port)
     return null;
 }
 
+// ── SoapySDR native library resolver ────────────────────────────────────────
+// .NET P/Invoke on Windows does not search PATH directories by default.
+// Resolve SoapySDR.dll explicitly from its install location so the P/Invoke
+// declarations in SoapySdrInterop are satisfied without relying on PATH.
+NativeLibrary.SetDllImportResolver(
+    System.Reflection.Assembly.GetExecutingAssembly(),
+    static (name, _, _) =>
+    {
+        if (name == "SoapySDR")
+        {
+            // Installed layout: <app>\SoapySDR\bin\SoapySDR.dll
+            var path = Path.Combine(AppContext.BaseDirectory, "SoapySDR", "bin", "SoapySDR.dll");
+            // Developer fallback: C:\SoapySDR\bin\SoapySDR.dll (build machine only)
+            if (!File.Exists(path))
+                path = @"C:\SoapySDR\bin\SoapySDR.dll";
+            if (File.Exists(path) && NativeLibrary.TryLoad(path, out IntPtr h))
+                return h;
+        }
+        return IntPtr.Zero;   // fall back to default resolution for all other DLLs
+    });
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<CalibrationStorage>();
 builder.Services.AddSingleton<ICalibrationService, CalibrationService>();
@@ -101,6 +123,11 @@ builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
 // Add after existing service registrations
 builder.Services.AddHostedService<MeterPollingService>();
+
+// SDR spectrum display — reads IQ samples, computes FFT, broadcasts via SignalR
+// Registered as singleton so the span-change API endpoint can call RequestRestart().
+builder.Services.AddSingleton<FTdx101_WebApp.Services.Sdr.SdrBackgroundService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<FTdx101_WebApp.Services.Sdr.SdrBackgroundService>());
 
 // Register the radio state service — reuse the same singleton instance as RadioStateService
 builder.Services.AddSingleton<IRadioStateService>(sp => sp.GetRequiredService<RadioStateService>());
@@ -177,6 +204,20 @@ try
     app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
 
     app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
+
+    app.MapPost("/api/sdr/span", async (
+        [Microsoft.AspNetCore.Mvc.FromQuery] double hz,
+        FTdx101_WebApp.Services.ISettingsService settings,
+        FTdx101_WebApp.Services.Sdr.SdrBackgroundService sdr) =>
+    {
+        double[] valid = [250_000, 500_000, 1_024_000, 2_048_000, 2_500_000, 3_200_000];
+        if (Array.IndexOf(valid, hz) < 0) return Results.BadRequest("Invalid span value.");
+        var s = await settings.GetSettingsAsync();
+        s.SdrSampleRateHz = hz;
+        await settings.SaveSettingsAsync(s);
+        sdr.RequestRestart();
+        return Results.Ok();
+    });
 
     // Open browser automatically when app starts (but not when debugging in Visual Studio)
     var browserLauncher = app.Services.GetRequiredService<BrowserLauncher>();

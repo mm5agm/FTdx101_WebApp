@@ -1,6 +1,6 @@
 !define APPNAME "FTdx101 WebApp"
 !define COMPANY "MM5AGM"
-!define VERSION "0.7.7"
+!define VERSION "0.7.8"
 !define INSTALLDIR "$PROGRAMFILES64\${COMPANY}\${APPNAME}"
 !define DOTNET_URL "https://dotnet.microsoft.com/en-us/download/dotnet/10.0"
 
@@ -71,6 +71,25 @@ Section "Install"
         /x "radio_state.json" \
         /x "appsettings.user.json" \
         "publish\*"
+
+    ; --- SoapySDR backend (vendor DLLs + SDR plugins) ---
+    SetOutPath "$INSTDIR\SoapySDR\bin"
+    File "soapysdr-dist\bin\SoapySDR.dll"
+    File "soapysdr-dist\bin\airspy.dll"
+    File "soapysdr-dist\bin\hackrf.dll"
+    File "soapysdr-dist\bin\librtlsdr.dll"
+    File "soapysdr-dist\bin\libusb-1.0.dll"
+    File "soapysdr-dist\bin\libwinpthread-1.dll"
+    File "soapysdr-dist\bin\pthreadVC2.dll"
+    File "soapysdr-dist\bin\pthreadVC3.dll"
+
+    SetOutPath "$INSTDIR\SoapySDR\lib\SoapySDR\modules0.8-3"
+    File "soapysdr-dist\lib\SoapySDR\modules0.8-3\airspySupport.dll"
+    File "soapysdr-dist\lib\SoapySDR\modules0.8-3\HackRFSupport.dll"
+    File "soapysdr-dist\lib\SoapySDR\modules0.8-3\rtlsdrSupport.dll"
+
+    ; Restore output path to app root for remaining install steps
+    SetOutPath "$INSTDIR"
 
     CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\FTdx101_WebApp.exe"
     CreateDirectory "$SMPROGRAMS\${COMPANY}"

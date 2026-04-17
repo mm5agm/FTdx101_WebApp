@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Hosting;
+using FTdx101_WebApp.Services;
 
 namespace FTdx101_WebApp.Hubs
 {
@@ -11,6 +12,7 @@ namespace FTdx101_WebApp.Hubs
     {
         private readonly ILogger<RadioHub> _logger;
         private readonly IHostApplicationLifetime _lifetime;
+        private readonly RadioStateService _radioState;
 
         // Track connected clients (thread-safe)
         private static readonly ConcurrentDictionary<string, byte> connections = new();
@@ -20,10 +22,11 @@ namespace FTdx101_WebApp.Hubs
         private static readonly TimeSpan HeartbeatCheckInterval = TimeSpan.FromSeconds(5);
         private static System.Threading.Timer? heartbeatTimer;
 
-        public RadioHub(ILogger<RadioHub> logger, IHostApplicationLifetime lifetime)
+        public RadioHub(ILogger<RadioHub> logger, IHostApplicationLifetime lifetime, RadioStateService radioState)
         {
             _logger = logger;
             _lifetime = lifetime ?? throw new ArgumentNullException(nameof(lifetime));
+            _radioState = radioState;
             _logger.LogInformation("RadioHub constructed. IHostApplicationLifetime injected: true");
             _logger.LogInformation("RadioHub constructor executed.");
             // Start heartbeat timer only once (static)
@@ -38,6 +41,15 @@ namespace FTdx101_WebApp.Hubs
             _logger.LogInformation("RadioHub OnConnectedAsync executed. Client connected: {ConnectionId}", Context.ConnectionId);
             connections.TryAdd(Context.ConnectionId, 0);
             lastHeartbeats[Context.ConnectionId] = DateTime.UtcNow;
+
+            // Send current VFO frequencies to the new client so it doesn't have to wait
+            // for the next change event. This ensures spectrum axis labels are correct
+            // even when the radio hasn't changed frequency since the last poll.
+            await Clients.Caller.SendAsync("RadioStateUpdate",
+                new { property = "FrequencyA", value = _radioState.FrequencyA });
+            await Clients.Caller.SendAsync("RadioStateUpdate",
+                new { property = "FrequencyB", value = _radioState.FrequencyB });
+
             await base.OnConnectedAsync();
         }
 
