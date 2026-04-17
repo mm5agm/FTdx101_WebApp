@@ -8,25 +8,25 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$root = Split-Path $PSScriptRoot -Parent
-$bin  = Join-Path $root "soapysdr-dist\bin"
-$mods = Join-Path $root "soapysdr-dist\lib\SoapySDR\modules0.8-3"
+$root    = Split-Path $PSScriptRoot -Parent
+$runtime = Join-Path $root "soapysdr-dist\runtime"
+$plugins = Join-Path $root "soapysdr-dist\plugins"
 
-New-Item -ItemType Directory -Force -Path $bin  | Out-Null
-New-Item -ItemType Directory -Force -Path $mods | Out-Null
+New-Item -ItemType Directory -Force -Path $runtime | Out-Null
+New-Item -ItemType Directory -Force -Path $plugins | Out-Null
 
 $copies = @(
-    @{ Src = "C:\build\SoapySDR\lib\SoapySDR.dll";             Dst = "$bin\SoapySDR.dll" },
-    @{ Src = "C:\deps\airspy\x64\airspy.dll";                   Dst = "$bin\airspy.dll" },
-    @{ Src = "C:\build\libhackrf\libhackrf\src\hackrf.dll";     Dst = "$bin\hackrf.dll" },
-    @{ Src = "C:\deps\rtlsdr\librtlsdr.dll";                    Dst = "$bin\librtlsdr.dll" },
-    @{ Src = "C:\deps\rtlsdr\libusb-1.0.dll";                   Dst = "$bin\libusb-1.0.dll" },
-    @{ Src = "C:\deps\rtlsdr\libwinpthread-1.dll";              Dst = "$bin\libwinpthread-1.dll" },
-    @{ Src = "C:\deps\airspy\x64\pthreadVC2.dll";               Dst = "$bin\pthreadVC2.dll" },
-    @{ Src = "C:\build\pthreads4w\pthreadVC3.dll";              Dst = "$bin\pthreadVC3.dll" },
-    @{ Src = "C:\build\SoapyAirspy\airspySupport.dll";          Dst = "$mods\airspySupport.dll" },
-    @{ Src = "C:\build\SoapyHackRF\HackRFSupport.dll";          Dst = "$mods\HackRFSupport.dll" },
-    @{ Src = "C:\build\SoapyRTLSDR\rtlsdrSupport.dll";          Dst = "$mods\rtlsdrSupport.dll" }
+    @{ Src = "C:\build\SoapySDR\lib\SoapySDR.dll";             Dst = "$runtime\SoapySDR.dll" },
+    @{ Src = "C:\deps\airspy\x64\airspy.dll";                   Dst = "$runtime\airspy.dll" },
+    @{ Src = "C:\build\libhackrf\libhackrf\src\hackrf.dll";     Dst = "$runtime\hackrf.dll" },
+    @{ Src = "C:\deps\rtlsdr\librtlsdr.dll";                    Dst = "$runtime\librtlsdr.dll" },
+    @{ Src = "C:\deps\rtlsdr\libusb-1.0.dll";                   Dst = "$runtime\libusb-1.0.dll" },
+    @{ Src = "C:\deps\rtlsdr\libwinpthread-1.dll";              Dst = "$runtime\libwinpthread-1.dll" },
+    @{ Src = "C:\deps\airspy\x64\pthreadVC2.dll";               Dst = "$runtime\pthreadVC2.dll" },
+    @{ Src = "C:\build\pthreads4w\pthreadVC3.dll";              Dst = "$runtime\pthreadVC3.dll" },
+    @{ Src = "C:\build\SoapyAirspy\airspySupport.dll";          Dst = "$plugins\airspySupport.dll" },
+    @{ Src = "C:\build\SoapyHackRF\HackRFSupport.dll";          Dst = "$plugins\HackRFSupport.dll" },
+    @{ Src = "C:\build\SoapyRTLSDR\rtlsdrSupport.dll";          Dst = "$plugins\rtlsdrSupport.dll" }
 )
 
 foreach ($c in $copies) {
