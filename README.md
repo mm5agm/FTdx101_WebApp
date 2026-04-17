@@ -54,7 +54,7 @@ The application includes a real-time spectrum display and waterfall, intended fo
 **Supported SDR devices:**
 
 - **SDRplay RSP1 (and other RSP series)** — supported via the SDRplay API v3. The SDRplay API must be installed separately from [sdrplay.com](https://www.sdrplay.com/downloads/). This is the only SDR the author has tested.
-- **RTL-SDR, Airspy, and other SoapySDR-compatible devices** — supported via the SoapySDR driver interface. SoapySDR and the appropriate device driver must be installed. *These devices have not been tested by the author — feedback from users with other SDRs is very welcome.*
+- **RTL-SDR, Airspy, and HackRF** — supported via the bundled SoapySDR driver interface. No separate SoapySDR installation is required — the necessary drivers are included in the installer. *These devices have not been tested by the author — feedback from users is very welcome.*
 
 **Features:**
 - Variable span: 250 kHz, 500 kHz, 1 MHz, or 2 MHz
