@@ -66,14 +66,11 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
-## 2026-04-17 - v0.7.8
+## 2026-04-17 - v0.9.0-rc1
 
 ### Changed
 
-- RSPplay spectrum labels not correct
-- RSPplay spectrum looks correct
-- SDR PLay detected
-- SDR NOT detected
+- Minor fixes and improvements
 
 
 ## 2026-04-17 - v0.9.0 RC1
