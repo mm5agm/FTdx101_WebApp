@@ -87,7 +87,6 @@ Section "Install"
     File "soapysdr-dist\lib\SoapySDR\modules0.8-3\airspySupport.dll"
     File "soapysdr-dist\lib\SoapySDR\modules0.8-3\HackRFSupport.dll"
     File "soapysdr-dist\lib\SoapySDR\modules0.8-3\rtlsdrSupport.dll"
-    File "soapysdr-dist\lib\SoapySDR\modules0.8-3\sdrPlaySupport.dll"
 
     ; Restore output path to app root for remaining install steps
     SetOutPath "$INSTDIR"

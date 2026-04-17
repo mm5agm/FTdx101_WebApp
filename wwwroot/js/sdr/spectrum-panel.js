@@ -25,6 +25,8 @@ export class SpectrumPanel {
         this._waterfallRows = 0;
         this._waterfallCols = 0;
 
+        this._errorDetail = null;
+
         // Last received spectrum data; held so the canvas can be redrawn on resize.
         this._lastBins    = null;
         this._lastCentreHz = 0;
@@ -42,6 +44,11 @@ export class SpectrumPanel {
         this._lastCentreHz = centreHz;
         this._lastSpanHz   = spanHz;
         this._render();
+    }
+
+    /** Store the latest error detail string for display alongside status overlays. */
+    setError(detail) {
+        this._errorDetail = detail;
     }
 
     /** Receive the current VFO frequency so the axis labels stay accurate. */
@@ -271,19 +278,29 @@ export class SpectrumPanel {
 
         const messages = {
             connecting:   'Connecting to SDR device…',
-            disconnected: 'SDR disconnected — retrying…',
-            nodll:        'SoapySDR.dll not found. Install SoapySDR + device driver.',
+            disconnected: 'SDR device unavailable — retrying every 5 s',
+            nodll:        'SoapySDR.dll not found — install SoapySDR + device driver',
         };
 
-        const text = messages[status] ?? `SDR status: ${status}`;
+        const line1 = messages[status] ?? `SDR status: ${status}`;
+        const line2 = status === 'disconnected' && this._errorDetail
+            ? this._errorDetail
+            : null;
 
         ctx.fillStyle = '#0a0a14';
         ctx.fillRect(0, 0, W, H);
 
         ctx.fillStyle = '#8899bb';
-        ctx.font      = '14px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(text, W / 2, H / 2);
+
+        ctx.font = '14px sans-serif';
+        ctx.fillText(line1, W / 2, H / 2 - (line2 ? 10 : 0));
+
+        if (line2) {
+            ctx.font      = '11px sans-serif';
+            ctx.fillStyle = '#cc6655';
+            ctx.fillText(line2, W / 2, H / 2 + 12);
+        }
     }
 
     // ── Color mapping ────────────────────────────────────────────────────────

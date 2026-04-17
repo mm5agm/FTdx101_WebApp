@@ -26,6 +26,10 @@ namespace FTdx101_WebApp.Services.Sdr
         // How long to wait between re-checking settings when no device is configured.
         private const int UnconfiguredPollMs = 10_000;
 
+        // Re-broadcast "streaming" every N frames so clients that connect after startup
+        // receive the current status without waiting for a device change event.
+        private const int StatusHeartbeatFrames = 30;   // ~3 s at 10 fps
+
         public SdrBackgroundService(
             ISettingsService              settings,
             IHubContext<RadioHub>          hub,
@@ -81,6 +85,8 @@ namespace FTdx101_WebApp.Services.Sdr
 
                 await BroadcastStatus("streaming", stoppingToken).ConfigureAwait(false);
 
+                int heartbeatCounter = 0;
+
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     bool got = await device
@@ -109,6 +115,14 @@ namespace FTdx101_WebApp.Services.Sdr
                         },
                         stoppingToken).ConfigureAwait(false);
 
+                    // Periodic heartbeat so clients that connect after the initial
+                    // "streaming" broadcast still learn the current status promptly.
+                    if (++heartbeatCounter >= StatusHeartbeatFrames)
+                    {
+                        heartbeatCounter = 0;
+                        await BroadcastStatus("streaming", stoppingToken).ConfigureAwait(false);
+                    }
+
                     await Task.Yield();
                 }
             }
@@ -126,8 +140,9 @@ namespace FTdx101_WebApp.Services.Sdr
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "SDR: Streaming error");
+                _logger.LogError(ex, "SDR: Streaming error — {Message}", ex.Message);
                 await BroadcastStatus("disconnected", stoppingToken).ConfigureAwait(false);
+                await BroadcastDetail(ex.Message, stoppingToken).ConfigureAwait(false);
             }
             finally
             {
@@ -164,6 +179,19 @@ namespace FTdx101_WebApp.Services.Sdr
             {
                 _logger.LogDebug(ex, "SDR: Failed to broadcast status '{Status}'", status);
             }
+        }
+
+        private async Task BroadcastDetail(string detail, CancellationToken ct)
+        {
+            try
+            {
+                await _hub.Clients.All.SendAsync(
+                    "RadioStateUpdate",
+                    new { property = "SdrError", value = detail },
+                    ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { }
+            catch { }
         }
     }
 }

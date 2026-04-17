@@ -1,12 +1,7 @@
 ﻿@page
 @model FTdx101_WebApp.Pages.SettingsModel
 
-<div style="color: red; font-weight: bold; margin-bottom: 1em;">
-    If this page appeared when you started the program it means that, either your rig isn't switched on, or your COM port settings are wrong!
-</div>
-
 <div class="mt-4">
-    <h1 class="display-4 mb-4">Settings</h1>
 
     @if (!string.IsNullOrEmpty(Model.StatusMessage))
     {
@@ -110,18 +105,29 @@
                         </dd>
                         <dt class="col-sm-4">Web Port:</dt>
                         <dd class="col-sm-8"><code>8080</code></dd>
+                        <dt class="col-sm-4">SDR Device:</dt>
+                        <dd class="col-sm-8">
+                            @if (string.IsNullOrEmpty(Model.Settings.SdrDeviceKey))
+                            {
+                                <span class="text-muted">None</span>
+                            }
+                            else
+                            {
+                                <code>@Model.Settings.SdrDeviceKey</code>
+                            }
+                        </dd>
                     </dl>
                 </div>
             </div>
         </div>
     </div>
 
+    <form method="post">
     <div class="card">
         <div class="card-header">
             <h3>Configuration</h3>
         </div>
         <div class="card-body">
-            <form method="post">
                 <div class="row">
                     <div class="col-md-6">
                         <h5 class="mb-3">Radio Connection</h5>
@@ -200,20 +206,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-save"></i> Save Settings
-                        </button>
-                        <button type="button" class="btn btn-success btn-lg ms-2" onclick="testConnection()">
-                            <i class="bi bi-plug"></i> Test Connection
-                        </button>
-                        <a asp-page="/Index" class="btn btn-secondary btn-lg ms-2">
-                            <i class="bi bi-x-circle"></i> Cancel
-                        </a>
-                    </div>
-                </div>
-            </form>
         </div>
     </div>
     <!-- SDR Spectrum Display -->
@@ -295,45 +287,18 @@
         </div>
     </div>
 
-    <div class="card mt-4">
-        <div class="card-header">
-            <h4>Current Configuration</h4>
-        </div>
-        <div class="card-body">
-            <dl class="row">
-                <dt class="col-sm-3">Radio Model:</dt>
-                <dd class="col-sm-9">
-                    <code>@Model.Settings.RadioModel</code>
-                    @if (Model.Settings.RadioModel == "FTdx101MP")
-                    {
-                        <span class="badge bg-primary">200W Output</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-info">100W Output</span>
-                    }
-                </dd>
-                <dt class="col-sm-3">Serial Port:</dt>
-                <dd class="col-sm-9"><code>@Model.Settings.SerialPort</code></dd>
-                <dt class="col-sm-3">Baud Rate:</dt>
-                <dd class="col-sm-9"><code>@Model.Settings.BaudRate</code></dd>
-                <dt class="col-sm-3">Network Interface:</dt>
-                <dd class="col-sm-9">
-                    <code>@Model.Settings.WebAddress</code>
-                    @if (Model.Settings.WebAddress == "0.0.0.0")
-                    {
-                        <span class="badge bg-success">All Interfaces</span>
-                    }
-                    else if (Model.Settings.WebAddress == "localhost")
-                    {
-                        <span class="badge bg-secondary">Local Only</span>
-                    }
-                </dd>
-                <dt class="col-sm-3">Web Port:</dt>
-                <dd class="col-sm-9"><code>8080</code></dd>
-            </dl>
-        </div>
+    <div class="mt-4 mb-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-save"></i> Save Settings
+        </button>
+        <button type="button" class="btn btn-success btn-lg ms-2" onclick="testConnection()">
+            <i class="bi bi-plug"></i> Test Connection
+        </button>
+        <a asp-page="/Index" class="btn btn-secondary btn-lg ms-2">
+            <i class="bi bi-x-circle"></i> Cancel
+        </a>
     </div>
+    </form>
 </div>
 
 <!-- SDR Help Modal -->
@@ -418,9 +383,43 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script type="module">
+        // Derives a human-readable label from a saved device key without needing a scan.
+        // sdrplay:0000000001  →  "SDRplay (0000000001) [sdrplay]"
+        // driver=rtlsdr,label=Generic RTL2832U,...  →  "Generic RTL2832U [rtlsdr]"
+        function keyToLabel(key) {
+            if (!key) return '';
+            if (key.startsWith('sdrplay:')) {
+                const serial = key.slice('sdrplay:'.length);
+                return `SDRplay (${serial}) [sdrplay]`;
+            }
+            let label = '', driver = '';
+            for (const pair of key.split(',')) {
+                const eq = pair.indexOf('=');
+                if (eq < 1) continue;
+                const k = pair.slice(0, eq).trim().toLowerCase();
+                const v = pair.slice(eq + 1).trim();
+                if (k === 'label')  label  = v;
+                if (k === 'driver') driver = v;
+            }
+            return label ? `${label}${driver ? ' [' + driver + ']' : ''}` : key;
+        }
+
         // Initialise the SDR device dropdown from the saved key on page load.
         document.addEventListener('DOMContentLoaded', () => {
             const savedKey = document.getElementById('sdrDeviceKeyInput').value;
+            if (savedKey) {
+                const dropdown = document.getElementById('sdrDeviceDropdown');
+                dropdown.innerHTML = '';
+                const noneOpt = document.createElement('option');
+                noneOpt.value = '';
+                noneOpt.textContent = '— Disabled (no spectrum display) —';
+                dropdown.appendChild(noneOpt);
+                const opt = document.createElement('option');
+                opt.value = savedKey;
+                opt.textContent = keyToLabel(savedKey);
+                opt.selected = true;
+                dropdown.appendChild(opt);
+            }
             updateDeviceKeyDisplay(savedKey);
         });
 
@@ -441,10 +440,10 @@
 
                 dropdown.innerHTML = '';
 
-                // Always offer a "none / disabled" option.
+                // Always offer an explicit "disable" option at the top.
                 const noneOpt = document.createElement('option');
                 noneOpt.value       = '';
-                noneOpt.textContent = '— None (disable spectrum display) —';
+                noneOpt.textContent = '— Disabled (no spectrum display) —';
                 dropdown.appendChild(noneOpt);
 
                 if (devices.length > 0) {
@@ -457,23 +456,29 @@
                         dropdown.appendChild(opt);
                     });
 
-                    // If the saved key didn't appear in the fresh scan, keep it as a manual entry.
-                    if (savedKey && !devices.some(d => d.key === savedKey)) {
+                    // Saved key not in scan results — append it so the user's choice isn't lost.
+                    if (savedKey && !matched) {
                         const opt = document.createElement('option');
                         opt.value       = savedKey;
-                        opt.textContent = `(Previously saved) ${savedKey}`;
+                        opt.textContent = `${keyToLabel(savedKey)} (not found in scan)`;
                         opt.selected    = true;
                         matched         = true;
                         dropdown.appendChild(opt);
                     }
 
-                    // Nothing previously saved — auto-select the first found device so the
-                    // user doesn't have to know to open the dropdown after scanning.
+                    // Nothing previously saved — auto-select the first found device.
                     if (!matched) {
                         dropdown.options[1].selected = true;
                         document.getElementById('sdrDeviceKeyInput').value = dropdown.options[1].value;
                         updateDeviceKeyDisplay(dropdown.options[1].value);
                     }
+                } else if (savedKey) {
+                    // Scan found no devices at all but we have a saved key — keep it visible.
+                    const opt = document.createElement('option');
+                    opt.value       = savedKey;
+                    opt.textContent = `${keyToLabel(savedKey)} (not found in scan)`;
+                    opt.selected    = true;
+                    dropdown.appendChild(opt);
                 }
 
                 // Show any installation notes returned by the server.
@@ -507,10 +512,11 @@
             updateDeviceKeyDisplay(this.value);
         });
 
-        window.clearSdrDevice = function () {
+window.clearSdrDevice = function () {
             document.getElementById('sdrDeviceKeyInput').value = '';
             document.getElementById('sdrDeviceDropdown').innerHTML =
-                '<option value="">— SDR disabled —</option>';
+                '<option value="" selected>— Disabled (no spectrum display) —</option>';
+            document.getElementById('sdrScanNotes').innerHTML = '';
             updateDeviceKeyDisplay('');
         };
 

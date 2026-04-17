@@ -535,6 +535,7 @@
                 }
             });
             spectrumPipeline.onFrequencyA(hz => spectrumPanel.setVfoFrequency(hz));
+            spectrumPipeline.onError(detail => spectrumPanel.setError(detail));
 
             spectrumPipeline.connect();
             window.spectrumPanel = spectrumPanel;

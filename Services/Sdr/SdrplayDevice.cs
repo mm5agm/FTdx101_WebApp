@@ -21,12 +21,17 @@
 //   Offset 0 : ppm (double)
 //   Offset 8 : fsFreq.fsHz (double)  ← sample rate
 //
-// Within sdrplay_api_RxChannelParamsT.tunerParams:
+// Within sdrplay_api_RxChannelParamsT.tunerParams (from sdrplay_api_tuner.h):
 //   Offset  0 : bwType (int)
 //   Offset  4 : ifType (int)
 //   Offset  8 : loMode (int)
-//   Offset 12 : gain   (52 bytes)
-//   Offset 64 : rfFreq.rfHz (double)  ← centre frequency
+//   Offset 12 : gain   (24 bytes)
+//     gain.gRdB      @ 12  (int)
+//     gain.LNAstate  @ 16  (unsigned char — NOT int)
+//     gain.syncUpdate@ 17  (unsigned char)
+//     gain.minGr     @ 20  (int, enum)
+//     gain.gainVals  @ 24  (3 × float)
+//   Offset 40 : rfFreq.rfHz (double)  ← centre frequency (36 end-of-gain → pad to 40)
 
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
@@ -45,8 +50,21 @@ namespace FTdx101_WebApp.Services.Sdr
         private const int    DevParamsOffset     = 0;   // within DeviceParamsT
         private const int    RxChannelAOffset    = 8;   // within DeviceParamsT
         private const int    FsHzOffset          = 8;   // within DevParamsT
-        private const int    RfHzOffset          = 64;  // within RxChannelParamsT
+        private const int    RfHzOffset          = 40;  // tunerParams.rfFreq.rfHz — gain(24)+pad(4) after loMode offset 12
         private const int    CallbackFnsSize     = 24;  // 3 × IntPtr
+
+        // Offsets within sdrplay_api_RxChannelParamsT (= tunerParams is first member at offset 0).
+        // tunerParams layout: bwType(0) ifType(4) loMode(8) gain(12…35) rfFreq.rfHz(40)
+        // gain.LNAstate is unsigned char at gain+4 — Marshal.WriteInt32 writes 4 bytes but
+        // the next fields (syncUpdate uchar, 2-byte padding) are all safely zeroed that way.
+        private const int    BwTypeOffset        = 0;   // sdrplay_api_Bw_MHzT (int)
+        private const int    GrDbOffset          = 12;  // gain.gRdB     (int) — first field
+        private const int    LnaStateOffset      = 16;  // gain.LNAstate (int) — second field
+
+        // sdrplay_api_Bw_MHzT enum values (numeric value = bandwidth in kHz).
+        private const int    BW_0_600            = 600;
+        private const int    BW_1_536            = 1536;
+        private const int    BW_5_000            = 5000;
 
         // Key prefix that identifies SDRplay devices across the codebase.
         public const string KeyPrefix = "sdrplay:";
@@ -79,6 +97,11 @@ namespace FTdx101_WebApp.Services.Sdr
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int sdrplay_api_Uninit(IntPtr dev);
+
+        // Returns a pointer to sdrplay_api_ErrorInfoT (owned by the API, do not free).
+        // ErrorInfoT layout: file[256] @ 0, function[256] @ 256, line(int) @ 512, message[1024] @ 516
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr sdrplay_api_GetLastError(IntPtr device);
 
         // ── Callback delegates (must stay rooted to prevent GC) ─────────────────
 
@@ -277,8 +300,25 @@ namespace FTdx101_WebApp.Services.Sdr
             IntPtr devParams  = Marshal.ReadIntPtr(deviceParamsPtr, DevParamsOffset);
             IntPtr rxChannelA = Marshal.ReadIntPtr(deviceParamsPtr, RxChannelAOffset);
 
-            WriteDouble(devParams,  FsHzOffset, sampleRateHz);
+            // Sample rate
+            WriteDouble(devParams, FsHzOffset, sampleRateHz);
+
+            // Centre frequency
             WriteDouble(rxChannelA, RfHzOffset, (double)centreFrequencyHz);
+
+            // Analog bandwidth — must be set to match the sample rate.
+            // Default after GetDeviceParams is 200 kHz, which rejects almost all of
+            // the displayed span and leaves the spectrum showing only noise floor.
+            int bw = sampleRateHz <= 1_200_000 ? BW_0_600
+                   : sampleRateHz <= 2_600_000 ? BW_1_536
+                   :                              BW_5_000;
+            Marshal.WriteInt32(rxChannelA, BwTypeOffset, bw);
+
+            // Gain — gRdB 40 (moderate IF gain reduction, safe for strong IF inputs),
+            // LNAstate 0 (minimum LNA attenuation = maximum LNA sensitivity).
+            // RSP1 valid ranges: gRdB 20–59, LNAstate 0–3.
+            Marshal.WriteInt32(rxChannelA, GrDbOffset,     40);
+            Marshal.WriteInt32(rxChannelA, LnaStateOffset,  0);
         }
 
         /// <inheritdoc/>
@@ -300,10 +340,14 @@ namespace FTdx101_WebApp.Services.Sdr
             Marshal.WriteIntPtr(_callbackFnsPtr, 8,  Marshal.GetFunctionPointerForDelegate(_streamDelegate));
             Marshal.WriteIntPtr(_callbackFnsPtr, 16, Marshal.GetFunctionPointerForDelegate(_eventDelegate));
 
-            ThrowIfError(sdrplay_api_Init(
+            int initErr = sdrplay_api_Init(
                 _devHandle,
                 _callbackFnsPtr,
-                GCHandle.ToIntPtr(_selfHandle)), "sdrplay_api_Init");
+                GCHandle.ToIntPtr(_selfHandle));
+            if (initErr != 0)
+                throw new InvalidOperationException(
+                    $"sdrplay_api: sdrplay_api_Init returned error code {initErr}" +
+                    ReadLastErrorDetail(_deviceStructPtr));
 
             _streaming = true;
         }
@@ -483,6 +527,22 @@ namespace FTdx101_WebApp.Services.Sdr
             if (err != 0)
                 throw new InvalidOperationException(
                     $"sdrplay_api: {operation} returned error code {err}");
+        }
+
+        // Reads fields from sdrplay_api_ErrorInfoT: file[256]@0, function[256]@256, line(int)@512, message[1024]@516
+        private static string ReadLastErrorDetail(IntPtr deviceStructPtr)
+        {
+            try
+            {
+                IntPtr info = sdrplay_api_GetLastError(deviceStructPtr);
+                if (info == IntPtr.Zero) return " [GetLastError=null]";
+                string? file    = Marshal.PtrToStringAnsi(info + 0);
+                string? func    = Marshal.PtrToStringAnsi(info + 256);
+                int     line    = Marshal.ReadInt32(info + 512);
+                string? message = Marshal.PtrToStringAnsi(info + 516);
+                return $" [{func}:{line} {message} ({file})]";
+            }
+            catch (Exception ex) { return $" [GetLastError threw {ex.GetType().Name}]"; }
         }
     }
 }

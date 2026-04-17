@@ -40,6 +40,12 @@ namespace FTdx101_WebApp.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
+            // SdrDeviceKey is intentionally allowed to be empty (empty = no SDR configured).
+            // Must be removed BEFORE ModelState.IsValid is checked, because the implicit
+            // [Required] from <Nullable>enable</Nullable> would otherwise reject an empty
+            // string and silently prevent the save.
+            ModelState.Remove("Settings.SdrDeviceKey");
+
             if (!ModelState.IsValid)
             {
                 NetworkAddresses = GetLocalIPAddresses();
@@ -57,7 +63,18 @@ namespace FTdx101_WebApp.Pages
 
             try
             {
-                await _settingsService.SaveSettingsAsync(Settings);
+                // Read-modify-write: load current settings so fields not on this form
+                // (external app paths, LastRadioState, etc.) are not overwritten with defaults.
+                var current = await _settingsService.GetSettingsAsync();
+                current.RadioModel        = Settings.RadioModel;
+                current.SerialPort        = Settings.SerialPort;
+                current.BaudRate          = Settings.BaudRate;
+                current.WebAddress        = Settings.WebAddress;
+                current.SdrDeviceKey      = Settings.SdrDeviceKey ?? string.Empty;
+                current.SdrIfFrequencyHz  = Settings.SdrIfFrequencyHz;
+                current.SdrSampleRateHz   = Settings.SdrSampleRateHz;
+                current.SdrFftSize        = Settings.SdrFftSize;
+                await _settingsService.SaveSettingsAsync(current);
 
                 // Reset initialization status so app will try again
                 FTdx101_WebApp.Services.AppStatus.InitializationStatus = "initializing";

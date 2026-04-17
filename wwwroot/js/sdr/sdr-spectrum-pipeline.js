@@ -58,6 +58,15 @@ export class SdrSpectrumPipeline {
     }
 
     /**
+     * Register a handler for SDR error detail strings.
+     * Fired alongside "disconnected" status to give a human-readable cause.
+     * @param {function(string)} handler
+     */
+    onError(handler) {
+        this._pipeline.register('SdrError', handler);
+    }
+
+    /**
      * Register a handler for VFO A frequency changes (Hz).
      * @param {function(number)} handler
      */
