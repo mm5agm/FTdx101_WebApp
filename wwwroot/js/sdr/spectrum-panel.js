@@ -191,39 +191,67 @@ export class SpectrumPanel {
     // ── Frequency axis ───────────────────────────────────────────────────────
 
     _drawFrequencyAxis(ctx, bins, W, specH, centreHz, spanHz) {
-        const axisH = 18;
+        const axisH  = 20;
+        const tickY0 = specH - axisH;       // top of axis strip
+        const labelY = specH - 4;           // baseline for text
+
         ctx.fillStyle = '#111118';
-        ctx.fillRect(0, specH - axisH, W, axisH);
+        ctx.fillRect(0, tickY0, W, axisH);
 
-        ctx.fillStyle  = '#8899bb';
-        ctx.font       = '10px monospace';
-        ctx.textAlign  = 'center';
-
-        // Show 5 tick marks: −span/2, −span/4, 0 (VFO), +span/4, +span/2
-        const ticks = [-0.5, -0.25, 0, 0.25, 0.5];
-        ticks.forEach(fraction => {
-            const x       = (fraction + 0.5) * W;
-            const rfHz    = this._vfoHz + (fraction * spanHz);
-            const label   = (rfHz / 1e6).toFixed(3);
-            ctx.fillText(`${label}`, x, specH - 3);
-
-            // Tick mark
-            ctx.strokeStyle = '#334466';
-            ctx.lineWidth   = 1;
-            ctx.beginPath();
-            ctx.moveTo(x, specH - axisH);
-            ctx.lineTo(x, specH - axisH + 4);
-            ctx.stroke();
-        });
-
-        // Centre label accent
-        const centreX = W / 2;
+        // VFO centre marker line (drawn first, behind labels)
         ctx.strokeStyle = 'rgba(0, 170, 255, 0.4)';
         ctx.lineWidth   = 1;
         ctx.beginPath();
-        ctx.moveTo(centreX, 0);
-        ctx.lineTo(centreX, specH - axisH);
+        ctx.moveTo(W / 2, 0);
+        ctx.lineTo(W / 2, tickY0);
         ctx.stroke();
+
+        // Sanity-check: _vfoHz below 500 kHz means the persisted state hasn't been
+        // overwritten by a live FrequencyA SignalR update yet — skip labels.
+        if (this._vfoHz < 100_000) {
+            ctx.fillStyle = '#667799';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('Waiting for VFO frequency…', W / 2, labelY);
+            return;
+        }
+
+        // Choose a "nice" tick interval that gives roughly 6–12 ticks across the span.
+        // Candidate steps in Hz: 50k, 100k, 200k, 250k, 500k, 1M, 2M, 5M, 10M
+        const steps = [50e3, 100e3, 200e3, 250e3, 500e3, 1e6, 2e6, 5e6, 10e6];
+        const targetTicks = 8;
+        const stepHz = steps.find(s => spanHz / s <= targetTicks) ?? steps[steps.length - 1];
+
+        // First tick at the next multiple of stepHz above the left edge
+        const leftHz  = this._vfoHz - spanHz / 2;
+        const firstHz = Math.ceil(leftHz / stepHz) * stepHz;
+
+        ctx.font      = '10px monospace';
+        ctx.textAlign = 'center';
+
+        for (let tickHz = firstHz; tickHz <= leftHz + spanHz; tickHz += stepHz) {
+            const x = ((tickHz - leftHz) / spanHz) * W;
+
+            // Tick line
+            const isVfo = Math.abs(tickHz - this._vfoHz) < stepHz * 0.01;
+            ctx.strokeStyle = isVfo ? 'rgba(0,170,255,0.8)' : '#334466';
+            ctx.lineWidth   = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, tickY0);
+            ctx.lineTo(x, tickY0 + 4);
+            ctx.stroke();
+
+            // Label — skip if too close to edge or below 0 Hz
+            if (x < 24 || x > W - 24 || tickHz <= 0) continue;
+
+            const mhz    = tickHz / 1e6;
+            // Decimal places: enough to show the step resolution clearly
+            const dp     = stepHz < 1e6 ? (stepHz < 100e3 ? 3 : 2) : 1;
+            const label  = mhz.toFixed(dp);
+
+            ctx.fillStyle = isVfo ? '#44aaff' : '#8899bb';
+            ctx.fillText(label, x, labelY);
+        }
     }
 
     // ── Waterfall ────────────────────────────────────────────────────────────
