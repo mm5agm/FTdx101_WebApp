@@ -72,6 +72,16 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 - Release notes: v0.9.0-rc1
 - Pre-release: pending changes for v0.9.0-rc1
+- Release notes: v0.9.0-rc1
+- Pre-release: pending changes for v0.9.0-rc1
+
+
+## 2026-04-17 - v0.9.0-rc1
+
+### Changed
+
+- Release notes: v0.9.0-rc1
+- Pre-release: pending changes for v0.9.0-rc1
 
 
 ## 2026-04-17 - v0.9.0-rc1

@@ -126,6 +126,19 @@ git push origin main
 # Return to develop
 git checkout develop
 
+# Delete existing release and tag if they already exist (e.g. from a failed previous run)
+gh release view $newTag 2>$null | Out-Null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Deleting existing release $newTag..." -ForegroundColor Yellow
+    gh release delete $newTag --yes
+}
+$existingTag = git tag -l $newTag
+if ($existingTag) {
+    Write-Host "Deleting existing tag $newTag..." -ForegroundColor Yellow
+    git tag -d $newTag
+    git push origin ":refs/tags/$newTag"
+}
+
 # Create GitHub release
 $releaseNotes = "Release $newTag - please send bug reports to mm5agm@outlook.com"
 
