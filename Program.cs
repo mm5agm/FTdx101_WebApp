@@ -125,7 +125,9 @@ builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddHostedService<MeterPollingService>();
 
 // SDR spectrum display — reads IQ samples, computes FFT, broadcasts via SignalR
-builder.Services.AddHostedService<FTdx101_WebApp.Services.Sdr.SdrBackgroundService>();
+// Registered as singleton so the span-change API endpoint can call RequestRestart().
+builder.Services.AddSingleton<FTdx101_WebApp.Services.Sdr.SdrBackgroundService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<FTdx101_WebApp.Services.Sdr.SdrBackgroundService>());
 
 // Register the radio state service — reuse the same singleton instance as RadioStateService
 builder.Services.AddSingleton<IRadioStateService>(sp => sp.GetRequiredService<RadioStateService>());
@@ -202,6 +204,20 @@ try
     app.MapHub<FTdx101_WebApp.Hubs.RadioHub>("/radioHub");
 
     app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
+
+    app.MapPost("/api/sdr/span", async (
+        [Microsoft.AspNetCore.Mvc.FromQuery] double hz,
+        FTdx101_WebApp.Services.ISettingsService settings,
+        FTdx101_WebApp.Services.Sdr.SdrBackgroundService sdr) =>
+    {
+        double[] valid = [250_000, 500_000, 1_024_000, 2_048_000, 2_500_000, 3_200_000];
+        if (Array.IndexOf(valid, hz) < 0) return Results.BadRequest("Invalid span value.");
+        var s = await settings.GetSettingsAsync();
+        s.SdrSampleRateHz = hz;
+        await settings.SaveSettingsAsync(s);
+        sdr.RequestRestart();
+        return Results.Ok();
+    });
 
     // Open browser automatically when app starts (but not when debugging in Visual Studio)
     var browserLauncher = app.Services.GetRequiredService<BrowserLauncher>();

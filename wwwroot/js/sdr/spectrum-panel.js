@@ -96,6 +96,62 @@ export class SpectrumPanel {
             if (this._lastBins) this._render();
         });
         this._resizeObserver.observe(canvas.parentElement ?? canvas);
+
+        // Tune VFO A to the clicked frequency.
+        canvas.addEventListener('click', (e) => this._onCanvasClick(e));
+
+        // Mouse-wheel tunes VFO A up/down in 1 kHz steps.
+        // { passive: false } required so preventDefault() suppresses page scroll.
+        canvas.addEventListener('wheel', (e) => this._onCanvasWheel(e), { passive: false });
+
+        canvas.style.cursor = 'crosshair';
+    }
+
+    _onCanvasClick(e) {
+        if (!this._lastBins || this._lastSpanHz <= 0 || this._vfoHz <= 0) return;
+
+        const canvas = document.getElementById(this._canvasId);
+        const rect   = canvas.getBoundingClientRect();
+        const x      = e.clientX - rect.left;
+        const W      = canvas.width;
+
+        // Only respond to clicks in the spectrum area (top 45%), not the waterfall.
+        const specH = Math.floor(canvas.height * 0.45);
+        const y     = e.clientY - rect.top;
+        if (y > specH * (rect.height / canvas.height)) return;
+
+        const leftHz  = this._vfoHz - this._lastSpanHz / 2;
+        const clickHz = Math.round(leftHz + (x / W) * this._lastSpanHz);
+
+        fetch('/api/cat/frequency/a', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ frequencyHz: clickHz }),
+        }).catch(() => { /* ignore network errors */ });
+    }
+
+    _onCanvasWheel(e) {
+        e.preventDefault();   // stop the page from scrolling
+        if (!this._lastBins || this._vfoHz <= 0) return;
+
+        // 1 kHz per notch — accumulate on _wheelTargetHz so rapid scrolling
+        // compounds correctly before the radio confirms the new frequency.
+        const step = 1000;
+        const direction = e.deltaY > 0 ? -1 : 1;   // scroll up = higher freq
+        this._wheelTargetHz = Math.max(30_000, Math.min(75_000_000,
+            (this._wheelTargetHz ?? this._vfoHz) + direction * step));
+
+        // Debounce: send once scrolling pauses for 60 ms.
+        clearTimeout(this._wheelTimer);
+        this._wheelTimer = setTimeout(() => {
+            const hz = this._wheelTargetHz;
+            this._wheelTargetHz = null;
+            fetch('/api/cat/frequency/a', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ frequencyHz: hz }),
+            }).catch(() => {});
+        }, 60);
     }
 
     _sizeCanvas(canvas) {
@@ -186,6 +242,15 @@ export class SpectrumPanel {
             const y = H - ((db - dbMin) / range) * H;
             ctx.fillText(`${db} dB`, W - 4, y - 2);
         }
+
+        // Centre frequency label
+        if (this._vfoHz > 0) {
+            const label = (this._vfoHz / 1e6).toFixed(6) + ' MHz';
+            ctx.font      = '12px monospace';
+            ctx.fillStyle = '#44aaff';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, W / 2, 14);
+        }
     }
 
     // ── Frequency axis ───────────────────────────────────────────────────────
@@ -206,13 +271,13 @@ export class SpectrumPanel {
         ctx.lineTo(W / 2, tickY0);
         ctx.stroke();
 
-        // Sanity-check: _vfoHz below 500 kHz means the persisted state hasn't been
-        // overwritten by a live FrequencyA SignalR update yet — skip labels.
-        if (this._vfoHz < 100_000) {
+        // Only skip labels when FrequencyA has never been set (C# long default = 0).
+        // Any non-zero persisted frequency is treated as valid; FTdx101MP range is 30 kHz–75 MHz.
+        if (this._vfoHz <= 0) {
             ctx.fillStyle = '#667799';
             ctx.font = '10px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('Waiting for VFO frequency…', W / 2, labelY);
+            ctx.fillText('No VFO frequency available', W / 2, labelY);
             return;
         }
 
@@ -245,9 +310,7 @@ export class SpectrumPanel {
             if (x < 24 || x > W - 24 || tickHz <= 0) continue;
 
             const mhz    = tickHz / 1e6;
-            // Decimal places: enough to show the step resolution clearly
-            const dp     = stepHz < 1e6 ? (stepHz < 100e3 ? 3 : 2) : 1;
-            const label  = mhz.toFixed(dp);
+            const label  = mhz.toFixed(6);
 
             ctx.fillStyle = isVfo ? '#44aaff' : '#8899bb';
             ctx.fillText(label, x, labelY);

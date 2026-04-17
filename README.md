@@ -1,6 +1,5 @@
 
-## This is a test release It will have bugs and Gauges will jump about till calibrated properly
-Trigger release-please
+##  I would appreciate feedback and bug/layout reports. I have only tested the spectrum display with the SDRplay V1
 
 ## FTdx101 WebApp Main Page
 ![FTdx101 WebApp Main Page](pictures/DevelopScreen.png)
@@ -48,14 +47,53 @@ If this project has helped you, please consider sponsoring it. Even small contri
 
 ---
 
+## 📡 Spectrum Display
+
+The application includes a real-time spectrum display and waterfall, intended for use with a Software Defined Radio (SDR) connected to the FTdx101MP's 9 MHz IF output on the rear panel.
+
+**Supported SDR devices:**
+
+- **SDRplay RSP1 (and other RSP series)** — supported via the SDRplay API v3. The SDRplay API must be installed separately from [sdrplay.com](https://www.sdrplay.com/downloads/). This is the only SDR the author has tested.
+- **RTL-SDR, Airspy, and other SoapySDR-compatible devices** — supported via the SoapySDR driver interface. SoapySDR and the appropriate device driver must be installed. *These devices have not been tested by the author — feedback from users with other SDRs is very welcome.*
+
+**Features:**
+- Variable span: 250 kHz, 500 kHz, 1 MHz, or 2 MHz
+- Click anywhere on the spectrum to tune VFO A to that frequency
+- Mouse wheel over the spectrum tunes VFO A up/down in 1 kHz steps
+- Frequency axis labels automatically track VFO A
+
+---
+
 ## Release Notes
+
+## 2026-04-17 - v0.9.0 RC1
+
+This is a release candidate for what may be the final major release. Please test and report any issues via the Groups.io group.
+
+### Added
+
+- **Spectrum display and waterfall** — real-time spectrum and scrolling waterfall via SDRplay RSP1 (or any SoapySDR-compatible device) connected to the FTdx101MP 9 MHz IF output.
+  - Variable span: 250 kHz, 500 kHz, 1 MHz, or 2 MHz
+  - Click on the spectrum to tune VFO A to that frequency
+  - Mouse wheel over the spectrum tunes VFO A up/down in 1 kHz steps
+  - Frequency axis labels track VFO A in real time
+  - Centre frequency displayed at the top of the spectrum
+
+### Changed
+
+- Layout compacted throughout to fit on a single screen without scrolling
+- Mic Gain slider moved alongside Power slider
+- AF Gain slider moved alongside Roofing Filter for both VFO A and VFO B
+- Copyright notice moved into the navigation bar
+- Application buttons row and navigation bar made more compact
+
+---
 
 ## 2026-04-10 - v0.7.7
 
 ### Changed
 
-- All working. Gauges moved to above VFO container
-- All working. Now about to move gauges container
+- Meter gauges repositioned above the VFO panels
 
 
 ## 2026-04-06 - v0.7.6
@@ -159,7 +197,6 @@ This release marks a near-complete rewrite of the application.
 
 ## Next Up
 
-- Continue meter smoothing and stability tuning during TX/RX transitions.
-- Continue migration and cleanup of remaining legacy paths.
-- Make a release and hopefully get some feedback - it's very quiet here :).
+- Address any issues reported against v0.9.0 RC1.
+- v1.0.0 final release if no critical issues are found.
 

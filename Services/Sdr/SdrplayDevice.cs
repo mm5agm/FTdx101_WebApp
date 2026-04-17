@@ -31,7 +31,9 @@
 //     gain.syncUpdate@ 17  (unsigned char)
 //     gain.minGr     @ 20  (int, enum)
 //     gain.gainVals  @ 24  (3 × float)
-//   Offset 40 : rfFreq.rfHz (double)  ← centre frequency (36 end-of-gain → pad to 40)
+//   Offset 40 : rfFreq.rfHz (double)  ← sizeof(RfFreqT)=16 (double+uchar+7B tail padding)
+//   Offset 56 : dcOffsetTuner (12 bytes) → refreshRateTime @ 64
+//   Offset 72 : ctrlParams.dcOffset (2B) then ctrlParams.decimation (3B)
 
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
@@ -61,7 +63,20 @@ namespace FTdx101_WebApp.Services.Sdr
         private const int    GrDbOffset          = 12;  // gain.gRdB     (int) — first field
         private const int    LnaStateOffset      = 16;  // gain.LNAstate (int) — second field
 
+        // sdrplay_api_ControlParamsT starts at rxChannelA + 72 (= sizeof TunerParamsT).
+        // sizeof(TunerParamsT) = 72 because RfFreqT (double+uchar) has 7 bytes tail padding
+        // → sizeof(RfFreqT)=16, dcOffsetTuner starts at 56, ends at 68, padded to 72.
+        //   ctrlParams.dcOffset.DCenable           @ 72
+        //   ctrlParams.dcOffset.IQenable           @ 73
+        //   ctrlParams.decimation.enable           @ 74
+        //   ctrlParams.decimation.decimationFactor @ 75
+        //   ctrlParams.decimation.wideBandSignal   @ 76
+        private const int    DecimationEnableOffset = 74;
+        private const int    DecimationFactorOffset = 75;
+
         // sdrplay_api_Bw_MHzT enum values (numeric value = bandwidth in kHz).
+        private const int    BW_0_200            = 200;
+        private const int    BW_0_300            = 300;
         private const int    BW_0_600            = 600;
         private const int    BW_1_536            = 1536;
         private const int    BW_5_000            = 5000;
@@ -300,8 +315,20 @@ namespace FTdx101_WebApp.Services.Sdr
             IntPtr devParams  = Marshal.ReadIntPtr(deviceParamsPtr, DevParamsOffset);
             IntPtr rxChannelA = Marshal.ReadIntPtr(deviceParamsPtr, RxChannelAOffset);
 
-            // Sample rate
-            WriteDouble(devParams, FsHzOffset, sampleRateHz);
+            // Sample rate — hardware minimum is 2 MHz; use decimation for narrower spans.
+            const double MinHardwareRateHz = 2_000_000;
+            double hardwareRateHz  = Math.Max(sampleRateHz, MinHardwareRateHz);
+            int    decimationFactor = (sampleRateHz < MinHardwareRateHz)
+                ? (int)Math.Round(MinHardwareRateHz / sampleRateHz)
+                : 1;
+
+            WriteDouble(devParams, FsHzOffset, hardwareRateHz);
+
+            if (decimationFactor > 1)
+            {
+                Marshal.WriteByte(rxChannelA, DecimationEnableOffset, 1);
+                Marshal.WriteByte(rxChannelA, DecimationFactorOffset, (byte)decimationFactor);
+            }
 
             // Centre frequency
             WriteDouble(rxChannelA, RfHzOffset, (double)centreFrequencyHz);
@@ -309,7 +336,9 @@ namespace FTdx101_WebApp.Services.Sdr
             // Analog bandwidth — must be set to match the sample rate.
             // Default after GetDeviceParams is 200 kHz, which rejects almost all of
             // the displayed span and leaves the spectrum showing only noise floor.
-            int bw = sampleRateHz <= 1_200_000 ? BW_0_600
+            int bw = sampleRateHz <=   250_000 ? BW_0_200
+                   : sampleRateHz <=   500_000 ? BW_0_300
+                   : sampleRateHz <= 1_200_000 ? BW_0_600
                    : sampleRateHz <= 2_600_000 ? BW_1_536
                    :                              BW_5_000;
             Marshal.WriteInt32(rxChannelA, BwTypeOffset, bw);

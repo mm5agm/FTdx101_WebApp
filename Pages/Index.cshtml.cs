@@ -49,6 +49,8 @@ namespace FTdx101_WebApp.Pages
         // MIC Gain persisted value
         public int MicGain { get; set; } = 50;
 
+        public double SdrSampleRateHz { get; set; } = 2_048_000;
+
         public RadioStateService RadioState => _radioStateService;
 
         public RadioStateViewModel State { get; set; } = new RadioStateViewModel();
@@ -68,6 +70,7 @@ namespace FTdx101_WebApp.Pages
             App1Name = settings.App1Name;
             App2Name = settings.App2Name;
             App3Name = settings.App3Name;
+            SdrSampleRateHz = settings.SdrSampleRateHz;
 
             // Load persisted MIC Gain
             MicGain = _radioStateService.MicGain;

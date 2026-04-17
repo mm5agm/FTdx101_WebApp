@@ -30,6 +30,8 @@ namespace FTdx101_WebApp.Services.Sdr
         // receive the current status without waiting for a device change event.
         private const int StatusHeartbeatFrames = 30;   // ~3 s at 10 fps
 
+        private CancellationTokenSource _restartCts = new();
+
         public SdrBackgroundService(
             ISettingsService              settings,
             IHubContext<RadioHub>          hub,
@@ -40,22 +42,37 @@ namespace FTdx101_WebApp.Services.Sdr
             _logger   = logger;
         }
 
+        /// <summary>
+        /// Cancels the current streaming session so it restarts immediately with fresh settings.
+        /// Safe to call from any thread.
+        /// </summary>
+        public void RequestRestart()
+        {
+            var old = Interlocked.Exchange(ref _restartCts, new CancellationTokenSource());
+            old.Cancel();
+            old.Dispose();
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var config = await _settings.GetSettingsAsync().ConfigureAwait(false);
+                var config       = await _settings.GetSettingsAsync().ConfigureAwait(false);
+                var restartToken = _restartCts.Token;
+                using var sessionCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, restartToken);
 
                 if (string.IsNullOrWhiteSpace(config.SdrDeviceKey))
                 {
                     await BroadcastStatus("unconfigured", stoppingToken).ConfigureAwait(false);
-                    await Task.Delay(UnconfiguredPollMs, stoppingToken).ConfigureAwait(false);
+                    try { await Task.Delay(UnconfiguredPollMs, sessionCts.Token).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { }
                     continue;
                 }
 
-                await RunStreamingSession(config, stoppingToken).ConfigureAwait(false);
+                await RunStreamingSession(config, sessionCts.Token).ConfigureAwait(false);
 
-                if (!stoppingToken.IsCancellationRequested)
+                // Skip the retry delay when a span change triggered the restart.
+                if (!stoppingToken.IsCancellationRequested && !restartToken.IsCancellationRequested)
                     await Task.Delay(RetryDelayMs, stoppingToken).ConfigureAwait(false);
             }
         }
