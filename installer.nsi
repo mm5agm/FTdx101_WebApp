@@ -1,6 +1,6 @@
 !define APPNAME "FTdx101 WebApp"
 !define COMPANY "MM5AGM"
-!define VERSION "0.7.8"
+!define VERSION "0.9.0-rc1"
 !define INSTALLDIR "$PROGRAMFILES64\${COMPANY}\${APPNAME}"
 !define DOTNET_URL "https://dotnet.microsoft.com/en-us/download/dotnet/10.0"
 
@@ -73,6 +73,7 @@ Section "Install"
         "publish\*"
 
     ; --- SoapySDR backend (vendor DLLs + SDR plugins) ---
+    ; Populated by scripts\collect-soapy-deps.ps1 before release.
     SetOutPath "$INSTDIR\SoapySDR\bin"
     File "soapysdr-dist\bin\SoapySDR.dll"
     File "soapysdr-dist\bin\airspy.dll"

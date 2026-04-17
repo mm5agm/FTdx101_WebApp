@@ -1,14 +1,19 @@
 # create-release.ps1
 # Full automated release from develop branch.
 # Run with no arguments: .\scripts\create-release.ps1
+# Run with explicit version: .\scripts\create-release.ps1 -Version v0.9.0-rc1
 #
 # What it does:
-#   1. Auto-increments the patch version (e.g. v0.7.1 -> v0.7.2)
+#   1. Auto-increments the patch version (e.g. v0.7.1 -> v0.7.2), or uses -Version if supplied
 #   2. Commits any pending changes in develop
 #   3. Updates README.md with release notes built from git log
 #   4. Commits the README update in develop and pushes
 #   5. Merges develop -> main and pushes
 #   6. Creates the GitHub release (triggers the build workflow)
+
+param(
+    [string]$Version = ""
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -38,8 +43,12 @@ if (-not $latestTag) {
     exit 1
 }
 
-$parts  = $latestTag.TrimStart('v') -split '\.'
-$newTag = "v$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+if ($Version -ne "") {
+    if ($Version.StartsWith('v')) { $newTag = $Version } else { $newTag = "v$Version" }
+} else {
+    $parts  = $latestTag.TrimStart('v') -split '\.'
+    $newTag = "v$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+}
 
 Write-Host "Last release : $latestTag" -ForegroundColor Yellow
 Write-Host "New  release : $newTag"    -ForegroundColor Green
