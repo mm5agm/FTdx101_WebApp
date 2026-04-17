@@ -66,6 +66,13 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
+## 2026-04-17 - v0.9.0-rc1
+
+### Changed
+
+- Minor fixes and improvements
+
+
 ## 2026-04-17 - v0.9.0 RC1
 
 This is a release candidate for what may be the final major release. Please test and report any issues via the Groups.io group.
