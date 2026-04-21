@@ -68,6 +68,20 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## 2026-04-21 - v1.0.0
 
+### Changed
+
+- Release v1.0.0: band segments, NB, manual notch slider, spectrum crosshair
+- Update README: SoapySDR bundled, no separate install needed
+- Release notes: v0.9.0-rc1
+- Pre-release: pending changes for v0.9.0-rc1
+- Release notes: v0.9.0-rc1
+- Pre-release: pending changes for v0.9.0-rc1
+- Release notes: v0.9.0-rc1
+- Pre-release: pending changes for v0.9.0-rc1
+
+
+## 2026-04-21 - v1.0.0
+
 ### Added
 
 - **Band segment dropdown** — each VFO now has a Segment selector (CW / FT8 / SSB / RTTY)
