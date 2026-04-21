@@ -846,6 +846,26 @@ connection.on("RadioStateUpdate", function (update) {
         if (el) el.value = update.value;
     }
 
+    // --- MANUAL NOTCH FREQUENCY ---
+    if (update.property === "ManualNotchFreqA") {
+        const el = document.getElementById('manualNotchFreqA');
+        if (el) { el.value = update.value; document.getElementById('manualNotchFreqValueA').textContent = update.value + ' Hz'; }
+    }
+    if (update.property === "ManualNotchFreqB") {
+        const el = document.getElementById('manualNotchFreqB');
+        if (el) { el.value = update.value; document.getElementById('manualNotchFreqValueB').textContent = update.value + ' Hz'; }
+    }
+
+    // --- NOISE BLANKER ---
+    if (update.property === "NbA") {
+        const el = document.getElementById('nbSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "NbB") {
+        const el = document.getElementById('nbSelectB');
+        if (el) el.value = update.value;
+    }
+
     // --- AUTO NOTCH ---
     if (update.property === "AutoNotchA") {
         const el = document.getElementById('autoNotchSelectA');
@@ -982,6 +1002,14 @@ window.radioControl = {
     setManualNotch: async function (receiver, enabled) {
         await fetch(`/api/cat/manualnotch/${receiver.toLowerCase()}`,
             { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
+    },
+    setNoiseBlanker: async function (receiver, enabled) {
+        await fetch(`/api/cat/noiseblanker/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) });
+    },
+    setManualNotchFreq: async function (receiver, frequencyHz) {
+        await fetch(`/api/cat/manualnotchfreq/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ frequencyHz }) });
     }
 };
 
@@ -1479,6 +1507,26 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) { console.error('setManualNotch error:', e); }
     }
 
+    async function setNoiseBlanker(receiver, enabled) {
+        try {
+            await fetch(`/api/cat/noiseblanker/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+        } catch (e) { console.error('setNoiseBlanker error:', e); }
+    }
+
+    async function setManualNotchFreq(receiver, frequencyHz) {
+        try {
+            await fetch(`/api/cat/manualnotchfreq/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ frequencyHz: parseInt(frequencyHz) })
+            });
+        } catch (e) { console.error('setManualNotchFreq error:', e); }
+    }
+
     async function setRoofingFilter(receiver, filter) {
         const didPause = pausePolling();
 
@@ -1868,6 +1916,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setNr,
         setAttenuator,
         setManualNotch,
+        setNoiseBlanker,
+        setManualNotchFreq,
         _state: state,  // Expose state for TX indicator updates
         updatePowerDisplay: updatePowerDisplay,
         setPower: setPower
@@ -1878,6 +1928,128 @@ document.addEventListener('DOMContentLoaded', function() {
     // Blur VFO control selects immediately after change so they don't stay highlighted
     document.querySelectorAll('.vfo-control-item select').forEach(function (sel) {
         sel.addEventListener('change', function () { this.blur(); });
+    });
+
+    // -------------------------------------------------------------------------
+    // Band Segment Dropdown
+    // -------------------------------------------------------------------------
+    // Populates the segment select for a VFO based on the current band and
+    // band plan, restores the last-used segment from localStorage, and tunes
+    // the radio when the user picks a segment.
+
+    function segmentStorageKey(vfo, band) {
+        return `bandSeg_${vfo}_${band}`;
+    }
+
+    function populateSegmentSelect(vfo, band) {
+        const select = document.getElementById(`segmentSelect${vfo}`);
+        if (!select) return;
+
+        // Wait until band-plan.js has been imported by the module script.
+        const bandPlanData = window.bandPlanData;
+        const plan = window.bandPlan || 'UK';
+        if (!bandPlanData) return;
+
+        const segments = (bandPlanData[plan] || {})[band] || null;
+        select.innerHTML = '';
+
+        if (!segments) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '-- Segment --';
+            select.appendChild(opt);
+            select.disabled = true;
+            return;
+        }
+
+        select.disabled = false;
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '-- Segment --';
+        select.appendChild(placeholder);
+
+        for (const [key, seg] of Object.entries(segments)) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = seg.label;
+            select.appendChild(opt);
+        }
+
+        // Restore last used segment for this band
+        const saved = localStorage.getItem(segmentStorageKey(vfo, band));
+        if (saved && select.querySelector(`option[value="${saved}"]`)) {
+            select.value = saved;
+        }
+    }
+
+    // Called when the user picks a segment from the dropdown.
+    window.onSegmentChange = async function(vfo, segKey) {
+        if (!segKey) return;
+        const plan = window.bandPlan || 'UK';
+        const bandPlanData = window.bandPlanData;
+        if (!bandPlanData) return;
+
+        // Determine the current band for this VFO
+        const band = state.lastBand[vfo];
+        if (!band) return;
+
+        const segments = (bandPlanData[plan] || {})[band];
+        if (!segments || !segments[segKey]) return;
+
+        const { freq, mode } = segments[segKey];
+
+        // Save preference
+        localStorage.setItem(segmentStorageKey(vfo, band), segKey);
+
+        // Tune frequency and set mode
+        if (window.radioControl) {
+            await window.radioControl.setFrequency(vfo, freq);
+            // Also update the mode dropdown immediately for responsiveness
+            const modeSelect = document.getElementById(`modeSelect${vfo}`);
+            if (modeSelect) modeSelect.value = mode;
+            await window.setMode(vfo, mode);
+        }
+    };
+
+    // Hook into the band state change: when lastBand is updated, repopulate
+    // the segment select. We patch setBand and updateBandButton so both
+    // UI-driven and SignalR-driven band changes trigger the update.
+    const _origUpdateBandButton = window.updateBandButton;
+
+    // Re-populate segments whenever band state changes
+    function onBandChanged(vfo, band) {
+        state.lastBand[vfo] = band;
+        populateSegmentSelect(vfo, band);
+    }
+
+    // Wrap the outer updateBandButton so SignalR-driven band changes also update segments
+    window.updateBandButton = function(receiver, band) {
+        if (_origUpdateBandButton) _origUpdateBandButton(receiver, band);
+        onBandChanged(receiver, band);
+    };
+
+    // Also update segment immediately when a band button is clicked (before poll)
+    document.addEventListener('change', function(e) {
+        if (e.target.type === 'radio' && e.target.name && e.target.name.startsWith('band-')) {
+            const receiver = e.target.getAttribute('data-receiver');
+            const band = e.target.value;
+            if (receiver && band && window.bandPlanData) {
+                populateSegmentSelect(receiver, band);
+            }
+        }
+    });
+
+    // Populate segments on first load once bandPlanData is ready
+    function tryPopulateSegmentsOnLoad() {
+        if (!window.bandPlanData) {
+            setTimeout(tryPopulateSegmentsOnLoad, 100);
+            return;
+        }
+        if (state.lastBand.A) populateSegmentSelect('A', state.lastBand.A);
+        if (state.lastBand.B) populateSegmentSelect('B', state.lastBand.B);
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(tryPopulateSegmentsOnLoad, 200);
     });
 
     // --- Raw Meter Label Visibility State (S-Meter and Power Out) ---

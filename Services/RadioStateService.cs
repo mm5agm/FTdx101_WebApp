@@ -151,6 +151,11 @@ namespace FTdx101_WebApp.Services
         public string ManualNotchA { get => _manualNotchA; set => SetField(ref _manualNotchA, value); }
         private string _manualNotchB = "0";
         public string ManualNotchB { get => _manualNotchB; set => SetField(ref _manualNotchB, value); }
+        // BP command Manual Notch frequency: 10–3200 Hz (CAT value = Hz ÷ 10, 3 digits)
+        private int _manualNotchFreqA = 1000;
+        public int ManualNotchFreqA { get => _manualNotchFreqA; set => SetField(ref _manualNotchFreqA, value); }
+        private int _manualNotchFreqB = 1000;
+        public int ManualNotchFreqB { get => _manualNotchFreqB; set => SetField(ref _manualNotchFreqB, value); }
 
         private int? _rfMain;
         public int? RFMain { get => _rfMain; set => SetField(ref _rfMain, value); }
@@ -223,6 +228,11 @@ namespace FTdx101_WebApp.Services
         public string? NB1 { get => _nb1; set => SetField(ref _nb1, value); }
         private string? _nl0;
         public string? NL0 { get => _nl0; set => SetField(ref _nl0, value); }
+
+        private string _nbA = "0";
+        public string NbA { get => _nbA; set => SetField(ref _nbA, value); }
+        private string _nbB = "0";
+        public string NbB { get => _nbB; set => SetField(ref _nbB, value); }
 
         private string _bandA = "20m";
         public string BandA { get => _bandA; set => SetField(ref _bandA, value); }

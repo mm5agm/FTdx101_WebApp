@@ -74,6 +74,7 @@ namespace FTdx101_WebApp.Pages
                 current.SdrIfFrequencyHz  = Settings.SdrIfFrequencyHz;
                 current.SdrSampleRateHz   = Settings.SdrSampleRateHz;
                 current.SdrFftSize        = Settings.SdrFftSize;
+                current.BandPlan          = Settings.BandPlan;
                 await _settingsService.SaveSettingsAsync(current);
 
                 // Reset initialization status so app will try again

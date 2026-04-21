@@ -164,6 +164,16 @@ namespace FTdx101_WebApp.Services
                             else if (vfo == '1') _stateService.NrB = code;
                         }
                         break;
+                    case "NB":
+                        // NB{vfo}{code}; — vfo: 0=Main 1=Sub; code: 0=OFF 1=ON
+                        if (message.Length >= 4)
+                        {
+                            var vfo = message[2];
+                            var code = message[3].ToString();
+                            if (vfo == '0') _stateService.NbA = code;
+                            else if (vfo == '1') _stateService.NbB = code;
+                        }
+                        break;
                     case "RA":
                         // RA{vfo}{nn}; — vfo: 0=Main 1=Sub; nn: 00=OFF 06=6dB 12=12dB 18=18dB
                         if (message.Length >= 5)
@@ -175,18 +185,25 @@ namespace FTdx101_WebApp.Services
                         }
                         break;
                     case "BP":
-                        // BP{vfo}{param}{val1}{val2}{val3}; — param 0=on/off, 1=freq
-                        // On/off: BP{vfo}0{000|001}; — 000=OFF 001=ON
+                        // BP{vfo}{param}{3-digit value};
+                        // param 0 = on/off: 000=OFF 001=ON
+                        // param 1 = frequency: value × 10 = Hz (001=10Hz … 320=3200Hz)
                         if (message.Length >= 7)
                         {
                             var vfo = message[2];
                             var param = message[3];
+                            var val = message.Substring(4, 3);
                             if (param == '0')
                             {
-                                var val = message.Substring(4, 3);
                                 var isOn = val == "001" ? "1" : "0";
                                 if (vfo == '0') _stateService.ManualNotchA = isOn;
                                 else if (vfo == '1') _stateService.ManualNotchB = isOn;
+                            }
+                            else if (param == '1' && int.TryParse(val, out int raw) && raw > 0)
+                            {
+                                var hz = raw * 10;
+                                if (vfo == '0') _stateService.ManualNotchFreqA = hz;
+                                else if (vfo == '1') _stateService.ManualNotchFreqB = hz;
                             }
                         }
                         break;

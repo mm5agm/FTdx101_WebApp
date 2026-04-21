@@ -33,6 +33,9 @@ namespace FTdx101_WebApp.Models
         // Last Radio State (persisted between sessions)
         public RadioState LastRadioState { get; set; } = new();
 
+        // Band Plan
+        public string BandPlan { get; set; } = "UK";
+
         // SDR Spectrum Display
         // SdrDeviceKey: the SoapySDR args string identifying the device (e.g. "driver=rtlsdr,serial=00000001").
         // Empty string means no SDR configured; the spectrum display is hidden.

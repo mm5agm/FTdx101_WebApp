@@ -454,6 +454,16 @@ pre, code { tab-size: 4; }
     }
 }
 
+/* Band segment dropdown — narrow, bold text */
+.segment-select {
+    width: fit-content;
+    min-width: 6rem;
+    max-width: 10rem;
+    font-weight: bold;
+    font-size: 0.8rem;
+    padding-right: 1.5rem;
+}
+
 /* Maximize usable width for receiver panels */
 .container-fluid {
     padding-left: 8px !important;

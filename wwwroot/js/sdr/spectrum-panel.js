@@ -32,6 +32,10 @@ export class SpectrumPanel {
         this._lastCentreHz = 0;
         this._lastSpanHz   = 0;
 
+        // Crosshair state — null when mouse is outside the canvas.
+        this._crosshairX  = null;
+        this._crosshairY  = null;
+
         this._resizeObserver = null;
         this._init();
     }
@@ -103,6 +107,19 @@ export class SpectrumPanel {
         // Mouse-wheel tunes VFO A up/down in 1 kHz steps.
         // { passive: false } required so preventDefault() suppresses page scroll.
         canvas.addEventListener('wheel', (e) => this._onCanvasWheel(e), { passive: false });
+
+        // Crosshair tracking.
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            this._crosshairX = (e.clientX - rect.left) * (canvas.width  / rect.width);
+            this._crosshairY = (e.clientY - rect.top)  * (canvas.height / rect.height);
+            if (this._lastBins) this._render();
+        });
+        canvas.addEventListener('mouseleave', () => {
+            this._crosshairX = null;
+            this._crosshairY = null;
+            if (this._lastBins) this._render();
+        });
 
         canvas.style.cursor = 'crosshair';
     }
@@ -180,6 +197,7 @@ export class SpectrumPanel {
         this._drawSpectrum(ctx, bins, W, specH);
         this._drawFrequencyAxis(ctx, bins, W, specH, centreHz, spanHz);
         this._scrollWaterfall(ctx, bins, W, specH, wfH);
+        this._drawCrosshair(ctx, W, specH, spanHz);
     }
 
     // ── Spectrum trace ───────────────────────────────────────────────────────
@@ -315,6 +333,59 @@ export class SpectrumPanel {
             ctx.fillStyle = isVfo ? '#44aaff' : '#8899bb';
             ctx.fillText(label, x, labelY);
         }
+    }
+
+    // ── Crosshair overlay ────────────────────────────────────────────────────
+
+    _drawCrosshair(ctx, W, specH, spanHz) {
+        if (this._crosshairX === null || this._lastSpanHz <= 0 || this._vfoHz <= 0) return;
+
+        const x = this._crosshairX;
+        const y = this._crosshairY;
+
+        // Only draw inside the spectrum area (above the axis strip).
+        const axisH = 20;
+        const specTop = specH - axisH;
+        if (y < 0 || y > specTop) return;
+
+        // Vertical line
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, specTop);
+        ctx.stroke();
+
+        // Horizontal line
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Frequency at cursor
+        const leftHz  = this._vfoHz - spanHz / 2;
+        const freqHz  = leftHz + (x / W) * spanHz;
+        const label   = (freqHz / 1e6).toFixed(6) + ' MHz';
+
+        ctx.font      = '11px monospace';
+        const pad     = 4;
+        const tw      = ctx.measureText(label).width;
+
+        // Position label to the right of cursor, flip left near the right edge.
+        const lx = (x + tw + pad * 2 + 6 < W) ? x + pad : x - tw - pad * 2;
+        const ly = Math.max(14, Math.min(y - pad, specTop - 4));
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(lx, ly - 12, tw + pad * 2, 16);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, lx + pad, ly);
+
+        ctx.restore();
     }
 
     // ── Waterfall ────────────────────────────────────────────────────────────

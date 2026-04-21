@@ -216,8 +216,39 @@ namespace FTdx101_WebApp.Services
         // Initialization commands for the transceiver
         public static readonly string[] InitializationCommands = new[]
         {
-            "ID;", "AG0;", "AG1;", "RG0;", "RG1;", "FA;", "FB;", "FR;", "FT;", "SS04;", "SS14;", "AO;", "MG;", "PL;", "PR0;", "PR1;", "MD0;", "MD1;", "VS;", "KP;", "PC;", "RL0;", "RL1;", "NR0;", "NR1;", "NB0;", "NB1;", "NL0;", "CO00;", "CO10;", "CO01;", "CO11;", "CO02;", "CO12;", "CO03;", "CO13;", "CN00;", "CN10;", "CT0;", "CT1;", "EX030203;", "EX030202;", "EX030102;", "EX030103;", "EX040105;", "EX030201;", "EX010111;", "EX010112;", "EX030405;", "EX010111;", "EX010211;", "EX010310;", "EX010413;", "EX010112;", "EX010213;", "EX010312;", "EX010414;", "EX0403021;", "SH0;", "SH1;", "IS0;", "SS06;", "IS1;", "AC;", "KP;", "FT;", "IF;", "BP00;", "BP01;", "BP10;", "BP11;", "GT0;", "GT1;", "AN0;", "AN1;", "PA0;", "PA1;", "RF0;", "RF1;", "ID;", "CS;", "ML0;", "ML1;", "BI;", "MS;", "KS;", "SS05;", "SS15;", "SS06;", "SS16;", "VT0;", "VX;", "VG;", "AV;", "CF000;", "CF100;", "CF001;", "CF101;", "BC0;", "BC1;", "KR;", "RA0;", "RA1;", "SY;", "VD;", "DT0;"
-};
+            // Frequencies and VFO
+            "FA;", "FB;", "FT;",
+            // Mode
+            "MD0;", "MD1;",
+            // Power and RF
+            "PC;", "RG0;", "RG1;",
+            // Antenna and roofing filter
+            "AN0;", "AN1;", "RF0;", "RF1;",
+            // AGC and IPO/AMP
+            "GT0;", "GT1;", "PA0;", "PA1;",
+            // Attenuator
+            "RA0;", "RA1;",
+            // AF and Mic gain
+            "AG0;", "AG1;", "MG;",
+            // Noise reduction and blanker
+            "NR0;", "NR1;", "NB0;", "NB1;", "NL0;",
+            // Notch (auto and manual)
+            "CT0;", "CT1;", "ML0;", "ML1;",
+            // DSP filter width and IF shift (future: DSP filter controls)
+            "SH0;", "SH1;", "IS0;", "IS1;",
+            // Beat cancel (future)
+            "BC0;", "BC1;",
+            // Speech processor (future)
+            "PR0;", "PR1;", "PL;",
+            // VOX (future)
+            "VX;", "VG;", "VD;",
+            // Keyer speed and CW break-in (future)
+            "KS;", "BI;",
+            // Antenna tuner (future)
+            "AC;",
+            // Init completion signal — must be last
+            "DT0;"
+        };
     }
 
     public static class IFCommandParser

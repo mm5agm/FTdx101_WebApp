@@ -276,6 +276,14 @@
                                 </select>
                             </div>
                             <div class="vfo-control-item">
+                                <label class="vfo-control-label">NB</label>
+                                <select class="form-select form-select-sm" id="nbSelectA"
+                                        onchange="window.radioControl.setNoiseBlanker('A', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">ON</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
                                 <label class="vfo-control-label">Auto Notch</label>
                                 <select class="form-select form-select-sm" id="autoNotchSelectA"
                                         onchange="window.radioControl.setAutoNotch('A', this.value)">
@@ -291,7 +299,23 @@
                                     <option value="1">ON</option>
                                 </select>
                             </div>
+                            <div class="vfo-control-item" style="grid-column: 1 / -1;">
+                                <label class="vfo-control-label">Notch Hz</label>
+                                <input type="range" id="manualNotchFreqA" min="10" max="3200" step="10" value="1000"
+                                       style="flex: 1; height: 16px;"
+                                       oninput="document.getElementById('manualNotchFreqValueA').textContent = this.value + ' Hz'; window.radioControl.setManualNotchFreq('A', this.value)">
+                                <span id="manualNotchFreqValueA" class="vfo-control-label" style="min-width: 52px; text-align: right;">1000 Hz</span>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Segment selector — left-aligned, above frequency digits -->
+                    <div class="d-flex align-items-center gap-1 mb-1" style="margin-top: 2px;">
+                        <span class="fw-bold" style="font-size: 0.8rem; white-space: nowrap;">Segment</span>
+                        <select class="form-select form-select-sm segment-select" id="segmentSelectA"
+                                onchange="window.onSegmentChange && window.onSegmentChange('A', this.value)">
+                            <option value="">--</option>
+                        </select>
                     </div>
 
                     <!-- Frequency display (below controls row) -->
@@ -426,6 +450,14 @@
                                 </select>
                             </div>
                             <div class="vfo-control-item">
+                                <label class="vfo-control-label">NB</label>
+                                <select class="form-select form-select-sm" id="nbSelectB"
+                                        onchange="window.radioControl.setNoiseBlanker('B', this.value)">
+                                    <option value="0" selected>OFF</option>
+                                    <option value="1">ON</option>
+                                </select>
+                            </div>
+                            <div class="vfo-control-item">
                                 <label class="vfo-control-label">Auto Notch</label>
                                 <select class="form-select form-select-sm" id="autoNotchSelectB"
                                         onchange="window.radioControl.setAutoNotch('B', this.value)">
@@ -441,7 +473,23 @@
                                     <option value="1">ON</option>
                                 </select>
                             </div>
+                            <div class="vfo-control-item" style="grid-column: 1 / -1;">
+                                <label class="vfo-control-label">Notch Hz</label>
+                                <input type="range" id="manualNotchFreqB" min="10" max="3200" step="10" value="1000"
+                                       style="flex: 1; height: 16px;"
+                                       oninput="document.getElementById('manualNotchFreqValueB').textContent = this.value + ' Hz'; window.radioControl.setManualNotchFreq('B', this.value)">
+                                <span id="manualNotchFreqValueB" class="vfo-control-label" style="min-width: 52px; text-align: right;">1000 Hz</span>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Segment selector — left-aligned, above frequency digits -->
+                    <div class="d-flex align-items-center gap-1 mb-1" style="margin-top: 2px;">
+                        <span class="fw-bold" style="font-size: 0.8rem; white-space: nowrap;">Segment</span>
+                        <select class="form-select form-select-sm segment-select" id="segmentSelectB"
+                                onchange="window.onSegmentChange && window.onSegmentChange('B', this.value)">
+                            <option value="">--</option>
+                        </select>
                     </div>
 
                     <!-- Frequency display (below controls row) -->
@@ -482,11 +530,15 @@
                     </div>
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
+    <script>window.bandPlan = '@Model.BandPlan';</script>
     <script type="module">
         import { MeterPanel }           from "/js/guages/meter-panel.js";
         import { FTdx101Meters }        from "/js/orchestrators/FTdx101Meters.js";
         import { SdrSpectrumPipeline }  from "/js/sdr/sdr-spectrum-pipeline.js";
         import { SpectrumPanel }        from "/js/sdr/spectrum-panel.js";
+        import { BAND_PLANS, getSegments } from "/js/ui/band-plan.js";
+        window.bandPlanData = BAND_PLANS;
+        window.getBandSegments = getSegments;
         document.addEventListener('DOMContentLoaded', function () {
             window.meterPanel = new MeterPanel({
                 smeterA:     { type: 'smeter', canvasId: 'sMeterCanvasA' },
