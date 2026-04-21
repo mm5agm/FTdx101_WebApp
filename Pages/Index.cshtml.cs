@@ -50,6 +50,7 @@ namespace FTdx101_WebApp.Pages
         public int MicGain { get; set; } = 50;
 
         public double SdrSampleRateHz { get; set; } = 2_048_000;
+        public string BandPlan { get; set; } = "UK";
 
         public RadioStateService RadioState => _radioStateService;
 
@@ -71,6 +72,7 @@ namespace FTdx101_WebApp.Pages
             App2Name = settings.App2Name;
             App3Name = settings.App3Name;
             SdrSampleRateHz = settings.SdrSampleRateHz;
+            BandPlan = settings.BandPlan;
 
             // Load persisted MIC Gain
             MicGain = _radioStateService.MicGain;

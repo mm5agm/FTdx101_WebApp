@@ -169,6 +169,17 @@
                             </div>
                             <span asp-validation-for="Settings.BaudRate" class="text-danger"></span>
                         </div>
+                        <div class="mb-3">
+                            <label asp-for="Settings.BandPlan" class="form-label">Band Plan</label>
+                            <select asp-for="Settings.BandPlan" class="form-select">
+                                <option value="UK">UK (includes 4m, 60m channels per Ofcom/IARU R1)</option>
+                                <option value="USA">USA (FCC Part 97, 5 × 60m channels)</option>
+                            </select>
+                            <div class="form-text">
+                                Determines the segment frequencies shown in the VFO band dropdowns (CW, FT8, SSB, RTTY).
+                            </div>
+                            <span asp-validation-for="Settings.BandPlan" class="text-danger"></span>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <h5 class="mb-3">Web Server</h5>

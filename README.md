@@ -66,30 +66,26 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
-## 2026-04-17 - v0.9.0-rc1
+## 2026-04-21 - v1.0.0
+
+### Added
+
+- **Band segment dropdown** — each VFO now has a Segment selector (CW / FT8 / SSB / RTTY)
+  that tunes directly to the standard frequency for that segment on the current band.
+  UK and USA band plans are selectable in Settings. 60m shows named channels.
+  Last-used segment per band is remembered across sessions.
+- **Noise Blanker (NB)** — ON/OFF control added to both VFO panels alongside NR.
+- **Manual Notch frequency slider** — continuously adjustable 10–3200 Hz slider
+  added below the Manual Notch on/off control for both VFOs.
+- **Spectrum crosshair** — hover over the spectrum to see the exact RF frequency
+  at the cursor position.
 
 ### Changed
 
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
+- CAT initialisation sequence trimmed from ~100 commands to 43, reducing startup time.
+- Band plan (UK/USA) setting added to the Settings page.
 
-
-## 2026-04-17 - v0.9.0-rc1
-
-### Changed
-
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
-
-
-## 2026-04-17 - v0.9.0-rc1
-
-### Changed
-
-- Minor fixes and improvements
-
+---
 
 ## 2026-04-17 - v0.9.0 RC1
 

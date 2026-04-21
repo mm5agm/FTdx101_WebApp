@@ -834,7 +834,9 @@ namespace FTdx101_WebApp.Controllers
         public class AutoNotchRequest   { public string Code { get; set; } = string.Empty; }
         public class NrRequest          { public string Code { get; set; } = string.Empty; }
         public class AttenuatorRequest  { public string Code { get; set; } = string.Empty; }
-        public class ManualNotchRequest { public string Enabled { get; set; } = "0"; }
+        public class ManualNotchRequest    { public string Enabled { get; set; } = "0"; }
+        public class NoiseBlankerRequest       { public string Enabled { get; set; } = "0"; }
+        public class ManualNotchFreqRequest    { public int FrequencyHz { get; set; } = 1000; }
 
         [HttpPost("agc/{receiver}")]
         public async Task<IActionResult> SetAgc(string receiver, [FromBody] AgcRequest request)
@@ -1010,6 +1012,63 @@ namespace FTdx101_WebApp.Controllers
             {
                 _logger.LogError(ex, "Error setting Manual Notch");
                 return StatusCode(500, new { error = "Failed to set Manual Notch" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("manualnotchfreq/{receiver}")]
+        public async Task<IActionResult> SetManualNotchFreq(string receiver, [FromBody] ManualNotchFreqRequest request)
+        {
+            if (request.FrequencyHz < 10 || request.FrequencyHz > 3200)
+                return BadRequest(new { error = $"Notch frequency must be 10–3200 Hz" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                var catValue = request.FrequencyHz / 10;
+                await _catClient.SendCommandAsync($"BP{vfo}1{catValue:D3};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.ManualNotchFreqA = request.FrequencyHz;
+                else            _radioStateService.ManualNotchFreqB = request.FrequencyHz;
+
+                return Ok(new { message = $"Manual Notch freq {receiver} set to {request.FrequencyHz} Hz" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Manual Notch frequency");
+                return StatusCode(500, new { error = "Failed to set Manual Notch frequency" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("noiseblanker/{receiver}")]
+        public async Task<IActionResult> SetNoiseBlanker(string receiver, [FromBody] NoiseBlankerRequest request)
+        {
+            if (request.Enabled != "0" && request.Enabled != "1")
+                return BadRequest(new { error = $"Invalid Noise Blanker value: {request.Enabled}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+
+            try
+            {
+                await EnsureConnectedAsync();
+                var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+                await _catClient.SendCommandAsync($"NB{vfo}{request.Enabled};", "WebUI", CancellationToken.None);
+
+                if (vfo == "0") _radioStateService.NbA = request.Enabled;
+                else            _radioStateService.NbB = request.Enabled;
+
+                return Ok(new { message = $"Noise Blanker {receiver} set to {request.Enabled}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting Noise Blanker");
+                return StatusCode(500, new { error = "Failed to set Noise Blanker" });
             }
             finally { _requestSemaphore.Release(); }
         }
