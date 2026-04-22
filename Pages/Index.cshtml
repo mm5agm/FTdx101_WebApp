@@ -318,37 +318,56 @@
                         </select>
                     </div>
 
-                    <!-- Frequency display (below controls row) -->
-                    <div class="d-flex align-items-center mb-1" style="margin-top: -2px;">
+                    <!-- Frequency + Roofing + AF Gain on one row -->
+                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1" style="margin-top: -2px;">
                         <span id="freqA" class="fw-bold frequency-display digit-display"></span>
-                        <span class="frequency-display digit-display ms-1">MHz</span>
-                        <div id="freqA-controls" class="ms-2" style="display:none;">
+                        <span class="frequency-display digit-display">MHz</span>
+                        <div id="freqA-controls" style="display:none;">
                             <button id="freqA-up" class="btn btn-secondary btn-sm">▲</button>
                             <button id="freqA-down" class="btn btn-secondary btn-sm">▼</button>
                         </div>
+                        <label class="mb-0 text-nowrap ms-1 fw-bold">Roofing:</label>
+                        <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectA"
+                                style="width: auto;"
+                                onchange="window.radioControl.setRoofingFilter('A', this.value)">
+                            <option value="6">12 kHz</option>
+                            <option value="7">3 kHz</option>
+                            <option value="8">1.2 kHz</option>
+                            <option value="9">600 Hz</option>
+                            <option value="A">300 Hz</option>
+                        </select>
+                        <label class="mb-0 text-nowrap ms-1 fw-bold">AF Gain: <span id="afGainValueA" class="fw-bold">0</span></label>
+                        <input type="range" class="form-range afgain-slider flex-shrink-0"
+                               id="afGainSliderA"
+                               min="0" max="255" step="1" value="0"
+                               style="width: 120px; height: 18px;"
+                               oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
                     </div>
 
-                    <!-- Other controls below -->
-                    <div>
-                        <!-- Roofing Filter A and AF Gain A on one row -->
-                        <div class="d-flex align-items-center gap-2 mt-1 mb-0" style="flex-wrap: nowrap;">
-                            <label class="mb-0 text-nowrap">Roofing:</label>
-                            <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectA"
-                                    style="width: auto;"
-                                    onchange="window.radioControl.setRoofingFilter('A', this.value)">
-                                <option value="6">12 kHz</option>
-                                <option value="7">3 kHz</option>
-                                <option value="8">1.2 kHz</option>
-                                <option value="9">600 Hz</option>
-                                <option value="A">300 Hz</option>
-                            </select>
-                            <label class="mb-0 text-nowrap ms-2">AF Gain: <span id="afGainValueA" class="fw-bold">0</span></label>
-                            <input type="range" class="form-range afgain-slider flex-shrink-0"
-                                   id="afGainSliderA"
-                                   min="0" max="255" step="1" value="0"
-                                   style="width: 150px; height: 18px;"
-                                   oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
-                        </div>
+                    <!-- IF Width and IF Shift -->
+                    <div class="d-flex align-items-center gap-2 mb-0" style="flex-wrap: nowrap;">
+                        <label class="mb-0 text-nowrap fw-bold">I.F. Width:</label>
+                        <select class="form-select form-select-sm fw-bold flex-shrink-0" id="ifWidthSelectA"
+                                style="width: auto;"
+                                onchange="window.radioControl.setIfWidth('A', this.value)">
+                            <option value="0" selected="@(Model.RadioState.IfWidthA=="0" ? "selected" : null)">200 Hz</option>
+                            <option value="1" selected="@(Model.RadioState.IfWidthA=="1" ? "selected" : null)">400 Hz</option>
+                            <option value="2" selected="@(Model.RadioState.IfWidthA=="2" ? "selected" : null)">600 Hz</option>
+                            <option value="3" selected="@(Model.RadioState.IfWidthA=="3" ? "selected" : null)">850 Hz</option>
+                            <option value="4" selected="@(Model.RadioState.IfWidthA=="4" ? "selected" : null)">1.2 kHz</option>
+                            <option value="5" selected="@(Model.RadioState.IfWidthA=="5" ? "selected" : null)">1.4 kHz</option>
+                            <option value="6" selected="@(Model.RadioState.IfWidthA=="6" ? "selected" : null)">1.8 kHz</option>
+                            <option value="7" selected="@(Model.RadioState.IfWidthA=="7" ? "selected" : null)">2.4 kHz</option>
+                            <option value="8" selected="@(Model.RadioState.IfWidthA=="8"||string.IsNullOrEmpty(Model.RadioState.IfWidthA) ? "selected" : null)">3.0 kHz</option>
+                        </select>
+                        <label class="mb-0 text-nowrap ms-1 fw-bold">I.F. Shift: <span id="ifShiftValueA" class="fw-bold">@Model.RadioState.IfShiftA</span></label>
+                        <input type="range" class="form-range flex-shrink-0"
+                               id="ifShiftSliderA"
+                               min="-1000" max="1000" step="20" value="@Model.RadioState.IfShiftA"
+                               style="width: 120px; height: 18px;"
+                               oninput="document.getElementById('ifShiftValueA').textContent = this.value">
+                        <button type="button" class="btn btn-secondary btn-sm flex-shrink-0"
+                                onclick="resetIfShift('A')" title="Zero IF Shift">Zero</button>
                     </div>
                             </div>
                         </div>
@@ -492,37 +511,56 @@
                         </select>
                     </div>
 
-                    <!-- Frequency display (below controls row) -->
-                    <div class="d-flex align-items-center mb-1" style="margin-top: -2px;">
+                    <!-- Frequency + Roofing + AF Gain on one row -->
+                    <div class="d-flex align-items-center flex-wrap gap-2 mb-1" style="margin-top: -2px;">
                         <span id="freqB" class="fw-bold frequency-display digit-display"></span>
-                        <span class="frequency-display digit-display ms-1">MHz</span>
-                        <div id="freqB-controls" class="ms-2" style="display:none;">
+                        <span class="frequency-display digit-display">MHz</span>
+                        <div id="freqB-controls" style="display:none;">
                             <button id="freqB-up" class="btn btn-secondary btn-sm">▲</button>
                             <button id="freqB-down" class="btn btn-secondary btn-sm">▼</button>
                         </div>
+                        <label class="mb-0 text-nowrap ms-1 fw-bold">Roofing:</label>
+                        <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectB"
+                                style="width: auto;"
+                                onchange="window.radioControl.setRoofingFilter('B', this.value)">
+                            <option value="6">12 kHz</option>
+                            <option value="7">3 kHz</option>
+                            <option value="8">1.2 kHz</option>
+                            <option value="9">600 Hz</option>
+                            <option value="A">300 Hz</option>
+                        </select>
+                        <label class="mb-0 text-nowrap ms-1 fw-bold">AF Gain: <span id="afGainValueB" class="fw-bold">0</span></label>
+                        <input type="range" class="form-range afgain-slider flex-shrink-0"
+                               id="afGainSliderB"
+                               min="0" max="255" step="1" value="0"
+                               style="width: 120px; height: 18px;"
+                               oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
                     </div>
 
-                    <!-- Other controls below -->
-                    <div>
-                        <!-- Roofing Filter B and AF Gain B on one row -->
-                        <div class="d-flex align-items-center gap-2 mt-1 mb-0" style="flex-wrap: nowrap;">
-                            <label class="mb-0 text-nowrap">Roofing:</label>
-                            <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectB"
-                                    style="width: auto;"
-                                    onchange="window.radioControl.setRoofingFilter('B', this.value)">
-                                <option value="6">12 kHz</option>
-                                <option value="7">3 kHz</option>
-                                <option value="8">1.2 kHz</option>
-                                <option value="9">600 Hz</option>
-                                <option value="A">300 Hz</option>
-                            </select>
-                            <label class="mb-0 text-nowrap ms-2">AF Gain: <span id="afGainValueB" class="fw-bold">0</span></label>
-                            <input type="range" class="form-range afgain-slider flex-shrink-0"
-                                   id="afGainSliderB"
-                                   min="0" max="255" step="1" value="0"
-                                   style="width: 150px; height: 18px;"
-                                   oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
-                        </div>
+                    <!-- IF Width and IF Shift -->
+                    <div class="d-flex align-items-center gap-2 mb-0" style="flex-wrap: nowrap;">
+                        <label class="mb-0 text-nowrap fw-bold">I.F. Width:</label>
+                        <select class="form-select form-select-sm fw-bold flex-shrink-0" id="ifWidthSelectB"
+                                style="width: auto;"
+                                onchange="window.radioControl.setIfWidth('B', this.value)">
+                            <option value="0" selected="@(Model.RadioState.IfWidthB=="0" ? "selected" : null)">200 Hz</option>
+                            <option value="1" selected="@(Model.RadioState.IfWidthB=="1" ? "selected" : null)">400 Hz</option>
+                            <option value="2" selected="@(Model.RadioState.IfWidthB=="2" ? "selected" : null)">600 Hz</option>
+                            <option value="3" selected="@(Model.RadioState.IfWidthB=="3" ? "selected" : null)">850 Hz</option>
+                            <option value="4" selected="@(Model.RadioState.IfWidthB=="4" ? "selected" : null)">1.2 kHz</option>
+                            <option value="5" selected="@(Model.RadioState.IfWidthB=="5" ? "selected" : null)">1.4 kHz</option>
+                            <option value="6" selected="@(Model.RadioState.IfWidthB=="6" ? "selected" : null)">1.8 kHz</option>
+                            <option value="7" selected="@(Model.RadioState.IfWidthB=="7" ? "selected" : null)">2.4 kHz</option>
+                            <option value="8" selected="@(Model.RadioState.IfWidthB=="8"||string.IsNullOrEmpty(Model.RadioState.IfWidthB) ? "selected" : null)">3.0 kHz</option>
+                        </select>
+                        <label class="mb-0 text-nowrap ms-1 fw-bold">I.F. Shift: <span id="ifShiftValueB" class="fw-bold">@Model.RadioState.IfShiftB</span></label>
+                        <input type="range" class="form-range flex-shrink-0"
+                               id="ifShiftSliderB"
+                               min="-1000" max="1000" step="20" value="@Model.RadioState.IfShiftB"
+                               style="width: 120px; height: 18px;"
+                               oninput="document.getElementById('ifShiftValueB').textContent = this.value">
+                        <button type="button" class="btn btn-secondary btn-sm flex-shrink-0"
+                                onclick="resetIfShift('B')" title="Zero IF Shift">Zero</button>
                     </div>
                                 </div>
                             </div>

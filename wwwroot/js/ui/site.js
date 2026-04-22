@@ -876,6 +876,30 @@ connection.on("RadioStateUpdate", function (update) {
         if (el) el.value = update.value;
     }
 
+    // --- IF WIDTH ---
+    if (update.property === "IfWidthA") {
+        const el = document.getElementById('ifWidthSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "IfWidthB") {
+        const el = document.getElementById('ifWidthSelectB');
+        if (el) el.value = update.value;
+    }
+
+    // --- IF SHIFT ---
+    if (update.property === "IfShiftA" && !ifShiftDragging.A) {
+        const slider = document.getElementById('ifShiftSliderA');
+        const label = document.getElementById('ifShiftValueA');
+        if (slider) slider.value = update.value;
+        if (label) label.textContent = update.value;
+    }
+    if (update.property === "IfShiftB" && !ifShiftDragging.B) {
+        const slider = document.getElementById('ifShiftSliderB');
+        const label = document.getElementById('ifShiftValueB');
+        if (slider) slider.value = update.value;
+        if (label) label.textContent = update.value;
+    }
+
     // --- MANUAL NOTCH ---
     if (update.property === "ManualNotchA") {
         const el = document.getElementById('manualNotchSelectA');
@@ -1010,6 +1034,14 @@ window.radioControl = {
     setManualNotchFreq: async function (receiver, frequencyHz) {
         await fetch(`/api/cat/manualnotchfreq/${receiver.toLowerCase()}`,
             { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ frequencyHz }) });
+    },
+    setIfWidth: async function (receiver, code) {
+        await fetch(`/api/cat/ifwidth/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    },
+    setIfShift: async function (receiver, shiftHz) {
+        await fetch(`/api/cat/ifshift/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shiftHz: parseInt(shiftHz) }) });
     }
 };
 
@@ -1190,6 +1222,40 @@ function setupAfGainSlider(receiver) {
 document.addEventListener('DOMContentLoaded', function() {
     setupAfGainSlider('A');
     setupAfGainSlider('B');
+});
+
+// IF Shift slider: send only on release, block SignalR updates while dragging
+const ifShiftDragging = { A: false, B: false };
+
+function setupIfShiftSlider(receiver) {
+    const slider = document.getElementById(`ifShiftSlider${receiver}`);
+    if (!slider) return;
+    const sendShift = () => {
+        if (window.radioControl) window.radioControl.setIfShift(receiver, parseInt(slider.value));
+    };
+    slider.addEventListener('mousedown',  () => { ifShiftDragging[receiver] = true; });
+    slider.addEventListener('touchstart', () => { ifShiftDragging[receiver] = true; }, { passive: true });
+    // Document-level mouseup catches releases anywhere, not just over the slider element
+    document.addEventListener('mouseup', () => {
+        if (ifShiftDragging[receiver]) { ifShiftDragging[receiver] = false; sendShift(); }
+    });
+    slider.addEventListener('touchend',   () => { ifShiftDragging[receiver] = false; sendShift(); });
+    // Keyboard arrow keys fire 'change' after the value settles
+    slider.addEventListener('change', sendShift);
+}
+
+function resetIfShift(receiver) {
+    const slider = document.getElementById(`ifShiftSlider${receiver}`);
+    const label  = document.getElementById(`ifShiftValue${receiver}`);
+    if (slider) slider.value = 0;
+    if (label)  label.textContent = '0';
+    if (window.radioControl) window.radioControl.setIfShift(receiver, 0);
+}
+window.resetIfShift = resetIfShift;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupIfShiftSlider('A');
+    setupIfShiftSlider('B');
 });
 
 
@@ -1525,6 +1591,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ frequencyHz: parseInt(frequencyHz) })
             });
         } catch (e) { console.error('setManualNotchFreq error:', e); }
+    }
+
+    async function setIfWidth(receiver, code) {
+        try {
+            await fetch(`/api/cat/ifwidth/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) { console.error('setIfWidth error:', e); }
+    }
+
+    async function setIfShift(receiver, shiftHz) {
+        try {
+            await fetch(`/api/cat/ifshift/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shiftHz: parseInt(shiftHz) })
+            });
+        } catch (e) { console.error('setIfShift error:', e); }
     }
 
     async function setRoofingFilter(receiver, filter) {
@@ -1918,6 +2004,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setManualNotch,
         setNoiseBlanker,
         setManualNotchFreq,
+        setIfWidth,
+        setIfShift,
         _state: state,  // Expose state for TX indicator updates
         updatePowerDisplay: updatePowerDisplay,
         setPower: setPower
