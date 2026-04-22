@@ -68,41 +68,21 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## 2026-04-22 - v1.1.0
 
-### Changed
+### Fixed
 
-- Before slider changes
-- All works, before slider outlines emphasised
-- Update main page screenshot
+- **AF Gain slider** — no longer jumps back to its previous position after release. The slider now sends the CAT command directly to the radio instead of only updating internal state.
 
+### Added
 
-## 2026-04-21 - v1.0.0
-
-### Changed
-
-- Release notes: v1.0.0
-- Release v1.0.0: band segments, NB, manual notch slider, spectrum crosshair
-- Update README: SoapySDR bundled, no separate install needed
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
-
-
-## 2026-04-21 - v1.0.0
+- **IF Shift zero-reset button** — a Zero button next to each VFO's IF Shift slider resets it to centre instantly.
 
 ### Changed
 
-- Release v1.0.0: band segments, NB, manual notch slider, spectrum crosshair
-- Update README: SoapySDR bundled, no separate install needed
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
-- Release notes: v0.9.0-rc1
-- Pre-release: pending changes for v0.9.0-rc1
+- **IF Width and IF Shift** values are now persisted across restarts and restored to the radio on startup.
+- **Slider appearance** — Power, MIC Gain, and AF Gain sliders now use the native browser appearance for a cleaner, more consistent look.
+- **Auto Notch / Man Notch dropdowns** widened so the full option text is visible without the dropdown arrow overlapping it.
 
+---
 
 ## 2026-04-21 - v1.0.0
 
