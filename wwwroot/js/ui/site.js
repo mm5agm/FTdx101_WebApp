@@ -876,6 +876,30 @@ connection.on("RadioStateUpdate", function (update) {
         if (el) el.value = update.value;
     }
 
+    // --- IF WIDTH ---
+    if (update.property === "IfWidthA") {
+        const el = document.getElementById('ifWidthSelectA');
+        if (el) el.value = update.value;
+    }
+    if (update.property === "IfWidthB") {
+        const el = document.getElementById('ifWidthSelectB');
+        if (el) el.value = update.value;
+    }
+
+    // --- IF SHIFT ---
+    if (update.property === "IfShiftA" && !ifShiftDragging.A) {
+        const slider = document.getElementById('ifShiftSliderA');
+        const label = document.getElementById('ifShiftValueA');
+        if (slider) slider.value = update.value;
+        if (label) label.textContent = update.value;
+    }
+    if (update.property === "IfShiftB" && !ifShiftDragging.B) {
+        const slider = document.getElementById('ifShiftSliderB');
+        const label = document.getElementById('ifShiftValueB');
+        if (slider) slider.value = update.value;
+        if (label) label.textContent = update.value;
+    }
+
     // --- MANUAL NOTCH ---
     if (update.property === "ManualNotchA") {
         const el = document.getElementById('manualNotchSelectA');
@@ -890,19 +914,10 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "AfGainA" || update.property === "AfGainB") {
         const receiver = update.property === "AfGainA" ? 'A' : 'B';
         const slider = document.getElementById(`afGainSlider${receiver}`);
-        if (slider) {
-            afGainLastConfirmed[receiver] = update.value;
-            if (
-                afGainPendingValue[receiver] !== null &&
-                Math.abs(Number(update.value) - Number(afGainPendingValue[receiver])) <= 2
-            ) {
-                slider.value = update.value;
-                slider.classList.remove('pending');
-                afGainPendingValue[receiver] = null;
-                if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
-            } else if (afGainPendingValue[receiver] === null && !afGainDragging[receiver]) {
-                slider.value = update.value;
-            }
+        const label  = document.getElementById(`afGainValue${receiver}`);
+        if (slider && !afGainDragging[receiver]) {
+            slider.value = update.value;
+            if (label) label.innerText = update.value;
         }
     }
 });
@@ -1010,6 +1025,14 @@ window.radioControl = {
     setManualNotchFreq: async function (receiver, frequencyHz) {
         await fetch(`/api/cat/manualnotchfreq/${receiver.toLowerCase()}`,
             { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ frequencyHz }) });
+    },
+    setIfWidth: async function (receiver, code) {
+        await fetch(`/api/cat/ifwidth/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    },
+    setIfShift: async function (receiver, shiftHz) {
+        await fetch(`/api/cat/ifshift/${receiver.toLowerCase()}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shiftHz: parseInt(shiftHz) }) });
     }
 };
 
@@ -1120,76 +1143,63 @@ function changeSelectedDigit(receiver, delta) {
 // --- AF Gain slider change handler with smooth UX ---
 // Track user interaction state
 const afGainDragging = { A: false, B: false };
-const afGainPendingValue = { A: null, B: null };
-const afGainPendingTimer = { A: null, B: null };
-const afGainLastConfirmed = { A: null, B: null };
 
-function sendAfGain(receiver, value) {
-    const slider = document.getElementById(`afGainSlider${receiver}`);
-    if (!slider) return;
-    // Optimistic UI: move instantly, show pending
-    slider.value = value;
-    slider.classList.add('pending');
-    afGainPendingValue[receiver] = value;
-    // Start/clear timeout for backend confirmation
-    if (afGainPendingTimer[receiver]) {
-        clearTimeout(afGainPendingTimer[receiver]);
-    }
-    afGainPendingTimer[receiver] = setTimeout(() => {
-        // Timeout: revert to last confirmed value and show error
-        if (afGainPendingValue[receiver] !== null) {
-            slider.value = afGainLastConfirmed[receiver] !== null ? afGainLastConfirmed[receiver] : slider.value;
-            slider.classList.remove('pending');
-            afGainPendingValue[receiver] = null;
-            alert('AF Gain not confirmed by radio. Reverted.');
-        }
-    }, 3500); // 3.5 seconds
-    fetch(`/api/cat/afgain/${receiver.toLowerCase()}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(value)
-    }).then(r => {
-        if (!r.ok) {
-            // ...removed debug logging...
-            slider.classList.remove('pending');
-            afGainPendingValue[receiver] = null;
-            if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
-        }
-        // On success, wait for backend confirmation via SignalR
-    }).catch(e => {
-        // ...removed debug logging...
-        slider.classList.remove('pending');
-        afGainPendingValue[receiver] = null;
-        if (afGainPendingTimer[receiver]) clearTimeout(afGainPendingTimer[receiver]);
-    });
-}
-
-// Attach event listeners to track dragging
 function setupAfGainSlider(receiver) {
     const slider = document.getElementById(`afGainSlider${receiver}`);
     if (!slider) return;
+    const send = () => {
+        fetch(`/api/cat/afgain/${receiver.toLowerCase()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parseInt(slider.value))
+        });
+    };
     slider.addEventListener('mousedown', () => { afGainDragging[receiver] = true; });
-    slider.addEventListener('touchstart', () => { afGainDragging[receiver] = true; });
-    // Only send value on release
-    slider.addEventListener('mouseup', () => {
-        afGainDragging[receiver] = false;
-        sendAfGain(receiver, slider.value);
+    slider.addEventListener('touchstart', () => { afGainDragging[receiver] = true; }, { passive: true });
+    document.addEventListener('mouseup', () => {
+        if (afGainDragging[receiver]) { afGainDragging[receiver] = false; send(); }
     });
-    slider.addEventListener('touchend', () => {
-        afGainDragging[receiver] = false;
-        sendAfGain(receiver, slider.value);
-    });
-    slider.addEventListener('mouseleave', () => { afGainDragging[receiver] = false; });
-    // Prevent sending on every input/change
-    slider.addEventListener('input', () => {
-        // Do nothing here; only send on release
-    });
+    slider.addEventListener('touchend', () => { afGainDragging[receiver] = false; send(); });
+    slider.addEventListener('change', send);
 }
 
-// Call setupAfGainSlider for both receivers on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
     setupAfGainSlider('A');
     setupAfGainSlider('B');
+});
+
+// IF Shift slider: send only on release, block SignalR updates while dragging
+const ifShiftDragging = { A: false, B: false };
+
+function setupIfShiftSlider(receiver) {
+    const slider = document.getElementById(`ifShiftSlider${receiver}`);
+    if (!slider) return;
+    const sendShift = () => {
+        if (window.radioControl) window.radioControl.setIfShift(receiver, parseInt(slider.value));
+    };
+    slider.addEventListener('mousedown',  () => { ifShiftDragging[receiver] = true; });
+    slider.addEventListener('touchstart', () => { ifShiftDragging[receiver] = true; }, { passive: true });
+    // Document-level mouseup catches releases anywhere, not just over the slider element
+    document.addEventListener('mouseup', () => {
+        if (ifShiftDragging[receiver]) { ifShiftDragging[receiver] = false; sendShift(); }
+    });
+    slider.addEventListener('touchend',   () => { ifShiftDragging[receiver] = false; sendShift(); });
+    // Keyboard arrow keys fire 'change' after the value settles
+    slider.addEventListener('change', sendShift);
+}
+
+function resetIfShift(receiver) {
+    const slider = document.getElementById(`ifShiftSlider${receiver}`);
+    const label  = document.getElementById(`ifShiftValue${receiver}`);
+    if (slider) slider.value = 0;
+    if (label)  label.textContent = '0';
+    if (window.radioControl) window.radioControl.setIfShift(receiver, 0);
+}
+window.resetIfShift = resetIfShift;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupIfShiftSlider('A');
+    setupIfShiftSlider('B');
 });
 
 
@@ -1527,6 +1537,26 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) { console.error('setManualNotchFreq error:', e); }
     }
 
+    async function setIfWidth(receiver, code) {
+        try {
+            await fetch(`/api/cat/ifwidth/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+        } catch (e) { console.error('setIfWidth error:', e); }
+    }
+
+    async function setIfShift(receiver, shiftHz) {
+        try {
+            await fetch(`/api/cat/ifshift/${receiver.toLowerCase()}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shiftHz: parseInt(shiftHz) })
+            });
+        } catch (e) { console.error('setIfShift error:', e); }
+    }
+
     async function setRoofingFilter(receiver, filter) {
         const didPause = pausePolling();
 
@@ -1689,33 +1719,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update MIC Gain / Data Out Gain label based on current mode (VFO A is main)
             updateMicGainLabel(data.vfoA.mode);
 
-            // --- Robust AF Gain slider enable/attach ---
-            const sliderA = document.getElementById('afGainSliderA');
-            const labelA = document.getElementById('afGainValueA');
-            const sliderB = document.getElementById('afGainSliderB');
-            const labelB = document.getElementById('afGainValueB');
-            // Use backend value or fallback to 0 (handle null, undefined, NaN, or missing)
-            let afGainA = 0;
-            let afGainB = 0;
-            if (data.vfoA && typeof data.vfoA.afGain === 'number' && !isNaN(data.vfoA.afGain)) {
-                afGainA = data.vfoA.afGain;
-            }
-            if (data.vfoB && typeof data.vfoB.afGain === 'number' && !isNaN(data.vfoB.afGain)) {
-                afGainB = data.vfoB.afGain;
-            }
-            if (sliderA && labelA) {
-                sliderA.value = afGainA;
-                labelA.innerText = afGainA;
-                updateAfGainFill('afGainSliderA');
-                sliderA.disabled = false;
-            }
-            if (sliderB && labelB) {
-                sliderB.value = afGainB;
-                labelB.innerText = afGainB;
-                updateAfGainFill('afGainSliderB');
-                sliderB.disabled = false;
-            }
-            attachAfGainSliderListeners();
 
         } catch (error) {
         }
@@ -1817,44 +1820,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Attach AF Gain slider event listeners only once, when data is available
-    function attachAfGainSliderListeners() {
-        const sliderA = document.getElementById('afGainSliderA');
-        const sliderB = document.getElementById('afGainSliderB');
-        const labelA = document.getElementById('afGainValueA');
-        const labelB = document.getElementById('afGainValueB');
-        // Debounce logic for AF Gain sliders
-        function debounce(fn, delay) {
-            let timer = null;
-            return function(...args) {
-                clearTimeout(timer);
-                timer = setTimeout(() => fn.apply(this, args), delay);
-            };
-        }
-        if (sliderA && !sliderA._afGainListenerAttached && labelA) {
-            const debouncedSendA = debounce(function () {
-                sendAfGain('A', parseInt(sliderA.value));
-            }, 100);
-            sliderA.addEventListener('input', function () {
-                labelA.innerText = sliderA.value;
-                updateAfGainFill('afGainSliderA');
-                debouncedSendA();
-            });
-            sliderA._afGainListenerAttached = true;
-        }
-        if (sliderB && !sliderB._afGainListenerAttached && labelB) {
-            const debouncedSendB = debounce(function () {
-                sendAfGain('B', parseInt(sliderB.value));
-            }, 100);
-            sliderB.addEventListener('input', function () {
-                labelB.innerText = sliderB.value;
-                updateAfGainFill('afGainSliderB');
-                debouncedSendB();
-            });
-            sliderB._afGainListenerAttached = true;
-        }
-    }
-
     // Kick everything off
     initializeDigitInteraction('A');
     initializeDigitInteraction('B');
@@ -1918,6 +1883,8 @@ document.addEventListener('DOMContentLoaded', function() {
         setManualNotch,
         setNoiseBlanker,
         setManualNotchFreq,
+        setIfWidth,
+        setIfShift,
         _state: state,  // Expose state for TX indicator updates
         updatePowerDisplay: updatePowerDisplay,
         setPower: setPower

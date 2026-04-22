@@ -45,6 +45,10 @@ namespace FTdx101_WebApp.Services
             RoofingFilterB = _initialState.RoofingFilterB ?? "";
             Power = _initialState.Power;
             MicGain = _initialState.MicGain;
+            IfWidthA = _initialState.IfWidthA ?? "8";
+            IfWidthB = _initialState.IfWidthB ?? "8";
+            IfShiftA = _initialState.IfShiftA;
+            IfShiftB = _initialState.IfShiftB;
         }
 
         public RadioState InitialState => _initialState;
@@ -233,6 +237,19 @@ namespace FTdx101_WebApp.Services
         public string NbA { get => _nbA; set => SetField(ref _nbA, value); }
         private string _nbB = "0";
         public string NbB { get => _nbB; set => SetField(ref _nbB, value); }
+
+        // SH command IF Width: "0"=200Hz "1"=400Hz "2"=600Hz "3"=850Hz "4"=1200Hz
+        //                      "5"=1400Hz "6"=1800Hz "7"=2400Hz "8"=3000Hz
+        private string _ifWidthA = "8";
+        public string IfWidthA { get => _ifWidthA; set => SetField(ref _ifWidthA, value); }
+        private string _ifWidthB = "8";
+        public string IfWidthB { get => _ifWidthB; set => SetField(ref _ifWidthB, value); }
+
+        // IS command IF Shift: stored in Hz, -1000 to +1000. CAT encodes as 0000-9999 (center=5000=0Hz).
+        private int _ifShiftA = 0;
+        public int IfShiftA { get => _ifShiftA; set => SetField(ref _ifShiftA, value); }
+        private int _ifShiftB = 0;
+        public int IfShiftB { get => _ifShiftB; set => SetField(ref _ifShiftB, value); }
 
         private string _bandA = "20m";
         public string BandA { get => _bandA; set => SetField(ref _bandA, value); }
@@ -474,6 +491,10 @@ namespace FTdx101_WebApp.Services
             AutoNotchB = state.AutoNotchB ?? "0";
             ManualNotchA = state.ManualNotchA ?? "0";
             ManualNotchB = state.ManualNotchB ?? "0";
+            IfWidthA = state.IfWidthA ?? "8";
+            IfWidthB = state.IfWidthB ?? "8";
+            IfShiftA = state.IfShiftA;
+            IfShiftB = state.IfShiftB;
         }
 
         public RadioState ToRadioState()
@@ -505,7 +526,11 @@ namespace FTdx101_WebApp.Services
                 AutoNotchA = AutoNotchA,
                 AutoNotchB = AutoNotchB,
                 ManualNotchA = ManualNotchA,
-                ManualNotchB = ManualNotchB
+                ManualNotchB = ManualNotchB,
+                IfWidthA = IfWidthA,
+                IfWidthB = IfWidthB,
+                IfShiftA = IfShiftA,
+                IfShiftB = IfShiftB
             };
         }
     }

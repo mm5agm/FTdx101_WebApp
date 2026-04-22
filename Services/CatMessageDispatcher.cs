@@ -207,6 +207,26 @@ namespace FTdx101_WebApp.Services
                             }
                         }
                         break;
+                    case "SH":
+                        // SH{vfo}{n}; — vfo: 0=Main 1=Sub; n: 0-8 (200Hz to 3000Hz)
+                        if (message.Length >= 4)
+                        {
+                            var vfo = message[2];
+                            var code = message[3].ToString();
+                            if (vfo == '0') _stateService.IfWidthA = code;
+                            else if (vfo == '1') _stateService.IfWidthB = code;
+                        }
+                        break;
+                    case "IS":
+                        // IS{vfo}{nnnn}; — 0000=min(-1000Hz) 5000=center(0Hz) 9999=max(+1000Hz)
+                        if (message.Length >= 7 && int.TryParse(message.Substring(3, 4), out int rawShift))
+                        {
+                            var vfo = message[2];
+                            var shiftHz = (int)Math.Round(rawShift / 9999.0 * 2000 - 1000);
+                            if (vfo == '0') _stateService.IfShiftA = shiftHz;
+                            else if (vfo == '1') _stateService.IfShiftB = shiftHz;
+                        }
+                        break;
                     // No debug logging for unhandled commands
                 }
             }

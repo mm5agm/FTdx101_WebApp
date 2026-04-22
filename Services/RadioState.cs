@@ -113,6 +113,19 @@ namespace FTdx101_WebApp.Services
         public string ManualNotchB { get; set; } = "0";
 
         /// <summary>
+        /// IF Width per VFO: "0"=200Hz "1"=400Hz "2"=600Hz "3"=850Hz "4"=1200Hz
+        ///                   "5"=1400Hz "6"=1800Hz "7"=2400Hz "8"=3000Hz
+        /// </summary>
+        public string IfWidthA { get; set; } = "8";
+        public string IfWidthB { get; set; } = "8";
+
+        /// <summary>
+        /// IF Shift per VFO in Hz (-1000 to +1000)
+        /// </summary>
+        public int IfShiftA { get; set; } = 0;
+        public int IfShiftB { get; set; } = 0;
+
+        /// <summary>
         /// Additional controls and settings (for future expansion)
         /// </summary>
         public Dictionary<string, object> Controls { get; set; } = new();

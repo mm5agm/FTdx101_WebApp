@@ -66,6 +66,15 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
+## 2026-04-22 - v1.1.0
+
+### Changed
+
+- Before slider changes
+- All works, before slider outlines emphasised
+- Update main page screenshot
+
+
 ## 2026-04-21 - v1.0.0
 
 ### Changed

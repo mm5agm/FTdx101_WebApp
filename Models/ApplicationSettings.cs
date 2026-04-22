@@ -56,5 +56,11 @@ namespace FTdx101_WebApp.Models
         public long FrequencyB { get; set; } = 14074000; // Default: 14.074 MHz (FT8)
         public string ModeB { get; set; } = "USB";
         public string AntennaB { get; set; } = "1";
+
+        // IF Width/Shift
+        public string IfWidthA { get; set; } = "8";
+        public string IfWidthB { get; set; } = "8";
+        public int IfShiftA { get; set; } = 0;
+        public int IfShiftB { get; set; } = 0;
     }
 }

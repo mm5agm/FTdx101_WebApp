@@ -20,24 +20,22 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("afgain/a")]
         public async Task<IActionResult> SetAfGainA([FromBody] int value)
         {
-            _logger.LogInformation("[API] SetAfGainA called: value={Value}", value);
-            if (!_catClient.IsConnected)
-                await EnsureConnectedAsync();
+            if (value < 0 || value > 255)
+                return BadRequest(new { error = "AF Gain value out of range (0-255)" });
+            await EnsureConnectedAsync();
+            await _catClient.SendCommandAsync($"AG0{value:D3};", "WebUI", CancellationToken.None);
             _radioStateService.AfGainA = value;
-            _logger.LogInformation("Set Receiver A AF Gain to {Value}", value);
-            _logger.LogInformation("[API] SetAfGainA completed: value={Value}", value);
             return Ok(new { message = $"AF Gain {value} set for Receiver A" });
         }
 
         [HttpPost("afgain/b")]
         public async Task<IActionResult> SetAfGainB([FromBody] int value)
         {
-            _logger.LogInformation("[API] SetAfGainB called: value={Value}", value);
-            if (!_catClient.IsConnected)
-                await EnsureConnectedAsync();
+            if (value < 0 || value > 255)
+                return BadRequest(new { error = "AF Gain value out of range (0-255)" });
+            await EnsureConnectedAsync();
+            await _catClient.SendCommandAsync($"AG1{value:D3};", "WebUI", CancellationToken.None);
             _radioStateService.AfGainB = value;
-            _logger.LogInformation("Set Receiver B AF Gain to {Value}", value);
-            _logger.LogInformation("[API] SetAfGainB completed: value={Value}", value);
             return Ok(new { message = $"AF Gain {value} set for Receiver B" });
         }
 
@@ -837,6 +835,8 @@ namespace FTdx101_WebApp.Controllers
         public class ManualNotchRequest    { public string Enabled { get; set; } = "0"; }
         public class NoiseBlankerRequest       { public string Enabled { get; set; } = "0"; }
         public class ManualNotchFreqRequest    { public int FrequencyHz { get; set; } = 1000; }
+        public class IfWidthRequest            { public string Code { get; set; } = "8"; }
+        public class IfShiftRequest            { public int ShiftHz { get; set; } = 0; }
 
         [HttpPost("agc/{receiver}")]
         public async Task<IActionResult> SetAgc(string receiver, [FromBody] AgcRequest request)
@@ -1069,6 +1069,57 @@ namespace FTdx101_WebApp.Controllers
             {
                 _logger.LogError(ex, "Error setting Noise Blanker");
                 return StatusCode(500, new { error = "Failed to set Noise Blanker" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("ifwidth/{receiver}")]
+        public async Task<IActionResult> SetIfWidth(string receiver, [FromBody] IfWidthRequest request)
+        {
+            var validCodes = new[] { "0","1","2","3","4","5","6","7","8" };
+            if (!validCodes.Contains(request.Code))
+                return BadRequest(new { error = $"Invalid IF Width code: {request.Code}" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+            try
+            {
+                var vfo = receiver.ToUpper() == "A" ? "0" : "1";
+                await _catClient.SendCommandAsync($"SH{vfo}{request.Code};", "WebUI", CancellationToken.None);
+                if (vfo == "0") _radioStateService.IfWidthA = request.Code;
+                else            _radioStateService.IfWidthB = request.Code;
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting IF Width");
+                return StatusCode(500, new { error = "Failed to set IF Width" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("ifshift/{receiver}")]
+        public async Task<IActionResult> SetIfShift(string receiver, [FromBody] IfShiftRequest request)
+        {
+            if (request.ShiftHz < -1000 || request.ShiftHz > 1000)
+                return BadRequest(new { error = "IF Shift must be -1000 to +1000 Hz" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+            try
+            {
+                var vfo = receiver.ToUpper() == "A" ? "0" : "1";
+                var raw = (int)Math.Round((request.ShiftHz + 1000) / 2000.0 * 9999);
+                raw = Math.Max(0, Math.Min(9999, raw));
+                await _catClient.SendCommandAsync($"IS{vfo}{raw:D4};", "WebUI", CancellationToken.None);
+                if (vfo == "0") _radioStateService.IfShiftA = request.ShiftHz;
+                else            _radioStateService.IfShiftB = request.ShiftHz;
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting IF Shift");
+                return StatusCode(500, new { error = "Failed to set IF Shift" });
             }
             finally { _requestSemaphore.Release(); }
         }

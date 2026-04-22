@@ -186,6 +186,28 @@ namespace FTdx101_WebApp.Services
                     stateTasks.Add(multiplexer.SendCommandAsync($"MG{persistedState.MicGain:D3};", "Initialization", stoppingToken)
                         .ContinueWith(t => { if (!t.IsFaulted) radioStateService.MicGain = persistedState.MicGain; }));
                 }
+                // Restore IF Width
+                if (!string.IsNullOrEmpty(persistedState.IfWidthA))
+                {
+                    stateTasks.Add(multiplexer.SendCommandAsync($"SH0{persistedState.IfWidthA};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfWidthA = persistedState.IfWidthA; }));
+                }
+                if (!string.IsNullOrEmpty(persistedState.IfWidthB))
+                {
+                    stateTasks.Add(multiplexer.SendCommandAsync($"SH1{persistedState.IfWidthB};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfWidthB = persistedState.IfWidthB; }));
+                }
+                // Restore IF Shift
+                {
+                    int rawA = (int)Math.Round((persistedState.IfShiftA + 1000) / 2000.0 * 9999);
+                    stateTasks.Add(multiplexer.SendCommandAsync($"IS0{rawA:D4};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfShiftA = persistedState.IfShiftA; }));
+                }
+                {
+                    int rawB = (int)Math.Round((persistedState.IfShiftB + 1000) / 2000.0 * 9999);
+                    stateTasks.Add(multiplexer.SendCommandAsync($"IS1{rawB:D4};", "Initialization", stoppingToken)
+                        .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfShiftB = persistedState.IfShiftB; }));
+                }
                 await Task.WhenAll(stateTasks);
 
                 // 4. Read actual radio state (frequencies, band, etc.) before marking initialized
