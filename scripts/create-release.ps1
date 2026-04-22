@@ -127,8 +127,12 @@ git push origin main
 git checkout develop
 
 # Delete existing release and tag if they already exist (e.g. from a failed previous run)
-gh release view $newTag 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) {
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'SilentlyContinue'
+gh release view $newTag | Out-Null
+$releaseExists = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = $prevEAP
+if ($releaseExists) {
     Write-Host "Deleting existing release $newTag..." -ForegroundColor Yellow
     gh release delete $newTag --yes
 }
