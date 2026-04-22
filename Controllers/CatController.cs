@@ -20,24 +20,22 @@ namespace FTdx101_WebApp.Controllers
         [HttpPost("afgain/a")]
         public async Task<IActionResult> SetAfGainA([FromBody] int value)
         {
-            _logger.LogInformation("[API] SetAfGainA called: value={Value}", value);
-            if (!_catClient.IsConnected)
-                await EnsureConnectedAsync();
+            if (value < 0 || value > 255)
+                return BadRequest(new { error = "AF Gain value out of range (0-255)" });
+            await EnsureConnectedAsync();
+            await _catClient.SendCommandAsync($"AG0{value:D3};", "WebUI", CancellationToken.None);
             _radioStateService.AfGainA = value;
-            _logger.LogInformation("Set Receiver A AF Gain to {Value}", value);
-            _logger.LogInformation("[API] SetAfGainA completed: value={Value}", value);
             return Ok(new { message = $"AF Gain {value} set for Receiver A" });
         }
 
         [HttpPost("afgain/b")]
         public async Task<IActionResult> SetAfGainB([FromBody] int value)
         {
-            _logger.LogInformation("[API] SetAfGainB called: value={Value}", value);
-            if (!_catClient.IsConnected)
-                await EnsureConnectedAsync();
+            if (value < 0 || value > 255)
+                return BadRequest(new { error = "AF Gain value out of range (0-255)" });
+            await EnsureConnectedAsync();
+            await _catClient.SendCommandAsync($"AG1{value:D3};", "WebUI", CancellationToken.None);
             _radioStateService.AfGainB = value;
-            _logger.LogInformation("Set Receiver B AF Gain to {Value}", value);
-            _logger.LogInformation("[API] SetAfGainB completed: value={Value}", value);
             return Ok(new { message = $"AF Gain {value} set for Receiver B" });
         }
 

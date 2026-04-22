@@ -134,14 +134,14 @@
                     <!-- Power and MIC Gain on one row -->
                     <div class="d-flex align-items-center gap-2 mb-2 closer-to-raw-power" style="margin-top: -18px !important; flex-wrap: nowrap;">
                         <label class="mb-0 text-nowrap">Power: <span id="powerValue" class="fw-bold">0W</span></label>
-                        <input type="range" class="form-range flex-shrink-0" id="powerSlider"
+                        <input type="range" class="flex-shrink-0" id="powerSlider"
                                min="5" max="200" step="5"
                                value="@Model.RadioState.Power"
                                style="width: 150px; height: 18px;"
                                oninput="window.radioControl.updatePowerDisplay(window.txVfo === 1 ? 'B' : 'A', this.value)"
                                onchange="window.radioControl.setPower(window.txVfo === 1 ? 'B' : 'A', this.value)">
                         <label class="mb-0 text-nowrap ms-2"><span id="micGainLabel">MIC Gain</span>: <span id="micGainValue" class="fw-bold">@Model.MicGain</span></label>
-                        <input type="range" class="form-range power-slider flex-shrink-0"
+                        <input type="range" class="flex-shrink-0"
                                id="micGainSlider"
                                min="0" max="100" step="1"
                                value="@Model.MicGain"
@@ -337,11 +337,11 @@
                             <option value="A">300 Hz</option>
                         </select>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">AF Gain: <span id="afGainValueA" class="fw-bold">0</span></label>
-                        <input type="range" class="form-range afgain-slider flex-shrink-0"
+                        <input type="range" class="flex-shrink-0"
                                id="afGainSliderA"
                                min="0" max="255" step="1" value="0"
                                style="width: 120px; height: 18px;"
-                               oninput="document.getElementById('afGainValueA').innerText = this.value; updateAfGainFill('afGainSliderA'); setAfGain('A', this.value)">
+                               oninput="document.getElementById('afGainValueA').innerText = this.value">
                     </div>
 
                     <!-- IF Width and IF Shift -->
@@ -530,11 +530,11 @@
                             <option value="A">300 Hz</option>
                         </select>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">AF Gain: <span id="afGainValueB" class="fw-bold">0</span></label>
-                        <input type="range" class="form-range afgain-slider flex-shrink-0"
+                        <input type="range" class="flex-shrink-0"
                                id="afGainSliderB"
                                min="0" max="255" step="1" value="0"
                                style="width: 120px; height: 18px;"
-                               oninput="document.getElementById('afGainValueB').innerText = this.value; updateAfGainFill('afGainSliderB'); setAfGain('B', this.value)">
+                               oninput="document.getElementById('afGainValueB').innerText = this.value">
                     </div>
 
                     <!-- IF Width and IF Shift -->
@@ -791,23 +791,6 @@
         updateLog4omStatus();
         setInterval(updateLog4omStatus, 5000);
 
-        window.setAfGain = async function(receiver, val) {
-    let band = receiver === 'A' ? '0' : '1';
-    let value = String(val).padStart(3, '0');
-    try {
-        const response = await fetch('/api/cat/afgain', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ band, value })
-        });
-        if (!response.ok) {
-            const data = await response.json();
-            alert(data.error || 'Failed to set AF Gain');
-        }
-    } catch (e) {
-        alert('Error setting AF Gain: ' + e.message);
-    }
-}
 
         async function setMicGain(value) {
             console.log('[setMicGain] Called with value:', value);
@@ -829,17 +812,7 @@
             }
         }
 
-        function updateAfGainFill(sliderId) {
-            const slider = document.getElementById(sliderId);
-            const value = parseInt(slider.value, 10);
-            const max = parseInt(slider.max, 10);
-            const pct = (value / max) * 100;
-            slider.style.background = `linear-gradient(to right, #198754 0%, #198754 ${pct}%, #dee2e6 ${pct}%, #dee2e6 100%)`;
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
-            updateAfGainFill('afGainSliderA');
-            updateAfGainFill('afGainSliderB');
         });
 
         // Expose functions called from HTML onclick/onchange attributes
@@ -847,6 +820,5 @@
         window.launchJtalert = launchJtalert;
         window.launchLog4om  = launchLog4om;
         window.setMicGain    = setMicGain;
-        window.updateAfGainFill = updateAfGainFill;
     </script>
 }

@@ -249,53 +249,8 @@ body {
 }
 
 
-#powerSlider::-webkit-slider-runnable-track {
-    height: 18px;
-    background: transparent;
-    border-radius: 9px;
-    border: 1px solid #6c757d;
-}
-#powerSlider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-#powerSlider::-moz-range-track {
-    height: 18px;
-    background: transparent;
-    border-radius: 9px;
-    border: 1px solid #6c757d;
-}
-#powerSlider::-ms-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-#powerSlider::-ms-fill-lower {
-    background: #e6f4ea;
-    border-radius: 9px;
-}
-#powerSlider::-ms-fill-upper {
-    background: #dee2e6;
-    border-radius: 9px;
-}
-#powerSlider:focus {
-    outline: none;
-    outline-offset: 0;
-}
-#powerSlider {
-    background: transparent;
-    border: none;
-}
-
 /* Focus state for accessibility */
-#powerSliderA:focus, .power-slider:focus, #micGainSlider:focus {
+#powerSliderA:focus {
     outline: none;
     outline-offset: 0;
 }
@@ -368,9 +323,10 @@ pre, code { tab-size: 4; }
 .vfo-controls-column {
     flex-shrink: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
     gap: 0.3rem 0.4rem;
     align-content: start;
+    margin-left: auto;
 }
 
 .vfo-control-item {
@@ -383,8 +339,9 @@ pre, code { tab-size: 4; }
 .vfo-control-item select {
     font-size: 0.78rem;
     font-weight: bold;
-    padding: 0.1rem 0.2rem;
+    padding: 0.1rem 1.6rem 0.1rem 0.25rem;
     flex: 1;
+    min-width: 52px;
 }
 
 .vfo-control-label {
@@ -540,147 +497,6 @@ pre, code { tab-size: 4; }
     border: none;
 }
 
-/* MIC Gain slider knob green */
-#micGainSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: 0;
-}
-#afGainSliderA::-webkit-slider-thumb,
-#afGainSliderB::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: 0;
-}
-#afGainSliderA::-moz-range-thumb,
-#afGainSliderB::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-#afGainSliderA::-ms-thumb,
-#afGainSliderB::-ms-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-#afGainSliderA,
-#afGainSliderB {
-    background: transparent !important;
-}
-#micGainSlider::-webkit-slider-runnable-track {
-    height: 18px;
-    background: transparent;
-    border-radius: 9px;
-    border: 1px solid #6c757d;
-}
-#micGainSlider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-#micGainSlider::-moz-range-track {
-    height: 18px;
-    background: transparent;
-    border-radius: 9px;
-    border: 1px solid #6c757d;
-}
-#micGainSlider::-ms-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-#micGainSlider::-ms-fill-lower {
-    background: #e6f4ea;
-    border-radius: 9px;
-}
-#micGainSlider::-ms-fill-upper {
-    background: #dee2e6;
-    border-radius: 9px;
-}
-#micGainSlider:focus {
-    outline: none;
-    outline-offset: 0;
-}
-#micGainSlider {
-    background: transparent;
-    border: none;
-}
-
-/* AF Gain slider: visible green knob and track, no hidden thumb */
-.afgain-slider {
-    width: 100%;
-    height: 18px;
-    background: transparent;
-    border: none;
-    outline: none;
-}
-.afgain-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-    margin-top: 0;
-}
-.afgain-slider::-webkit-slider-runnable-track {
-    height: 18px;
-    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
-    border-radius: 9px;
-    border: 1px solid #6c757d;
-}
-.afgain-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-.afgain-slider::-moz-range-track {
-    height: 18px;
-    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
-    border-radius: 9px;
-    border: 1px solid #6c757d;
-}
-.afgain-slider::-ms-thumb {
-    width: 18px;
-    height: 18px;
-    background: #28a745;
-    border: 2px solid #b7e4c7;
-    border-radius: 50%;
-    cursor: pointer;
-}
-.afgain-slider:focus {
-    outline: none;
-}
 
 /* IF Shift slider: visible track outline matching Notch slider style */
 .ifshift-slider::-webkit-slider-runnable-track {
