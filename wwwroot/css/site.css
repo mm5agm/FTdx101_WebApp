@@ -249,9 +249,11 @@ body {
 }
 
 
+#powerSlider::-webkit-slider-runnable-track {
     height: 18px;
-    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    background: transparent;
     border-radius: 9px;
+    border: 1px solid #6c757d;
 }
 #powerSlider::-moz-range-thumb {
     width: 18px;
@@ -263,8 +265,9 @@ body {
 }
 #powerSlider::-moz-range-track {
     height: 18px;
-    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    background: transparent;
     border-radius: 9px;
+    border: 1px solid #6c757d;
 }
 #powerSlider::-ms-thumb {
     width: 18px;
@@ -585,8 +588,9 @@ pre, code { tab-size: 4; }
 }
 #micGainSlider::-webkit-slider-runnable-track {
     height: 18px;
-    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    background: transparent;
     border-radius: 9px;
+    border: 1px solid #6c757d;
 }
 #micGainSlider::-moz-range-thumb {
     width: 18px;
@@ -598,8 +602,9 @@ pre, code { tab-size: 4; }
 }
 #micGainSlider::-moz-range-track {
     height: 18px;
-    background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
+    background: transparent;
     border-radius: 9px;
+    border: 1px solid #6c757d;
 }
 #micGainSlider::-ms-thumb {
     width: 18px;
@@ -649,6 +654,7 @@ pre, code { tab-size: 4; }
     height: 18px;
     background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
     border-radius: 9px;
+    border: 1px solid #6c757d;
 }
 .afgain-slider::-moz-range-thumb {
     width: 18px;
@@ -662,6 +668,7 @@ pre, code { tab-size: 4; }
     height: 18px;
     background: linear-gradient(90deg, #e6f4ea 0%, #e9ecef 60%, #dee2e6 100%);
     border-radius: 9px;
+    border: 1px solid #6c757d;
 }
 .afgain-slider::-ms-thumb {
     width: 18px;
@@ -673,6 +680,39 @@ pre, code { tab-size: 4; }
 }
 .afgain-slider:focus {
     outline: none;
+}
+
+/* IF Shift slider: visible track outline matching Notch slider style */
+.ifshift-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    border: 1px solid #6c757d;
+}
+.ifshift-slider::-moz-range-track {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    border: 1px solid #6c757d;
+}
+.ifshift-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #0d6efd;
+    border: 2px solid #cfe2ff;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -6px;
+}
+.ifshift-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #0d6efd;
+    border: 2px solid #cfe2ff;
+    border-radius: 50%;
+    cursor: pointer;
 }
 
 /* Calibration page container for meter tables */
