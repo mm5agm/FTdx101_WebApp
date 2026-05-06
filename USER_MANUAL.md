@@ -1,0 +1,541 @@
+# FTdx101 WebApp — User Manual
+
+## Table of Contents
+
+1. [Introduction](#1-introduction)
+2. [Installation](#2-installation)
+3. [First-Time Setup](#3-first-time-setup)
+4. [Starting the Application](#4-starting-the-application)
+5. [Main Control Panel](#5-main-control-panel)
+   - 5.1 [Top Bar](#51-top-bar)
+   - 5.2 [Meters](#52-meters)
+   - 5.3 [Power and Mic Gain](#53-power-and-mic-gain)
+   - 5.4 [Spectrum Display](#54-spectrum-display)
+   - 5.5 [VFO Panels](#55-vfo-panels)
+   - 5.6 [Frequency Display and Tuning](#56-frequency-display-and-tuning)
+   - 5.7 [Receiver Controls](#57-receiver-controls)
+   - 5.8 [IF Width, IF Shift, and AF Gain](#58-if-width-if-shift-and-af-gain)
+   - 5.9 [Band and Segment Selection](#59-band-and-segment-selection)
+   - 5.10 [Transmit Controls](#510-transmit-controls)
+6. [Settings Page](#6-settings-page)
+   - 6.1 [Radio Connection](#61-radio-connection)
+   - 6.2 [Web Server Settings](#62-web-server-settings)
+   - 6.3 [SDR Spectrum Display](#63-sdr-spectrum-display)
+7. [Application Setup](#7-application-setup)
+   - 7.1 [External App Buttons](#71-external-app-buttons)
+   - 7.2 [WSJT-X UDP Settings](#72-wsjt-x-udp-settings)
+8. [External Applications](#8-external-applications)
+   - 8.1 [WSJT-X](#81-wsjt-x)
+   - 8.2 [JTAlert](#82-jtalert)
+   - 8.3 [Log4OM](#83-log4om)
+9. [Meter Calibration](#9-meter-calibration)
+10. [Diagnostics](#10-diagnostics)
+11. [Using the App on a Tablet or Phone](#11-using-the-app-on-a-tablet-or-phone)
+12. [Keyboard Shortcuts](#12-keyboard-shortcuts)
+13. [Troubleshooting](#13-troubleshooting)
+
+---
+
+## 1. Introduction
+
+FTdx101 WebApp is a web-based control panel for the Yaesu FTdx101MP and FTdx101D transceivers. It runs as a small application on your shack PC and is accessed through any web browser — on the same PC, a tablet, or any device on your home network.
+
+The application was written for operators who find the physical controls on the FTdx101 difficult to read or use, and for those who want a large, clean touchscreen-friendly display alongside their existing logging software.
+
+**Key features:**
+
+- Large, readable frequency displays with digit-by-digit mouse-wheel tuning
+- Full dual-receiver control (VFO A and VFO B)
+- Live S-meter, power, SWR, ALC, temperature, IDD, VDD, and compression meters
+- Real-time two-way sync — changes on the radio front panel appear immediately in the app, and vice versa
+- Band and segment selectors for fast QSY to CW, FT8, SSB, or RTTY
+- Optional real-time spectrum display and waterfall (requires an SDR connected to the 9 MHz IF output)
+- Integration with WSJT-X, JTAlert, and Log4OM
+- Built-in rigctld server so WSJT-X can control the radio through the app
+- UK and USA band plans
+
+---
+
+## 2. Installation
+
+1. Download the installer from the [GitHub Releases page](https://github.com/mm5agm/FTdx101_WebApp/releases).
+2. Run the installer. .NET 10 is bundled — you do not need to install it separately.
+3. A desktop shortcut and a Start Menu entry are created automatically.
+4. The first time you run the app, Windows may show a **Smart App Control** or **Unknown Publisher** warning. Click **More info → Run anyway** to proceed. This warning appears because the installer is not signed with a commercial certificate.
+
+---
+
+## 3. First-Time Setup
+
+Before the app can communicate with your radio you need to tell it which serial port the radio is connected to and what baud rate to use.
+
+1. Open a browser and go to **http://localhost:8080**
+2. Click the **Settings** link in the navigation bar.
+3. Set **Radio Model** to either FTdx101MP (200 W, dual receiver) or FTdx101D (100 W, single receiver).
+4. Set **Serial Port** to the COM port your radio is connected to. If you are unsure, go to **Diagnostics → Ports** to see a list of available ports, or check Windows Device Manager.
+5. Set **Baud Rate** to match the radio's CAT baud rate. The factory default on the FTdx101 is **38400**. You can verify or change this on the radio under **Menu → CAT Rate**.
+6. Select your **Band Plan** (UK or USA).
+7. Click **Save Settings**, then **Test Connection**. A green tick means the app is talking to the radio.
+
+If you see a red cross, double-check the COM port number and baud rate, then try again.
+
+---
+
+## 4. Starting the Application
+
+Double-click the **FTdx101 WebApp** shortcut on your desktop. A small window opens confirming the server has started. The window must remain open while you use the app.
+
+Open your browser and go to:
+
+```
+http://localhost:8080
+```
+
+The main control panel loads. If the radio is powered on and the serial connection is correct, a brief "Initialising…" overlay appears while the app reads the current radio state. After a few seconds the overlay disappears and all controls reflect the current state of the radio.
+
+**Accessing the app from another device:** If you set **Network Interface** to `0.0.0.0 (all interfaces)` in Settings (the default), the app is also accessible from any device on your local network. The Settings page shows the full URL for each network interface — bookmark one of these on your tablet or phone.
+
+---
+
+## 5. Main Control Panel
+
+### 5.1 Top Bar
+
+The top bar contains navigation links, external application buttons, and the radio power button.
+
+**External app buttons** (WSJT-X, JTAlert, Log4OM) appear if they are enabled in Application Setup. The colour of each button indicates status:
+
+| Colour | Meaning |
+|--------|---------|
+| Green | Application is running and connected |
+| Yellow | Application is running but waiting for UDP data (WSJT-X only) |
+| Red | Application is not running |
+
+Click a button to launch the application. If it is already running, it is brought to the front.
+
+The **WSJT-X** button also shows a red **TX** badge when WSJT-X is currently transmitting.
+
+**POWER button** (top right) turns the radio on or off. The button is green when the radio is on and red when it is off.
+
+---
+
+### 5.2 Meters
+
+Seven meters are displayed in a scrollable row above the VFO panels:
+
+| Meter | What it shows |
+|-------|--------------|
+| SWR | Standing wave ratio on the antenna — only active during transmit |
+| Power | Output power in watts — only active during transmit |
+| Compression | Speech compression in dB — only active during transmit |
+| ALC | Automatic Level Control voltage — only active during transmit |
+| Temp | PA temperature in °C |
+| IDD | PA drain current in amps |
+| VDD | PA drain voltage in volts |
+
+All meters update in real time at approximately 10 times per second. Meters that only apply to transmit automatically read zero when the radio is receiving.
+
+The meter scales are calibrated to show meaningful units rather than raw ADC values. See Section 9 (Meter Calibration) if you want to adjust the calibration for your specific radio.
+
+---
+
+### 5.3 Power and Mic Gain
+
+**Power slider** — Sets the transmit power from 5 W to 200 W (FTdx101MP) or 5 W to 100 W (FTdx101D). Drag the slider to set the desired power level. The current value is shown to the right of the slider.
+
+**MIC Gain / Data Out Gain slider** — Sets the microphone gain (0–100). When the radio is in a data mode (DATA-U, DATA-L, PSK, RTTY, or DATA-FM), the label changes to **Data Out Gain** automatically.
+
+---
+
+### 5.4 Spectrum Display
+
+The spectrum display is only visible if an SDR device has been configured in Settings. It shows a real-time spectrum and scrolling waterfall of the band around the current VFO A frequency.
+
+**Span buttons** — Click **250k**, **500k**, **1M**, or **2M** to change the visible bandwidth. The display recentres on VFO A.
+
+**Click to tune** — Click anywhere on the spectrum to tune VFO A to that frequency.
+
+**Mouse wheel to tune** — Scroll the mouse wheel over the spectrum to tune VFO A up or down in 1 kHz steps.
+
+**Frequency crosshair** — Move the mouse over the spectrum to see the exact RF frequency at the cursor position displayed above the waterfall.
+
+A status badge in the spectrum panel shows the current SDR state: **No SDR**, **Connecting…**, **Live**, or **Disconnected**.
+
+---
+
+### 5.5 VFO Panels
+
+There are two VFO panels side by side:
+
+- **VFO A** (blue border) — the main receiver
+- **VFO B** (green border) — the sub-receiver (FTdx101MP only; on the FTdx101D, VFO B controls are still present but operate on the single receiver)
+
+Both panels have identical controls. All settings are independent — changing a control in VFO A does not affect VFO B.
+
+---
+
+### 5.6 Frequency Display and Tuning
+
+The frequency display shows the current VFO frequency in MHz to 1 Hz resolution (e.g., **14.074.000**).
+
+**Digit tuning with the mouse wheel:**
+
+1. Click on any digit in the frequency display. The selected digit is highlighted.
+2. Roll the mouse wheel up to increase that digit, or down to decrease it.
+3. Carry-over is automatic — for example, scrolling 9 → 0 on the kHz digit also increments the 10 kHz digit.
+4. The new frequency is sent to the radio approximately 200 ms after you stop scrolling.
+5. Click anywhere outside the frequency display to deselect.
+
+**On a tablet or phone**, tap a digit to select it, then use the **▲** and **▼** buttons that appear below the display to adjust it.
+
+---
+
+### 5.7 Receiver Controls
+
+Each VFO panel has a row of dropdowns for the main receiver settings. All are two-way — if you change a setting on the radio's front panel, the dropdown updates automatically.
+
+**Mode** — Select the operating mode:
+LSB, USB, CW-U, CW-L, FM, FM-N, AM, AM-N, RTTY-L, RTTY-U, DATA-L, DATA-U, DATA-FM, DATA-FM-N, PSK
+
+**Antenna** — Select the antenna connector: ANT 1, ANT 2, ANT 3
+
+**Roofing Filter** — Select the roofing filter bandwidth: 12 kHz, 3 kHz, 1.2 kHz, 600 Hz, 300 Hz
+
+**Control column** (the two-column grid of dropdowns to the right):
+
+| Control | Options |
+|---------|---------|
+| AGC | OFF, FAST, MID, SLOW, AUTO |
+| IPO/AMP | IPO, AMP1, AMP2 |
+| ATT | OFF, 6 dB, 12 dB, 18 dB |
+| NR | OFF, NR1, NR2 |
+| NB | OFF, ON |
+| Auto Notch | OFF, ON |
+| Man Notch | OFF, ON |
+| Notch Hz | Slider 10–3200 Hz (only relevant when Man Notch is ON) |
+
+All of these settings are restored to the radio when the app starts.
+
+---
+
+### 5.8 IF Width, IF Shift, and AF Gain
+
+**IF Width** — Sets the DSP filter bandwidth. Options: 200 Hz, 400 Hz, 600 Hz, 850 Hz, 1.2 kHz, 1.4 kHz, 1.8 kHz, 2.4 kHz, 3.0 kHz. This setting is persisted and restored on startup.
+
+**IF Shift** — Shifts the passband centre ±1000 Hz in 20 Hz steps. Drag the slider or use the keyboard arrow keys. The current offset is shown next to the slider.
+
+**Zero button** — Resets IF Shift to 0 Hz instantly.
+
+IF Shift is persisted and restored on startup.
+
+**AF Gain** — Sets the audio output level (0–255). Drag the slider and release to send the new value to the radio.
+
+---
+
+### 5.9 Band and Segment Selection
+
+**Band buttons** — Click a band button (160m, 80m, 40m, etc.) to switch the VFO to that band. The radio tunes to the last-used frequency on that band.
+
+Available bands depend on your band plan setting:
+- **UK:** 160m, 80m, 60m, 40m, 30m, 20m, 17m, 15m, 12m, 10m, 6m, 4m
+- **USA:** 160m, 80m, 60m, 40m, 30m, 20m, 17m, 15m, 12m, 10m, 6m
+
+**Segment dropdown** — After selecting a band, a dropdown appears above the frequency display showing common operating segments for that band. Select a segment to jump directly to its standard frequency and set the appropriate mode:
+
+| Segment | Example (20m) | Mode set |
+|---------|--------------|---------|
+| CW | 14.025 MHz | CW-U |
+| FT8 | 14.074 MHz | DATA-U |
+| SSB | 14.150 MHz | USB |
+| RTTY | 14.080 MHz | RTTY-U |
+
+The last segment you used on each band is remembered, so when you return to a band the dropdown re-selects your previous segment.
+
+**60m (UK):** The 60m band shows named channels (e.g., CH1 5.2585 MHz, CH2 5.2760 MHz, etc.) instead of generic segment names.
+
+**60m (USA):** Shows the five FCC-designated 60m channels.
+
+---
+
+### 5.10 Transmit Controls
+
+**TX button** — Appears on whichever VFO is currently the transmit VFO. Click to start transmitting; click again to return to receive. The button turns red and the label changes to **TX** while transmitting.
+
+**Radio POWER button** — Turns the FTdx101 on or off. The button shows green (on) or red (off).
+
+---
+
+## 6. Settings Page
+
+Access Settings from the navigation bar or by clicking the settings icon. Changes take effect only after clicking **Save Settings**.
+
+### 6.1 Radio Connection
+
+| Setting | Description |
+|---------|-------------|
+| Radio Model | FTdx101MP (200 W, dual RX) or FTdx101D (100 W, single RX) |
+| Serial Port | COM port the radio's USB/serial cable is connected to (e.g., COM3) |
+| Baud Rate | Must match the radio's CAT Rate setting. Default: 38400 |
+| Band Plan | UK or USA. Affects which bands and segment frequencies are shown |
+
+After changing the serial port or baud rate, click **Test Connection** to verify the radio responds. A green tick confirms success.
+
+---
+
+### 6.2 Web Server Settings
+
+| Setting | Description |
+|---------|-------------|
+| Network Interface | `localhost` (this PC only) or `0.0.0.0` (all interfaces, including LAN). Choose `0.0.0.0` to access the app from a tablet or phone |
+
+> **Note:** After changing the network interface, save settings and restart the application.
+
+The Settings page also shows the full URL for each detected network interface so you can bookmark the correct address on your tablet.
+
+---
+
+### 6.3 SDR Spectrum Display
+
+The spectrum display requires an SDR receiver connected to the FTdx101's 9 MHz IF output (rear panel BNC labelled **IF OUT**).
+
+**Supported hardware:**
+- **SDRplay RSP1 and RSP series** — requires the [SDRplay API v3](https://www.sdrplay.com/downloads/) to be installed separately
+- **RTL-SDR, Airspy, HackRF** — drivers are included in the app installer; no separate installation needed
+
+**Setting up the SDR:**
+
+1. Connect the SDR to the 9 MHz IF output.
+2. Go to Settings and click **Scan** in the SDR section.
+3. Detected devices appear in the dropdown. Select your device.
+4. Set **IF Frequency** to `9000000` (9 MHz) for the FTdx101 IF output.
+5. **Sample Rate**: 2M (2,048,000 Hz) is recommended and gives a 2 MHz span.
+6. **FFT Size**: 1024 is recommended.
+7. Click **Save Settings**.
+
+The spectrum panel appears on the main page when a device is saved. If you want to remove the spectrum display, click **Disable/Clear** in the SDR settings section.
+
+| SDR Setting | Recommended Value |
+|-------------|------------------|
+| IF Frequency | 9,000,000 Hz |
+| Sample Rate | 2,048,000 (2M) |
+| FFT Size | 1024 |
+
+---
+
+## 7. Application Setup
+
+Access Application Setup from the navigation bar. This page configures the external application buttons and the WSJT-X UDP connection.
+
+### 7.1 External App Buttons
+
+Three buttons can appear in the top bar to launch external applications. For each button you can set:
+
+- **Show / Hide** — whether the button appears on the main page
+- **Button Name** — the label shown on the button (e.g., "WSJT-X")
+- **Command Line** — the full path to the executable, including any arguments
+
+Default command lines:
+
+| App | Default |
+|-----|---------|
+| WSJT-X | `C:\WSJT\wsjtx\bin\wsjtx.exe --rig-name=WebApp` |
+| JTAlert | `C:\HamApps\JTAlert\JTAlert.exe` |
+| Log4OM | `C:\Program Files (x86)\Log4OM 2\Log4OM.exe` |
+
+Adjust these to match where you have installed each program.
+
+---
+
+### 7.2 WSJT-X UDP Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| UDP Address | 239.255.0.1 | Multicast address WSJT-X sends status packets to |
+| UDP Port | 2237 | UDP port number |
+
+These must match WSJT-X's **Settings → Reporting → UDP Server** settings. See Section 8.1 for full WSJT-X setup instructions.
+
+---
+
+## 8. External Applications
+
+### 8.1 WSJT-X
+
+The app integrates with WSJT-X in two ways:
+
+1. **CAT control via rigctld** — the app runs a rigctld-compatible server on TCP port 4532. WSJT-X connects to this to control the radio (frequency, mode, PTT).
+2. **UDP status sync** — WSJT-X sends status packets (frequency, mode, TX state) to the app via UDP. The app uses these to keep VFO A in sync.
+
+**Configuring WSJT-X for use with this app:**
+
+The default command line (`--rig-name=WebApp`) causes WSJT-X to use a separate configuration profile called "WebApp". You must configure this profile once:
+
+1. Launch WSJT-X from the app's button (so it starts in the WebApp profile).
+2. In WSJT-X, go to **File → Settings**.
+
+**Radio tab:**
+- Rig: **Hamlib NET rigctl**
+- Network Server: `localhost`
+- Port: `4532`
+- CAT Control: `Hamlib Net rigctl`
+- PTT Method: **CAT**
+- Click **Test CAT** — it should show green. Click **Test PTT**.
+- Click OK.
+
+**Reporting tab:**
+- UDP Server: `239.255.0.1`
+- UDP Server port: `2237`
+- Outgoing Interfaces: `loopback_0` (or leave blank)
+- Multicast TTL: `1`
+- Tick: **Accept UDP requests**, **Notify on accepted UDP request**
+- Click OK.
+
+These settings are saved in the WebApp profile and used every time WSJT-X is launched from the app button.
+
+> **Important:** If you already use WSJT-X with a direct serial connection to the radio, the `--rig-name=WebApp` keeps those settings separate. Your normal WSJT-X profile is not affected.
+
+**If you do not want a separate profile**, remove `--rig-name=WebApp` from the WSJT-X command line in Application Setup. WSJT-X will then use its default configuration — make sure that configuration points to rigctld on port 4532.
+
+---
+
+### 8.2 JTAlert
+
+JTAlert does not use UDP. It reads WSJT-X log files directly. No configuration is required in this app for JTAlert to work.
+
+The JTAlert button in the top bar launches JTAlert and shows green when it is running.
+
+---
+
+### 8.3 Log4OM
+
+Configure Log4OM to receive WSJT-X decodes:
+
+1. In Log4OM, go to **Settings → Program Configuration → Software Integration → Connections**.
+2. Add a connection:
+   - Type: **JT_Message**
+   - Port: **2236**
+   - Enabled: **Yes**
+
+Note: Log4OM uses port 2236, which is different from WSJT-X's UDP port (2237). Both can be active simultaneously.
+
+---
+
+## 9. Meter Calibration
+
+The calibration page lets you adjust the scale of each meter gauge to match your radio's actual output. This is useful if the meter readings seem inaccurate.
+
+Access calibration from **Calibrate Meters** in the navigation bar.
+
+**How calibration works:**
+
+Each meter has a table of calibration points. Each point maps a **raw value** (the number the radio sends) to a **display value** (what is shown on the gauge).
+
+For example, the S-meter might have points like:
+- Raw 0 → S0
+- Raw 120 → S9
+- Raw 200 → S9+20dB
+
+The gauge interpolates between points to produce smooth readings.
+
+**Editing calibration:**
+
+1. To add a point: click **Add Point**, then enter the raw and display values.
+2. To delete a point: click the **×** button next to it.
+3. To test: click the **TX** button on the calibration page to transmit a test signal and watch the meters respond in real time.
+4. Click **Save Calibration** when finished.
+5. Click **Reload From File** to discard unsaved changes.
+
+Calibration is saved to `%APPDATA%\MM5AGM\FTdx101 WebApp\calibration.user.json`.
+
+---
+
+## 10. Diagnostics
+
+The Diagnostics page provides two tools for troubleshooting:
+
+**Ports** — Lists all COM ports currently available on your PC. Use this if you are unsure which COM port the radio is connected to.
+
+**Status (JSON)** — Opens the raw CAT status API. This shows the current state of every radio parameter as JSON. Useful when reporting a bug.
+
+---
+
+## 11. Using the App on a Tablet or Phone
+
+The app is designed to work well on tablets and phones.
+
+1. Make sure the **Network Interface** in Settings is set to `0.0.0.0 (all interfaces)`.
+2. Note the network URL shown on the Settings page (e.g., `http://192.168.1.42:8080`).
+3. Open that URL in the browser on your tablet or phone.
+4. For the best experience on a tablet, use the browser's **Add to Home Screen** option to create a shortcut.
+
+**Touch-friendly frequency tuning:**
+
+On touch devices, tap a digit in the frequency display to select it (it highlights). Two buttons appear — **▲** (increase) and **▼** (decrease) — which you can tap to adjust that digit.
+
+---
+
+## 12. Keyboard Shortcuts
+
+| Key / Action | Result |
+|---|---|
+| **F** | Enter full-screen mode |
+| **Esc** | Exit full-screen mode |
+| Click a frequency digit | Select that digit for editing |
+| Mouse wheel (on selected digit) | Increment or decrement the digit |
+| Mouse wheel (on spectrum) | Tune VFO A up or down in 1 kHz steps |
+| Click on spectrum | Tune VFO A to the clicked frequency |
+
+---
+
+## 13. Troubleshooting
+
+**App shows "Initialising…" and never clears**
+
+- Check that the radio is powered on.
+- Check the COM port in Settings. Go to **Diagnostics → Ports** to see which ports are available.
+- Check the baud rate in Settings matches the radio's **Menu → CAT Rate** setting (default 38400).
+- Click **Test Connection** in Settings.
+
+**Frequency display shows 0 or does not update**
+
+- The radio may not be responding to CAT commands. Test the connection from the Settings page.
+- Check that no other software (e.g., another instance of the app, Ham Radio Deluxe, WSJT-X in direct CAT mode) is using the same COM port.
+
+**WSJT-X does not show as connected**
+
+- Make sure you have configured WSJT-X's **WebApp** profile (see Section 8.1). This must be done once after a fresh install.
+- Check that the UDP address in Application Setup (default 239.255.0.1) matches WSJT-X's **Settings → Reporting → UDP Server** address.
+- Check that the UDP port (default 2237) also matches.
+- If WSJT-X was already running when you started the app, restart WSJT-X from the app button.
+
+**WSJT-X cannot control the radio (CAT fails)**
+
+- Make sure WSJT-X's Radio settings are:
+  - Rig: Hamlib NET rigctl
+  - Network Server: localhost, port 4532
+- The rigctld server starts automatically when this app starts. Check the app is running.
+
+**Spectrum display shows "No SDR" or "Disconnected"**
+
+- For SDRplay devices: confirm the **SDRplay API** is installed and the **SDRplay API Service** is running (check services.msc).
+- For RTL-SDR: check the device is plugged in and not in use by another application (e.g., SDR#).
+- Try clicking **Scan** again in Settings and re-selecting the device.
+- Verify the IF Frequency is set to `9000000`.
+
+**Meters appear to show incorrect values**
+
+- The meters use a default calibration that may not exactly match every individual radio. See Section 9 to adjust the calibration.
+
+**App will not start — "Another instance is already running"**
+
+- Only one instance of the app can run at a time. Check the Windows taskbar or system tray for an existing instance. If the previous instance crashed and left a stale lock, restart Windows.
+
+**Cannot access the app from a tablet**
+
+- Check that **Network Interface** in Settings is set to `0.0.0.0 (all interfaces)`, not `localhost`.
+- Check that Windows Firewall allows inbound connections on port 8080. You may see a firewall prompt the first time you use the app.
+- Make sure the tablet is on the same Wi-Fi network as the shack PC.
+
+---
+
+*FTdx101 WebApp is written and maintained by mm5agm@outlook.com. For bug reports and feedback, please use the [Groups.io discussion group](https://groups.io/g/ftdx101-webapp/topics) or the [GitHub issues page](https://github.com/mm5agm/FTdx101_WebApp/issues).*

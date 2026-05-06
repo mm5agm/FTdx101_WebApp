@@ -74,7 +74,7 @@ namespace FTdx101_WebApp.Services
                     _logger.LogInformation("[MeterPolling][DebugSWR] TX={IsTransmitting} RM6 raw response: '{Raw}'", isTransmitting, swrResponse);
                     int swr = CatCommands.ParseMeterReading(swrResponse ?? "");
                     _logger.LogInformation("[MeterPolling][DebugSWR] TX={IsTransmitting} RM6 parsed value: {Value}", isTransmitting, swr);
-                    _stateService.SWRMeter = swr;
+                    _stateService.SWRMeter = isTransmitting ? swr : 0;
 
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling Compression Meter...");
                     var compResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterComp + ";", "MeterPoll", stoppingToken);

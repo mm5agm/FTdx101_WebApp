@@ -101,8 +101,8 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">UDP Address:</label>
-                    <input type="text" class="form-control" asp-for="WsjtxUdpAddress" placeholder="127.0.0.1" />
-                    <div class="form-text">The IP address to listen for WSJT-X UDP messages (usually 127.0.0.1)</div>
+                    <input type="text" class="form-control" asp-for="WsjtxUdpAddress" placeholder="239.255.0.1" />
+                    <div class="form-text">Multicast address WSJT-X sends to (default: 239.255.0.1). Must match WSJT-X Settings &rarr; Reporting &rarr; UDP Server.</div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">UDP Port:</label>
@@ -126,15 +126,15 @@
     </div>
     <div class="card-body">
         <h6>WSJT-X Settings</h6>
-        <p>In the "Reporting" setting:</p>
+        <p>In WSJT-X <strong>Settings &rarr; Reporting</strong>:</p>
         <ul>
-            <li>Tick "Enable PSK Reporting Spotting"</li>
-            <li>UDP Server: 239.255.0.1</li>
-            <li>UDP Server port number: 2237</li>
-            <li>Outgoing Interfaces: loopback_0</li>
-            <li>Multicast TTL: 1</li>
-            <li>Tick: Accept UDP requests, Notify on accepted UDP request, Accepted UDP request restores window</li>
+            <li>UDP Server: <strong>239.255.0.1</strong></li>
+            <li>UDP Server port number: <strong>2237</strong></li>
+            <li>Outgoing Interfaces: <strong>loopback_0</strong> (or leave blank for all interfaces)</li>
+            <li>Multicast TTL: <strong>1</strong></li>
+            <li>Tick: <em>Accept UDP requests</em>, <em>Notify on accepted UDP request</em></li>
         </ul>
+        <p class="text-muted small">If you use <code>--rig-name=WebApp</code> in the WSJT-X command line above, these settings must be configured in that WSJT-X profile (open WSJT-X, go to Settings, save — it writes to the WebApp profile).</p>
 
         <h6>JTAlert</h6>
         <p>There is nothing to set up. JTAlert reads WSJT-X log files directly (not UDP).</p>
