@@ -256,12 +256,16 @@ class SWRGauge extends Gauge {
             minValue: 0,
             maxValue: 255,
             majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
+            // Highlight zones match the linear SWR scale used by the orchestrator:
+            //   gauge value = (SWR - 1.0) * 127.5
+            //   SWR 1.5 → 64,  SWR 2.0 → 127,  SWR 3.0 → 255
             highlights: [
-                { from: 0, to: 85, color: "rgba(0,255,0,.25)" },
-                { from: 85, to: 128, color: "rgba(255,255,0,.25)" },
-                { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
+                { from: 0,   to: 64,  color: "rgba(0,255,0,.25)" },
+                { from: 64,  to: 127, color: "rgba(255,255,0,.25)" },
+                { from: 127, to: 255, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["1.0", "1.2", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
+            // 9 evenly-spaced labels across the arc, matching the linear 1.0–3.0 scale.
+            labels: ["1.0", "1.25", "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,

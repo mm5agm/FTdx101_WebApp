@@ -1,19 +1,264 @@
-﻿@page "/Diagnostics"
+@page "/Diagnostics"
 @model FTdx101_WebApp.Pages.DiagnosticsModel
 @{
     ViewData["Title"] = "Diagnostics";
 }
-<h1>@ViewData["Title"]</h1>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <ul class="navbar-nav flex-grow-1">
-        <li class="nav-item">
-            <a class="nav-link text-dark" asp-page="/Index">Home</a>
-        </li>
-    </ul>
-</nav>
+<h1 class="mb-3">Diagnostics</h1>
 
-<ul>
-    <li><a href="/Ports" target="_blank">Ports</a> &mdash; View available COM ports</li>
-    <li><a href="/api/cat/status" target="_blank">Status</a> &mdash; View CAT status (JSON)</li>
-</ul>
+<div class="d-flex align-items-center gap-3 mb-3">
+    <span>SignalR: <span id="diag-status" class="badge bg-secondary">Connecting&hellip;</span></span>
+    <a href="/Ports" target="_blank" class="btn btn-sm btn-outline-secondary">COM Ports</a>
+    <a href="/api/cat/status" target="_blank" class="btn btn-sm btn-outline-secondary">CAT Status JSON</a>
+</div>
+
+<div class="row g-3">
+
+    <!-- Live meter readings -->
+    <div class="col-xl-5">
+        <div class="card">
+            <div class="card-header fw-semibold">Live Meter Readings <small class="text-muted fw-normal">(raw 0–255, as received from radio)</small></div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Meter</th>
+                            <th>CAT</th>
+                            <th class="text-end">Raw value</th>
+                            <th class="text-end">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="diag-meter-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event log -->
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span>SignalR Event Log</span>
+                <div class="d-flex gap-2 align-items-center">
+                    <select id="diag-filter" class="form-select form-select-sm" style="width:auto">
+                        <option value="">All properties</option>
+                        <option value="IsTransmitting">IsTransmitting</option>
+                        <option value="SWRMeter">SWRMeter</option>
+                        <option value="PowerMeter">PowerMeter</option>
+                        <option value="SMeterA">SMeterA</option>
+                        <option value="SMeterB">SMeterB</option>
+                        <option value="ALCMeter">ALCMeter</option>
+                        <option value="CompressionMeter">CompressionMeter</option>
+                        <option value="IDDMeter">IDDMeter</option>
+                        <option value="VDDMeter">VDDMeter</option>
+                        <option value="Temperature">Temperature</option>
+                    </select>
+                    <button id="diag-pause" class="btn btn-sm btn-outline-secondary">Pause</button>
+                    <button id="diag-clear" class="btn btn-sm btn-outline-secondary">Clear</button>
+                    <button id="diag-save" class="btn btn-sm btn-outline-secondary">Save&hellip;</button>
+                </div>
+            </div>
+            <div id="diag-log"
+                 style="height:420px;overflow-y:auto;font-family:monospace;font-size:12px;padding:6px;background:#1e1e1e;color:#d4d4d4">
+                <em style="color:#888">Waiting for events&hellip;</em>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+(function () {
+
+    // ── Meter definitions ─────────────────────────────────────────────────────
+    const METERS = [
+        { property: 'IsTransmitting',   label: 'TX State',       cat: 'TX;'  },
+        { property: 'SWRMeter',         label: 'SWR',            cat: 'RM6;' },
+        { property: 'PowerMeter',       label: 'Power',          cat: 'RM5;' },
+        { property: 'SMeterA',          label: 'S-Meter A',      cat: 'SM0;' },
+        { property: 'SMeterB',          label: 'S-Meter B',      cat: 'SM1;' },
+        { property: 'ALCMeter',         label: 'ALC',            cat: 'RM4;' },
+        { property: 'CompressionMeter', label: 'Compression',    cat: 'RM3;' },
+        { property: 'IDDMeter',         label: 'IDD',            cat: 'RM7;' },
+        { property: 'VDDMeter',         label: 'VDD',            cat: 'RM8;' },
+        { property: 'Temperature',      label: 'Temp (PA)',      cat: 'RM9;' },
+        { property: 'FrequencyA',       label: 'Freq A (Hz)',    cat: 'FA;'  },
+        { property: 'FrequencyB',       label: 'Freq B (Hz)',    cat: 'FB;'  },
+    ];
+
+    // ── Build meter table ─────────────────────────────────────────────────────
+    const tbody  = document.getElementById('diag-meter-tbody');
+    const rowMap = {};
+
+    METERS.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            `<td>${m.label}</td>` +
+            `<td><code>${m.cat}</code></td>` +
+            `<td class="text-end fw-bold" id="dv-${m.property}" style="min-width:80px">—</td>` +
+            `<td class="text-end text-muted small" id="dt-${m.property}" style="min-width:72px">—</td>`;
+        tbody.appendChild(tr);
+        rowMap[m.property] = tr;
+    });
+
+    function updateMeterRow(property, value) {
+        const valEl  = document.getElementById(`dv-${property}`);
+        const timeEl = document.getElementById(`dt-${property}`);
+        if (!valEl) return;
+
+        valEl.textContent = String(value);
+
+        // Colour TX state
+        if (property === 'IsTransmitting') {
+            valEl.style.color = value ? '#22c55e' : '#ef4444';
+        }
+        // Flag high SWR raw values
+        else if (property === 'SWRMeter') {
+            valEl.style.color = (typeof value === 'number' && value > 20) ? '#f97316' : '';
+        }
+
+        // Flash row
+        const tr = rowMap[property];
+        if (tr) {
+            tr.style.backgroundColor = '#fef9c3';
+            setTimeout(() => { tr.style.backgroundColor = ''; }, 400);
+        }
+
+        if (timeEl) {
+            const n = new Date();
+            timeEl.textContent = n.toTimeString().substring(0, 8);
+        }
+    }
+
+    // ── Event log ─────────────────────────────────────────────────────────────
+    const logDiv   = document.getElementById('diag-log');
+    const MAX_LOG  = 200;
+    let   entries  = [];
+    let   paused   = false;
+    let   filter   = '';
+
+    document.getElementById('diag-filter').addEventListener('change', function () {
+        filter = this.value;
+        renderLog();
+    });
+
+    document.getElementById('diag-pause').addEventListener('click', function () {
+        paused = !paused;
+        this.textContent  = paused ? 'Resume' : 'Pause';
+        this.className    = paused
+            ? 'btn btn-sm btn-warning'
+            : 'btn btn-sm btn-outline-secondary';
+    });
+
+    document.getElementById('diag-clear').addEventListener('click', function () {
+        entries = [];
+        renderLog();
+    });
+
+    document.getElementById('diag-save').addEventListener('click', function () {
+        const text = entries
+            .map(e => `${e.time}\t${e.property}\t${JSON.stringify(e.value)}`)
+            .join('\n');
+        const blob = new Blob([text], { type: 'text/plain' });
+        const a    = document.createElement('a');
+        a.href     = URL.createObjectURL(blob);
+        a.download = `diag-${new Date().toISOString().replace(/[:.]/g,'-')}.txt`;
+        a.click();
+    });
+
+    function ts() {
+        const n = new Date();
+        return n.toTimeString().substring(0, 8) + '.' +
+               String(n.getMilliseconds()).padStart(3, '0');
+    }
+
+    function rowColor(property, value) {
+        if (property === 'IsTransmitting') return value ? '#22c55e' : '#ef4444';
+        if (property === 'SWRMeter' && typeof value === 'number' && value > 20)
+            return '#f97316';
+        return '#d4d4d4';
+    }
+
+    function renderLog() {
+        const visible = filter
+            ? entries.filter(e => e.property === filter)
+            : entries;
+
+        if (visible.length === 0) {
+            logDiv.innerHTML = '<em style="color:#888">No events.</em>';
+            return;
+        }
+
+        const atBottom = logDiv.scrollHeight - logDiv.scrollTop - logDiv.clientHeight < 40;
+
+        logDiv.innerHTML = visible.map(e =>
+            `<div>` +
+            `<span style="color:#666">${e.time}</span> ` +
+            `<span style="color:#9cdcfe;display:inline-block;width:190px">${e.property}</span>` +
+            `<span style="color:${rowColor(e.property, e.value)}">${JSON.stringify(e.value)}</span>` +
+            `</div>`
+        ).join('');
+
+        if (atBottom) logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function addEntry(property, value) {
+        if (paused) return;
+        entries.push({ time: ts(), property, value });
+        if (entries.length > MAX_LOG) entries.shift();
+        renderLog();
+    }
+
+    // ── SignalR connection ────────────────────────────────────────────────────
+    const statusBadge = document.getElementById('diag-status');
+
+    const conn = new signalR.HubConnectionBuilder()
+        .withUrl('/radioHub')
+        .withAutomaticReconnect()
+        .build();
+
+    conn.on('RadioStateUpdate', function (data) {
+        let { property, value } = data;
+
+        // PowerMeter is wrapped: { value, isTransmitting }
+        if (property === 'PowerMeter' && value !== null && typeof value === 'object') {
+            value = value.value;
+        }
+
+        updateMeterRow(property, value);
+        addEntry(property, value);
+    });
+
+    conn.onreconnecting(() => {
+        statusBadge.textContent = 'Reconnecting…';
+        statusBadge.className   = 'badge bg-warning text-dark';
+        addEntry('_connection', 'reconnecting');
+    });
+
+    conn.onreconnected(() => {
+        statusBadge.textContent = 'Connected';
+        statusBadge.className   = 'badge bg-success';
+        addEntry('_connection', 'reconnected');
+    });
+
+    conn.onclose(() => {
+        statusBadge.textContent = 'Disconnected';
+        statusBadge.className   = 'badge bg-danger';
+        addEntry('_connection', 'closed');
+    });
+
+    conn.start()
+        .then(() => {
+            statusBadge.textContent = 'Connected';
+            statusBadge.className   = 'badge bg-success';
+        })
+        .catch(err => {
+            statusBadge.textContent = 'Failed';
+            statusBadge.className   = 'badge bg-danger';
+            addEntry('_connection', 'failed: ' + err.message);
+        });
+
+})();
+</script>
+}

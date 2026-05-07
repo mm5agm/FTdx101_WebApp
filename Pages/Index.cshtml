@@ -70,6 +70,9 @@
                 </button>
             </div>
         }
+        <div class="col-auto">
+            <a href="/Diagnostics" class="btn btn-sm btn-outline-secondary" style="padding-top: 1px; padding-bottom: 1px;" title="Diagnostics">Diagnostics</a>
+        </div>
         <div class="col-auto ms-auto d-flex gap-2 align-items-center">
             <a href="https://paypal.me/mm5agm" target="_blank" rel="noopener noreferrer"
                class="btn btn-warning btn-sm" style="padding-top: 1px; padding-bottom: 1px;" title="Support this project via PayPal">
@@ -790,7 +793,6 @@
 
         updateLog4omStatus();
         setInterval(updateLog4omStatus, 5000);
-
 
         async function setMicGain(value) {
             console.log('[setMicGain] Called with value:', value);

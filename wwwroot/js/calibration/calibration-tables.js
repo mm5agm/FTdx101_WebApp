@@ -43,13 +43,26 @@ export const defaultTables = {
         { raw: 255, value: 200 }
     ],
 
-    // SWR — RM6 (0–255 ADC → 1.0–3.0 ratio)
-    // Raw 0 at RX/idle; ratio rises during TX into mismatched load.
+    // SWR — RM6 (raw 0–100 → SWR 1.0+)
+    // The FTdx101MP RM6 value follows a power-law curve, not a simple Gamma formula.
+    // Derived from two measured FTdx101MP data points:
+    //   raw=52 → SWR=1.30, raw=73 → SWR=5.00
+    //   SWR = 1 + A * raw^n, where n=7.636, A=2.365e-14
+    // The scale has a flat region (raw 0–45 → SWR≈1.0) then rises steeply above raw≈50.
+    // The gauge needle uses (SWR - 1.0) × 127.5 so it pegs at SWR≥3.0; text shows actual ratio.
+    // Raw 0 at RX/idle; the orchestrator forces SWR=1.0 when not transmitting.
     SWR: [
-        { raw: 0,   value: 1.0 },
-        { raw: 128, value: 1.5 },
-        { raw: 200, value: 2.0 },
-        { raw: 255, value: 3.0 }
+        { raw: 0,  value: 1.00  },
+        { raw: 40, value: 1.04  },
+        { raw: 50, value: 1.22  },
+        { raw: 52, value: 1.30  },
+        { raw: 55, value: 1.46  },
+        { raw: 60, value: 1.89  },
+        { raw: 65, value: 2.65  },
+        { raw: 70, value: 3.90  },
+        { raw: 73, value: 5.00  },
+        { raw: 80, value: 9.05  },
+        { raw: 90, value: 20.78 }
     ],
 
     // ALC — RM4 (0–255 ADC → 0–50 volts)

@@ -13,6 +13,12 @@ namespace FTdx101_WebApp.Services
         private readonly RadioStateService _stateService;
         private readonly ILogger<MeterPollingService> _logger;
 
+        // TX debounce: require 2 consecutive TX=false readings before declaring not-transmitting.
+        // A single TX=false poll (e.g. from a stale CAT response mid-burst) would otherwise
+        // clear the SWR rolling-average history and cause a momentary spike on the next reading.
+        private int _txFalseCount = 0;
+        private bool _stableIsTransmitting = false;
+
         public MeterPollingService(
             CatMultiplexerService multiplexer,
             RadioStateService stateService,
@@ -33,9 +39,21 @@ namespace FTdx101_WebApp.Services
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling TX status...");
                     var txResponse = await _multiplexer.SendCommandAsync("TX;", "MeterPoll", stoppingToken);
                     _logger.LogInformation("[MeterPolling][DEBUG] TX response: {0}", txResponse);
-                    bool isTransmitting = !string.IsNullOrEmpty(txResponse) && txResponse.Contains("TX1");
+                    bool rawIsTransmitting = !string.IsNullOrEmpty(txResponse) && txResponse.Contains("TX1");
+                    if (rawIsTransmitting)
+                    {
+                        _txFalseCount = 0;
+                        _stableIsTransmitting = true;
+                    }
+                    else
+                    {
+                        _txFalseCount++;
+                        if (_txFalseCount >= 2)
+                            _stableIsTransmitting = false;
+                    }
+                    bool isTransmitting = _stableIsTransmitting;
                     _stateService.IsTransmitting = isTransmitting;
-                    _logger.LogInformation("[MeterPolling] TX poll: raw='{Raw}', isTransmitting={IsTransmitting}", txResponse, isTransmitting);
+                    _logger.LogInformation("[MeterPolling] TX poll: raw='{Raw}', rawTX={RawTX}, stableTX={StableTX}", txResponse, rawIsTransmitting, isTransmitting);
 
                     _logger.LogInformation("[MeterPolling][DEBUG] Polling S-Meter A...");
                     var smAResponse = await _multiplexer.SendCommandAsync(CatCommands.SMeterMain + ";", "MeterPoll", stoppingToken);

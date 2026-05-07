@@ -122,6 +122,8 @@ export class FTdx101Meters {
         this._wasTransmittingSWR = true;
         this._swrHistory.push(raw);
         if (this._swrHistory.length > this._historyLength) this._swrHistory.shift();
+        // Require at least 2 readings before displaying — single-reading bursts are likely noise.
+        if (this._swrHistory.length < 2) return { skip: true };
         const rawAvg    = this._swrHistory.reduce((s, v) => s + v, 0) / this._swrHistory.length;
         const swr       = this._calibration.calibrateNumeric('SWR', rawAvg);
         const swrClamped = Math.min(swr, 10.0);
