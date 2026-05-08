@@ -43,26 +43,26 @@ export const defaultTables = {
         { raw: 255, value: 200 }
     ],
 
-    // SWR — RM6 (raw 0–100 → SWR 1.0+)
-    // The FTdx101MP RM6 value follows a power-law curve, not a simple Gamma formula.
-    // Derived from two measured FTdx101MP data points:
-    //   raw=52 → SWR=1.30, raw=73 → SWR=5.00
-    //   SWR = 1 + A * raw^n, where n=7.636, A=2.365e-14
-    // The scale has a flat region (raw 0–45 → SWR≈1.0) then rises steeply above raw≈50.
-    // The gauge needle uses (SWR - 1.0) × 127.5 so it pegs at SWR≥3.0; text shows actual ratio.
-    // Raw 0 at RX/idle; the orchestrator forces SWR=1.0 when not transmitting.
+    // SWR — MS03+RM0 right meter (0–255 ADC → SWR ratio)
+    // Scale matches friend's FTdx101MP measurements: percentage = raw/255*100,
+    // then lookup { 1.0:0%, 1.5:20%, 2.0:30%, 3.0:50%, 5.0:68%, 9.9:95% }.
     SWR: [
-        { raw: 0,  value: 1.00  },
-        { raw: 40, value: 1.04  },
-        { raw: 50, value: 1.22  },
-        { raw: 52, value: 1.30  },
-        { raw: 55, value: 1.46  },
-        { raw: 60, value: 1.89  },
-        { raw: 65, value: 2.65  },
-        { raw: 70, value: 3.90  },
-        { raw: 73, value: 5.00  },
-        { raw: 80, value: 9.05  },
-        { raw: 90, value: 20.78 }
+        { raw: 0,   value: 1.0 },
+        { raw: 51,  value: 1.5 },
+        { raw: 77,  value: 2.0 },
+        { raw: 128, value: 3.0 },
+        { raw: 173, value: 5.0 },
+        { raw: 242, value: 9.9 }
+    ],
+
+    // Compression — RM3 (0–255 ADC → 0–20 dB)
+    // Scale matches friend's FTdx101MP table: { 0dB:0%, 5dB:22%, 10dB:40%, 15dB:55%, 20dB:80% }.
+    Compression: [
+        { raw: 0,   value: 0  },
+        { raw: 56,  value: 5  },
+        { raw: 102, value: 10 },
+        { raw: 140, value: 15 },
+        { raw: 204, value: 20 }
     ],
 
     // ALC — RM4 (0–255 ADC → 0–50 volts)
@@ -74,10 +74,14 @@ export const defaultTables = {
     ],
 
     // Drain current IDD — RM7 (0–255 ADC → 0–25 amps)
+    // Scale matches friend's FTdx101MP table: { 0A:0%, 5A:20%, 10A:40%, 15A:60%, 20A:80%, 25A:95% }.
     IDD: [
         { raw: 0,   value: 0  },
-        { raw: 128, value: 12 },
-        { raw: 255, value: 25 }
+        { raw: 51,  value: 5  },
+        { raw: 102, value: 10 },
+        { raw: 153, value: 15 },
+        { raw: 204, value: 20 },
+        { raw: 242, value: 25 }
     ],
 
     // PA supply voltage VDD — RM8 (0–255 ADC → 0–60 volts)
@@ -91,12 +95,14 @@ export const defaultTables = {
         { raw: 255, value: 60 }
     ],
 
-    // PA temperature — RM9 (0-255 ADC → 0-100 °C, linear per FTdx101 CAT manual)
+    // PA temperature — RM9 (0-255 ADC → 0-100 °C)
+    // Friend's formula: temp = (raw / 2.3) - 6
     TPA: [
-        { raw: 0,   value: 0   },
-        { raw: 64,  value: 25  },
-        { raw: 128, value: 50  },
-        { raw: 192, value: 75  },
-        { raw: 255, value: 100 }
+        { raw: 14,  value: 0   },
+        { raw: 60,  value: 20  },
+        { raw: 106, value: 40  },
+        { raw: 152, value: 60  },
+        { raw: 198, value: 80  },
+        { raw: 244, value: 100 }
     ]
 };

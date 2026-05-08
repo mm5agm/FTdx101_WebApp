@@ -36,17 +36,12 @@
       "name": "SWR",
       "type": "numeric",
       "points": [
-        { "Radio": "1.00",  "raw": 0  },
-        { "Radio": "1.04",  "raw": 40 },
-        { "Radio": "1.22",  "raw": 50 },
-        { "Radio": "1.30",  "raw": 52 },
-        { "Radio": "1.46",  "raw": 55 },
-        { "Radio": "1.89",  "raw": 60 },
-        { "Radio": "2.65",  "raw": 65 },
-        { "Radio": "3.90",  "raw": 70 },
-        { "Radio": "5.00",  "raw": 73 },
-        { "Radio": "9.05",  "raw": 80 },
-        { "Radio": "20.78", "raw": 90 }
+        { "Radio": "1.0", "raw": 0   },
+        { "Radio": "1.5", "raw": 51  },
+        { "Radio": "2.0", "raw": 77  },
+        { "Radio": "3.0", "raw": 128 },
+        { "Radio": "5.0", "raw": 173 },
+        { "Radio": "9.9", "raw": 242 }
       ],
       "isGauge": true,
       "units": "ratio"
@@ -60,24 +55,24 @@
           "raw": 0
         },
         {
-          "Radio": "25",
-          "raw": 64
+          "Radio": "5",
+          "raw": 56
         },
         {
-          "Radio": "50",
-          "raw": 128
+          "Radio": "10",
+          "raw": 102
         },
         {
-          "Radio": "75",
-          "raw": 192
+          "Radio": "15",
+          "raw": 140
         },
         {
-          "Radio": "100",
-          "raw": 255
+          "Radio": "20",
+          "raw": 204
         }
       ],
       "isGauge": true,
-      "units": "%"
+      "units": "dB"
     },
     {
       "name": "ALC",
@@ -117,23 +112,27 @@
       "points": [
         {
           "Radio": "0",
-          "raw": 0
+          "raw": 14
         },
         {
-          "Radio": "25",
-          "raw": 64
+          "Radio": "20",
+          "raw": 60
         },
         {
-          "Radio": "50",
-          "raw": 128
+          "Radio": "40",
+          "raw": 106
         },
         {
-          "Radio": "75",
-          "raw": 192
+          "Radio": "60",
+          "raw": 152
+        },
+        {
+          "Radio": "80",
+          "raw": 198
         },
         {
           "Radio": "100",
-          "raw": 255
+          "raw": 244
         }
       ],
       "isGauge": true,
@@ -148,20 +147,24 @@
           "raw": 0
         },
         {
-          "Radio": "3",
-          "raw": 64
-        },
-        {
-          "Radio": "7",
-          "raw": 117
-        },
-        {
-          "Radio": "9",
-          "raw": 202
+          "Radio": "5",
+          "raw": 51
         },
         {
           "Radio": "10",
-          "raw": 255
+          "raw": 102
+        },
+        {
+          "Radio": "15",
+          "raw": 153
+        },
+        {
+          "Radio": "20",
+          "raw": 204
+        },
+        {
+          "Radio": "25",
+          "raw": 242
         }
       ],
       "isGauge": true,

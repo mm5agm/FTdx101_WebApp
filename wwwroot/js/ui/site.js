@@ -419,7 +419,7 @@ function updateMeterDomLabel(property, result) {
         }
         case 'CompressionMeter': {
             const el = document.getElementById('compressionMeterValue');
-            if (el) el.textContent = window.MeterFormatters.compressionOverlay(dv.percent);
+            if (el) el.textContent = window.MeterFormatters.compressionOverlay(dv.db);
             break;
         }
         case 'ALCMeter': {

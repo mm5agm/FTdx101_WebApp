@@ -87,17 +87,14 @@ namespace FTdx101_WebApp.Services
                         }
                     }
 
-                    _logger.LogInformation("[MeterPolling][DEBUG] Polling SWR Meter... TX={IsTransmitting}", isTransmitting);
-                    var swrResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterSWR + ";", "MeterPoll", stoppingToken);
-                    _logger.LogInformation("[MeterPolling][DebugSWR] TX={IsTransmitting} RM6 raw response: '{Raw}'", isTransmitting, swrResponse);
-                    int swr = CatCommands.ParseMeterReading(swrResponse ?? "");
-                    _logger.LogInformation("[MeterPolling][DebugSWR] TX={IsTransmitting} RM6 parsed value: {Value}", isTransmitting, swr);
+                    _logger.LogInformation("[MeterPolling][DEBUG] Polling Compression+SWR (MS13+RM0)... TX={IsTransmitting}", isTransmitting);
+                    await _multiplexer.SendCommandAsync(CatCommands.SetMetersCompAndSWR + ";", "MeterPoll", stoppingToken);
+                    var compSwrResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterBoth + ";", "MeterPoll", stoppingToken);
+                    _logger.LogInformation("[MeterPolling][DEBUG] MS13+RM0 response: '{Raw}'", compSwrResponse);
+                    int compression = CatCommands.ParseRm0LeftMeter(compSwrResponse ?? "");
+                    int swr = CatCommands.ParseRm0RightMeter(compSwrResponse ?? "");
+                    _logger.LogInformation("[MeterPolling][DEBUG] TX={IsTransmitting} Compression={Comp} SWR={SWR}", isTransmitting, compression, swr);
                     _stateService.SWRMeter = isTransmitting ? swr : 0;
-
-                    _logger.LogInformation("[MeterPolling][DEBUG] Polling Compression Meter...");
-                    var compResponse = await _multiplexer.SendCommandAsync(CatCommands.MeterComp + ";", "MeterPoll", stoppingToken);
-                    _logger.LogInformation("[MeterPolling][DEBUG] Compression Meter response: {0}", compResponse);
-                    int compression = CatCommands.ParseMeterReading(compResponse ?? "");
                     if (isTransmitting)
                     {
                         _stateService.CompressionMeter = compression;

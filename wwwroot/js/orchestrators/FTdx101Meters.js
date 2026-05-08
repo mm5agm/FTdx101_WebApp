@@ -132,11 +132,11 @@ export class FTdx101Meters {
     }
 
     _processCompression(raw) {
-        const percent = this._isTransmitting
-            ? Math.max(0, Math.min(100, Math.round((raw / 255) * 100)))
+        const db = this._isTransmitting
+            ? Math.max(0, Math.min(20, this._calibration.calibrateNumeric('Compression', raw)))
             : 0;
-        this._meterPanel.update('compression', percent);
-        return { skip: false, gaugeKey: 'compression', displayValue: { percent } };
+        this._meterPanel.update('compression', db);
+        return { skip: false, gaugeKey: 'compression', displayValue: { db } };
     }
 
     _processALC(raw) {

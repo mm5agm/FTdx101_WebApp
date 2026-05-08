@@ -133,7 +133,7 @@
 
     // ── Event log ─────────────────────────────────────────────────────────────
     const logDiv   = document.getElementById('diag-log');
-    const MAX_LOG  = 200;
+    const MAX_LOG  = 2000;
     let   entries  = [];
     let   paused   = false;
     let   filter   = '';
@@ -157,7 +157,8 @@
     });
 
     document.getElementById('diag-save').addEventListener('click', function () {
-        const text = entries
+        const source = filter ? entries.filter(e => e.property === filter) : entries;
+        const text = source
             .map(e => `${e.time}\t${e.property}\t${JSON.stringify(e.value)}`)
             .join('\n');
         const blob = new Blob([text], { type: 'text/plain' });

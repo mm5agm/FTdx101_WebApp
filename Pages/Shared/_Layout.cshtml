@@ -19,7 +19,7 @@
     <!-- Calibration engine — exposes window.calibrationEngine for site.js -->
     <!-- v=9: bump this when calibration-engine.js or calibration-tables.js changes -->
     <script type="module">
-        import { calibrateNumeric, calibrateSMeterLabel, loadFromBackend } from '/js/calibration/calibration-engine.js?v=9';
+        import { calibrateNumeric, calibrateSMeterLabel, loadFromBackend } from '/js/calibration/calibration-engine.js?v=10';
         // Expose immediately with default tables so site.js never gets undefined.
         window.calibrationEngine = { calibrateNumeric, calibrateSMeterLabel };
         // Replace defaults with any user-saved calibration from the backend.

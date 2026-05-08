@@ -436,14 +436,14 @@ class CompressionGauge extends Gauge {
         const config = Object.assign({
             renderTo: canvasId,
             minValue: 0,
-            maxValue: 100,
-            majorTicks: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            maxValue: 20,
+            majorTicks: ["0", "2.5", "5", "7.5", "10", "12.5", "15", "17.5", "20"],
             highlights: [
-                { from: 0, to: 30, color: "rgba(0,255,0,.25)" },
-                { from: 30, to: 70, color: "rgba(255,255,0,.25)" },
-                { from: 70, to: 100, color: "rgba(255,0,0,.25)" }
+                { from: 0,  to: 5,  color: "rgba(0,255,0,.25)" },
+                { from: 5,  to: 10, color: "rgba(255,255,0,.25)" },
+                { from: 10, to: 20, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            labels: ["0", "2.5", "5", "7.5", "10", "12.5", "15", "17.5", "20"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -478,7 +478,7 @@ class CompressionGauge extends Gauge {
             gaugeTitle: 'Compression',
             gaugeTitleId: 'compressionMeterValue',
             gaugeTitleDefault: '0',
-            gaugeTitleSuffix: '%',
+            gaugeTitleSuffix: 'dB',
             gaugeTitleBg: '#ffc107',
             gaugeTitleColor: '#000000'
         }, options);
