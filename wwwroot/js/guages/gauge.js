@@ -41,6 +41,12 @@ class Gauge {
         this.gauge = new RadialGauge(this.config);
         this.gauge.draw();
 
+        // The canvas-gauges library may inject a `title` attribute during draw(),
+        // which NVDA reads in preference to aria-label. Strip it so the aria-label wins.
+        if (canvas) {
+            canvas.removeAttribute('title');
+        }
+
         // Create overlay labels
         this.createLabels();
     }
@@ -61,9 +67,10 @@ class Gauge {
         const existing = wrapper.querySelector('.gauge-labels-overlay');
         if (existing) existing.remove();
 
-        // Overlay container
+        // Overlay container — hidden from screen readers; the canvas has aria-label.
         const labelsDiv = document.createElement('div');
         labelsDiv.className = 'gauge-labels-overlay';
+        labelsDiv.setAttribute('aria-hidden', 'true');
         labelsDiv.style.position = 'absolute';
         labelsDiv.style.left = '0';
         labelsDiv.style.top = '0';

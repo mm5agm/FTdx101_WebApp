@@ -33,12 +33,18 @@
 11. [Using the App on a Tablet or Phone](#11-using-the-app-on-a-tablet-or-phone)
 12. [Keyboard Shortcuts](#12-keyboard-shortcuts)
 13. [Troubleshooting](#13-troubleshooting)
+14. [Accessibility and Screen Readers](#14-accessibility-and-screen-readers)
+    - 14.1 [Windows High Contrast Mode](#141-windows-high-contrast-mode)
+    - 14.2 [Screen Reader Support](#142-screen-reader-support)
+    - 14.3 [NVDA](#143-nvda)
+    - 14.4 [Windows Narrator](#144-windows-narrator)
+    - 14.5 [Customising Screen Reader Labels](#145-customising-screen-reader-labels)
 
 ---
 
 ## 1. Introduction
 
-FTdx101 WebApp is a web-based control panel for the Yaesu FTdx101MP and FTdx101D transceivers. It runs as a small application on your shack PC and is accessed through any web browser — on the same PC, a tablet, or any device on your home network.
+FTdx101 WebApp is a web-based control panel for Yaesu transceivers especially the FTdx101MP and FTdx101D but also works with the FTdx10. It runs as a small application on your shack PC and is accessed through any web browser — on the same PC, a tablet, or any device on your home network.
 
 The application was written for operators who find the physical controls on the FTdx101 difficult to read or use, and for those who want a large, clean touchscreen-friendly display alongside their existing logging software.
 
@@ -53,6 +59,9 @@ The application was written for operators who find the physical controls on the 
 - Integration with WSJT-X, JTAlert, and Log4OM
 - Built-in rigctld server so WSJT-X can control the radio through the app
 - UK and USA band plans
+- Full screen reader support — compatible with NVDA and Windows Narrator
+- Windows High Contrast mode support for all gauge displays
+- Customisable accessible labels (band names, meter names, control names) for any language
 
 ---
 
@@ -71,7 +80,7 @@ Before the app can communicate with your radio you need to tell it which serial 
 
 1. Open a browser and go to **http://localhost:8080**
 2. Click the **Settings** link in the navigation bar.
-3. Set **Radio Model** to either FTdx101MP (200 W, dual receiver) or FTdx101D (100 W, single receiver).
+3. Set **Radio Model** to your transceiver: **FTdx101MP** (200 W, dual receiver), **FTdx101D** (100 W, single receiver), or **FTdx10** (100 W, single receiver — VFO B is hidden by default).
 4. Set **Serial Port** to the COM port your radio is connected to. If you are unsure, go to **Diagnostics → Ports** to see a list of available ports, or check Windows Device Manager.
 5. Set **Baud Rate** to match the radio's CAT baud rate. The factory default on the FTdx101 is **38400**. You can verify or change this on the radio under **Menu → CAT Rate**.
 6. Select your **Band Plan** (UK or USA).
@@ -273,7 +282,7 @@ Access Settings from the navigation bar or by clicking the settings icon. Change
 
 | Setting | Description |
 |---------|-------------|
-| Radio Model | FTdx101MP (200 W, dual RX) or FTdx101D (100 W, single RX) |
+| Radio Model | **FTdx101MP** (200 W, dual RX), **FTdx101D** (100 W, single RX), or **FTdx10** (100 W, single RX — VFO B hidden) |
 | Serial Port | COM port the radio's USB/serial cable is connected to (e.g., COM3) |
 | Baud Rate | Must match the radio's CAT Rate setting. Default: 38400 |
 | Band Plan | UK or USA. Affects which bands and segment frequencies are shown |
@@ -451,11 +460,15 @@ Calibration is saved to `%APPDATA%\MM5AGM\FTdx101 WebApp\calibration.user.json`.
 
 ## 10. Diagnostics
 
-The Diagnostics page provides two tools for troubleshooting:
+Access the Diagnostics page from the navigation bar. It is primarily used when something is not working as expected.
 
-**Ports** — Lists all COM ports currently available on your PC. Use this if you are unsure which COM port the radio is connected to.
+**COM Ports button** — Opens a list of all serial ports currently detected on your PC. Use this if you are unsure which port the radio is connected to.
 
-**Status (JSON)** — Opens the raw CAT status API. This shows the current state of every radio parameter as JSON. Useful when reporting a bug.
+**CAT Status JSON button** — Opens a live JSON view of every radio parameter the app knows about. Useful when reporting a bug.
+
+**Live Meter Readings table** — Shows the most recent raw value (0–255) received from the radio for each meter, alongside the CAT command used to request it and the time it was last updated. Rows flash yellow when a new value arrives. High SWR raw values are highlighted in orange.
+
+**SignalR Event Log** — A scrolling log of every radio state update received over the websocket connection, with millisecond timestamps. Use the filter dropdown to narrow the log to a single property (e.g., SWR, Power, S-Meter). The **Pause** button freezes the log so you can read it; **Clear** empties it; **Save…** downloads the current log as a text file.
 
 ---
 
@@ -535,6 +548,98 @@ On touch devices, tap a digit in the frequency display to select it (it highligh
 - Check that **Network Interface** in Settings is set to `0.0.0.0 (all interfaces)`, not `localhost`.
 - Check that Windows Firewall allows inbound connections on port 8080. You may see a firewall prompt the first time you use the app.
 - Make sure the tablet is on the same Wi-Fi network as the shack PC.
+
+---
+
+## 14. Accessibility and Screen Readers
+
+### 14.1 Windows High Contrast Mode
+
+When a Windows High Contrast theme is active, the gauge displays automatically adjust:
+
+- Gauge needles are shown in bright **yellow** so they remain clearly visible against dark backgrounds.
+- Gauge plate backgrounds become transparent, preserving the half-circle appearance.
+
+To enable a High Contrast theme: **Windows Settings → Accessibility → Contrast themes**, choose a theme, and click **Apply**. No changes to the app are needed — it detects the theme automatically.
+
+---
+
+### 14.2 Screen Reader Support
+
+All interactive controls in the app have accessible labels that screen readers announce when you hover over or focus on them:
+
+| Element | What is announced |
+|---------|------------------|
+| Band buttons | Full band name — e.g., "20 metres" instead of "20m" |
+| Meter gauges | Meter name — e.g., "S meter VFO A", "SWR meter" |
+| Frequency display | "VFO A frequency" with current value in MHz |
+| Sliders, dropdowns, buttons | Their purpose — e.g., "Transmit power", "VFO A mode" |
+
+---
+
+### 14.3 NVDA
+
+NVDA (NonVisual Desktop Access) is a free, open-source screen reader for Windows.
+
+**Download:** [https://www.nvaccess.org/download/](https://www.nvaccess.org/download/)
+
+NVDA works with Edge, Chrome, and Firefox. Install it, then open the app in Edge as normal.
+
+**Essential NVDA keys:**
+
+| Key | Action |
+|-----|--------|
+| `Insert + N` | Open the NVDA menu |
+| `Insert + Q` | Quit NVDA |
+| `Insert + M` | Toggle mouse tracking on/off |
+
+**Mouse tracking** is the most useful mode for this app. When enabled, NVDA announces the name of whatever element is currently under your mouse cursor as you move it around the page. This lets you identify every control without clicking.
+
+> **Note:** NVDA reads abbreviations aloud. "SWR" is read as three separate letters ("S W R"). "PA" may be expanded to "Power Amplifier". The default labels in this app are written to avoid ambiguous abbreviations.
+
+---
+
+### 14.4 Windows Narrator
+
+Narrator is the screen reader built into Windows 11 — no download required.
+
+**Toggle Narrator on/off:** `Win + Ctrl + Enter`
+
+Once running, Narrator reads aloud the element that has keyboard focus. To navigate the app with Narrator:
+
+- Use `Tab` to move between interactive controls (buttons, sliders, dropdowns).
+- Narrator announces the control's label and current value as focus moves to it.
+- In **Scan mode** (`Caps Lock + Space`): use the arrow keys to move through all elements on the page, including non-interactive text and meter labels.
+
+---
+
+### 14.5 Customising Screen Reader Labels
+
+The text that screen readers announce for each control is stored in a labels file. You can edit this file to change any label — for example, to translate the app into another language, or simply to use your preferred wording.
+
+**How it works:**
+
+1. The app ships with a default English labels file.
+2. If you create your own copy in `%APPDATA%\MM5AGM\FTdx101 WebApp\labels.json`, the app uses your copy instead. Your file survives app updates.
+
+**To create your labels file:**
+
+1. Find the default labels file in the app's installation folder at `wwwroot\i18n\labels.default.json`. Open it with Notepad.
+2. Copy the entire contents and paste them into a new file saved as:
+   `C:\Users\<your-name>\AppData\Roaming\MM5AGM\FTdx101 WebApp\labels.json`
+3. Edit the **values** (the text on the right of each colon). For example:
+
+```json
+"bands": {
+    "20m": "20 metres"
+}
+```
+
+Change `"20 metres"` to whatever you want NVDA to say — e.g., `"zwanzig Meter"` for German.
+
+4. Save the file, then refresh the page in your browser (`F5`). The new labels take effect immediately.
+
+> **Important:** Do not change the **keys** (the text on the left, such as `"20m"`, `"swr"`, `"temp"`). Only change the values on the right.
 
 ---
 

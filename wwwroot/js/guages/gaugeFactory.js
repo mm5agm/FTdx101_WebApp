@@ -17,6 +17,25 @@ const gaugeRegistry = {
     vdd: VDDGauge
 };
 
+// High-contrast colour overrides applied when Windows High Contrast mode is active.
+// Canvas ignores CSS forced-colors, so we must set explicit colours manually.
+const HIGH_CONTRAST_OVERRIDES = window.matchMedia('(forced-colors: active)').matches
+    ? {
+        colorPlate:                  'transparent',
+        colorMajorTicks:             '#ffffff',
+        colorMinorTicks:             '#ffffff',
+        colorNumbers:                '#ffffff',
+        colorNeedle:                 '#ffff00',
+        colorNeedleEnd:              '#ffff00',
+        colorNeedleCircleInner:      '#ffff00',
+        colorNeedleCircleInnerEnd:   '#ffff00',
+        colorBar:                    '#444444',
+        colorBarProgress:            '#00ff00',
+        colorBarProgressEnd:         '#00ff00',
+        highlights:                  []
+      }
+    : {};
+
 /**
  * Create a gauge instance.
  *
@@ -33,7 +52,7 @@ export function createGauge(type, canvasId, options = {}) {
         return null;
     }
 
-    return new Constructor(canvasId, options);
+    return new Constructor(canvasId, Object.assign({}, HIGH_CONTRAST_OVERRIDES, options));
 }
 
 /**

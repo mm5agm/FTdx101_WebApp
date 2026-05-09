@@ -205,6 +205,20 @@ try
 
     app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
 
+    // Serve accessible labels — user's AppData copy takes priority over the bundled default.
+    app.MapGet("/i18n/labels.json", (IWebHostEnvironment env) =>
+    {
+        var userPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "MM5AGM", "FTdx101 WebApp", "labels.json");
+
+        var filePath = File.Exists(userPath)
+            ? userPath
+            : Path.Combine(env.WebRootPath, "i18n", "labels.default.json");
+
+        return Results.File(filePath, "application/json");
+    });
+
     app.MapPost("/api/sdr/span", async (
         [Microsoft.AspNetCore.Mvc.FromQuery] double hz,
         FTdx101_WebApp.Services.ISettingsService settings,

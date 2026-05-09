@@ -1,0 +1,66 @@
+{
+  "_readme": "Edit this file to customise accessible labels (what a screen reader announces). Restart the app after saving. To override without losing your changes on update, copy this file to %APPDATA%\\MM5AGM\\FTdx101 WebApp\\labels.json — that location takes priority.",
+
+  "bands": {
+    "160m": "160 metres",
+    "80m":  "80 metres",
+    "60m":  "60 metres",
+    "40m":  "40 metres",
+    "30m":  "30 metres",
+    "20m":  "20 metres",
+    "17m":  "17 metres",
+    "15m":  "15 metres",
+    "12m":  "12 metres",
+    "10m":  "10 metres",
+    "6m":   "6 metres",
+    "4m":   "4 metres"
+  },
+
+  "meters": {
+    "smeterA":      "S meter, VFO A",
+    "smeterB":      "S meter, VFO B",
+    "power":        "Power output meter",
+    "swr":          "SWR meter",
+    "alc":          "ALC meter",
+    "compression":  "Compression meter",
+    "temp":         "Amplifier temperature meter",
+    "idd":          "Drain current meter",
+    "vdd":          "Amplifier supply voltage meter"
+  },
+
+  "vfo": {
+    "a.frequency":  "VFO A frequency in megahertz",
+    "b.frequency":  "VFO B frequency in megahertz",
+    "a.up":         "VFO A frequency up",
+    "a.down":       "VFO A frequency down",
+    "b.up":         "VFO B frequency up",
+    "b.down":       "VFO B frequency down",
+    "a.mode":       "VFO A mode",
+    "b.mode":       "VFO B mode"
+  },
+
+  "controls": {
+    "txPower":      "Transmit power",
+    "micGain":      "Microphone gain",
+    "afGain":       "Audio frequency gain",
+    "ifShift":      "Intermediate frequency shift",
+    "ifWidthA":     "IF width, VFO A",
+    "ifWidthB":     "IF width, VFO B",
+    "agcA":         "Automatic gain control, VFO A",
+    "agcB":         "Automatic gain control, VFO B",
+    "ipoA":         "IPO, VFO A",
+    "ipoB":         "IPO, VFO B",
+    "attA":         "Attenuator, VFO A",
+    "attB":         "Attenuator, VFO B",
+    "nrA":          "Noise reduction, VFO A",
+    "nrB":          "Noise reduction, VFO B",
+    "nbA":          "Noise blanker, VFO A",
+    "nbB":          "Noise blanker, VFO B",
+    "autoNotchA":   "Auto notch, VFO A",
+    "autoNotchB":   "Auto notch, VFO B",
+    "manualNotchA": "Manual notch, VFO A",
+    "manualNotchB": "Manual notch, VFO B",
+    "roofingA":     "Roofing filter, VFO A",
+    "roofingB":     "Roofing filter, VFO B"
+  }
+}

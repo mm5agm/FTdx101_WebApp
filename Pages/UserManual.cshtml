@@ -59,6 +59,15 @@
                         <li><a href="#tablet">Using on a Tablet or Phone</a></li>
                         <li><a href="#shortcuts">Keyboard Shortcuts</a></li>
                         <li><a href="#troubleshooting">Troubleshooting</a></li>
+                        <li><a href="#accessibility">Accessibility &amp; Screen Readers</a>
+                            <ol class="ps-3">
+                                <li><a href="#high-contrast">High Contrast Mode</a></li>
+                                <li><a href="#screen-reader-support">Screen Reader Support</a></li>
+                                <li><a href="#nvda">NVDA</a></li>
+                                <li><a href="#narrator">Windows Narrator</a></li>
+                                <li><a href="#custom-labels">Customising Labels</a></li>
+                            </ol>
+                        </li>
                     </ol>
                 </div>
             </div>
@@ -73,7 +82,7 @@
                     <h5 class="mb-0">1. Introduction</h5>
                 </div>
                 <div class="card-body">
-                    <p>FTdx101 WebApp is a web-based control panel for the Yaesu FTdx101MP and FTdx101D transceivers. It runs as a small application on your shack PC and is accessed through any web browser — on the same PC, a tablet, or any device on your home network.</p>
+                    <p>FTdx101 WebApp is a web-based control panel for Yaesu transceivers especially the FTdx101MP and FTdx101D but also works with the FTdx10. It runs as a small application on your shack PC and is accessed through any web browser — on the same PC, a tablet, or any device on your home network.</p>
                     <p>The application was written for operators who find the physical controls on the FTdx101 difficult to read or use, and for those who want a large, clean touchscreen-friendly display alongside their existing logging software.</p>
                     <h6 class="mt-3">Key features</h6>
                     <ul>
@@ -86,6 +95,9 @@
                         <li>Integration with WSJT-X, JTAlert, and Log4OM</li>
                         <li>Built-in rigctld server so WSJT-X can control the radio through the app</li>
                         <li>UK and USA band plans</li>
+                        <li>Full screen reader support — compatible with NVDA and Windows Narrator</li>
+                        <li>Windows High Contrast mode support for all gauge displays</li>
+                        <li>Customisable accessible labels (band names, meter names, control names) for any language</li>
                     </ul>
                 </div>
             </div>
@@ -115,7 +127,7 @@
                     <ol>
                         <li>Open a browser and go to <code>http://localhost:8080</code></li>
                         <li>Click <strong>Settings</strong> in the navigation bar.</li>
-                        <li>Set <strong>Radio Model</strong> to either <em>FTdx101MP</em> (200 W, dual receiver) or <em>FTdx101D</em> (100 W, single receiver).</li>
+                        <li>Set <strong>Radio Model</strong> to your transceiver: <strong>FTdx101MP</strong> (200 W, dual receiver), <strong>FTdx101D</strong> (100 W, single receiver), or <strong>FTdx10</strong> (100 W, single receiver — VFO B is hidden by default).</li>
                         <li>Set <strong>Serial Port</strong> to the COM port your radio is connected to. If you are unsure, go to <strong>Diagnostics → Ports</strong> to see a list of available ports, or check Windows Device Manager.</li>
                         <li>Set <strong>Baud Rate</strong> to match the radio's CAT baud rate. The factory default on the FTdx101 is <strong>38400</strong>. You can verify or change this on the radio under <strong>Menu → CAT Rate</strong>.</li>
                         <li>Select your <strong>Band Plan</strong> (UK or USA).</li>
@@ -304,7 +316,7 @@
                     <table class="table table-sm table-bordered mb-4">
                         <thead class="table-light"><tr><th>Setting</th><th>Description</th></tr></thead>
                         <tbody>
-                            <tr><td>Radio Model</td><td>FTdx101MP (200 W, dual RX) or FTdx101D (100 W, single RX)</td></tr>
+                            <tr><td>Radio Model</td><td><strong>FTdx101MP</strong> (200 W, dual RX), <strong>FTdx101D</strong> (100 W, single RX), or <strong>FTdx10</strong> (100 W, single RX — VFO B hidden by default)</td></tr>
                             <tr><td>Serial Port</td><td>COM port the radio is connected to (e.g., COM3). Check Device Manager or Diagnostics → Ports if unsure.</td></tr>
                             <tr><td>Baud Rate</td><td>Must match the radio's CAT Rate setting. Factory default: <strong>38400</strong>.</td></tr>
                             <tr><td>Band Plan</td><td>UK or USA. Affects which bands and segment frequencies appear.</td></tr>
@@ -479,10 +491,12 @@
                     <h5 class="mb-0">10. Diagnostics</h5>
                 </div>
                 <div class="card-body">
-                    <p>The Diagnostics page provides two tools for troubleshooting, accessible from the Settings page.</p>
+                    <p>Access the Diagnostics page from the navigation bar. It is primarily useful when something is not working as expected.</p>
                     <ul>
-                        <li><strong>Ports</strong> — Lists all COM ports currently available on your PC. Use this if you are unsure which port the radio is connected to.</li>
-                        <li><strong>Status (JSON)</strong> — Shows the current state of every radio parameter as raw JSON. Useful when reporting a bug.</li>
+                        <li><strong>COM Ports button</strong> — Lists all serial ports currently detected on your PC. Use this if you are unsure which port the radio is connected to.</li>
+                        <li><strong>CAT Status JSON button</strong> — Opens a live JSON view of every radio parameter the app knows about. Useful when reporting a bug.</li>
+                        <li><strong>Live Meter Readings table</strong> — Shows the most recent raw value (0–255) received from the radio for each meter, the CAT command used to poll it, and the time of the last update. Rows flash yellow when a new value arrives. High SWR raw values are highlighted in orange.</li>
+                        <li><strong>SignalR Event Log</strong> — A scrolling log of every radio state update received over the websocket connection, with millisecond timestamps. Use the filter dropdown to narrow the log to a single property (e.g., SWR, Power, S-Meter). <strong>Pause</strong> freezes the log; <strong>Clear</strong> empties it; <strong>Save…</strong> downloads the current log as a text file.</li>
                     </ul>
                 </div>
             </div>
@@ -666,6 +680,96 @@
                         </div>
 
                     </div><!-- /accordion -->
+                </div>
+            </div>
+
+            <!-- 14. Accessibility -->
+            <div class="card mb-4 manual-section" id="accessibility">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">14. Accessibility and Screen Readers</h5>
+                </div>
+                <div class="card-body p-0">
+
+                    <!-- 14.1 High Contrast -->
+                    <div class="p-3 border-bottom section-anchor" id="high-contrast">
+                        <h6 class="text-primary fw-bold">14.1 Windows High Contrast Mode</h6>
+                        <p>When a Windows High Contrast theme is active, the gauge displays adjust automatically:</p>
+                        <ul>
+                            <li>Gauge needles are shown in bright <strong>yellow</strong> so they remain clearly visible.</li>
+                            <li>Gauge backgrounds become transparent, preserving the half-circle appearance.</li>
+                        </ul>
+                        <p class="mb-0">To enable: <strong>Windows Settings → Accessibility → Contrast themes</strong>, choose a theme, and click <strong>Apply</strong>. No changes to the app are needed — it detects the theme automatically.</p>
+                    </div>
+
+                    <!-- 14.2 Screen Reader Support -->
+                    <div class="p-3 border-bottom section-anchor" id="screen-reader-support">
+                        <h6 class="text-primary fw-bold">14.2 Screen Reader Support</h6>
+                        <p>All interactive controls have accessible labels that screen readers announce when you hover over or focus on them:</p>
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="table-light"><tr><th>Element</th><th>What is announced</th></tr></thead>
+                            <tbody>
+                                <tr><td>Band buttons</td><td>Full band name — e.g., <em>"20 metres"</em> instead of <em>"20m"</em></td></tr>
+                                <tr><td>Meter gauges</td><td>Meter name — e.g., <em>"S meter VFO A"</em>, <em>"SWR meter"</em></td></tr>
+                                <tr><td>Frequency display</td><td><em>"VFO A frequency"</em> with current value in MHz</td></tr>
+                                <tr><td>Sliders, dropdowns, buttons</td><td>Their purpose — e.g., <em>"Transmit power"</em>, <em>"VFO A mode"</em></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 14.3 NVDA -->
+                    <div class="p-3 border-bottom section-anchor" id="nvda">
+                        <h6 class="text-primary fw-bold">14.3 NVDA</h6>
+                        <p>NVDA (NonVisual Desktop Access) is a free, open-source screen reader for Windows. Download it from <a href="https://www.nvaccess.org/download/" target="_blank">nvaccess.org <i class="bi bi-box-arrow-up-right"></i></a>. It works with Edge, Chrome, and Firefox.</p>
+                        <table class="table table-sm table-bordered mb-3">
+                            <thead class="table-light"><tr><th>Key</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <tr><td><kbd>Insert + N</kbd></td><td>Open the NVDA menu</td></tr>
+                                <tr><td><kbd>Insert + Q</kbd></td><td>Quit NVDA</td></tr>
+                                <tr><td><kbd>Insert + M</kbd></td><td>Toggle mouse tracking on/off</td></tr>
+                            </tbody>
+                        </table>
+                        <p><strong>Mouse tracking</strong> is the most useful mode for this app. When enabled, NVDA announces the name of whatever element is under your mouse cursor as you move it around the page — letting you identify every control without clicking.</p>
+                        <div class="alert alert-info py-2 mb-0">
+                            <i class="bi bi-info-circle"></i> NVDA reads abbreviations aloud. "SWR" is read as three letters. "PA" may be expanded to "Power Amplifier". The default labels in this app are written to avoid ambiguous abbreviations — see <a href="#custom-labels">Section 14.5</a> to customise them.
+                        </div>
+                    </div>
+
+                    <!-- 14.4 Narrator -->
+                    <div class="p-3 border-bottom section-anchor" id="narrator">
+                        <h6 class="text-primary fw-bold">14.4 Windows Narrator</h6>
+                        <p>Narrator is the screen reader built into Windows 11 — no download required.</p>
+                        <p><strong>Toggle on/off:</strong> <kbd>Win + Ctrl + Enter</kbd></p>
+                        <p>Narrator reads aloud the element that has keyboard focus. To navigate the app:</p>
+                        <ul>
+                            <li>Use <kbd>Tab</kbd> to move between interactive controls (buttons, sliders, dropdowns). Narrator announces each control's label and current value.</li>
+                            <li>In <strong>Scan mode</strong> (<kbd>Caps Lock + Space</kbd>): use the arrow keys to step through all elements on the page, including meter labels and static text.</li>
+                        </ul>
+                    </div>
+
+                    <!-- 14.5 Custom Labels -->
+                    <div class="p-3 section-anchor" id="custom-labels">
+                        <h6 class="text-primary fw-bold">14.5 Customising Screen Reader Labels</h6>
+                        <p>The text that screen readers announce for each control is stored in a labels file you can edit — for example to translate the app into another language or change any wording.</p>
+
+                        <h6>How it works</h6>
+                        <ul>
+                            <li>The app ships with a default English labels file.</li>
+                            <li>If you create your own copy at <code>%APPDATA%\MM5AGM\FTdx101 WebApp\labels.json</code>, the app uses your copy instead. Your file survives app updates.</li>
+                        </ul>
+
+                        <h6>Creating your labels file</h6>
+                        <ol>
+                            <li>Find the default labels file in the app's installation folder at <code>wwwroot\i18n\labels.default.json</code>. Open it with Notepad.</li>
+                            <li>Copy the entire contents and paste them into a new file saved as:<br>
+                                <code>C:\Users\&lt;your-name&gt;\AppData\Roaming\MM5AGM\FTdx101 WebApp\labels.json</code></li>
+                            <li>Edit the <strong>values</strong> (the text on the right of each colon). For example, to use German band names change <code>"20m": "20 metres"</code> to <code>"20m": "zwanzig Meter"</code>.</li>
+                            <li>Save the file, then press <kbd>F5</kbd> to refresh the page. The new labels take effect immediately.</li>
+                        </ol>
+                        <div class="alert alert-warning py-2 mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Do not change the keys</strong> (the text on the left of each colon, such as <code>"20m"</code>, <code>"swr"</code>, <code>"temp"</code>). Only change the values on the right.
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

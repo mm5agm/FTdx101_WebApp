@@ -1253,10 +1253,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         let selIdx = state.selectedIdx[receiver];
-        let freqToShow = (state.editing[receiver] && state.localFreq[receiver] !== null)
-            ? state.localFreq[receiver]
+        let freqToShow = state.editing[receiver]
+            ? (state.localFreq[receiver] ?? state.lastSentFreq[receiver] ?? freqHz)
             : freqHz;
         display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
+        if (freqToShow && freqToShow > 0) {
+            display.setAttribute('aria-valuenow', (freqToShow / 1e6).toFixed(6));
+        }
     }
 
     // Update band, mode, and antenna radio/toggle buttons to reflect current state.
@@ -1346,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             let newFreq = parseInt(freqArr.join(''));
-            newFreq = Math.max(30000, Math.min(70000000, newFreq));
+            newFreq = Math.max(30000, Math.min(75000000, newFreq));
             state.localFreq[receiver] = newFreq;
             updateFrequencyDisplay(receiver, newFreq);
             let newDigits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
