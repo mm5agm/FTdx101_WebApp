@@ -205,18 +205,21 @@ try
 
     app.MapGet("/api/status/init", () => new { status = FTdx101_WebApp.Services.AppStatus.InitializationStatus });
 
-    // Serve accessible labels — user's AppData copy takes priority over the bundled default.
+    // Serve accessible labels from AppData — copy default on first run so users can find and edit it.
     app.MapGet("/i18n/labels.json", (IWebHostEnvironment env) =>
     {
         var userPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "MM5AGM", "FTdx101 WebApp", "labels.json");
 
-        var filePath = File.Exists(userPath)
-            ? userPath
-            : Path.Combine(env.WebRootPath, "i18n", "labels.default.json");
+        if (!File.Exists(userPath))
+        {
+            var defaultPath = Path.Combine(env.WebRootPath, "i18n", "labels.default.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(userPath)!);
+            File.Copy(defaultPath, userPath);
+        }
 
-        return Results.File(filePath, "application/json");
+        return Results.File(userPath, "application/json");
     });
 
     app.MapPost("/api/sdr/span", async (
