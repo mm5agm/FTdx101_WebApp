@@ -150,7 +150,7 @@ The meter scales are calibrated to show meaningful units rather than raw ADC val
 
 ### 5.3 Power and Mic Gain
 
-**Power slider** — Sets the transmit power from 5 W to 200 W (FTdx101MP) or 5 W to 100 W (FTdx101D). Drag the slider to set the desired power level. The current value is shown to the right of the slider.
+**Power slider** — Sets the transmit power from 5 W to 200 W (FTdx101MP) or 5 W to 100 W (FTdx101D and FTdx10). Drag the slider to set the desired power level. The current value is shown to the right of the slider.
 
 **MIC Gain / Data Out Gain slider** — Sets the microphone gain (0–100). When the radio is in a data mode (DATA-U, DATA-L, PSK, RTTY, or DATA-FM), the label changes to **Data Out Gain** automatically.
 
@@ -176,10 +176,12 @@ A status badge in the spectrum panel shows the current SDR state: **No SDR**, **
 
 There are two VFO panels side by side:
 
-- **VFO A** (blue border) — the main receiver
-- **VFO B** (green border) — the sub-receiver (FTdx101MP only; on the FTdx101D, VFO B controls are still present but operate on the single receiver)
+- **VFO A** (blue border) — the main receiver, present on all supported radios
+- **VFO B** (green border) — the sub-receiver, present on the FTdx101MP and FTdx101D. On the FTdx10 the VFO B panel is hidden because that radio has only one VFO.
 
 Both panels have identical controls. All settings are independent — changing a control in VFO A does not affect VFO B.
+
+> **FTdx10 users:** If you switch to the FTdx10 model in Settings, the **VFO B** panel and the **VFO-B toggle button** are removed from the main page automatically. They reappear if you change back to an FTdx101MP or FTdx101D.
 
 ---
 
@@ -243,7 +245,7 @@ IF Shift is persisted and restored on startup.
 
 ### 5.9 Band and Segment Selection
 
-**Band buttons** — Click a band button (160m, 80m, 40m, etc.) to switch the VFO to that band. The radio tunes to the last-used frequency on that band.
+**Band buttons** — Click a band button (160m, 80m, 40m, etc.) to switch the VFO to that band. The radio tunes to the last-used frequency on that band. You can also navigate between band buttons with the keyboard: **Tab** moves focus into the band group, then the **left/right arrow keys** move between bands and activate the selected one immediately.
 
 Available bands depend on your band plan setting:
 - **UK:** 160m, 80m, 60m, 40m, 30m, 20m, 17m, 15m, 12m, 10m, 6m, 4m
@@ -305,15 +307,17 @@ The Settings page also shows the full URL for each detected network interface so
 
 ### 6.3 SDR Spectrum Display
 
-The spectrum display requires an SDR receiver connected to the FTdx101's 9 MHz IF output (rear panel BNC labelled **IF OUT**).
+The spectrum display requires an SDR receiver. On the FTdx101MP and FTdx101D the SDR is connected to the radio's 9 MHz IF output (rear panel RCA socket labelled **IF OUT**), giving a VFO-centred panoramic view of the band. The FTdx10 does not have an IF output — see the note below.
+
+> **FTdx10 users:** The FTdx10 has no rear-panel IF output. You can still use an SDR for spectrum display by connecting it to an antenna port, but the spectrum will show absolute RF frequencies rather than a view centred on your VFO frequency. The IF Frequency setting has no effect when used this way. The Settings page shows a reminder of this when FTdx10 is selected as the radio model.
 
 **Supported hardware:**
 - **SDRplay RSP1 and RSP series** — requires the [SDRplay API v3](https://www.sdrplay.com/downloads/) to be installed separately
 - **RTL-SDR, Airspy, HackRF** — drivers are included in the app installer; no separate installation needed
 
-**Setting up the SDR:**
+**Setting up the SDR (FTdx101MP / FTdx101D):**
 
-1. Connect the SDR to the 9 MHz IF output.
+1. Connect the SDR to the 9 MHz IF output using an RCA-to-SMA adapter and a short coax cable.
 2. Go to Settings and click **Scan** in the SDR section.
 3. Detected devices appear in the dropdown. Select your device.
 4. Set **IF Frequency** to `9000000` (9 MHz) for the FTdx101 IF output.
@@ -325,7 +329,7 @@ The spectrum panel appears on the main page when a device is saved. If you want 
 
 | SDR Setting | Recommended Value |
 |-------------|------------------|
-| IF Frequency | 9,000,000 Hz |
+| IF Frequency | 9,000,000 Hz (FTdx101MP/D) — no effect on FTdx10 |
 | Sample Rate | 2,048,000 (2M) |
 | FFT Size | 1024 |
 
@@ -497,6 +501,8 @@ On touch devices, tap a digit in the frequency display to select it (it highligh
 | Mouse wheel (on selected digit) | Increment or decrement the digit |
 | Mouse wheel (on spectrum) | Tune VFO A up or down in 1 kHz steps |
 | Click on spectrum | Tune VFO A to the clicked frequency |
+| **Tab** (in band buttons) | Move focus into the band button group |
+| **← / →** (in band buttons) | Move to the previous/next band and switch immediately |
 
 ---
 
@@ -570,7 +576,8 @@ All interactive controls in the app have accessible labels that screen readers a
 
 | Element | What is announced |
 |---------|------------------|
-| Band buttons | Full band name — e.g., "20 metres" instead of "20m" |
+| Band buttons | Full band name — e.g., "20 metres, radio button" |
+| Band button group | Announced as a radio group; arrow keys move between bands |
 | Meter gauges | Meter name — e.g., "S meter VFO A", "SWR meter" |
 | Frequency display | "VFO A frequency" with current value in MHz |
 | Sliders, dropdowns, buttons | Their purpose — e.g., "Transmit power", "VFO A mode" |

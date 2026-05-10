@@ -200,7 +200,7 @@
                     <!-- 5.3 Power and Mic Gain -->
                     <div class="p-3 border-bottom section-anchor" id="power-mic">
                         <h6 class="text-primary fw-bold">5.3 Power and Mic Gain</h6>
-                        <p><strong>Power slider</strong> — Sets the transmit power from 5 W to 200 W (FTdx101MP) or 5 W to 100 W (FTdx101D). Drag the slider to set the desired power level. The current value is shown to the right of the slider.</p>
+                        <p><strong>Power slider</strong> — Sets the transmit power from 5 W to 200 W (FTdx101MP) or 5 W to 100 W (FTdx101D and FTdx10). Drag the slider to set the desired power level. The current value is shown to the right of the slider.</p>
                         <p class="mb-0"><strong>MIC Gain / Data Out Gain slider</strong> — Sets the microphone gain (0–100). When the radio is in a data mode (DATA-U, DATA-L, PSK, RTTY, or DATA-FM), the label changes automatically to <em>Data Out Gain</em>.</p>
                     </div>
 
@@ -222,10 +222,13 @@
                         <h6 class="text-primary fw-bold">5.5 VFO Panels</h6>
                         <p>There are two VFO panels side by side:</p>
                         <ul>
-                            <li><strong>VFO A</strong> <span class="badge bg-primary">Blue border</span> — the main receiver</li>
-                            <li><strong>VFO B</strong> <span class="badge bg-success">Green border</span> — the sub-receiver (FTdx101MP only)</li>
+                            <li><strong>VFO A</strong> <span class="badge bg-primary">Blue border</span> — the main receiver, present on all supported radios</li>
+                            <li><strong>VFO B</strong> <span class="badge bg-success">Green border</span> — the sub-receiver, present on the FTdx101MP and FTdx101D. On the FTdx10 the VFO B panel is hidden because that radio has only one VFO.</li>
                         </ul>
-                        <p class="mb-0">Both panels have identical controls. All settings are independent — changing a control in VFO A does not affect VFO B.</p>
+                        <p>Both panels have identical controls. All settings are independent — changing a control in VFO A does not affect VFO B.</p>
+                        <div class="alert alert-info py-2 mb-0">
+                            <i class="bi bi-info-circle"></i> <strong>FTdx10 users:</strong> When FTdx10 is selected in Settings, the VFO B panel and the VFO-B toggle button are removed from the main page automatically. They reappear if you switch back to an FTdx101MP or FTdx101D.
+                        </div>
                     </div>
 
                     <!-- 5.6 Frequency -->
@@ -279,7 +282,7 @@
                     <!-- 5.9 Band and Segment -->
                     <div class="p-3 border-bottom section-anchor" id="band-segment">
                         <h6 class="text-primary fw-bold">5.9 Band and Segment Selection</h6>
-                        <p><strong>Band buttons</strong> — Click a band button (160m, 80m, 40m, etc.) to switch the VFO to that band.</p>
+                        <p><strong>Band buttons</strong> — Click a band button (160m, 80m, 40m, etc.) to switch the VFO to that band. You can also navigate with the keyboard: <kbd>Tab</kbd> moves focus into the band group, then <kbd>←</kbd> / <kbd>→</kbd> move between bands and switch immediately.</p>
                         <p>Available bands depend on your band plan: UK includes 4m and 60m; USA includes the five 60m FCC channels.</p>
                         <p><strong>Segment dropdown</strong> — After selecting a band, a dropdown above the frequency display shows common operating segments for that band. Select a segment to jump directly to its standard frequency and set the appropriate mode:</p>
                         <table class="table table-sm table-bordered mb-3">
@@ -336,15 +339,18 @@
                     </div>
 
                     <h6>6.3 SDR Spectrum Display</h6>
-                    <p>The spectrum display requires an SDR receiver connected to the FTdx101's 9 MHz IF output (rear panel BNC labelled <strong>IF OUT</strong>).</p>
+                    <p>The spectrum display requires an SDR receiver. On the FTdx101MP and FTdx101D the SDR is connected to the radio's 9 MHz IF output (rear panel RCA socket labelled <strong>IF OUT</strong>), giving a VFO-centred panoramic view of the band.</p>
+                    <div class="alert alert-warning py-2 mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>FTdx10 users:</strong> The FTdx10 has no rear-panel IF output. You can still use an SDR for spectrum display by connecting it to an antenna port, but the spectrum will show absolute RF frequencies rather than a view centred on your VFO frequency. The IF Frequency setting has no effect when used this way.
+                    </div>
                     <p><strong>Supported hardware:</strong></p>
                     <ul>
                         <li><strong>SDRplay RSP1 and RSP series</strong> — requires the <a href="https://www.sdrplay.com/downloads/" target="_blank">SDRplay API v3 <i class="bi bi-box-arrow-up-right"></i></a> to be installed separately.</li>
                         <li><strong>RTL-SDR, Airspy, HackRF</strong> — drivers are included in the app installer; no separate installation needed.</li>
                     </ul>
-                    <p><strong>Setting up the SDR:</strong></p>
+                    <p><strong>Setting up the SDR (FTdx101MP / FTdx101D):</strong></p>
                     <ol>
-                        <li>Connect the SDR to the 9 MHz IF output.</li>
+                        <li>Connect the SDR to the 9 MHz IF output using an RCA-to-SMA adapter and a short coax cable.</li>
                         <li>Go to Settings and click <strong>Scan</strong> in the SDR section.</li>
                         <li>Select your device from the dropdown.</li>
                         <li>Set <strong>IF Frequency</strong> to <code>9000000</code> (9 MHz).</li>
@@ -534,6 +540,8 @@
                             <tr><td>Mouse wheel on selected digit</td><td>Increment or decrement the digit (with carry-over)</td></tr>
                             <tr><td>Mouse wheel on spectrum</td><td>Tune VFO A up or down in 1 kHz steps</td></tr>
                             <tr><td>Click on spectrum</td><td>Tune VFO A to the clicked frequency</td></tr>
+                            <tr><td><kbd>Tab</kbd> (in band buttons)</td><td>Move focus into the band button group</td></tr>
+                            <tr><td><kbd>←</kbd> / <kbd>→</kbd> (in band buttons)</td><td>Move to the previous/next band and switch immediately</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -708,7 +716,8 @@
                         <table class="table table-sm table-bordered mb-0">
                             <thead class="table-light"><tr><th>Element</th><th>What is announced</th></tr></thead>
                             <tbody>
-                                <tr><td>Band buttons</td><td>Full band name — e.g., <em>"20 metres"</em> instead of <em>"20m"</em></td></tr>
+                                <tr><td>Band buttons</td><td>Full band name — e.g., <em>"20 metres, radio button"</em></td></tr>
+                                <tr><td>Band button group</td><td>Announced as a radio group; arrow keys move between bands</td></tr>
                                 <tr><td>Meter gauges</td><td>Meter name — e.g., <em>"S meter VFO A"</em>, <em>"SWR meter"</em></td></tr>
                                 <tr><td>Frequency display</td><td><em>"VFO A frequency"</em> with current value in MHz</td></tr>
                                 <tr><td>Sliders, dropdowns, buttons</td><td>Their purpose — e.g., <em>"Transmit power"</em>, <em>"VFO A mode"</em></td></tr>

@@ -238,6 +238,15 @@
                 Connect your radio's <strong>IF output (RCA)</strong> to an SDR receiver. The spectrum
                 display shows the band around your current VFO frequency in real time.
             </p>
+            @if (Model.Settings.RadioModel == "FTdx10")
+            {
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>FTdx10:</strong> This radio does not have a rear-panel IF output.
+                    SDR spectrum display will show absolute RF frequencies from the connected antenna
+                    rather than a VFO-centred view. The IF Frequency setting has no effect.
+                </div>
+            }
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">

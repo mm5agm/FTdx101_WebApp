@@ -20,20 +20,28 @@
     var selectedBand = (Model.Item3 ?? "").Trim().ToLowerInvariant();
 }
 <div class="band-buttons-container">
-    <div class="band-radio-grid" id="bandRadioGroup@(receiver)">
+    <div class="band-radio-grid" id="bandRadioGroup@(receiver)" role="radiogroup" aria-label="Band">
         @for (int idx = 0; idx < bands.Length; idx++)
         {
             var band = bands[idx];
             var bandValue = band.Trim().ToLowerInvariant();
             var bandLabel = bandLabels.TryGetValue(band, out var lbl) ? lbl : band;
-            <label class="band-radio-label">
+            var isChecked = bandValue == selectedBand;
+            <label class="band-radio-label"
+                   role="radio"
+                   aria-checked="@(isChecked ? "true" : "false")"
+                   aria-label="@bandLabel"
+                   data-a11y-key="bands.@band"
+                   data-receiver="@receiver"
+                   data-band="@band"
+                   tabindex="@(isChecked ? "0" : "-1")">
                 <input type="radio"
                        name="band-@receiver"
                        value="@band"
-                       aria-label="@bandLabel"
-                       data-a11y-key="bands.@band"
+                       aria-hidden="true"
+                       tabindex="-1"
                        data-receiver="@receiver"
-                       @(bandValue == selectedBand ? "checked" : "")>
+                       @(isChecked ? "checked" : "")>
                 <span aria-hidden="true">@band</span>
             </label>
         }

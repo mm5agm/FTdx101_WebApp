@@ -1085,10 +1085,23 @@ function updateBandButton(receiver, band) {
         radio.checked = matches;
     });
 
+    if (typeof syncBandAriaChecked === 'function') syncBandAriaChecked(receiver);
+
     if (!foundMatch) {
         // ...removed debug logging...
     }
     // ...removed debug logging...
+}
+
+// Sync aria-checked and tabindex on band-radio-label[role="radio"] elements
+// after the underlying radio input's checked state is changed programmatically.
+function syncBandAriaChecked(receiver) {
+    document.querySelectorAll(`input[name="band-${receiver}"]`).forEach(input => {
+        const label = input.closest('label[role="radio"]');
+        if (!label) return;
+        label.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+        label.tabIndex = input.checked ? 0 : -1;
+    });
 }
 
 // Outer DOMContentLoaded - initial UI wiring
@@ -1101,10 +1114,27 @@ window.addEventListener('DOMContentLoaded', () => {
         if (e.target.type === 'radio' && e.target.name && e.target.name.startsWith('band-')) {
             const receiver = e.target.getAttribute('data-receiver');
             const band = e.target.value;
+            syncBandAriaChecked(receiver);
             if (receiver && band && window.radioControl && window.radioControl.setBand) {
                 window.radioControl.setBand(receiver, band);
             }
         }
+    });
+
+    // Keyboard navigation for band radiogroups (arrow keys move between bands)
+    document.querySelectorAll('.band-radio-grid[role="radiogroup"]').forEach(grid => {
+        grid.addEventListener('keydown', function(e) {
+            const radios = Array.from(grid.querySelectorAll('label[role="radio"]'));
+            const idx = radios.indexOf(document.activeElement);
+            if (idx === -1) return;
+            let next = -1;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown')      next = (idx + 1) % radios.length;
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')    next = (idx - 1 + radios.length) % radios.length;
+            else return;
+            e.preventDefault();
+            radios[next].focus();
+            radios[next].click();
+        });
     });
 });
 
@@ -1270,6 +1300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll(`input[name="band-${receiver}"]`).forEach(btn => {
             btn.checked = (btn.value === band);
         });
+        if (typeof syncBandAriaChecked === 'function') syncBandAriaChecked(receiver);
 
         // Mode dropdown - update the selected value
         const modeSelect = document.getElementById(`modeSelect${receiver}`);
