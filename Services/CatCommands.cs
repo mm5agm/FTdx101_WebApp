@@ -20,7 +20,9 @@ namespace FTdx101_WebApp.Services
 
         // METER READING COMMANDS (RM)
         public const string MeterPower = "RM5";    // Power output meter (0-255)
-        public const string MeterSWR = "RM6";      // SWR meter (0-255)
+        public const string MeterSWR = "RM6";      // SWR meter (0-255) — NOTE: RM6 returns stale/wrong values on FTdx101MP; use SetMetersSWR+MeterBoth instead
+        public const string SetMetersCompAndSWR = "MS13"; // Select Compression(left) + SWR(right) for RM0 read
+        public const string MeterBoth = "RM0";            // Read both currently-selected meters: RM0LLLRRR;
         public const string MeterALC = "RM4";      // ALC meter (0-255)
         public const string MeterComp = "RM3";     // Compression meter (0-255)
         public const string MeterIDD = "RM7";      // IDD current meter (0-255)
@@ -184,6 +186,40 @@ namespace FTdx101_WebApp.Services
             {
                 string valueStr = response.Substring(3);
                 if (int.TryParse(valueStr, out int value))
+                    return value;
+            }
+            return 0;
+        }
+
+        public static int ParseRm0LeftMeter(string response)
+        {
+            // Parse left-side meter from RM0 response: RM0LLLRRR;
+            // Positions 3-5 are the left meter value (0-255).
+            if (string.IsNullOrEmpty(response) || !response.StartsWith("RM0"))
+                return 0;
+            int semicolonIndex = response.IndexOf(';');
+            if (semicolonIndex > 0)
+                response = response.Substring(0, semicolonIndex);
+            if (response.Length >= 6)
+            {
+                if (int.TryParse(response.Substring(3, 3), out int value))
+                    return value;
+            }
+            return 0;
+        }
+
+        public static int ParseRm0RightMeter(string response)
+        {
+            // Parse right-side meter from RM0 response: RM0LLLRRR;
+            // Positions 6-8 are the right meter value (0-255).
+            if (string.IsNullOrEmpty(response) || !response.StartsWith("RM0"))
+                return 0;
+            int semicolonIndex = response.IndexOf(';');
+            if (semicolonIndex > 0)
+                response = response.Substring(0, semicolonIndex);
+            if (response.Length >= 9)
+            {
+                if (int.TryParse(response.Substring(6, 3), out int value))
                     return value;
             }
             return 0;

@@ -80,11 +80,15 @@
                             <code>@Model.Settings.RadioModel</code>
                             @if (Model.Settings.RadioModel == "FTdx101MP")
                             {
-                                <span class="badge bg-primary">200W Output</span>
+                                <span class="badge bg-primary">200W</span>
+                            }
+                            else if (Model.Settings.RadioModel == "FTdx10")
+                            {
+                                <span class="badge bg-secondary">100W · Single RX</span>
                             }
                             else
                             {
-                                <span class="badge bg-info">100W Output</span>
+                                <span class="badge bg-info">100W</span>
                             }
                         </dd>
                         <dt class="col-sm-4">Serial Port:</dt>
@@ -136,11 +140,12 @@
                             <select asp-for="Settings.RadioModel" class="form-select">
                                 <option value="FTdx101MP">FTdx101MP</option>
                                 <option value="FTdx101D">FTdx101D</option>
+                                <option value="FTdx10">FTdx10</option>
                             </select>
                             <div class="form-text">
-                                <strong>FTdx101MP:</strong> 200W output, includes additional roofing filters<br />
-                                <strong>FTdx101D:</strong> 100W output<br />
-                                Both models have dual receivers (VFO A and VFO B)
+                                <strong>FTdx101MP:</strong> 200W output, dual receivers (VFO A + VFO B shown by default)<br />
+                                <strong>FTdx101D:</strong> 100W output, dual receivers (VFO A + VFO B shown by default)<br />
+                                <strong>FTdx10:</strong> 100W output, single receiver (VFO B hidden by default)
                             </div>
                             <span asp-validation-for="Settings.RadioModel" class="text-danger"></span>
                         </div>
@@ -233,6 +238,15 @@
                 Connect your radio's <strong>IF output (RCA)</strong> to an SDR receiver. The spectrum
                 display shows the band around your current VFO frequency in real time.
             </p>
+            @if (Model.Settings.RadioModel == "FTdx10")
+            {
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>FTdx10:</strong> This radio does not have a rear-panel IF output.
+                    SDR spectrum display will show absolute RF frequencies from the connected antenna
+                    rather than a VFO-centred view. The IF Frequency setting has no effect.
+                </div>
+            }
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">

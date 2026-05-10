@@ -41,6 +41,12 @@ class Gauge {
         this.gauge = new RadialGauge(this.config);
         this.gauge.draw();
 
+        // The canvas-gauges library may inject a `title` attribute during draw(),
+        // which NVDA reads in preference to aria-label. Strip it so the aria-label wins.
+        if (canvas) {
+            canvas.removeAttribute('title');
+        }
+
         // Create overlay labels
         this.createLabels();
     }
@@ -61,9 +67,10 @@ class Gauge {
         const existing = wrapper.querySelector('.gauge-labels-overlay');
         if (existing) existing.remove();
 
-        // Overlay container
+        // Overlay container — hidden from screen readers; the canvas has aria-label.
         const labelsDiv = document.createElement('div');
         labelsDiv.className = 'gauge-labels-overlay';
+        labelsDiv.setAttribute('aria-hidden', 'true');
         labelsDiv.style.position = 'absolute';
         labelsDiv.style.left = '0';
         labelsDiv.style.top = '0';
@@ -256,12 +263,16 @@ class SWRGauge extends Gauge {
             minValue: 0,
             maxValue: 255,
             majorTicks: ["0", "32", "64", "96", "128", "160", "192", "224", "255"],
+            // Highlight zones match the linear SWR scale used by the orchestrator:
+            //   gauge value = (SWR - 1.0) * 127.5
+            //   SWR 1.5 → 64,  SWR 2.0 → 127,  SWR 3.0 → 255
             highlights: [
-                { from: 0, to: 85, color: "rgba(0,255,0,.25)" },
-                { from: 85, to: 128, color: "rgba(255,255,0,.25)" },
-                { from: 128, to: 255, color: "rgba(255,0,0,.25)" }
+                { from: 0,   to: 64,  color: "rgba(0,255,0,.25)" },
+                { from: 64,  to: 127, color: "rgba(255,255,0,.25)" },
+                { from: 127, to: 255, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["1.0", "1.2", "1.5", "1.7", "2.0", "2.3", "2.5", "2.7", "3.0"],
+            // 9 evenly-spaced labels across the arc, matching the linear 1.0–3.0 scale.
+            labels: ["1.0", "1.25", "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -432,14 +443,14 @@ class CompressionGauge extends Gauge {
         const config = Object.assign({
             renderTo: canvasId,
             minValue: 0,
-            maxValue: 100,
-            majorTicks: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            maxValue: 20,
+            majorTicks: ["0", "2.5", "5", "7.5", "10", "12.5", "15", "17.5", "20"],
             highlights: [
-                { from: 0, to: 30, color: "rgba(0,255,0,.25)" },
-                { from: 30, to: 70, color: "rgba(255,255,0,.25)" },
-                { from: 70, to: 100, color: "rgba(255,0,0,.25)" }
+                { from: 0,  to: 5,  color: "rgba(0,255,0,.25)" },
+                { from: 5,  to: 10, color: "rgba(255,255,0,.25)" },
+                { from: 10, to: 20, color: "rgba(255,0,0,.25)" }
             ],
-            labels: ["0", "13", "25", "38", "50", "63", "75", "88", "100"],
+            labels: ["0", "2.5", "5", "7.5", "10", "12.5", "15", "17.5", "20"],
             startAngle: 90,
             ticksAngle: 180,
             valueBox: false,
@@ -474,7 +485,7 @@ class CompressionGauge extends Gauge {
             gaugeTitle: 'Compression',
             gaugeTitleId: 'compressionMeterValue',
             gaugeTitleDefault: '0',
-            gaugeTitleSuffix: '%',
+            gaugeTitleSuffix: 'dB',
             gaugeTitleBg: '#ffc107',
             gaugeTitleColor: '#000000'
         }, options);

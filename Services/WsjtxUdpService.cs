@@ -99,7 +99,10 @@ namespace FTdx101_WebApp.Services
 
             _logger.LogWarning("UDP socket bound to port {Port} on all interfaces", udpPort);
 
-            // If multicast address, join group
+            // If multicast address, join group on default interface and also on loopback.
+            // WSJT-X may be configured with "Outgoing Interfaces: loopback_0", in which case
+            // packets only arrive on the loopback adapter and won't be seen if we only join
+            // on the default (LAN) interface.
             if (IPAddress.TryParse(udpAddress, out var ip) &&
                 ip.AddressFamily == AddressFamily.InterNetwork &&
                 ip.IsMulticast())
@@ -107,11 +110,21 @@ namespace FTdx101_WebApp.Services
                 try
                 {
                     udp.JoinMulticastGroup(ip);
-                    _logger.LogWarning("✓ Joined WSJT-X multicast group {Address}:{Port}", udpAddress, udpPort);
+                    _logger.LogWarning("✓ Joined WSJT-X multicast group {Address}:{Port} on default interface", udpAddress, udpPort);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "✗ FAILED to join multicast group {Address} - check firewall settings", udpAddress);
+                    _logger.LogError(ex, "✗ FAILED to join multicast group {Address} on default interface - check firewall settings", udpAddress);
+                }
+
+                try
+                {
+                    udp.JoinMulticastGroup(ip, IPAddress.Loopback);
+                    _logger.LogWarning("✓ Joined WSJT-X multicast group {Address}:{Port} on loopback interface", udpAddress, udpPort);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Could not join multicast {Address} on loopback (non-fatal): {Message}", udpAddress, ex.Message);
                 }
             }
             else

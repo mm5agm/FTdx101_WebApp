@@ -15,15 +15,18 @@ namespace FTdx101_WebApp.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly IHubContext<RadioHub> _hubContext;
         private readonly BrowserLauncher _browserLauncher;
+        private readonly CatMultiplexerService _multiplexer;
 
         public RadioInitializationService(
             IServiceProvider serviceProvider,
             IHubContext<RadioHub> hubContext,
-            BrowserLauncher browserLauncher)
+            BrowserLauncher browserLauncher,
+            CatMultiplexerService multiplexer)
         {
             _serviceProvider = serviceProvider;
             _hubContext = hubContext;
             _browserLauncher = browserLauncher;
+            _multiplexer = multiplexer;
         }
 
         public async Task InitializeRadioAsync()
@@ -38,7 +41,7 @@ namespace FTdx101_WebApp.Services
             {
                 using var scope = _serviceProvider.CreateScope();
                 var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
-                var multiplexer = scope.ServiceProvider.GetRequiredService<CatMultiplexerService>();
+                var multiplexer = _multiplexer;
                 var radioStateService = scope.ServiceProvider.GetRequiredService<RadioStateService>();
                 var statePersistence = scope.ServiceProvider.GetRequiredService<RadioStatePersistenceService>();
                 logger = scope.ServiceProvider.GetRequiredService<ILogger<RadioInitializationService>>();
@@ -312,6 +315,12 @@ namespace FTdx101_WebApp.Services
                 }
                 catch { /* Ignore browser launch errors */ }
             }
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await _multiplexer.DisconnectAsync();
+            await base.StopAsync(cancellationToken);
         }
     }
 }

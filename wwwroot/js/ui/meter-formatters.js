@@ -40,11 +40,11 @@ export const MeterFormatters = {
     },
 
     // ----------------------------------------------------------------
-    // COMPRESSION  (CompressionGauge appends '%' as gaugeTitleSuffix)
+    // COMPRESSION  (CompressionGauge appends 'dB' as gaugeTitleSuffix)
     // ----------------------------------------------------------------
 
-    compressionOverlay(percent) {
-        return String(Math.round(percent));
+    compressionOverlay(db) {
+        return db.toFixed(1);
     },
 
     // ----------------------------------------------------------------
