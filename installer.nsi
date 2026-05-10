@@ -1,6 +1,6 @@
 !define APPNAME "FTdx101 WebApp"
 !define COMPANY "MM5AGM"
-!define VERSION "1.2.0"
+!define VERSION "1.2.1"
 !define INSTALLDIR "$PROGRAMFILES64\${COMPANY}\${APPNAME}"
 !define DOTNET_URL "https://dotnet.microsoft.com/en-us/download/dotnet/10.0"
 

@@ -66,6 +66,15 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
+## 2026-05-10 - v1.2.1
+
+### Fixed
+
+- **Calibration data location** — calibration.user.json was being written to the wrong AppData subfolder (`MM5AGM\FTdx101\WebApp\` instead of `MM5AGM\FTdx101 WebApp\`). It now lands in the correct folder alongside appsettings.user.json and radio_state.json.
+- **Labels file** — labels.json is now copied to `%APPDATA%\MM5AGM\FTdx101 WebApp\` on first run so users can easily locate and edit it.
+
+---
+
 ## 2026-05-10 - v1.2.0
 
 ### Added
