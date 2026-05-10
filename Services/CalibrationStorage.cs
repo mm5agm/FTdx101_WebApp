@@ -27,8 +27,7 @@ public class CalibrationStorage
         _userPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "MM5AGM",
-            "FTdx101",
-            "WebApp",
+            "FTdx101 WebApp",
             "calibration.user.json");
     }
 
