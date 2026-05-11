@@ -50,7 +50,7 @@ The application was written for operators who find the physical controls on the 
 
 **Key features:**
 
-- Large, readable frequency displays with digit-by-digit mouse-wheel tuning
+- Large, readable frequency displays with digit-by-digit mouse-wheel tuning and an on-screen frequency keyboard
 - Full dual-receiver control (VFO A and VFO B)
 - Live S-meter, power, SWR, ALC, temperature, IDD, VDD, and compression meters
 - Real-time two-way sync — changes on the radio front panel appear immediately in the app, and vice versa
@@ -102,6 +102,8 @@ http://localhost:8080
 
 The main control panel loads. If the radio is powered on and the serial connection is correct, a brief "Initialising…" overlay appears while the app reads the current radio state. After a few seconds the overlay disappears and all controls reflect the current state of the radio.
 
+**Closing the app:** When you close the browser tab or window, the app detects that no browser is connected and begins a 30-second countdown. If you reopen the page within those 30 seconds (for example after a page refresh or accidentally closing the tab) the countdown cancels and the app continues normally. If no browser reconnects within 30 seconds the application exits automatically and disappears from Task Manager.
+
 **Accessing the app from another device:** If you set **Network Interface** to `0.0.0.0 (all interfaces)` in Settings (the default), the app is also accessible from any device on your local network. The Settings page shows the full URL for each network interface — bookmark one of these on your tablet or phone.
 
 ---
@@ -110,7 +112,7 @@ The main control panel loads. If the radio is powered on and the serial connecti
 
 ### 5.1 Top Bar
 
-The top bar contains navigation links, external application buttons, and the radio power button.
+The top bar contains navigation links, external application buttons, and the radio power button. The app name and current version number (e.g., **FTdx101_WebApp v1.2.2**) are shown in the top-left corner.
 
 **External app buttons** (WSJT-X, JTAlert, Log4OM) appear if they are enabled in Application Setup. The colour of each button indicates status:
 
@@ -198,6 +200,30 @@ The frequency display shows the current VFO frequency in MHz to 1 Hz resolution 
 5. Click anywhere outside the frequency display to deselect.
 
 **On a tablet or phone**, tap a digit to select it, then use the **▲** and **▼** buttons that appear below the display to adjust it.
+
+---
+
+**On-screen frequency keyboard:**
+
+A keyboard button (🖮) appears to the right of the **MHz** label on each VFO panel. Click or tap it to open a floating on-screen number pad for typing in a frequency directly.
+
+The keyboard pre-fills with the current VFO frequency when it opens. The display shows the frequency as **XX.YYYYYY MHz** with the current digit position highlighted in blue.
+
+| Key | Action |
+|-----|--------|
+| **0–9** | Enter a digit at the cursor position and advance the cursor one place to the right |
+| **◀ / ▶** | Move the cursor left or right without changing any digit |
+| **⌫** | Zero the digit at the cursor and move the cursor left |
+| **CLR** | Reset all digits to zero |
+| **↵ Enter** | Validate and send the frequency to the radio, then close the keyboard |
+| **✕** (title bar) | Close the keyboard without changing the frequency |
+| **Esc** | Close the keyboard without changing the frequency |
+
+If you enter a frequency outside the radio's range (0.030–75.000 MHz) an error message appears and the frequency is not sent.
+
+**Moving and resizing the keyboard:** Drag the title bar to move the keyboard anywhere on screen. Drag the bottom-right corner to resize it. The position and size are saved automatically and restored the next time you open the keyboard.
+
+All keys have accessible labels for screen readers.
 
 ---
 
@@ -503,6 +529,10 @@ On touch devices, tap a digit in the frequency display to select it (it highligh
 | Click on spectrum | Tune VFO A to the clicked frequency |
 | **Tab** (in band buttons) | Move focus into the band button group |
 | **← / →** (in band buttons) | Move to the previous/next band and switch immediately |
+| Keyboard button (🖮) next to MHz | Open the on-screen frequency keyboard for that VFO |
+| **◀ / ▶** (in frequency keyboard) | Move the cursor left or right |
+| **↵ Enter** (in frequency keyboard) | Send the entered frequency to the radio |
+| **Esc** (in frequency keyboard) | Close the keyboard without changing frequency |
 
 ---
 
@@ -548,6 +578,10 @@ On touch devices, tap a digit in the frequency display to select it (it highligh
 **App will not start — "Another instance is already running"**
 
 - Only one instance of the app can run at a time. Check the Windows taskbar or system tray for an existing instance. If the previous instance crashed and left a stale lock, restart Windows.
+
+**App shuts down unexpectedly after closing the browser**
+
+- This is normal behaviour. When the last browser tab is closed, the app waits 30 seconds for a reconnection before exiting. If you want to keep the app running (for example while WSJT-X is using it via rigctld), leave a browser tab open on the main page.
 
 **Cannot access the app from a tablet**
 
@@ -631,10 +665,8 @@ The text that screen readers announce for each control is stored in a labels fil
 
 **To create your labels file:**
 
-1. Find the default labels file in the app's installation folder at `wwwroot\i18n\labels.default.json`. Open it with Notepad.
-2. Copy the entire contents and paste them into a new file saved as:
-   `C:\Users\<your-name>\AppData\Roaming\MM5AGM\FTdx101 WebApp\labels.json`
-3. Edit the **values** (the text on the right of each colon). For example:
+1. The app automatically copies the default labels file to `%APPDATA%\MM5AGM\FTdx101 WebApp\labels.json` the first time it runs. Open that file with Notepad — it is already in the right place.
+2. Edit the **values** (the text on the right of each colon). For example:
 
 ```json
 "bands": {
