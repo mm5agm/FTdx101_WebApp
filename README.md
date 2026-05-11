@@ -66,6 +66,14 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
+## 2026-05-11 - v1.2.2
+
+### Fixed
+
+- **Installer no longer requires .NET 10** — the app is self-contained and bundles its own runtime. The installer was incorrectly blocking installation on machines without a system-wide .NET 10 installation.
+
+---
+
 ## 2026-05-10 - v1.2.1
 
 ### Fixed
