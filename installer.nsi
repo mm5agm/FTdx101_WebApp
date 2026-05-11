@@ -2,8 +2,6 @@
 !define COMPANY "MM5AGM"
 !define VERSION "1.2.1"
 !define INSTALLDIR "$PROGRAMFILES64\${COMPANY}\${APPNAME}"
-!define DOTNET_URL "https://dotnet.microsoft.com/en-us/download/dotnet/10.0"
-
 Name "${APPNAME} ${VERSION}"
 OutFile "FTdx101_WebApp_Setup.exe"
 InstallDir "${INSTALLDIR}"
@@ -12,51 +10,6 @@ RequestExecutionLevel admin
 
 Page directory
 Page instfiles
-
-Function .onInit
-    ; --- Method 1: registry check (most reliable) ---
-    ; On 64-bit Windows the x64 registry hive is used.
-    ; The key is written by the x64 ASP.NET Core runtime installer and holds
-    ; the highest installed 10.x.y version as the default value.
-    SetRegView 64
-    ReadRegStr $0 HKLM \
-        "SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.AspNetCore.App" \
-        "Version"
-    SetRegView lastused
-    StrCmp $0 "" try_exe 0        ; empty = not found, fall through
-    StrCpy $2 $0 3
-    StrCmp $2 "10." dotnet_ok try_exe
-
-    ; --- Method 2: run x64 dotnet.exe and read the version ---
-    try_exe:
-        nsExec::ExecToStack '"$PROGRAMFILES64\dotnet\dotnet.exe" --version'
-        Pop $0
-        Pop $1
-        StrCmp $0 "0" 0 try_filesystem
-        StrCpy $2 $1 3
-        StrCmp $2 "10." dotnet_ok try_filesystem
-
-    ; --- Method 3: filesystem check for any 10.x.y runtime directory ---
-    try_filesystem:
-        FindFirst $0 $1 "$PROGRAMFILES64\dotnet\shared\Microsoft.AspNetCore.App\10*"
-        FindClose $0
-        StrCmp $1 "" no_dotnet dotnet_ok
-
-    no_dotnet:
-        MessageBox MB_YESNO|MB_ICONEXCLAMATION \
-            ".NET 10 x64 Runtime is required but was not found on this machine.$\n$\n\
-IMPORTANT: You need the x64 (64-bit) version of .NET 10.$\n$\n\
-Click Yes to open the download page - choose x64 under Windows.$\n\
-Install .NET 10 x64 Runtime, then re-run this installer.$\n$\n\
-Click No to cancel." \
-            IDNO cancel_install
-        ExecShell "open" "${DOTNET_URL}"
-
-    cancel_install:
-        Abort
-
-    dotnet_ok:
-FunctionEnd
 
 Section "Install"
     SetOutPath "$INSTDIR"
