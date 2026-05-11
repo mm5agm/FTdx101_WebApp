@@ -5,100 +5,100 @@ using FTdx101_WebApp.Services;
 
 namespace FTdx101_WebApp.Hubs
 {
-    /// <summary>
-    /// SignalR hub for real-time radio state updates
-    /// </summary>
     public class RadioHub : Hub
     {
         private readonly ILogger<RadioHub> _logger;
         private readonly IHostApplicationLifetime _lifetime;
         private readonly RadioStateService _radioState;
 
-        // Track connected clients (thread-safe)
-        private static readonly ConcurrentDictionary<string, byte> connections = new();
-        // Track last heartbeat per connection
-        private static readonly ConcurrentDictionary<string, DateTime> lastHeartbeats = new();
-        private static readonly TimeSpan HeartbeatTimeout = TimeSpan.FromSeconds(10);
-        private static readonly TimeSpan HeartbeatCheckInterval = TimeSpan.FromSeconds(5);
-        private static System.Threading.Timer? heartbeatTimer;
+        // All currently open SignalR connections
+        private static readonly ConcurrentDictionary<string, byte> _connections = new();
+
+        // Connections that have sent at least one heartbeat (i.e. the main page tab)
+        private static readonly ConcurrentDictionary<string, DateTime> _heartbeats = new();
+
+        // Grace-period shutdown: starts when all heartbeating clients disconnect,
+        // cancelled if any client reconnects within the window.
+        private static readonly TimeSpan ShutdownGrace = TimeSpan.FromSeconds(30);
+        private static CancellationTokenSource? _shutdownCts;
+        private static readonly object _shutdownLock = new();
 
         public RadioHub(ILogger<RadioHub> logger, IHostApplicationLifetime lifetime, RadioStateService radioState)
         {
-            _logger = logger;
+            _logger   = logger;
             _lifetime = lifetime ?? throw new ArgumentNullException(nameof(lifetime));
             _radioState = radioState;
-            _logger.LogInformation("RadioHub constructed. IHostApplicationLifetime injected: true");
-            _logger.LogInformation("RadioHub constructor executed.");
-            // Start heartbeat timer only once (static)
-            if (heartbeatTimer is null)
-            {
-                heartbeatTimer = new System.Threading.Timer(CheckHeartbeats, null, HeartbeatCheckInterval, HeartbeatCheckInterval);
-            }
         }
 
         public override async Task OnConnectedAsync()
         {
-            _logger.LogInformation("RadioHub OnConnectedAsync executed. Client connected: {ConnectionId}", Context.ConnectionId);
-            connections.TryAdd(Context.ConnectionId, 0);
-            lastHeartbeats[Context.ConnectionId] = DateTime.UtcNow;
-
-            // Send current VFO frequencies to the new client so it doesn't have to wait
-            // for the next change event. This ensures spectrum axis labels are correct
-            // even when the radio hasn't changed frequency since the last poll.
+            _connections.TryAdd(Context.ConnectionId, 0);
+            CancelShutdown();
             await Clients.Caller.SendAsync("RadioStateUpdate",
                 new { property = "FrequencyA", value = _radioState.FrequencyA });
             await Clients.Caller.SendAsync("RadioStateUpdate",
                 new { property = "FrequencyB", value = _radioState.FrequencyB });
-
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            _logger.LogInformation("RadioHub OnDisconnectedAsync executed. Client disconnected: {ConnectionId}", Context.ConnectionId);
-            connections.TryRemove(Context.ConnectionId, out _);
-            lastHeartbeats.TryRemove(Context.ConnectionId, out _);
+            _connections.TryRemove(Context.ConnectionId, out _);
+            bool wasHeartbeating = _heartbeats.TryRemove(Context.ConnectionId, out _);
+
             await base.OnDisconnectedAsync(exception);
 
-            // If no clients remain, do not shut down the app (shutdown logic removed)
-            // if (connections.IsEmpty)
-            // {
-            //     _logger.LogInformation("No clients remain. Attempting shutdown. IHostApplicationLifetime injected: true");
-            //     _logger.LogInformation("RadioHub: Calling StopApplication.");
-            //     _lifetime.StopApplication();
-            // }
+            // Only trigger shutdown countdown when a heartbeating client (main page tab)
+            // disconnects and no other heartbeating clients remain.
+            if (wasHeartbeating && _heartbeats.IsEmpty)
+            {
+                _logger.LogInformation("All browser tabs closed. Shutting down in {s}s if none reconnect.",
+                    ShutdownGrace.TotalSeconds);
+                ScheduleShutdown();
+            }
         }
 
-        // Heartbeat method called by client every 5 seconds
+        // Called by the main page every 5 seconds
         public Task Heartbeat()
         {
-            lastHeartbeats[Context.ConnectionId] = DateTime.UtcNow;
-            _logger.LogDebug("Heartbeat received from {ConnectionId}", Context.ConnectionId);
+            _heartbeats[Context.ConnectionId] = DateTime.UtcNow;
             return Task.CompletedTask;
         }
 
-        // Timer callback to check for stale clients
-        private void CheckHeartbeats(object? state)
+        // ── Shutdown helpers ──────────────────────────────────────────────────
+
+        private void ScheduleShutdown()
         {
-            var now = DateTime.UtcNow;
-            foreach (var kvp in lastHeartbeats.ToArray())
+            lock (_shutdownLock)
             {
-                if (now - kvp.Value > HeartbeatTimeout)
+                _shutdownCts?.Cancel();
+                _shutdownCts?.Dispose();
+                _shutdownCts = new CancellationTokenSource();
+                var token = _shutdownCts.Token;
+
+                Task.Delay(ShutdownGrace, token).ContinueWith(t =>
                 {
-                    _logger.LogWarning("Heartbeat timeout for {ConnectionId}. Removing.", kvp.Key);
-                    connections.TryRemove(kvp.Key, out _);
-                    lastHeartbeats.TryRemove(kvp.Key, out _);
-                }
+                    if (!t.IsCanceled && _heartbeats.IsEmpty)
+                    {
+                        _logger.LogInformation("No clients reconnected — stopping application.");
+                        _lifetime.StopApplication();
+                    }
+                }, TaskScheduler.Default);
             }
-            // If no clients remain, do not shut down the app (shutdown logic removed)
-            // if (connections.IsEmpty)
-            // {
-            //     _logger.LogInformation("[Heartbeat] No clients remain. Attempting shutdown. IHostApplicationLifetime injected: true");
-            //     _logger.LogInformation("[Heartbeat] RadioHub: Calling StopApplication.");
-            //     _lifetime.StopApplication();
-            // }
         }
 
+        private static void CancelShutdown()
+        {
+            lock (_shutdownLock)
+            {
+                if (_shutdownCts is not null)
+                {
+                    _shutdownCts.Cancel();
+                    _shutdownCts.Dispose();
+                    _shutdownCts = null;
+                }
+            }
+        }
 
         public async Task SendInitializationStatus(string status)
         {
@@ -106,4 +106,3 @@ namespace FTdx101_WebApp.Hubs
         }
     }
 }
-    

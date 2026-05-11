@@ -345,6 +345,12 @@
                             <button id="freqA-up" class="btn btn-secondary btn-sm" aria-label="VFO A frequency up">▲</button>
                             <button id="freqA-down" class="btn btn-secondary btn-sm" aria-label="VFO A frequency down">▼</button>
                         </div>
+                        <button class="btn btn-outline-secondary btn-sm fkb-open-btn"
+                                data-freq-keyboard="A"
+                                aria-label="Keyboard — enter VFO A frequency"
+                                title="Frequency keyboard">
+                            <i class="bi bi-keyboard" aria-hidden="true"></i>
+                        </button>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">Roofing:</label>
                         <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectA"
                                 aria-label="VFO A roofing filter"
@@ -552,6 +558,12 @@
                             <button id="freqB-up" class="btn btn-secondary btn-sm" aria-label="VFO B frequency up">▲</button>
                             <button id="freqB-down" class="btn btn-secondary btn-sm" aria-label="VFO B frequency down">▼</button>
                         </div>
+                        <button class="btn btn-outline-secondary btn-sm fkb-open-btn"
+                                data-freq-keyboard="B"
+                                aria-label="Keyboard — enter VFO B frequency"
+                                title="Frequency keyboard">
+                            <i class="bi bi-keyboard" aria-hidden="true"></i>
+                        </button>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">Roofing:</label>
                         <select class="form-select form-select-sm fw-bold flex-shrink-0" id="roofingFilterSelectB"
                                 aria-label="VFO B roofing filter"
@@ -603,6 +615,36 @@
                             </div>
                         </div>
                     </div>
+<!-- Frequency Keyboard Dialog — shared for VFO A and VFO B -->
+<dialog id="freqKeyboardDialog" class="fkb-dialog" aria-labelledby="freqKeyboardTitle" aria-modal="true">
+    <div class="fkb-header" id="freqKeyboardHeader">
+        <span class="fkb-title" id="freqKeyboardTitle">VFO A Frequency</span>
+        <button class="fkb-close" id="freqKeyboardClose" aria-label="Close frequency keyboard">✕</button>
+    </div>
+    <div class="fkb-display-row">
+        <div class="fkb-display" id="freqKeyboardDisplay" role="status" aria-live="polite" aria-label="Entered frequency"></div>
+        <span class="fkb-mhz-label" aria-hidden="true">MHz</span>
+    </div>
+    <div class="fkb-error" id="freqKeyboardError" role="alert" aria-live="assertive"></div>
+    <div class="fkb-pad">
+        <button class="fkb-key fkb-num" data-digit="7" aria-label="7">7</button>
+        <button class="fkb-key fkb-num" data-digit="8" aria-label="8">8</button>
+        <button class="fkb-key fkb-num" data-digit="9" aria-label="9">9</button>
+        <button class="fkb-key fkb-nav" id="freqKbLeft"  aria-label="Move cursor left">◀</button>
+        <button class="fkb-key fkb-num" data-digit="4" aria-label="4">4</button>
+        <button class="fkb-key fkb-num" data-digit="5" aria-label="5">5</button>
+        <button class="fkb-key fkb-num" data-digit="6" aria-label="6">6</button>
+        <button class="fkb-key fkb-nav" id="freqKbRight" aria-label="Move cursor right">▶</button>
+        <button class="fkb-key fkb-num" data-digit="1" aria-label="1">1</button>
+        <button class="fkb-key fkb-num" data-digit="2" aria-label="2">2</button>
+        <button class="fkb-key fkb-num" data-digit="3" aria-label="3">3</button>
+        <button class="fkb-key fkb-backspace" id="freqKbBackspace" aria-label="Backspace">⌫</button>
+        <button class="fkb-key fkb-num" data-digit="0" aria-label="0">0</button>
+        <button class="fkb-key fkb-clear" id="freqKbClear" aria-label="Clear all digits">CLR</button>
+        <button class="fkb-key fkb-enter" id="freqKbEnter" aria-label="Enter frequency">↵ Enter</button>
+    </div>
+</dialog>
+
 @section Scripts {
     <!-- Cache-busted JS reference, placed BEFORE your inline script if you use window.radioControl, etc. -->
     <script>window.bandPlan = '@Model.BandPlan';</script>
@@ -613,9 +655,11 @@
         import { SpectrumPanel }        from "/js/sdr/spectrum-panel.js";
         import { BAND_PLANS, getSegments } from "/js/ui/band-plan.js";
         import { loadLabels }           from "/js/ui/a11y-labels.js";
+        import { initFreqKeyboard }     from "/js/ui/freq-keyboard.js";
         window.bandPlanData = BAND_PLANS;
         window.getBandSegments = getSegments;
         loadLabels();
+        initFreqKeyboard();
         document.addEventListener('DOMContentLoaded', function () {
             window.meterPanel = new MeterPanel({
                 smeterA:     { type: 'smeter', canvasId: 'sMeterCanvasA' },
