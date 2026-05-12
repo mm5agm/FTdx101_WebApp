@@ -66,6 +66,14 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
+## 2026-05-12 - v1.3.2
+
+### Fixed
+
+- **FTdx10 Settings badge** — the Current Configuration panel on the Settings page was showing "100W · Single RX" for the FTdx10. It now shows "100W" to match the other dual-receiver models.
+
+---
+
 ## 2026-05-12 - v1.3.1
 
 ### Fixed
