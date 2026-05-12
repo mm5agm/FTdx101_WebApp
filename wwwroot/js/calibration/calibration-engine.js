@@ -44,7 +44,7 @@ function snapLabel(table, raw) {
         if (raw < pt.raw) break;
         last = pt;
     }
-    return last.label;
+    return last.label ?? String(last.value ?? last.raw);
 }
 
 // ------------------------------------------------------------
@@ -101,7 +101,10 @@ export async function loadFromBackend(backendNameMap = {}) {
                 const value = (radioStr !== undefined && radioStr !== null && radioStr !== '')
                     ? Number(radioStr)
                     : rawVal;
-                return { raw: rawVal, value: isNaN(value) ? rawVal : value };
+                // Preserve the original string as a label when it can't be parsed as a number
+                // (e.g. S-meter points store 'S1', 'S7', '+20' as their Radio value).
+                const label = (radioStr != null && isNaN(Number(radioStr))) ? radioStr : undefined;
+                return { raw: rawVal, value: isNaN(value) ? rawVal : value, ...(label !== undefined && { label }) };
             });
         }
     } catch (e) {

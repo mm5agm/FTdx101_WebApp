@@ -6,7 +6,7 @@ let _labels = null;
 
 export async function loadLabels() {
     try {
-        const resp = await fetch('/i18n/labels.json');
+        const resp = await fetch('/i18n/labels.json', { cache: 'no-cache' });
         if (resp.ok) _labels = await resp.json();
     } catch {
         // Non-fatal — built-in aria-labels remain as fallback.
@@ -28,6 +28,11 @@ function resolveKey(key) {
 function applyAll() {
     document.querySelectorAll('[data-a11y-key]').forEach(el => {
         const label = resolveKey(el.dataset.a11yKey);
-        if (label) el.setAttribute('aria-label', label);
+        if (label) {
+            el.setAttribute('aria-label', label);
+            // Sync title for non-canvas interactive elements (buttons, links) where
+            // NVDA reads title as a tooltip; canvases are aria-hidden so title is irrelevant for them.
+            if (el.hasAttribute('title')) el.setAttribute('title', label);
+        }
     });
 }

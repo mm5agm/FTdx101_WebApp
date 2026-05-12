@@ -192,23 +192,25 @@ namespace FTdx101_WebApp.Services
                 // Restore IF Width
                 if (!string.IsNullOrEmpty(persistedState.IfWidthA))
                 {
-                    stateTasks.Add(multiplexer.SendCommandAsync($"SH0{persistedState.IfWidthA};", "Initialization", stoppingToken)
+                    stateTasks.Add(multiplexer.SendCommandAsync($"SH00{int.Parse(persistedState.IfWidthA):D2};", "Initialization", stoppingToken)
                         .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfWidthA = persistedState.IfWidthA; }));
                 }
                 if (!string.IsNullOrEmpty(persistedState.IfWidthB))
                 {
-                    stateTasks.Add(multiplexer.SendCommandAsync($"SH1{persistedState.IfWidthB};", "Initialization", stoppingToken)
+                    stateTasks.Add(multiplexer.SendCommandAsync($"SH10{int.Parse(persistedState.IfWidthB):D2};", "Initialization", stoppingToken)
                         .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfWidthB = persistedState.IfWidthB; }));
                 }
                 // Restore IF Shift
                 {
-                    int rawA = (int)Math.Round((persistedState.IfShiftA + 1000) / 2000.0 * 9999);
-                    stateTasks.Add(multiplexer.SendCommandAsync($"IS0{rawA:D4};", "Initialization", stoppingToken)
+                    var signA = persistedState.IfShiftA >= 0 ? '+' : '-';
+                    var absA = Math.Abs(persistedState.IfShiftA);
+                    stateTasks.Add(multiplexer.SendCommandAsync($"IS00{signA}{absA:D4};", "Initialization", stoppingToken)
                         .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfShiftA = persistedState.IfShiftA; }));
                 }
                 {
-                    int rawB = (int)Math.Round((persistedState.IfShiftB + 1000) / 2000.0 * 9999);
-                    stateTasks.Add(multiplexer.SendCommandAsync($"IS1{rawB:D4};", "Initialization", stoppingToken)
+                    var signB = persistedState.IfShiftB >= 0 ? '+' : '-';
+                    var absB = Math.Abs(persistedState.IfShiftB);
+                    stateTasks.Add(multiplexer.SendCommandAsync($"IS10{signB}{absB:D4};", "Initialization", stoppingToken)
                         .ContinueWith(t => { if (!t.IsFaulted) radioStateService.IfShiftB = persistedState.IfShiftB; }));
                 }
                 await Task.WhenAll(stateTasks);

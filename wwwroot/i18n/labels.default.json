@@ -39,6 +39,39 @@
     "b.mode":       "VFO B mode"
   },
 
+  "keyboard": {
+    "openA":      "Open frequency keyboard for VFO A",
+    "openB":      "Open frequency keyboard for VFO B",
+    "close":      "Close frequency keyboard",
+    "digit0":     "0",
+    "digit1":     "1",
+    "digit2":     "2",
+    "digit3":     "3",
+    "digit4":     "4",
+    "digit5":     "5",
+    "digit6":     "6",
+    "digit7":     "7",
+    "digit8":     "8",
+    "digit9":     "9",
+    "cursorLeft": "Move cursor left",
+    "cursorRight":"Move cursor right",
+    "backspace":  "Backspace — clear digit and move left",
+    "clear":      "Clear all digits",
+    "enter":      "Enter frequency"
+  },
+
+  "spectrum": {
+    "display":  "RF spectrum display",
+    "span250k": "Span 250 kHz",
+    "span500k": "Span 500 kHz",
+    "span1m":   "Span 1 MHz",
+    "span2m":   "Span 2 MHz"
+  },
+
+  "nav": {
+    "brand": "FTdx101 WebApp home"
+  },
+
   "controls": {
     "txPower":      "Transmit power",
     "micGain":      "Microphone gain",

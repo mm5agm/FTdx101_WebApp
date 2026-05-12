@@ -1,0 +1,177 @@
+@page
+@model FTdx101_WebApp.Pages.LabelsModel
+@{
+    ViewData["Title"] = "Accessibility Labels";
+
+    var sectionMeta = new (string Key, string Title, string Description, string HeaderClass)[]
+    {
+        ("bands",    "Band Buttons",        "Announced when a band button is activated",      "bg-success bg-opacity-10"),
+        ("meters",   "Meters",              "Signal and power meter displays",                "bg-primary bg-opacity-10"),
+        ("vfo",      "VFO Controls",        "Frequency displays and up/down buttons",         "bg-info bg-opacity-10"),
+        ("keyboard", "Frequency Keyboard",  "On-screen frequency keyboard buttons",           "bg-warning bg-opacity-10"),
+        ("controls",  "Radio Controls",      "Sliders, toggles, and selectors",                "bg-secondary bg-opacity-10"),
+        ("spectrum",  "Spectrum Display",   "SDR spectrum panel and span buttons",            "bg-dark bg-opacity-10"),
+        ("nav",       "Navigation",         "Navigation bar links",                           "bg-light"),
+    };
+
+    // Friendly control descriptions — defines display order within each section
+    var descriptions = new Dictionary<string, string>
+    {
+        // Bands
+        ["bands.160m"] = "160 metres",
+        ["bands.80m"]  = "80 metres",
+        ["bands.60m"]  = "60 metres",
+        ["bands.40m"]  = "40 metres",
+        ["bands.30m"]  = "30 metres",
+        ["bands.20m"]  = "20 metres",
+        ["bands.17m"]  = "17 metres",
+        ["bands.15m"]  = "15 metres",
+        ["bands.12m"]  = "12 metres",
+        ["bands.10m"]  = "10 metres",
+        ["bands.6m"]   = "6 metres",
+        ["bands.4m"]   = "4 metres",
+        // Meters
+        ["meters.smeterA"]     = "S meter — VFO A",
+        ["meters.smeterB"]     = "S meter — VFO B",
+        ["meters.power"]       = "Power output meter",
+        ["meters.swr"]         = "SWR meter",
+        ["meters.alc"]         = "ALC meter",
+        ["meters.compression"] = "Compression meter",
+        ["meters.temp"]        = "Amplifier temperature meter",
+        ["meters.idd"]         = "Drain current meter",
+        ["meters.vdd"]         = "Supply voltage meter",
+        // VFO
+        ["vfo.a.frequency"] = "VFO A — frequency display",
+        ["vfo.b.frequency"] = "VFO B — frequency display",
+        ["vfo.a.up"]        = "VFO A — frequency up button",
+        ["vfo.a.down"]      = "VFO A — frequency down button",
+        ["vfo.b.up"]        = "VFO B — frequency up button",
+        ["vfo.b.down"]      = "VFO B — frequency down button",
+        ["vfo.a.mode"]      = "VFO A — mode selector",
+        ["vfo.b.mode"]      = "VFO B — mode selector",
+        // Frequency keyboard
+        ["keyboard.openA"]       = "Open keyboard — VFO A",
+        ["keyboard.openB"]       = "Open keyboard — VFO B",
+        ["keyboard.close"]       = "Close keyboard",
+        ["keyboard.digit0"]      = "Digit key: 0",
+        ["keyboard.digit1"]      = "Digit key: 1",
+        ["keyboard.digit2"]      = "Digit key: 2",
+        ["keyboard.digit3"]      = "Digit key: 3",
+        ["keyboard.digit4"]      = "Digit key: 4",
+        ["keyboard.digit5"]      = "Digit key: 5",
+        ["keyboard.digit6"]      = "Digit key: 6",
+        ["keyboard.digit7"]      = "Digit key: 7",
+        ["keyboard.digit8"]      = "Digit key: 8",
+        ["keyboard.digit9"]      = "Digit key: 9",
+        ["keyboard.cursorLeft"]  = "Move cursor left",
+        ["keyboard.cursorRight"] = "Move cursor right",
+        ["keyboard.backspace"]   = "Backspace — clear digit and move left",
+        ["keyboard.clear"]       = "Clear all digits",
+        ["keyboard.enter"]       = "Confirm frequency entry",
+        // Controls
+        ["controls.txPower"]      = "Transmit power slider",
+        ["controls.micGain"]      = "Microphone gain slider",
+        ["controls.afGain"]       = "AF gain slider",
+        ["controls.ifShift"]      = "IF shift slider",
+        ["controls.ifWidthA"]     = "IF width — VFO A",
+        ["controls.ifWidthB"]     = "IF width — VFO B",
+        ["controls.agcA"]         = "AGC — VFO A",
+        ["controls.agcB"]         = "AGC — VFO B",
+        ["controls.ipoA"]         = "IPO — VFO A",
+        ["controls.ipoB"]         = "IPO — VFO B",
+        ["controls.attA"]         = "Attenuator — VFO A",
+        ["controls.attB"]         = "Attenuator — VFO B",
+        ["controls.nrA"]          = "Noise reduction — VFO A",
+        ["controls.nrB"]          = "Noise reduction — VFO B",
+        ["controls.nbA"]          = "Noise blanker — VFO A",
+        ["controls.nbB"]          = "Noise blanker — VFO B",
+        ["controls.autoNotchA"]   = "Auto notch — VFO A",
+        ["controls.autoNotchB"]   = "Auto notch — VFO B",
+        ["controls.manualNotchA"] = "Manual notch — VFO A",
+        ["controls.manualNotchB"] = "Manual notch — VFO B",
+        ["controls.roofingA"]     = "Roofing filter — VFO A",
+        ["controls.roofingB"]     = "Roofing filter — VFO B",
+        // Spectrum
+        ["spectrum.display"]  = "Spectrum canvas",
+        ["spectrum.span250k"] = "Span 250 kHz button",
+        ["spectrum.span500k"] = "Span 500 kHz button",
+        ["spectrum.span1m"]   = "Span 1 MHz button",
+        ["spectrum.span2m"]   = "Span 2 MHz button",
+        // Navigation
+        ["nav.brand"] = "Application name / home link",
+    };
+}
+
+<div class="mt-4">
+
+    <div class="mb-3">
+        <h2>Accessibility Labels</h2>
+        <p class="text-muted mb-0">
+            These labels are announced by screen readers (NVDA, Narrator, JAWS) when navigating controls.
+            Edit the <strong>Label</strong> column, then click <strong>Save Labels</strong>.
+            Reload the main page after saving for changes to take effect.
+        </p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="alert @(Model.StatusMessage.Contains("✓") ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+            @Model.StatusMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form method="post">
+        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-3 mb-3">
+        @foreach (var (sKey, sTitle, sDesc, hClass) in sectionMeta)
+        {
+            var sectionKeys = descriptions.Keys.Where(k => k.StartsWith(sKey + ".")).ToList();
+
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header @hClass d-flex align-items-baseline gap-2 py-2">
+                        <strong>@sTitle</strong>
+                        <small class="text-muted">@sDesc</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-striped mb-0">
+                            <colgroup>
+                                <col style="width: 48%" />
+                                <col />
+                            </colgroup>
+                            <tbody>
+                                @foreach (var fullKey in sectionKeys)
+                                {
+                                    <tr>
+                                        <td class="ps-2 align-middle text-muted small">@descriptions[fullKey]</td>
+                                        <td class="pe-2 py-1">
+                                            <input name="Labels[@fullKey]"
+                                                   value="@Model.Labels.GetValueOrDefault(fullKey, "")"
+                                                   class="form-control form-control-sm"
+                                                   aria-label="Label for: @descriptions[fullKey]" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+        </div>
+
+        <div class="mb-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Save Labels
+            </button>
+        </div>
+    </form>
+
+    <form method="post" asp-page-handler="Reset"
+          onsubmit="return confirm('Reset all labels to factory defaults? Your current labels will be lost.')">
+        <button type="submit" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
+        </button>
+    </form>
+
+</div>

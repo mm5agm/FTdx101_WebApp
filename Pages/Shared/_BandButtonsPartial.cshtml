@@ -20,7 +20,7 @@
     var selectedBand = (Model.Item3 ?? "").Trim().ToLowerInvariant();
 }
 <div class="band-buttons-container">
-    <div class="band-radio-grid" id="bandRadioGroup@(receiver)" role="radiogroup" aria-label="Band">
+    <div class="band-radio-grid" id="bandRadioGroup@(receiver)" role="radiogroup" aria-label="Band — use arrow keys to change band">
         @for (int idx = 0; idx < bands.Length; idx++)
         {
             var band = bands[idx];
@@ -31,6 +31,7 @@
                    role="radio"
                    aria-checked="@(isChecked ? "true" : "false")"
                    aria-label="@bandLabel"
+                   title="@bandLabel"
                    data-a11y-key="bands.@band"
                    data-receiver="@receiver"
                    data-band="@band"
