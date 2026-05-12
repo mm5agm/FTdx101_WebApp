@@ -57,7 +57,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <Version>1.3.0</Version>
+    <Version>1.3.1</Version>
     <AssemblyTitle>MM5AGM Yaesu Control</AssemblyTitle>
     <Product>MM5AGM Yaesu Control</Product>
     <Description>Web-based control panel for Yaesu FTdx101 series transceivers</Description>

@@ -66,6 +66,14 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
+## 2026-05-12 - v1.3.1
+
+### Fixed
+
+- **FTdx10 dual receivers** — the FTdx10 has two independent receivers (VFO A and VFO B), the same as the FTdx101MP and FTdx101D. The app was incorrectly hiding VFO B for FTdx10 users. Both VFO panels are now shown by default.
+
+---
+
 ## 2026-05-12 - v1.3.0
 
 ### Added
