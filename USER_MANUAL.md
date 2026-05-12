@@ -116,7 +116,7 @@ The main control panel loads. If the radio is powered on and the serial connecti
 
 ### 5.1 Top Bar
 
-The top bar contains navigation links, external application buttons, and the radio power button. The app name and current version number (e.g., **FTdx101_WebApp v1.2.2**) are shown in the top-left corner.
+The top bar contains navigation links, external application buttons, and the radio power button. The app name and current version number (e.g., **FTdx101_WebApp v1.3.0**) are shown in the top-left corner.
 
 **External app buttons** (WSJT-X, JTAlert, Log4OM) appear if they are enabled in Application Setup. The colour of each button indicates status:
 
