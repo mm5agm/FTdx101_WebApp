@@ -77,13 +77,10 @@
                class="btn btn-warning btn-sm" style="padding-top: 1px; padding-bottom: 1px;" title="Support this project via PayPal">
                 <i class="bi bi-cup-hot-fill" aria-hidden="true"></i> Buy Me a Coffee
             </a>
-            @if (Model.RadioModel != "FTdx10")
-            {
-                <button id="vfoBToggleBtn" class="btn btn-sm btn-outline-secondary"
-                        style="padding-top: 1px; padding-bottom: 1px;" title="Show/Hide VFO-B">
-                    VFO-B
-                </button>
-            }
+            <button id="vfoBToggleBtn" class="btn btn-sm btn-outline-secondary"
+                    style="padding-top: 1px; padding-bottom: 1px;" title="Show/Hide VFO-B">
+                VFO-B
+            </button>
             <button id="radioPowerBtn" class="btn btn-danger btn-sm"
                     onclick="toggleRadioPower()" style="padding-top: 1px; padding-bottom: 1px;" title="Radio Power On/Off">
                 <i class="bi bi-power" aria-hidden="true"></i> POWER
@@ -941,11 +938,7 @@
     <script>
     (function () {
         const STORAGE_KEY = 'vfoBVisible';
-        const radioModel  = (document.getElementById('vfoRow') || {}).dataset?.radioModel || 'FTdx101MP';
-        const isFtdx10    = radioModel === 'FTdx10';
-
         function getVisible() {
-            if (isFtdx10) return false;
             const stored = localStorage.getItem(STORAGE_KEY);
             return stored !== null ? stored === 'true' : true;
         }
