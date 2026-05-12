@@ -127,7 +127,7 @@
                     <ol>
                         <li>Open a browser and go to <code>http://localhost:8080</code></li>
                         <li>Click <strong>Settings</strong> in the navigation bar.</li>
-                        <li>Set <strong>Radio Model</strong> to your transceiver: <strong>FTdx101MP</strong> (200 W, dual receiver), <strong>FTdx101D</strong> (100 W, single receiver), or <strong>FTdx10</strong> (100 W, single receiver — VFO B is hidden by default).</li>
+                        <li>Set <strong>Radio Model</strong> to your transceiver: <strong>FTdx101MP</strong> (200 W, dual receiver), <strong>FTdx101D</strong> (100 W, dual receiver), or <strong>FTdx10</strong> (100 W, dual receiver).</li>
                         <li>Set <strong>Serial Port</strong> to the COM port your radio is connected to. If you are unsure, go to <strong>Diagnostics → Ports</strong> to see a list of available ports, or check Windows Device Manager.</li>
                         <li>Set <strong>Baud Rate</strong> to match the radio's CAT baud rate. The factory default on the FTdx101 is <strong>38400</strong>. You can verify or change this on the radio under <strong>Menu → CAT Rate</strong>.</li>
                         <li>Select your <strong>Band Plan</strong> (UK or USA).</li>
@@ -223,12 +223,9 @@
                         <p>There are two VFO panels side by side:</p>
                         <ul>
                             <li><strong>VFO A</strong> <span class="badge bg-primary">Blue border</span> — the main receiver, present on all supported radios</li>
-                            <li><strong>VFO B</strong> <span class="badge bg-success">Green border</span> — the sub-receiver, present on the FTdx101MP and FTdx101D. On the FTdx10 the VFO B panel is hidden because that radio has only one VFO.</li>
+                            <li><strong>VFO B</strong> <span class="badge bg-success">Green border</span> — the sub-receiver, present on all supported radios.</li>
                         </ul>
                         <p>Both panels have identical controls. All settings are independent — changing a control in VFO A does not affect VFO B.</p>
-                        <div class="alert alert-info py-2 mb-0">
-                            <i class="bi bi-info-circle"></i> <strong>FTdx10 users:</strong> When FTdx10 is selected in Settings, the VFO B panel and the VFO-B toggle button are removed from the main page automatically. They reappear if you switch back to an FTdx101MP or FTdx101D.
-                        </div>
                     </div>
 
                     <!-- 5.6 Frequency -->
@@ -319,7 +316,7 @@
                     <table class="table table-sm table-bordered mb-4">
                         <thead class="table-light"><tr><th>Setting</th><th>Description</th></tr></thead>
                         <tbody>
-                            <tr><td>Radio Model</td><td><strong>FTdx101MP</strong> (200 W, dual RX), <strong>FTdx101D</strong> (100 W, single RX), or <strong>FTdx10</strong> (100 W, single RX — VFO B hidden by default)</td></tr>
+                            <tr><td>Radio Model</td><td><strong>FTdx101MP</strong> (200 W, dual RX), <strong>FTdx101D</strong> (100 W, dual RX), or <strong>FTdx10</strong> (100 W, dual RX)</td></tr>
                             <tr><td>Serial Port</td><td>COM port the radio is connected to (e.g., COM3). Check Device Manager or Diagnostics → Ports if unsure.</td></tr>
                             <tr><td>Baud Rate</td><td>Must match the radio's CAT Rate setting. Factory default: <strong>38400</strong>.</td></tr>
                             <tr><td>Band Plan</td><td>UK or USA. Affects which bands and segment frequencies appear.</td></tr>

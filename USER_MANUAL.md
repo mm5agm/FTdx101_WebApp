@@ -84,7 +84,7 @@ Before the app can communicate with your radio you need to tell it which serial 
 
 1. Open a browser and go to **http://localhost:8080**
 2. Click the **Settings** link in the navigation bar.
-3. Set **Radio Model** to your transceiver: **FTdx101MP** (200 W, dual receiver), **FTdx101D** (100 W, single receiver), or **FTdx10** (100 W, single receiver — VFO B is hidden by default).
+3. Set **Radio Model** to your transceiver: **FTdx101MP** (200 W, dual receiver), **FTdx101D** (100 W, dual receiver), or **FTdx10** (100 W, dual receiver).
 4. Set **Serial Port** to the COM port your radio is connected to. If you are unsure, go to **Diagnostics → Ports** to see a list of available ports, or check Windows Device Manager.
 5. Set **Baud Rate** to match the radio's CAT baud rate. The factory default on the FTdx101 is **38400**. You can verify or change this on the radio under **Menu → CAT Rate**.
 6. Select your **Band Plan** (UK or USA).
@@ -183,11 +183,9 @@ A status badge in the spectrum panel shows the current SDR state: **No SDR**, **
 There are two VFO panels side by side:
 
 - **VFO A** (blue border) — the main receiver, present on all supported radios
-- **VFO B** (green border) — the sub-receiver, present on the FTdx101MP and FTdx101D. On the FTdx10 the VFO B panel is hidden because that radio has only one VFO.
+- **VFO B** (green border) — the sub-receiver, present on all supported radios.
 
 Both panels have identical controls. All settings are independent — changing a control in VFO A does not affect VFO B.
-
-> **FTdx10 users:** If you switch to the FTdx10 model in Settings, the **VFO B** panel and the **VFO-B toggle button** are removed from the main page automatically. They reappear if you change back to an FTdx101MP or FTdx101D.
 
 ---
 
@@ -318,7 +316,7 @@ Access Settings from the navigation bar or by clicking the settings icon. Change
 
 | Setting | Description |
 |---------|-------------|
-| Radio Model | **FTdx101MP** (200 W, dual RX), **FTdx101D** (100 W, single RX), or **FTdx10** (100 W, single RX — VFO B hidden) |
+| Radio Model | **FTdx101MP** (200 W, dual RX), **FTdx101D** (100 W, dual RX), or **FTdx10** (100 W, dual RX) |
 | Serial Port | COM port the radio's USB/serial cable is connected to (e.g., COM3) |
 | Baud Rate | Must match the radio's CAT Rate setting. Default: 38400 |
 | Band Plan | UK or USA. Affects which bands and segment frequencies are shown |
