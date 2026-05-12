@@ -83,7 +83,58 @@ async function pressEnter() {
     if (window.radioControl?.setFrequency) {
         await window.radioControl.setFrequency(_receiver, hz);
     }
-    closeKeyboard();
+}
+
+// ── Physical keyboard handler ─────────────────────────────────────────────────
+
+function initPhysicalKeyboard() {
+    // Use capture phase on document so we receive key events regardless of where
+    // focus is — focus escapes the dialog when the user clicks band buttons etc.
+    document.addEventListener('keydown', e => {
+        if (!_dialog.open) return;
+
+        // Digit keys: always route to the keyboard while it is open.
+        // There are no text inputs on the main page, so capturing digits is safe.
+        if (e.key >= '0' && e.key <= '9') {
+            e.preventDefault();
+            e.stopPropagation();
+            pressDigit(e.key);
+            return;
+        }
+
+        // Escape always closes the keyboard (show() does not auto-close on Escape).
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            closeKeyboard();
+            return;
+        }
+
+        // Navigation keys only apply when focus is within the dialog.
+        if (!_dialog.contains(document.activeElement)) return;
+
+        if (e.key === 'ArrowLeft')       { e.preventDefault(); moveCursor(-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); moveCursor(1); }
+        else if (e.key === 'Backspace')  { e.preventDefault(); pressBackspace(); }
+        else if (e.key === 'Delete')     { e.preventDefault(); pressClear(); }
+        else if (e.key === 'Enter') {
+            if (document.activeElement?.id === 'freqKbEnter') return;
+            e.preventDefault();
+            pressEnter();
+        }
+    }, true); // capture phase — fires before any element handler
+}
+
+// ── Live frequency update (e.g. after a band change) ─────────────────────────
+
+function initFrequencyUpdateListener() {
+    window.addEventListener('radioFrequencyUpdate', e => {
+        if (!_dialog.open) return;
+        if (e.detail.receiver !== _receiver) return;
+        _digits = hzToDigits(e.detail.hz);
+        _cursor = 0;
+        renderDisplay();
+    });
 }
 
 // ── Open / close ──────────────────────────────────────────────────────────────
@@ -99,7 +150,7 @@ export function openKeyboard(receiver) {
     renderDisplay();
 
     applySavedLayout();
-    _dialog.showModal();
+    _dialog.show();
     _dialog.querySelector('.fkb-num')?.focus();
 }
 
@@ -107,9 +158,10 @@ function closeKeyboard() {
     _dialog.close();
 }
 
-// ── Drag ──────────────────────────────────────────────────────────────────────
+// ── Drag (mouse + touch) ──────────────────────────────────────────────────────
 
 function initDrag(header) {
+    // Mouse drag
     header.addEventListener('mousedown', e => {
         if (e.target.closest('.fkb-close')) return;
 
@@ -143,6 +195,45 @@ function initDrag(header) {
         document.addEventListener('mouseup',   onUp);
         e.preventDefault();
     });
+
+    // Touch drag
+    header.addEventListener('touchstart', e => {
+        if (e.target.closest('.fkb-close')) return;
+        if (e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        const rect  = _dialog.getBoundingClientRect();
+        const origX = touch.clientX;
+        const origY = touch.clientY;
+        let   left  = rect.left;
+        let   top   = rect.top;
+
+        _dialog.style.margin = '0';
+        _dialog.style.left   = `${left}px`;
+        _dialog.style.top    = `${top}px`;
+
+        function onMove(ev) {
+            if (ev.touches.length !== 1) return;
+            const t = ev.touches[0];
+            left = rect.left + (t.clientX - origX);
+            top  = rect.top  + (t.clientY - origY);
+            left = Math.max(-rect.width  + 40, Math.min(window.innerWidth  - 40, left));
+            top  = Math.max(0,                 Math.min(window.innerHeight - 40, top));
+            _dialog.style.left = `${left}px`;
+            _dialog.style.top  = `${top}px`;
+            ev.preventDefault();
+        }
+
+        function onEnd() {
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend',  onEnd);
+            saveLayout();
+        }
+
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend',  onEnd);
+        e.preventDefault();
+    }, { passive: false });
 }
 
 // ── Resize persistence ────────────────────────────────────────────────────────
@@ -219,4 +310,7 @@ export function initFreqKeyboard() {
 
     // Close on backdrop click
     _dialog.addEventListener('click', e => { if (e.target === _dialog) closeKeyboard(); });
+
+    initPhysicalKeyboard();
+    initFrequencyUpdateListener();
 }

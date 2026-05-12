@@ -171,22 +171,28 @@ function updateFrequencyDisplay(receiver, freqHz) {
         ? lastBackendFreq
         : localFreq;
     display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
+    if (freqToShow && freqToShow > 0) {
+        const mhz = String(parseFloat((freqToShow / 1e6).toFixed(6)));
+        display.setAttribute('aria-valuenow', mhz);
+        display.setAttribute('aria-label', `VFO ${receiver}: ${mhz} MHz`);
+        display.setAttribute('title', `VFO ${receiver}: ${mhz} MHz`);
+    }
 }
 
 function renderFrequencyDigits(freq, selIdx) {
     // Show dashes if no valid frequency yet
     if (!freq || isNaN(freq) || freq < 100) {
-        return '<span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
+        return '<span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span>.<span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span>.<span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span>';
     }
     let s = freq.toString().padStart(8, "0");
     let html = "";
     let digitIdx = 0;
     for (let i = 0; i < 8; i++) {
         if (i === 2 || i === 5) {
-            html += '<span class="digit">.</span>';
+            html += '<span class="digit" aria-hidden="true">.</span>';
         }
         let selected = (selIdx === digitIdx) ? " selected" : "";
-        html += `<span class="digit${selected}" tabindex="0">${s[i]}</span>`;
+        html += `<span class="digit${selected}" aria-hidden="true" tabindex="-1">${s[i]}</span>`;
         digitIdx++;
     }
     return html;
@@ -406,26 +412,36 @@ function updateMeterDomLabel(property, result) {
     const dv = result.displayValue;
     switch (property) {
         case 'PowerMeter': {
+            const formatted = window.MeterFormatters.powerOverlay(dv.watts);
             const el = document.getElementById('powerMeterValue');
-            if (el) el.textContent = window.MeterFormatters.powerOverlay(dv.watts);
+            if (el) el.textContent = formatted;
             const rawEl = document.getElementById('raw-powerout-label');
             if (rawEl) rawEl.textContent = 'Raw Power Out: ' + Math.round(dv.rawAvg);
+            const canvas = document.getElementById('powerMeterCanvas');
+            if (canvas) canvas.dataset.reading = formatted;
             break;
         }
         case 'SWRMeter': {
+            const formatted = window.MeterFormatters.swr(dv.swr);
             const el = document.getElementById('swrMeterValue');
-            if (el) el.textContent = window.MeterFormatters.swr(dv.swr);
+            if (el) el.textContent = formatted;
+            const canvas = document.getElementById('swrMeterCanvas');
+            if (canvas) canvas.dataset.reading = formatted;
             break;
         }
         case 'CompressionMeter': {
+            const formatted = window.MeterFormatters.compressionOverlay(dv.db);
             const el = document.getElementById('compressionMeterValue');
-            if (el) el.textContent = window.MeterFormatters.compressionOverlay(dv.db);
+            if (el) el.textContent = formatted;
+            const canvas = document.getElementById('compressionMeterCanvas');
+            if (canvas) canvas.dataset.reading = formatted;
             break;
         }
         case 'ALCMeter': {
             const el  = document.getElementById('alcValue');
             const bar = document.getElementById('alcBar');
             const meterEl = document.getElementById('alcMeterValue');
+            const alcFormatted = window.MeterFormatters.alcVolts(dv.alcVolts);
             if (el) el.textContent = window.MeterFormatters.percent(dv.percent);
             if (bar) {
                 bar.style.width = `${dv.percent}%`;
@@ -435,22 +451,33 @@ function updateMeterDomLabel(property, result) {
                 else if (dv.percent < 90) bar.classList.add('bg-warning');
                 else                      bar.classList.add('bg-danger');
             }
-            if (meterEl) meterEl.textContent = window.MeterFormatters.alcVolts(dv.alcVolts);
+            if (meterEl) meterEl.textContent = alcFormatted;
+            const alcCanvas = document.getElementById('alcMeterCanvas');
+            if (alcCanvas) alcCanvas.dataset.reading = alcFormatted;
             break;
         }
         case 'IDDMeter': {
+            const formatted = window.MeterFormatters.iddOverlay(dv.amps);
             const el = document.getElementById('iddMeterValue');
-            if (el) el.textContent = window.MeterFormatters.iddOverlay(dv.amps);
+            if (el) el.textContent = formatted;
+            const canvas = document.getElementById('iddMeterCanvas');
+            if (canvas) canvas.dataset.reading = formatted;
             break;
         }
         case 'VDDMeter': {
+            const formatted = window.MeterFormatters.vddOverlay(dv.volts);
             const el = document.getElementById('vddMeterValue');
-            if (el) el.textContent = window.MeterFormatters.vddOverlay(dv.volts);
+            if (el) el.textContent = formatted;
+            const canvas = document.getElementById('vddMeterCanvas');
+            if (canvas) canvas.dataset.reading = formatted;
             break;
         }
         case 'Temperature': {
+            const formatted = window.MeterFormatters.tempOverlay(dv.tempC);
             const el = document.getElementById('paTemperatureValue');
-            if (el) el.textContent = window.MeterFormatters.tempOverlay(dv.tempC);
+            if (el) el.textContent = formatted;
+            const canvas = document.getElementById('tempMeterCanvas');
+            if (canvas) canvas.dataset.reading = formatted;
             break;
         }
     }
@@ -531,11 +558,11 @@ function updateRadioPowerButton() {
 
     if (radioPowerOn) {
         btn.className = 'btn btn-success btn-sm';
-        btn.innerHTML = '<i class="bi bi-power"></i> POWER';
+        btn.innerHTML = '<i class="bi bi-power" aria-hidden="true"></i> POWER';
         btn.title = 'Radio is ON - Click to turn OFF';
     } else {
         btn.className = 'btn btn-danger btn-sm';
-        btn.innerHTML = '<i class="bi bi-power"></i> POWER';
+        btn.innerHTML = '<i class="bi bi-power" aria-hidden="true"></i> POWER';
         btn.title = 'Radio is OFF - Click to turn ON';
     }
 }
@@ -623,11 +650,11 @@ function updateTxButton() {
     if (activeBtn) {
         if (isTransmitting) {
             activeBtn.className = 'btn btn-danger btn-sm';
-            activeBtn.innerHTML = '<i class="bi bi-broadcast"></i> TX ON';
+            activeBtn.innerHTML = '<i class="bi bi-broadcast" aria-hidden="true"></i> TX ON';
             activeBtn.title = 'Click to stop transmitting';
         } else {
             activeBtn.className = 'btn btn-warning btn-sm';
-            activeBtn.innerHTML = '<i class="bi bi-broadcast"></i> TX';
+            activeBtn.innerHTML = '<i class="bi bi-broadcast" aria-hidden="true"></i> TX';
             activeBtn.title = 'Click to transmit';
         }
     }
@@ -722,10 +749,12 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "FrequencyA") {
         state.lastBackendFreq.A = update.value;
         updateFrequencyDisplay('A', update.value);
+        window.dispatchEvent(new CustomEvent('radioFrequencyUpdate', { detail: { receiver: 'A', hz: update.value } }));
     }
     if (update.property === "FrequencyB") {
         state.lastBackendFreq.B = update.value;
         updateFrequencyDisplay('B', update.value);
+        window.dispatchEvent(new CustomEvent('radioFrequencyUpdate', { detail: { receiver: 'B', hz: update.value } }));
     }
 
     // --- BAND CHANGE ---
@@ -950,6 +979,7 @@ async function pollInitStatus() {
             initPollingStopped = true; // Stop polling
             radioPowerOn = true;
             updateRadioPowerButton();
+            if (window.applySegmentsOnInit) window.applySegmentsOnInit();
         } else if (data.status === "radio_off") {
             // Radio is off - hide overlay and let user turn it on via power button
             overlay.style.display = "none";
@@ -1052,11 +1082,13 @@ async function updateBandButtonsFromBackend() {
             document.querySelectorAll('input[name="band-A"]').forEach(radio => {
                 radio.checked = (radio.value.toLowerCase() === data.vfoA.band.toLowerCase());
             });
+            syncBandAriaChecked('A');
         }
         if (data.vfoB && data.vfoB.band) {
             document.querySelectorAll('input[name="band-B"]').forEach(radio => {
                 radio.checked = (radio.value.toLowerCase() === data.vfoB.band.toLowerCase());
             });
+            syncBandAriaChecked('B');
         }
     } catch (error) {
         // ...removed debug logging...
@@ -1260,17 +1292,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderFrequencyDigits(freq, selIdx) {
         if (!freq || freq < 1000) {
-            return '<span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>.<span class="digit">-</span><span class="digit">-</span><span class="digit">-</span>';
+            return '<span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span>.<span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span>.<span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span><span class="digit" aria-hidden="true">-</span>';
         }
         let s = freq.toString().padStart(8, "0");
         let html = "";
         let digitIdx = 0;
         for (let i = 0; i < 8; i++) {
             if (i === 2 || i === 5) {
-                html += '<span class="digit">.</span>';
+                html += '<span class="digit" aria-hidden="true">.</span>';
             }
             let selected = (selIdx === digitIdx) ? " selected" : "";
-            html += `<span class="digit${selected}" tabindex="0">${s[i]}</span>`;
+            html += `<span class="digit${selected}" aria-hidden="true" tabindex="-1">${s[i]}</span>`;
             digitIdx++;
         }
         return html;
@@ -1288,7 +1320,10 @@ document.addEventListener('DOMContentLoaded', function() {
             : freqHz;
         display.innerHTML = renderFrequencyDigits(freqToShow, selIdx);
         if (freqToShow && freqToShow > 0) {
-            display.setAttribute('aria-valuenow', (freqToShow / 1e6).toFixed(6));
+            const mhz = String(parseFloat((freqToShow / 1e6).toFixed(6)));
+            display.setAttribute('aria-valuenow', mhz);
+            display.setAttribute('aria-label', `VFO ${receiver}: ${mhz} MHz`);
+            display.setAttribute('title', `VFO ${receiver}: ${mhz} MHz`);
         }
     }
 
@@ -1474,7 +1509,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const textEl = document.getElementById('messageBoxText');
 
         if (modalEl && titleEl && textEl) {
-            titleEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${title}`;
+            titleEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>${title}`;
             textEl.textContent = message;
             const modal = new bootstrap.Modal(modalEl);
             modal.show();
@@ -1673,8 +1708,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updatePowerSliderMax();
 
-            state.lastBackendFreq.A = data.vfoA.frequency;
-            state.lastBackendFreq.B = data.vfoB.frequency;
             state.lastMode.A = data.vfoA.mode;
             state.lastMode.B = data.vfoB.mode;
             state.lastAntenna.A = data.vfoA.antenna;
@@ -1701,11 +1734,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 state.selectedIdx.B = null;
             }
 
-            if (!state.editing.A) updateFrequencyDisplay('A', data.vfoA.frequency);
-            else updateFrequencyDisplay('A', state.localFreq.A);
+            if (!state.editing.A) {
+                updateFrequencyDisplay('A', data.vfoA.frequency);
+                if (data.vfoA.frequency !== state.lastBackendFreq.A) {
+                    state.lastBackendFreq.A = data.vfoA.frequency;
+                    window.dispatchEvent(new CustomEvent('radioFrequencyUpdate', { detail: { receiver: 'A', hz: data.vfoA.frequency } }));
+                }
+            } else updateFrequencyDisplay('A', state.localFreq.A);
 
-            if (!state.editing.B) updateFrequencyDisplay('B', data.vfoB.frequency);
-            else updateFrequencyDisplay('B', state.localFreq.B);
+            if (!state.editing.B) {
+                updateFrequencyDisplay('B', data.vfoB.frequency);
+                if (data.vfoB.frequency !== state.lastBackendFreq.B) {
+                    state.lastBackendFreq.B = data.vfoB.frequency;
+                    window.dispatchEvent(new CustomEvent('radioFrequencyUpdate', { detail: { receiver: 'B', hz: data.vfoB.frequency } }));
+                }
+            } else updateFrequencyDisplay('B', state.localFreq.B);
 
             updateSMeter('A', data.vfoA.sMeter);
             updateSMeter('B', data.vfoB.sMeter);
@@ -1828,8 +1871,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (receiver === 'A') {
             if (window.meterPanel) window.meterPanel.update('smeterA', value);
             updateRawSMeterValueA(value);
+            const canvasA = document.getElementById('sMeterCanvasA');
+            if (canvasA) canvasA.dataset.reading = sMeterLabel(value);
         } else if (receiver === 'B') {
             if (window.meterPanel) window.meterPanel.update('smeterB', value);
+            const canvasB = document.getElementById('sMeterCanvasB');
+            if (canvasB) canvasB.dataset.reading = sMeterLabel(value);
         }
     }
 
@@ -2002,13 +2049,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save preference
         localStorage.setItem(segmentStorageKey(vfo, band), segKey);
 
-        // Tune frequency and set mode
+        // Set mode first so the radio doesn't shift frequency when mode changes,
+        // then tune to the target frequency.
         if (window.radioControl) {
-            await window.radioControl.setFrequency(vfo, freq);
-            // Also update the mode dropdown immediately for responsiveness
             const modeSelect = document.getElementById(`modeSelect${vfo}`);
             if (modeSelect) modeSelect.value = mode;
             await window.setMode(vfo, mode);
+            await window.radioControl.setFrequency(vfo, freq);
         }
     };
 
@@ -2052,6 +2099,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('DOMContentLoaded', function () {
         setTimeout(tryPopulateSegmentsOnLoad, 200);
     });
+
+    // Called by pollInitStatus when initialization reaches "complete".
+    // Applies the saved segment for each VFO, tuning the radio to the segment frequency.
+    window.applySegmentsOnInit = async function () {
+        for (const vfo of ['A', 'B']) {
+            const band = state.lastBand[vfo];
+            if (!band) continue;
+            const savedKey = localStorage.getItem(segmentStorageKey(vfo, band));
+            if (!savedKey) continue;
+            const select = document.getElementById(`segmentSelect${vfo}`);
+            if (!select || !select.querySelector(`option[value="${savedKey}"]`)) continue;
+            await window.onSegmentChange(vfo, savedKey);
+        }
+    };
 
     // --- Raw Meter Label Visibility State (S-Meter and Power Out) ---
     // Use localStorage to sync across tabs/pages
@@ -2128,3 +2189,75 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 pollInitStatus();
+
+// Screen-reader hover announcements via ARIA live region.
+// NVDA may have mouse tracking or tooltip reporting disabled; live regions
+// are always announced regardless of those settings.
+(function () {
+    const liveRegion = document.createElement('div');
+    liveRegion.id = '_sr_live';
+    liveRegion.setAttribute('aria-live', 'polite');
+    liveRegion.setAttribute('aria-atomic', 'true');
+    liveRegion.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;white-space:nowrap;';
+    document.body.appendChild(liveRegion);
+
+    // Elements we want announced on hover (covers all interactive controls on the page).
+    const INTERACTIVE = [
+        'button',
+        'a[href]',
+        'select',
+        'input:not([aria-hidden="true"])',  // exclude the aria-hidden radio inputs inside band buttons
+        'label[role="radio"]',              // band buttons
+        '[role="spinbutton"]',              // frequency display
+        'canvas[role="img"]'                // spectrum canvas
+    ].join(',');
+
+    let lastLabel = '';
+    let timer = null;
+
+    document.addEventListener('mouseover', function (e) {
+        const el = e.target.closest(INTERACTIVE);
+        if (!el) {
+            // Mouse moved off all interactive elements — reset so re-hover re-announces
+            clearTimeout(timer);
+            lastLabel = '';
+            return;
+        }
+        let label;
+        if (el.tagName === 'CANVAS') {
+            // All canvases are aria-hidden="true" so NVDA mouse tracking ignores them.
+            // The live region owns all announcements: name (from aria-label, user-customisable)
+            // followed by the current reading stored in dataset.reading.
+            const name    = el.getAttribute('aria-label') || el.getAttribute('title') || '';
+            const reading = el.dataset.reading || '';
+            label = reading ? (name ? name + ': ' + reading : reading) : (name || null);
+        } else {
+            label = el.getAttribute('aria-label') || el.getAttribute('title');
+            // Fall back to text content for buttons/links that have no aria-label/title
+            if (!label && (el.tagName === 'BUTTON' || el.tagName === 'A')) {
+                label = (el.textContent || '').trim().replace(/\s+/g, ' ');
+            }
+            // Append selected option text for dropdowns
+            if (el.tagName === 'SELECT' && el.selectedIndex >= 0) {
+                const selectedText = el.options[el.selectedIndex].text;
+                if (selectedText && !selectedText.startsWith('--')) {
+                    label = label + ', ' + selectedText;
+                }
+            }
+            // Append current value for sliders
+            if (el.tagName === 'INPUT' && el.type === 'range') {
+                label = label + ', ' + el.value;
+            }
+        }
+        if (!label) return;
+        if (label === lastLabel) return;
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+            lastLabel = label;
+            liveRegion.textContent = '';
+            requestAnimationFrame(function () { liveRegion.textContent = label; });
+        }, 200);
+    });
+    // No mouseout handler — resetting lastLabel in the mouseover null-el branch is sufficient
+    // and avoids the aggressive clearing that mouseout on every child element causes.
+})();

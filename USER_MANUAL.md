@@ -38,7 +38,11 @@
     - 14.2 [Screen Reader Support](#142-screen-reader-support)
     - 14.3 [NVDA](#143-nvda)
     - 14.4 [Windows Narrator](#144-windows-narrator)
-    - 14.5 [Customising Screen Reader Labels](#145-customising-screen-reader-labels)
+    - 14.5 [Customising Accessible Labels](#145-customising-screen-reader-labels)
+
+---
+
+![FTdx101 WebApp with the on-screen frequency keyboard open](pictures/DevelopScreen.png)
 
 ---
 
@@ -205,9 +209,11 @@ The frequency display shows the current VFO frequency in MHz to 1 Hz resolution 
 
 **On-screen frequency keyboard:**
 
-A keyboard button (🖮) appears to the right of the **MHz** label on each VFO panel. Click or tap it to open a floating on-screen number pad for typing in a frequency directly.
+A numeric entry button (**⑁**) appears to the right of the **MHz** label on each VFO panel. Click or tap it to open a floating on-screen number pad for typing in a frequency directly.
 
 The keyboard pre-fills with the current VFO frequency when it opens. The display shows the frequency as **XX.YYYYYY MHz** with the current digit position highlighted in blue.
+
+You can enter digits by clicking the on-screen buttons **or by typing on your physical keyboard** — whichever is more convenient.
 
 | Key | Action |
 |-----|--------|
@@ -219,9 +225,11 @@ The keyboard pre-fills with the current VFO frequency when it opens. The display
 | **✕** (title bar) | Close the keyboard without changing the frequency |
 | **Esc** | Close the keyboard without changing the frequency |
 
+The same actions are available from the physical keyboard: digit keys type digits; **← →** move the cursor; **Backspace** zeros the current digit; **Delete** clears all digits; **Enter** sends the frequency; **Esc** closes the keyboard.
+
 If you enter a frequency outside the radio's range (0.030–75.000 MHz) an error message appears and the frequency is not sent.
 
-**Moving and resizing the keyboard:** Drag the title bar to move the keyboard anywhere on screen. Drag the bottom-right corner to resize it. The position and size are saved automatically and restored the next time you open the keyboard.
+**Moving and resizing the keyboard:** Drag the title bar to move the keyboard anywhere on screen (touch drag is also supported on tablets). Drag the bottom-right corner to resize it. The position and size are saved automatically and restored the next time you open the keyboard.
 
 All keys have accessible labels for screen readers.
 
@@ -529,10 +537,13 @@ On touch devices, tap a digit in the frequency display to select it (it highligh
 | Click on spectrum | Tune VFO A to the clicked frequency |
 | **Tab** (in band buttons) | Move focus into the band button group |
 | **← / →** (in band buttons) | Move to the previous/next band and switch immediately |
-| Keyboard button (🖮) next to MHz | Open the on-screen frequency keyboard for that VFO |
-| **◀ / ▶** (in frequency keyboard) | Move the cursor left or right |
-| **↵ Enter** (in frequency keyboard) | Send the entered frequency to the radio |
-| **Esc** (in frequency keyboard) | Close the keyboard without changing frequency |
+| Numeric entry button (**⑁**) next to MHz | Open the on-screen frequency keyboard for that VFO |
+| **0–9** (frequency keyboard open) | Type the digit at the cursor position |
+| **← →** (frequency keyboard open) | Move the cursor left or right |
+| **Backspace** (frequency keyboard open) | Clear the current digit and move cursor back |
+| **Delete** (frequency keyboard open) | Clear all digits |
+| **↵ Enter** (frequency keyboard open) | Send the entered frequency to the radio |
+| **Esc** (frequency keyboard open) | Close the keyboard without changing frequency |
 
 ---
 
@@ -612,7 +623,7 @@ All interactive controls in the app have accessible labels that screen readers a
 |---------|------------------|
 | Band buttons | Full band name — e.g., "20 metres, radio button" |
 | Band button group | Announced as a radio group; arrow keys move between bands |
-| Meter gauges | Meter name — e.g., "S meter VFO A", "SWR meter" |
+| Meter gauges | Meter name and current reading — e.g., "S meter, VFO A: S5", "Amplifier supply voltage meter: 50.2 V" |
 | Frequency display | "VFO A frequency" with current value in MHz |
 | Sliders, dropdowns, buttons | Their purpose — e.g., "Transmit power", "VFO A mode" |
 
@@ -634,7 +645,27 @@ NVDA works with Edge, Chrome, and Firefox. Install it, then open the app in Edge
 | `Insert + Q` | Quit NVDA |
 | `Insert + M` | Toggle mouse tracking on/off |
 
-**Mouse tracking** is the most useful mode for this app. When enabled, NVDA announces the name of whatever element is currently under your mouse cursor as you move it around the page. This lets you identify every control without clicking.
+**How meter announcements work:**
+
+The app does **not** rely on NVDA's built-in mouse tracking for meter gauges. Instead, the meter canvases are intentionally hidden from NVDA's accessibility tree (`aria-hidden`). An ARIA live region — a standard web accessibility technique — handles all meter announcements directly.
+
+When you move the mouse over a meter gauge, the app reads:
+
+1. The meter's accessible label from your saved labels (see Section 14.5)
+2. The current reading at that moment (e.g., "S5", "50.2 V", "1.5:1")
+
+It then writes *both* into the live region, and NVDA announces them as a single phrase — for example: **"Amplifier supply voltage meter: 50.2 V"**.
+
+Because the live region is always active, meter values are announced whether or not NVDA's mouse tracking is enabled. The label used is always your custom label, not a title generated by the gauge library.
+
+**Behaviour on startup:**
+
+When the app loads, NVDA does not automatically read through the page. Two design decisions achieve this:
+
+- The main control panel uses `role="application"`, which tells NVDA to stay in forms/interaction mode rather than reading the page from top to bottom in browse mode.
+- The navigation bar at the top of the page is hidden from the accessibility tree so it is not announced when the page loads or when you return to the tab.
+
+**Band navigation:** When Tab moves focus into a band button group, NVDA announces *"Band — use arrow keys to change band, group"*. Press the **left/right arrow keys** to move between bands. Each band change is announced immediately (e.g., "20 metres, radio button, checked").
 
 > **Note:** NVDA reads abbreviations aloud. "SWR" is read as three separate letters ("S W R"). "PA" may be expanded to "Power Amplifier". The default labels in this app are written to avoid ambiguous abbreviations.
 
@@ -656,29 +687,152 @@ Once running, Narrator reads aloud the element that has keyboard focus. To navig
 
 ### 14.5 Customising Screen Reader Labels
 
-The text that screen readers announce for each control is stored in a labels file. You can edit this file to change any label — for example, to translate the app into another language, or simply to use your preferred wording.
+Every control in the app — band buttons, meters, VFO controls, the on-screen frequency keyboard, spectrum span buttons, and the navigation bar home link — has a text label that screen readers announce. You can change any of these labels through the built-in **Accessibility Labels** editor.
 
-**How it works:**
+**Editing labels:**
 
-1. The app ships with a default English labels file.
-2. If you create your own copy in `%APPDATA%\MM5AGM\FTdx101 WebApp\labels.json`, the app uses your copy instead. Your file survives app updates.
+1. Click **Accessibility Labels** in the navigation bar.
+2. The page shows all labels grouped by section. Edit the text in any **Label** field.
+3. Click **Save Labels**.
+4. Switch back to the main page — the new labels take effect automatically without needing to reload.
 
-**To create your labels file:**
+To restore all labels to their factory defaults, click **Reset to Defaults** at the bottom of the page.
 
-1. The app automatically copies the default labels file to `%APPDATA%\MM5AGM\FTdx101 WebApp\labels.json` the first time it runs. Open that file with Notepad — it is already in the right place.
-2. Edit the **values** (the text on the right of each colon). For example:
+---
 
-```json
-"bands": {
-    "20m": "20 metres"
-}
-```
+**What can be customised:**
 
-Change `"20 metres"` to whatever you want NVDA to say — e.g., `"zwanzig Meter"` for German.
+| Section | Controls covered |
+|---------|-----------------|
+| Band Buttons | Band buttons — 160m through 4m |
+| Meters | All meter gauges (S-meter, SWR, Power, etc.) |
+| VFO Controls | Frequency displays, up/down buttons, mode selector |
+| Radio Controls | AGC, IPO/AMP, ATT, NR, NB, Notch, Roofing filter, AF gain, IF width, IF shift, TX power, Mic gain |
+| Frequency Keyboard | On-screen frequency keyboard — all buttons including digits 0–9 |
+| Spectrum Display | Spectrum canvas and span buttons (250k, 500k, 1M, 2M) |
+| Navigation | Application name / home link |
 
-4. Save the file, then refresh the page in your browser (`F5`). The new labels take effect immediately.
+---
 
-> **Important:** Do not change the **keys** (the text on the left, such as `"20m"`, `"swr"`, `"temp"`). Only change the values on the right.
+**Complete French translation:**
+
+On the Accessibility Labels page, replace each label value with the French equivalent below. The section names (Band Buttons, Meters, etc.) and internal keys are not editable — only the label values shown in the input boxes.
+
+| Section | Key | French label |
+|---------|-----|-------------|
+| Band Buttons | 160m | 160 mètres |
+| Band Buttons | 80m | 80 mètres |
+| Band Buttons | 60m | 60 mètres |
+| Band Buttons | 40m | 40 mètres |
+| Band Buttons | 30m | 30 mètres |
+| Band Buttons | 20m | 20 mètres |
+| Band Buttons | 17m | 17 mètres |
+| Band Buttons | 15m | 15 mètres |
+| Band Buttons | 12m | 12 mètres |
+| Band Buttons | 10m | 10 mètres |
+| Band Buttons | 6m | 6 mètres |
+| Band Buttons | 4m | 4 mètres |
+| Meters | S meter — VFO A | Indicateur S, VFO A |
+| Meters | S meter — VFO B | Indicateur S, VFO B |
+| Meters | Power output meter | Indicateur de puissance |
+| Meters | SWR meter | Indicateur ROS |
+| Meters | ALC meter | Indicateur ALC |
+| Meters | Compression meter | Indicateur de compression |
+| Meters | Amplifier temperature meter | Indicateur de température ampli |
+| Meters | Drain current meter | Indicateur de courant de drain |
+| Meters | Amplifier supply voltage meter | Indicateur de tension d'alimentation |
+| VFO Controls | VFO A — frequency display | Fréquence VFO A en mégahertz |
+| VFO Controls | VFO B — frequency display | Fréquence VFO B en mégahertz |
+| VFO Controls | VFO A — frequency up button | VFO A fréquence plus haute |
+| VFO Controls | VFO A — frequency down button | VFO A fréquence plus basse |
+| VFO Controls | VFO B — frequency up button | VFO B fréquence plus haute |
+| VFO Controls | VFO B — frequency down button | VFO B fréquence plus basse |
+| VFO Controls | VFO A — mode selector | Mode VFO A |
+| VFO Controls | VFO B — mode selector | Mode VFO B |
+| Frequency Keyboard | Open keyboard — VFO A | Ouvrir le clavier de fréquence pour VFO A |
+| Frequency Keyboard | Open keyboard — VFO B | Ouvrir le clavier de fréquence pour VFO B |
+| Frequency Keyboard | Close keyboard | Fermer le clavier de fréquence |
+| Frequency Keyboard | Digit key: 0 | Zéro |
+| Frequency Keyboard | Digit key: 1 | Un |
+| Frequency Keyboard | Digit key: 2 | Deux |
+| Frequency Keyboard | Digit key: 3 | Trois |
+| Frequency Keyboard | Digit key: 4 | Quatre |
+| Frequency Keyboard | Digit key: 5 | Cinq |
+| Frequency Keyboard | Digit key: 6 | Six |
+| Frequency Keyboard | Digit key: 7 | Sept |
+| Frequency Keyboard | Digit key: 8 | Huit |
+| Frequency Keyboard | Digit key: 9 | Neuf |
+| Frequency Keyboard | Move cursor left | Déplacer le curseur à gauche |
+| Frequency Keyboard | Move cursor right | Déplacer le curseur à droite |
+| Frequency Keyboard | Backspace — clear digit and move left | Retour arrière — effacer le chiffre et reculer |
+| Frequency Keyboard | Clear all digits | Effacer tous les chiffres |
+| Frequency Keyboard | Confirm frequency entry | Saisir la fréquence |
+| Spectrum Display | Spectrum canvas | Affichage du spectre RF |
+| Spectrum Display | Span 250 kHz button | Largeur de bande 250 kHz |
+| Spectrum Display | Span 500 kHz button | Largeur de bande 500 kHz |
+| Spectrum Display | Span 1 MHz button | Largeur de bande 1 MHz |
+| Spectrum Display | Span 2 MHz button | Largeur de bande 2 MHz |
+| Navigation | Application name / home link | Accueil FTdx101 WebApp |
+
+---
+
+**Complete Danish translation:**
+
+| Section | Key | Danish label |
+|---------|-----|-------------|
+| Band Buttons | 160m | 160 meter |
+| Band Buttons | 80m | 80 meter |
+| Band Buttons | 60m | 60 meter |
+| Band Buttons | 40m | 40 meter |
+| Band Buttons | 30m | 30 meter |
+| Band Buttons | 20m | 20 meter |
+| Band Buttons | 17m | 17 meter |
+| Band Buttons | 15m | 15 meter |
+| Band Buttons | 12m | 12 meter |
+| Band Buttons | 10m | 10 meter |
+| Band Buttons | 6m | 6 meter |
+| Band Buttons | 4m | 4 meter |
+| Meters | S meter — VFO A | S-måler, VFO A |
+| Meters | S meter — VFO B | S-måler, VFO B |
+| Meters | Power output meter | Udgangseffektmåler |
+| Meters | SWR meter | SWR-måler |
+| Meters | ALC meter | ALC-måler |
+| Meters | Compression meter | Kompressionsmåler |
+| Meters | Amplifier temperature meter | Forstærkertemperaturmåler |
+| Meters | Drain current meter | Drænstrømmåler |
+| Meters | Amplifier supply voltage meter | Forsyningsspændingsmåler |
+| VFO Controls | VFO A — frequency display | VFO A frekvens i megahertz |
+| VFO Controls | VFO B — frequency display | VFO B frekvens i megahertz |
+| VFO Controls | VFO A — frequency up button | VFO A frekvens op |
+| VFO Controls | VFO A — frequency down button | VFO A frekvens ned |
+| VFO Controls | VFO B — frequency up button | VFO B frekvens op |
+| VFO Controls | VFO B — frequency down button | VFO B frekvens ned |
+| VFO Controls | VFO A — mode selector | VFO A tilstand |
+| VFO Controls | VFO B — mode selector | VFO B tilstand |
+| Frequency Keyboard | Open keyboard — VFO A | Åbn frekvenstastaturt for VFO A |
+| Frequency Keyboard | Open keyboard — VFO B | Åbn frekvenstastaturt for VFO B |
+| Frequency Keyboard | Close keyboard | Luk frekvenstastaturt |
+| Frequency Keyboard | Digit key: 0 | Nul |
+| Frequency Keyboard | Digit key: 1 | En |
+| Frequency Keyboard | Digit key: 2 | To |
+| Frequency Keyboard | Digit key: 3 | Tre |
+| Frequency Keyboard | Digit key: 4 | Fire |
+| Frequency Keyboard | Digit key: 5 | Fem |
+| Frequency Keyboard | Digit key: 6 | Seks |
+| Frequency Keyboard | Digit key: 7 | Syv |
+| Frequency Keyboard | Digit key: 8 | Otte |
+| Frequency Keyboard | Digit key: 9 | Ni |
+| Frequency Keyboard | Move cursor left | Flyt markør til venstre |
+| Frequency Keyboard | Move cursor right | Flyt markør til højre |
+| Frequency Keyboard | Backspace — clear digit and move left | Tilbage — slet ciffer og flyt til venstre |
+| Frequency Keyboard | Clear all digits | Ryd alle cifre |
+| Frequency Keyboard | Confirm frequency entry | Indtast frekvens |
+| Spectrum Display | Spectrum canvas | RF-spektrum visning |
+| Spectrum Display | Span 250 kHz button | Spændvidde 250 kHz |
+| Spectrum Display | Span 500 kHz button | Spændvidde 500 kHz |
+| Spectrum Display | Span 1 MHz button | Spændvidde 1 MHz |
+| Spectrum Display | Span 2 MHz button | Spændvidde 2 MHz |
+| Navigation | Application name / home link | FTdx101 WebApp startside |
 
 ---
 

@@ -389,6 +389,7 @@ pre, code { tab-size: 4; }
     margin: 0;
     cursor: pointer;
     z-index: 1;
+    pointer-events: none;
 }
 
 .band-radio-label span {

@@ -971,7 +971,8 @@ namespace FTdx101_WebApp.Controllers
             {
                 await EnsureConnectedAsync();
                 var vfo = receiver.Equals("A", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
-                await _catClient.SendCommandAsync($"RA{vfo}{request.Code};", "WebUI", CancellationToken.None);
+                var catCode = request.Code switch { "00" => "0", "06" => "1", "12" => "2", "18" => "3", _ => "0" };
+                await _catClient.SendCommandAsync($"RA{vfo}{catCode};", "WebUI", CancellationToken.None);
 
                 if (vfo == "0") _radioStateService.AttA = request.Code;
                 else            _radioStateService.AttB = request.Code;
@@ -1084,8 +1085,9 @@ namespace FTdx101_WebApp.Controllers
                 return StatusCode(503, new { error = "Radio busy" });
             try
             {
+                await EnsureConnectedAsync();
                 var vfo = receiver.ToUpper() == "A" ? "0" : "1";
-                await _catClient.SendCommandAsync($"SH{vfo}{request.Code};", "WebUI", CancellationToken.None);
+                await _catClient.SendCommandAsync($"SH{vfo}0{int.Parse(request.Code):D2};", "WebUI", CancellationToken.None);
                 if (vfo == "0") _radioStateService.IfWidthA = request.Code;
                 else            _radioStateService.IfWidthB = request.Code;
                 return Ok();
@@ -1108,10 +1110,11 @@ namespace FTdx101_WebApp.Controllers
                 return StatusCode(503, new { error = "Radio busy" });
             try
             {
+                await EnsureConnectedAsync();
                 var vfo = receiver.ToUpper() == "A" ? "0" : "1";
-                var raw = (int)Math.Round((request.ShiftHz + 1000) / 2000.0 * 9999);
-                raw = Math.Max(0, Math.Min(9999, raw));
-                await _catClient.SendCommandAsync($"IS{vfo}{raw:D4};", "WebUI", CancellationToken.None);
+                var sign = request.ShiftHz >= 0 ? '+' : '-';
+                var abs = Math.Abs(request.ShiftHz);
+                await _catClient.SendCommandAsync($"IS{vfo}0{sign}{abs:D4};", "WebUI", CancellationToken.None);
                 if (vfo == "0") _radioStateService.IfShiftA = request.ShiftHz;
                 else            _radioStateService.IfShiftB = request.ShiftHz;
                 return Ok();

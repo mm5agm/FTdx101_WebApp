@@ -175,11 +175,12 @@ namespace FTdx101_WebApp.Services
                         }
                         break;
                     case "RA":
-                        // RA{vfo}{nn}; — vfo: 0=Main 1=Sub; nn: 00=OFF 06=6dB 12=12dB 18=18dB
-                        if (message.Length >= 5)
+                        // RA{vfo}{n}; — vfo: 0=Main 1=Sub; n: 0=OFF 1=6dB 2=12dB 3=18dB
+                        if (message.Length >= 4)
                         {
                             var vfo = message[2];
-                            var code = message.Substring(3, 2);
+                            var catCode = message[3].ToString();
+                            var code = catCode switch { "0" => "00", "1" => "06", "2" => "12", "3" => "18", _ => "00" };
                             if (vfo == '0') _stateService.AttA = code;
                             else if (vfo == '1') _stateService.AttB = code;
                         }
@@ -208,23 +209,28 @@ namespace FTdx101_WebApp.Services
                         }
                         break;
                     case "SH":
-                        // SH{vfo}{n}; — vfo: 0=Main 1=Sub; n: 0-8 (200Hz to 3000Hz)
-                        if (message.Length >= 4)
+                        // SH{vfo}0{nn}; — vfo: 0=Main 1=Sub; [3]='0' fixed; [4-5]=2-digit code
+                        if (message.Length >= 6)
                         {
                             var vfo = message[2];
-                            var code = message[3].ToString();
+                            var rawCode = message.Substring(4, 2).TrimStart('0');
+                            var code = string.IsNullOrEmpty(rawCode) ? "0" : rawCode;
                             if (vfo == '0') _stateService.IfWidthA = code;
                             else if (vfo == '1') _stateService.IfWidthB = code;
                         }
                         break;
                     case "IS":
-                        // IS{vfo}{nnnn}; — 0000=min(-1000Hz) 5000=center(0Hz) 9999=max(+1000Hz)
-                        if (message.Length >= 7 && int.TryParse(message.Substring(3, 4), out int rawShift))
+                        // IS{vfo}0{sign}{nnnn}; — sign '+'/'-', nnnn=absolute Hz
+                        if (message.Length >= 9)
                         {
                             var vfo = message[2];
-                            var shiftHz = (int)Math.Round(rawShift / 9999.0 * 2000 - 1000);
-                            if (vfo == '0') _stateService.IfShiftA = shiftHz;
-                            else if (vfo == '1') _stateService.IfShiftB = shiftHz;
+                            var sign = message[4];
+                            if (int.TryParse(message.Substring(5, 4), out int absHz))
+                            {
+                                var shiftHz = sign == '-' ? -absHz : absHz;
+                                if (vfo == '0') _stateService.IfShiftA = shiftHz;
+                                else if (vfo == '1') _stateService.IfShiftB = shiftHz;
+                            }
                         }
                         break;
                     // No debug logging for unhandled commands

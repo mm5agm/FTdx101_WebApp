@@ -59,6 +59,9 @@ export class SpectrumPanel {
     setVfoFrequency(hz) {
         this._vfoHz = hz;
         if (this._lastBins) this._render();
+        // Keep data-reading on the canvas current so the hover live region can announce it.
+        const canvas = document.getElementById(this._canvasId);
+        if (canvas) canvas.dataset.reading = 'centred on ' + (hz / 1e6).toFixed(6) + ' MHz';
     }
 
     /**
@@ -114,10 +117,26 @@ export class SpectrumPanel {
             this._crosshairX = (e.clientX - rect.left) * (canvas.width  / rect.width);
             this._crosshairY = (e.clientY - rect.top)  * (canvas.height / rect.height);
             if (this._lastBins) this._render();
+            // Announce cursor frequency to screen readers via a live region (debounced to 1 s).
+            if (this._lastSpanHz > 0 && this._vfoHz > 0) {
+                clearTimeout(this._announceTimer);
+                this._announceTimer = setTimeout(() => {
+                    const canvas2 = document.getElementById(this._canvasId);
+                    if (!canvas2) return;
+                    const W = canvas2.width;
+                    const leftHz = this._vfoHz - this._lastSpanHz / 2;
+                    const cx = this._crosshairX;
+                    if (cx == null) return;
+                    const freqHz = leftHz + (cx / W) * this._lastSpanHz;
+                    const freqLabel = (freqHz / 1e6).toFixed(6) + ' MHz';
+                    this._announceToScreenReader('Spectrum cursor at ' + freqLabel);
+                }, 1000);
+            }
         });
         canvas.addEventListener('mouseleave', () => {
             this._crosshairX = null;
             this._crosshairY = null;
+            clearTimeout(this._announceTimer);
             if (this._lastBins) this._render();
         });
 
@@ -463,6 +482,24 @@ export class SpectrumPanel {
             ctx.fillStyle = '#cc6655';
             ctx.fillText(line2, W / 2, H / 2 + 12);
         }
+    }
+
+    // ── Accessibility ────────────────────────────────────────────────────────
+
+    /** Announce text to screen readers via the shared ARIA live region in site.js. */
+    _announceToScreenReader(text) {
+        let lr = document.getElementById('_sr_live');
+        if (!lr) {
+            // Fallback: create a local live region if site.js hasn't run yet.
+            lr = document.createElement('div');
+            lr.id = '_sr_live';
+            lr.setAttribute('aria-live', 'polite');
+            lr.setAttribute('aria-atomic', 'true');
+            lr.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;';
+            document.body.appendChild(lr);
+        }
+        lr.textContent = '';
+        requestAnimationFrame(() => { lr.textContent = text; });
     }
 
     // ── Color mapping ────────────────────────────────────────────────────────

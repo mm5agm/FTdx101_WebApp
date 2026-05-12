@@ -19,7 +19,7 @@
     <!-- Calibration engine — exposes window.calibrationEngine for site.js -->
     <!-- v=9: bump this when calibration-engine.js or calibration-tables.js changes -->
     <script type="module">
-        import { calibrateNumeric, calibrateSMeterLabel, loadFromBackend } from '/js/calibration/calibration-engine.js?v=10';
+        import { calibrateNumeric, calibrateSMeterLabel, loadFromBackend } from '/js/calibration/calibration-engine.js?v=11';
         // Expose immediately with default tables so site.js never gets undefined.
         window.calibrationEngine = { calibrateNumeric, calibrateSMeterLabel };
         // Replace defaults with any user-saved calibration from the backend.
@@ -33,10 +33,10 @@
     </script>
 </head>
 <body>
-    <header>
+    <header aria-hidden="true">
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow" style="padding-top: 0; padding-bottom: 0; margin-bottom: 2px; min-height: 0;">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">FTdx101_WebApp <small class="text-muted fw-normal" style="font-size: 0.6em;">v@(AppVersion.Current) &copy; 2025</small></a>
+                <a class="navbar-brand" asp-area="" asp-page="/Index" data-a11y-key="nav.brand" aria-label="FTdx101 WebApp home">FTdx101_WebApp <small class="text-muted fw-normal" style="font-size: 0.6em;">v@(AppVersion.Current) &copy; 2025</small></a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -56,6 +56,9 @@
                             <a class="nav-link text-dark" href="/MeterCalibration">Meter Calibration</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Labels">Accessibility Labels</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/UserManual">User Manual</a>
                         </li>
                     </ul>
@@ -64,7 +67,11 @@
         </nav>
     </header>
     <div class="container-fluid">
-        <main role="main" class="pb-1">
+        @{
+            var _bodyRole  = (string?)ViewData["BodyRole"]  ?? "main";
+            var _bodyLabel = (string?)ViewData["BodyLabel"];
+        }
+        <main role="@_bodyRole" @(_bodyLabel != null ? Html.Raw($"aria-label=\"{_bodyLabel}\"") : Html.Raw("")) class="pb-1">
             @RenderBody()
         </main>
     </div>
