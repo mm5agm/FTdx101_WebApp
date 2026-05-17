@@ -521,25 +521,7 @@ namespace FTdx101_WebApp.Controllers
                 bool isFtdx10 = settings.RadioModel == "FTdx10";
 
                 if (isFtdx10)
-                {
-                    // FTdx10: RU command, single shared roofing filter (no VFO prefix)
-                    if (!FtdxTenRoofingFilterNames.ContainsKey(request.Filter))
-                        return BadRequest(new { error = $"Invalid filter code: {request.Filter}" });
-
-                    var command = $"RU{request.Filter};";
-                    _logger.LogInformation("Sending FTdx10 roofing filter command: {Command}", command);
-                    await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
-
-                    await Task.Delay(100);
-                    var readResponse = await _catClient.SendCommandAsync("RU;", "WebUI", CancellationToken.None);
-
-                    var actualFilter = (readResponse?.Length >= 3) ? readResponse[2].ToString() : request.Filter;
-                    _radioStateService.RoofingFilterA = actualFilter;
-                    _radioStateService.RoofingFilterB = actualFilter;
-                    var filterName = FtdxTenRoofingFilterNames.GetValueOrDefault(actualFilter, actualFilter);
-                    _logger.LogInformation("Set FTdx10 roofing filter to {Filter}", filterName);
-                    return Ok(new { message = $"Roofing filter {filterName} selected", filter = actualFilter, filterName });
-                }
+                    return Ok(new { message = "FTdx10 roofing filter is selected automatically by the radio" });
 
                 // FTdx101MP/D: RF command with set code conversion
                 if (!RoofingFilterSetCodes.TryGetValue(request.Filter, out var setCode))
@@ -600,25 +582,7 @@ namespace FTdx101_WebApp.Controllers
                 bool isFtdx10 = settings.RadioModel == "FTdx10";
 
                 if (isFtdx10)
-                {
-                    // FTdx10: same shared RU command — identical logic to VFO A
-                    if (!FtdxTenRoofingFilterNames.ContainsKey(request.Filter))
-                        return BadRequest(new { error = $"Invalid filter code: {request.Filter}" });
-
-                    var command = $"RU{request.Filter};";
-                    _logger.LogInformation("Sending FTdx10 roofing filter command: {Command}", command);
-                    await _catClient.SendCommandAsync(command, "WebUI", CancellationToken.None);
-
-                    await Task.Delay(100);
-                    var readResponse = await _catClient.SendCommandAsync("RU;", "WebUI", CancellationToken.None);
-
-                    var actualFilter = (readResponse?.Length >= 3) ? readResponse[2].ToString() : request.Filter;
-                    _radioStateService.RoofingFilterA = actualFilter;
-                    _radioStateService.RoofingFilterB = actualFilter;
-                    var filterName = FtdxTenRoofingFilterNames.GetValueOrDefault(actualFilter, actualFilter);
-                    _logger.LogInformation("Set FTdx10 roofing filter to {Filter}", filterName);
-                    return Ok(new { message = $"Roofing filter {filterName} selected", filter = actualFilter, filterName });
-                }
+                    return Ok(new { message = "FTdx10 roofing filter is selected automatically by the radio" });
 
                 // FTdx101MP/D: RF command with set code conversion
                 if (!RoofingFilterSetCodes.TryGetValue(request.Filter, out var setCode))

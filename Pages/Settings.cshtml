@@ -145,6 +145,50 @@
                             </div>
                             <span asp-validation-for="Settings.RadioModel" class="text-danger"></span>
                         </div>
+                        <div class="mb-3" id="optionalFiltersSection">
+                            <label class="form-label fw-bold">Roofing Filters Installed</label>
+                            <div id="filtersMpNote" style="display:@(Model.Settings.RadioModel == "FTdx101MP" ? "block" : "none")">
+                                <div class="alert alert-info py-2 mb-0">
+                                    The FTdx101MP comes with all roofing filters fitted as standard: 12 kHz, 3 kHz, 1.2 kHz, 600 Hz, and 300 Hz. No configuration is needed.
+                                </div>
+                            </div>
+                            <div id="filtersDSection" style="display:@(Model.Settings.RadioModel == "FTdx101D" ? "block" : "none")">
+                                <div class="form-text mb-2">
+                                    The FTdx101D comes with 12 kHz, 3 kHz, and 600 Hz fitted as standard.
+                                    Tick any optional filters you have installed so the app only shows filters that are actually available.
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filter8" name="Settings.InstalledRoofingFilters" value="8"
+                                           @(Model.Settings.InstalledRoofingFilters.Contains("8") ? "checked" : "") />
+                                    <label class="form-check-label" for="filter8">1.2 kHz (optional)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filterA" name="Settings.InstalledRoofingFilters" value="A"
+                                           @(Model.Settings.InstalledRoofingFilters.Contains("A") ? "checked" : "") />
+                                    <label class="form-check-label" for="filterA">300 Hz (optional)</label>
+                                </div>
+                                <div class="form-text text-muted mt-1">
+                                    12 kHz, 3 kHz, and 600 Hz are always shown (standard on FTdx101D).
+                                </div>
+                            </div>
+                            <div id="filtersFtdx10Section" style="display:@(Model.Settings.RadioModel == "FTdx10" ? "block" : "none")">
+                                <div class="alert alert-info py-2 mb-2">
+                                    The FTdx10 selects its roofing filter automatically — there is no CAT command to control it.
+                                    The radio switches to the appropriate filter based on DSP bandwidth and mode.
+                                    Tick any optional filters you have installed for your own reference.
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filter4" name="Settings.InstalledRoofingFilters" value="4"
+                                           @(Model.Settings.InstalledRoofingFilters.Contains("4") ? "checked" : "") />
+                                    <label class="form-check-label" for="filter4">1.2 kHz installed (optional — YF-130CN)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filter5" name="Settings.InstalledRoofingFilters" value="5"
+                                           @(Model.Settings.InstalledRoofingFilters.Contains("5") ? "checked" : "") />
+                                    <label class="form-check-label" for="filter5">300 Hz installed (optional — YF-130CW)</label>
+                                </div>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label asp-for="Settings.SerialPort" class="form-label">Serial Port</label>
                             <input asp-for="Settings.SerialPort" class="form-control" placeholder="COM3" required />
@@ -181,34 +225,6 @@
                             </div>
                             <span asp-validation-for="Settings.BandPlan" class="text-danger"></span>
                         </div>
-                        @if (Model.Settings.RadioModel != "FTdx10")
-                        {
-                        <div class="mb-3" id="optionalFiltersSection">
-                            <label class="form-label fw-bold">Optional Roofing Filters Installed</label>
-                            <div class="form-text mb-2">
-                                The FTdx101 comes with 12 kHz and 3 kHz fitted as standard.
-                                Tick any optional filters you have installed so the app only shows filters that are actually available.
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filter8" name="Settings.InstalledRoofingFilters" value="8"
-                                       @(Model.Settings.InstalledRoofingFilters.Contains("8") ? "checked" : "") />
-                                <label class="form-check-label" for="filter8">1.2 kHz (optional)</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filter9" name="Settings.InstalledRoofingFilters" value="9"
-                                       @(Model.Settings.InstalledRoofingFilters.Contains("9") ? "checked" : "") />
-                                <label class="form-check-label" for="filter9">600 Hz (optional)</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filterA" name="Settings.InstalledRoofingFilters" value="A"
-                                       @(Model.Settings.InstalledRoofingFilters.Contains("A") ? "checked" : "") />
-                                <label class="form-check-label" for="filterA">300 Hz (optional)</label>
-                            </div>
-                            <div class="form-text text-muted mt-1">
-                                12 kHz and 3 kHz are always shown (always fitted as standard).
-                            </div>
-                        </div>
-                        }
                     </div>
                     <div class="col-md-6">
                         <h5 class="mb-3">Web Server</h5>
@@ -640,5 +656,20 @@ window.clearSdrDevice = function () {
             }
         }
 
+    </script>
+    <script>
+        (function () {
+            const modelSelect  = document.getElementById('Settings_RadioModel');
+            const mpNote       = document.getElementById('filtersMpNote');
+            const dSection     = document.getElementById('filtersDSection');
+            const ftdx10Section = document.getElementById('filtersFtdx10Section');
+            if (!modelSelect) return;
+            modelSelect.addEventListener('change', function () {
+                const v = this.value;
+                if (mpNote)        mpNote.style.display        = v === 'FTdx101MP' ? 'block' : 'none';
+                if (dSection)      dSection.style.display      = v === 'FTdx101D'  ? 'block' : 'none';
+                if (ftdx10Section) ftdx10Section.style.display = v === 'FTdx10'    ? 'block' : 'none';
+            });
+        })();
     </script>
 }

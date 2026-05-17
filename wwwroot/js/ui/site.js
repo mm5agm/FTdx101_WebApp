@@ -1429,13 +1429,19 @@ document.addEventListener('DOMContentLoaded', function() {
         display.addEventListener('wheel', function (e) {
             let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
             let idx = state.selectedIdx[receiver];
-            // Auto-select 1 kHz digit (index 4) if the user wheels without clicking a digit first.
+            // If the cursor is directly over a digit span, use that digit regardless of
+            // what was previously selected — this makes wheeling position-sensitive.
+            if (e.target.classList.contains('digit') && e.target.textContent !== '.') {
+                const hovered = digits.indexOf(e.target);
+                if (hovered !== -1) idx = hovered;
+            }
+            // Fall back to auto-selecting the 1 kHz digit (index 4) when not over any digit.
             if (idx === null || !digits[idx]) {
                 idx = Math.min(4, digits.length - 1);
-                state.selectedIdx[receiver] = idx;
-                digits.forEach(d => d.classList.remove('selected'));
-                if (digits[idx]) digits[idx].classList.add('selected');
             }
+            state.selectedIdx[receiver] = idx;
+            digits.forEach(d => d.classList.remove('selected'));
+            if (digits[idx]) digits[idx].classList.add('selected');
             state.editing[receiver] = true;
             let freqArr = digits.map(d => parseInt(d.textContent));
             let carry = e.deltaY < 0 ? 1 : -1;
@@ -1803,7 +1809,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     ALCMeter:         data.alcMeter,
                     IDDMeter:         data.iddMeter,
                     VDDMeter:         data.vddMeter,
-                    Temperature:      data.temperature,
+                    // Temperature intentionally omitted — the persisted value in radio_state.json
+                    // can be stale (e.g. from a hot previous session). Live SignalR updates from
+                    // MeterPollingService arrive within ~100ms and provide the first real reading.
                 };
                 for (const [prop, value] of Object.entries(metersFromState)) {
                     if (value !== undefined) {

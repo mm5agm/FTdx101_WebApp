@@ -194,7 +194,8 @@
                                 <tr><td>VDD</td><td>PA drain voltage in volts</td><td>Always</td></tr>
                             </tbody>
                         </table>
-                        <p class="mb-0">All meters update in real time at approximately 10 times per second. TX-only meters show <strong>—</strong> until the radio transmits for the first time, then hold their last reading while receiving. If you find the meter scales inaccurate for your radio, see <a href="#calibration">Section 9 — Meter Calibration</a>.</p>
+                        <p>All meters update in real time at approximately 10 times per second. TX-only meters show <strong>—</strong> until the radio transmits for the first time, then hold their last reading while receiving.</p>
+                        <p class="mb-0">The <strong>Temp</strong> meter also shows <strong>—</strong> briefly on startup until the first live reading arrives from the radio — this prevents a stale value from a previous session appearing before the current temperature is known. If you find the meter scales inaccurate for your radio, see <a href="#calibration">Section 9 — Meter Calibration</a>.</p>
                     </div>
 
                     <!-- 5.3 Power and Mic Gain -->
@@ -264,8 +265,9 @@
                             <tbody>
                                 <tr><td>Mode</td><td>LSB, USB, CW-U, CW-L, FM, FM-N, AM, AM-N, RTTY-L, RTTY-U, DATA-L, DATA-U, DATA-FM, DATA-FM-N, PSK</td></tr>
                                 <tr><td>Antenna</td><td>ANT 1, ANT 2, ANT 3</td></tr>
-                                <tr><td>Roofing Filter (FTdx101MP/D)</td><td>12 kHz, 3 kHz — always available; 1.2 kHz, 600 Hz, 300 Hz — only shown if ticked as installed in Settings</td></tr>
-                                <tr><td>Roofing Filter (FTdx10)</td><td>3 kHz, 6 kHz, 15 kHz (shared filter, set via the RU command)</td></tr>
+                                <tr><td>Roofing Filter (FTdx101MP)</td><td>12 kHz, 3 kHz, 1.2 kHz, 600 Hz, 300 Hz (all fitted as standard)</td></tr>
+                                <tr><td>Roofing Filter (FTdx101D)</td><td>12 kHz, 3 kHz, 600 Hz always shown; 1.2 kHz and 300 Hz shown only if ticked as installed in Settings</td></tr>
+                                <tr><td>Roofing Filter (FTdx10)</td><td>3 kHz, 6 kHz, 15 kHz standard; optional 1.2 kHz (YF-130CN) and 300 Hz (YF-130CW). Selected automatically by the radio based on DSP bandwidth and mode — no manual control or CAT command involved.</td></tr>
                                 <tr><td>AGC</td><td>OFF, FAST, MID, SLOW, AUTO</td></tr>
                                 <tr><td>IPO/AMP</td><td>IPO, AMP1, AMP2</td></tr>
                                 <tr><td>ATT</td><td>OFF, 6 dB, 12 dB, 18 dB</td></tr>
@@ -308,7 +310,10 @@
                                 <tr><td>RTTY</td><td>14.080 MHz</td><td>RTTY-U</td></tr>
                             </tbody>
                         </table>
-                        <p class="mb-0">The last segment you used on each band is remembered — when you return to a band, the dropdown re-selects your previous segment. On 60m, the dropdown shows named channels (e.g., CH1, CH2…) rather than generic segments.</p>
+                        <p>The last segment you used on each band is remembered — when you return to a band, the dropdown re-selects your previous segment. On 60m, the dropdown shows named channels (e.g., CH1, CH2…) rather than generic segments.</p>
+                        <div class="alert alert-info py-2 mb-0">
+                            <strong>Why does 30m only show CW and FT8?</strong> This is correct — 30m (10 MHz) has no international phone (SSB) allocation. The ITU and most national regulators restrict 30m to CW and digital modes only. No SSB or RTTY segments exist for this band, so none appear in the dropdown. If you switch to 30m and the dropdown looks sparse, that is intentional, not a bug.
+                        </div>
                     </div>
 
                     <!-- 5.10 TX -->
@@ -341,10 +346,17 @@
                     </table>
                     <p>After changing the serial port or baud rate, click <strong>Test Connection</strong> to verify the radio responds.</p>
 
-                    <h6>6.2 Optional Roofing Filters (FTdx101MP/D only)</h6>
-                    <p>The FTdx101MP and FTdx101D come with two standard roofing filters (12 kHz and 3 kHz) and three optional extras that can be purchased separately: 1.2 kHz, 600 Hz, and 300 Hz. The roofing filter dropdown in the VFO panels only shows filters that are actually fitted in your radio.</p>
-                    <p>Tick the checkboxes for each optional filter you have installed, then click <strong>Save Settings</strong>. The 12 kHz and 3 kHz filters are always shown and cannot be unticked.</p>
-                    <p class="mb-3">This section does not appear when <strong>FTdx10</strong> is selected as the radio model, because the FTdx10 has a fixed set of roofing filters with no optional extras.</p>
+                    <h6>6.2 Optional Roofing Filters (FTdx101D only)</h6>
+                    <p>The roofing filter dropdown in the VFO panels only shows filters that are actually fitted in your radio. The standard fitment differs by model:</p>
+                    <table class="table table-sm table-bordered mb-3">
+                        <thead class="table-light"><tr><th>Model</th><th>Standard (always shown)</th><th>Optional (tick if fitted)</th></tr></thead>
+                        <tbody>
+                            <tr><td>FTdx101MP</td><td>12 kHz, 3 kHz, 1.2 kHz, 600 Hz, 300 Hz</td><td>— (fully loaded as standard)</td></tr>
+                            <tr><td>FTdx101D</td><td>12 kHz, 3 kHz, 600 Hz</td><td>1.2 kHz, 300 Hz</td></tr>
+                            <tr><td>FTdx10</td><td>3 kHz, 6 kHz, 15 kHz</td><td>1.2 kHz (YF-130CN), 300 Hz (YF-130CW) — selected automatically by the radio, no CAT control</td></tr>
+                        </tbody>
+                    </table>
+                    <p>The optional filter checkboxes only appear on this page when <strong>FTdx101D</strong> is selected. Tick any optional filters you have installed, then click <strong>Save Settings</strong>.</p>
 
                     <h6>6.3 Web Server Settings</h6>
                     <table class="table table-sm table-bordered mb-3">
@@ -738,6 +750,7 @@
                     <!-- 14.2 Screen Reader Support -->
                     <div class="p-3 border-bottom section-anchor" id="screen-reader-support">
                         <h6 class="text-primary fw-bold">14.2 Screen Reader Support</h6>
+                        <p>The navigation bar (Home, Settings, User Manual, etc.) is fully accessible to screen readers on all pages except the main control panel. On the main control panel the navigation bar is intentionally hidden from the accessibility tree to prevent NVDA announcing the page links on startup — use <kbd>Tab</kbd> or mouse tracking to reach it if needed.</p>
                         <p>All interactive controls have accessible labels that screen readers announce when you hover over or focus on them:</p>
                         <table class="table table-sm table-bordered mb-0">
                             <thead class="table-light"><tr><th>Element</th><th>What is announced</th></tr></thead>
