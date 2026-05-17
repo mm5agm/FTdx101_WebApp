@@ -512,11 +512,6 @@ namespace FTdx101_WebApp.Services
                 CatCommands.InitializationCommands.Length);
             await SendInitializationCommandsFastAsync(CatCommands.InitializationCommands);
 
-            // For FTdx10: query the shared roofing filter (RU command replaces RF0/RF1)
-            var radioModel = (await _settingsService.GetSettingsAsync()).RadioModel;
-            if (radioModel == "FTdx10")
-                await SendCommandAsync("RU;", "Initialization", CancellationToken.None);
-
             // Settle time after the fast burst before sending DT0
             await Task.Delay(100);
 

@@ -75,11 +75,27 @@ namespace FTdx101_WebApp.Pages
                 current.SdrSampleRateHz   = Settings.SdrSampleRateHz;
                 current.SdrFftSize        = Settings.SdrFftSize;
                 current.BandPlan          = Settings.BandPlan;
-                // Always include the two standard filters; merge with any optional ones ticked.
-                var optionalSelected = Settings.InstalledRoofingFilters ?? new List<string>();
-                current.InstalledRoofingFilters = new List<string> { "6", "7" }
-                    .Concat(optionalSelected.Where(f => f is "8" or "9" or "A"))
-                    .Distinct().ToList();
+                // MP comes fully loaded; D has 600Hz standard plus 1.2kHz/300Hz optional.
+                if (Settings.RadioModel == "FTdx101MP")
+                {
+                    current.InstalledRoofingFilters = new List<string> { "6", "7", "8", "9", "A" };
+                }
+                else if (Settings.RadioModel == "FTdx101D")
+                {
+                    var optionalSelected = Settings.InstalledRoofingFilters ?? new List<string>();
+                    current.InstalledRoofingFilters = new List<string> { "6", "7", "9" }
+                        .Concat(optionalSelected.Where(f => f is "8" or "A"))
+                        .Distinct().ToList();
+                }
+                else if (Settings.RadioModel == "FTdx10")
+                {
+                    // Standard filters (1=15kHz, 2=6kHz, 3=3kHz) are always available.
+                    // Optional: 4=1.2kHz (YF-130CN), 5=300Hz (YF-130CW).
+                    var optionalSelected = Settings.InstalledRoofingFilters ?? new List<string>();
+                    current.InstalledRoofingFilters = new List<string> { "1", "2", "3" }
+                        .Concat(optionalSelected.Where(f => f is "4" or "5"))
+                        .Distinct().ToList();
+                }
                 await _settingsService.SaveSettingsAsync(current);
 
                 // Reset initialization status so app will try again

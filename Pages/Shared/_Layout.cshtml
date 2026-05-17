@@ -33,7 +33,7 @@
     </script>
 </head>
 <body>
-    <header aria-hidden="true">
+    <header @(((string?)ViewData["BodyRole"] == "application") ? Html.Raw("aria-hidden=\"true\"") : Html.Raw(""))>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow" style="padding-top: 0; padding-bottom: 0; margin-bottom: 2px; min-height: 0;">
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-page="/Index" data-a11y-key="nav.brand" aria-label="FTdx101 WebApp home">FTdx101_WebApp <small class="text-muted fw-normal" style="font-size: 0.6em;">v@(AppVersion.Current) &copy; 2025</small></a>
