@@ -38,7 +38,7 @@
                                 <li><a href="#power-mic">Power and Mic Gain</a></li>
                                 <li><a href="#spectrum">Spectrum Display</a></li>
                                 <li><a href="#vfo-panels">VFO Panels</a></li>
-                                <li><a href="#frequency">Frequency Tuning</a></li>
+                                <li><a href="#frequency">Frequency Tuning &amp; Keyboard</a></li>
                                 <li><a href="#rx-controls">Receiver Controls</a></li>
                                 <li><a href="#if-af">IF Width, IF Shift &amp; AF Gain</a></li>
                                 <li><a href="#band-segment">Band &amp; Segment Selection</a></li>
@@ -194,7 +194,7 @@
                                 <tr><td>VDD</td><td>PA drain voltage in volts</td><td>Always</td></tr>
                             </tbody>
                         </table>
-                        <p class="mb-0">All meters update in real time at approximately 10 times per second. TX-only meters automatically read zero when the radio is receiving. If you find the meter scales inaccurate for your radio, see <a href="#calibration">Section 9 — Meter Calibration</a>.</p>
+                        <p class="mb-0">All meters update in real time at approximately 10 times per second. TX-only meters show <strong>—</strong> until the radio transmits for the first time, then hold their last reading while receiving. If you find the meter scales inaccurate for your radio, see <a href="#calibration">Section 9 — Meter Calibration</a>.</p>
                     </div>
 
                     <!-- 5.3 Power and Mic Gain -->
@@ -226,6 +226,7 @@
                             <li><strong>VFO B</strong> <span class="badge bg-success">Green border</span> — the sub-receiver, present on all supported radios.</li>
                         </ul>
                         <p>Both panels have identical controls. All settings are independent — changing a control in VFO A does not affect VFO B.</p>
+                        <p class="mb-0"><strong>VFO B toggle button</strong> — The <strong>VFO B</strong> button in the toolbar shows or hides the VFO B panel. Click it once to collapse VFO B and give VFO A more room on screen; click again to restore it. The last state is remembered across sessions.</p>
                     </div>
 
                     <!-- 5.6 Frequency -->
@@ -234,15 +235,24 @@
                         <p>The frequency display shows the current VFO frequency in MHz to 1 Hz resolution (e.g., <strong>14.074.000</strong>).</p>
                         <h6>Digit tuning with the mouse wheel</h6>
                         <ol>
-                            <li>Click on any digit in the frequency display. The selected digit is highlighted.</li>
+                            <li>Optionally click on a digit to select it (the selected digit is highlighted). If you scroll without clicking, the 1 kHz digit is automatically selected.</li>
                             <li>Roll the mouse wheel <strong>up</strong> to increase that digit, or <strong>down</strong> to decrease it.</li>
                             <li>Carry-over is automatic — scrolling 9 → 0 on the kHz digit also increments the 10 kHz digit.</li>
                             <li>The new frequency is sent to the radio approximately 200 ms after you stop scrolling.</li>
                             <li>Click anywhere outside the frequency display to deselect.</li>
                         </ol>
-                        <div class="alert alert-info py-2 mb-0">
+                        <div class="alert alert-info py-2 mb-3">
                             <i class="bi bi-phone"></i> <strong>On a tablet or phone:</strong> tap a digit to select it, then use the <strong>▲</strong> and <strong>▼</strong> buttons that appear below the display to adjust it.
                         </div>
+                        <h6>On-screen frequency keyboard</h6>
+                        <p>A keyboard icon button (<strong>⑁</strong>) next to the MHz label opens a floating number pad. Type a frequency digit-by-digit and press <strong>Enter</strong> (or the Enter button) to tune the VFO. The keyboard pre-fills with the current VFO frequency and updates automatically when you change bands.</p>
+                        <ul>
+                            <li><strong>Cursor buttons ◀ ▶</strong> — move the entry cursor left or right between digits.</li>
+                            <li><strong>Backspace</strong> — clears the current digit and moves the cursor left.</li>
+                            <li><strong>Clear</strong> — resets all digits to zero.</li>
+                            <li><strong>Physical keyboard</strong> — digit keys (0–9) enter directly; <kbd>←</kbd>/<kbd>→</kbd> move the cursor; <kbd>Backspace</kbd> and <kbd>Delete</kbd> map to their on-screen equivalents; <kbd>Enter</kbd> sends the frequency; <kbd>Escape</kbd> closes the keyboard.</li>
+                        </ul>
+                        <p class="mb-0">The keyboard is draggable and resizable. Its position and size are remembered across sessions.</p>
                     </div>
 
                     <!-- 5.7 Receiver Controls -->
@@ -254,7 +264,8 @@
                             <tbody>
                                 <tr><td>Mode</td><td>LSB, USB, CW-U, CW-L, FM, FM-N, AM, AM-N, RTTY-L, RTTY-U, DATA-L, DATA-U, DATA-FM, DATA-FM-N, PSK</td></tr>
                                 <tr><td>Antenna</td><td>ANT 1, ANT 2, ANT 3</td></tr>
-                                <tr><td>Roofing Filter</td><td>12 kHz, 3 kHz, 1.2 kHz, 600 Hz, 300 Hz</td></tr>
+                                <tr><td>Roofing Filter (FTdx101MP/D)</td><td>12 kHz, 3 kHz — always available; 1.2 kHz, 600 Hz, 300 Hz — only shown if ticked as installed in Settings</td></tr>
+                                <tr><td>Roofing Filter (FTdx10)</td><td>3 kHz, 6 kHz, 15 kHz (shared filter, set via the RU command)</td></tr>
                                 <tr><td>AGC</td><td>OFF, FAST, MID, SLOW, AUTO</td></tr>
                                 <tr><td>IPO/AMP</td><td>IPO, AMP1, AMP2</td></tr>
                                 <tr><td>ATT</td><td>OFF, 6 dB, 12 dB, 18 dB</td></tr>
@@ -270,9 +281,15 @@
                     <!-- 5.8 IF/AF -->
                     <div class="p-3 border-bottom section-anchor" id="if-af">
                         <h6 class="text-primary fw-bold">5.8 IF Width, IF Shift, and AF Gain</h6>
-                        <p><strong>IF Width</strong> — Sets the DSP filter bandwidth: 200 Hz, 400 Hz, 600 Hz, 850 Hz, 1.2 kHz, 1.4 kHz, 1.8 kHz, 2.4 kHz, 3.0 kHz. This setting is persisted and restored on startup.</p>
+                        <p><strong>IF Width</strong> — Sets the DSP filter bandwidth. Options depend on your radio model:</p>
+                        <ul>
+                            <li><strong>FTdx101MP/D:</strong> 200 Hz, 400 Hz, 600 Hz, 850 Hz, 1.2 kHz, 1.4 kHz, 1.8 kHz, 2.4 kHz, 3.0 kHz</li>
+                            <li><strong>FTdx10:</strong> 400 Hz, 600 Hz, 800 Hz, 1.0 kHz, 1.2 kHz, 1.4 kHz, 1.6 kHz, 1.8 kHz, 2.0 kHz, 2.2 kHz, 2.4 kHz, 2.6 kHz, 2.8 kHz, 3.0 kHz, 3.2 kHz, 3.4 kHz</li>
+                        </ul>
+                        <p>This setting is persisted and restored on startup.</p>
+                        <p><strong>Reset button</strong> (next to IF Width) — Resets IF Width to its widest bandwidth in one click.</p>
                         <p><strong>IF Shift</strong> — Shifts the passband centre ±1000 Hz in 20 Hz steps. Drag the slider or use the keyboard arrow keys. The current offset is shown next to the slider. IF Shift is persisted and restored on startup.</p>
-                        <p><strong>Zero button</strong> — Resets IF Shift to 0 Hz instantly.</p>
+                        <p><strong>Zero button</strong> (next to IF Shift) — Resets IF Shift to 0 Hz instantly.</p>
                         <p class="mb-0"><strong>AF Gain</strong> — Sets the audio output level (0–255). Drag the slider and release to send the new value to the radio.</p>
                     </div>
 
@@ -324,7 +341,12 @@
                     </table>
                     <p>After changing the serial port or baud rate, click <strong>Test Connection</strong> to verify the radio responds.</p>
 
-                    <h6>6.2 Web Server Settings</h6>
+                    <h6>6.2 Optional Roofing Filters (FTdx101MP/D only)</h6>
+                    <p>The FTdx101MP and FTdx101D come with two standard roofing filters (12 kHz and 3 kHz) and three optional extras that can be purchased separately: 1.2 kHz, 600 Hz, and 300 Hz. The roofing filter dropdown in the VFO panels only shows filters that are actually fitted in your radio.</p>
+                    <p>Tick the checkboxes for each optional filter you have installed, then click <strong>Save Settings</strong>. The 12 kHz and 3 kHz filters are always shown and cannot be unticked.</p>
+                    <p class="mb-3">This section does not appear when <strong>FTdx10</strong> is selected as the radio model, because the FTdx10 has a fixed set of roofing filters with no optional extras.</p>
+
+                    <h6>6.3 Web Server Settings</h6>
                     <table class="table table-sm table-bordered mb-3">
                         <thead class="table-light"><tr><th>Setting</th><th>Description</th></tr></thead>
                         <tbody>
@@ -335,7 +357,7 @@
                         <i class="bi bi-exclamation-triangle"></i> After changing the network interface, save settings and restart the application.
                     </div>
 
-                    <h6>6.3 SDR Spectrum Display</h6>
+                    <h6>6.4 SDR Spectrum Display</h6>
                     <p>The spectrum display requires an SDR receiver. On the FTdx101MP and FTdx101D the SDR is connected to the radio's 9 MHz IF output (rear panel RCA socket labelled <strong>IF OUT</strong>), giving a VFO-centred panoramic view of the band.</p>
                     <div class="alert alert-warning py-2 mb-3">
                         <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>FTdx10 users:</strong> The FTdx10 has no rear-panel IF output. You can still use an SDR for spectrum display by connecting it to an antenna port, but the spectrum will show absolute RF frequencies rather than a view centred on your VFO frequency. The IF Frequency setting has no effect when used this way.
@@ -532,13 +554,20 @@
                         <thead class="table-light"><tr><th>Key / Action</th><th>Result</th></tr></thead>
                         <tbody>
                             <tr><td><kbd>F</kbd></td><td>Enter full-screen mode</td></tr>
-                            <tr><td><kbd>Esc</kbd></td><td>Exit full-screen mode</td></tr>
+                            <tr><td><kbd>Esc</kbd></td><td>Exit full-screen mode / close frequency keyboard</td></tr>
                             <tr><td>Click a frequency digit</td><td>Select that digit for editing</td></tr>
-                            <tr><td>Mouse wheel on selected digit</td><td>Increment or decrement the digit (with carry-over)</td></tr>
+                            <tr><td>Mouse wheel (anywhere on frequency display)</td><td>Increment or decrement the selected digit — or auto-selects the 1 kHz digit if none is selected</td></tr>
                             <tr><td>Mouse wheel on spectrum</td><td>Tune VFO A up or down in 1 kHz steps</td></tr>
                             <tr><td>Click on spectrum</td><td>Tune VFO A to the clicked frequency</td></tr>
                             <tr><td><kbd>Tab</kbd> (in band buttons)</td><td>Move focus into the band button group</td></tr>
                             <tr><td><kbd>←</kbd> / <kbd>→</kbd> (in band buttons)</td><td>Move to the previous/next band and switch immediately</td></tr>
+                            <tr><td colspan="2" class="table-light fw-semibold">Frequency keyboard (when open)</td></tr>
+                            <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Enter a digit</td></tr>
+                            <tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>Move the entry cursor</td></tr>
+                            <tr><td><kbd>Backspace</kbd></td><td>Clear current digit and move cursor left</td></tr>
+                            <tr><td><kbd>Delete</kbd></td><td>Clear all digits</td></tr>
+                            <tr><td><kbd>Enter</kbd></td><td>Send frequency to radio</td></tr>
+                            <tr><td><kbd>Escape</kbd></td><td>Close the frequency keyboard</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -755,24 +784,25 @@
                     <!-- 14.5 Custom Labels -->
                     <div class="p-3 section-anchor" id="custom-labels">
                         <h6 class="text-primary fw-bold">14.5 Customising Screen Reader Labels</h6>
-                        <p>The text that screen readers announce for each control is stored in a labels file you can edit — for example to translate the app into another language or change any wording.</p>
+                        <p>The text that screen readers announce for each control can be edited from the <strong>Accessibility Labels</strong> page (available in the navigation bar). Use it to change any label — for example to rename a band, adjust a meter name, or translate the app into another language.</p>
 
-                        <h6>How it works</h6>
+                        <h6>Using the Accessibility Labels editor</h6>
+                        <ol>
+                            <li>Click <strong>Accessibility Labels</strong> in the navigation bar.</li>
+                            <li>Labels are grouped into sections (Band Buttons, Meters, VFO Controls, Frequency Keyboard, Radio Controls, Spectrum Display, Navigation).</li>
+                            <li>Edit any label by typing in its text box.</li>
+                            <li>Click <strong>Save All Labels</strong>. Changes take effect automatically when you switch back to the main page — no refresh required.</li>
+                            <li>To undo all changes, click <strong>Reset to Defaults</strong>.</li>
+                        </ol>
+
+                        <h6>Advanced: editing the labels file directly</h6>
+                        <p>Labels are stored in a file you can also edit with a text editor:</p>
                         <ul>
                             <li>The app ships with a default English labels file.</li>
-                            <li>If you create your own copy at <code>%APPDATA%\MM5AGM\FTdx101 WebApp\labels.json</code>, the app uses your copy instead. Your file survives app updates.</li>
+                            <li>Your saved labels live at <code>%APPDATA%\MM5AGM\FTdx101 WebApp\labels.json</code> and survive app updates.</li>
                         </ul>
-
-                        <h6>Creating your labels file</h6>
-                        <ol>
-                            <li>Find the default labels file in the app's installation folder at <code>wwwroot\i18n\labels.default.json</code>. Open it with Notepad.</li>
-                            <li>Copy the entire contents and paste them into a new file saved as:<br>
-                                <code>C:\Users\&lt;your-name&gt;\AppData\Roaming\MM5AGM\FTdx101 WebApp\labels.json</code></li>
-                            <li>Edit the <strong>values</strong> (the text on the right of each colon). For example, to use German band names change <code>"20m": "20 metres"</code> to <code>"20m": "zwanzig Meter"</code>.</li>
-                            <li>Save the file, then press <kbd>F5</kbd> to refresh the page. The new labels take effect immediately.</li>
-                        </ol>
                         <div class="alert alert-warning py-2 mb-0">
-                            <i class="bi bi-exclamation-triangle"></i> <strong>Do not change the keys</strong> (the text on the left of each colon, such as <code>"20m"</code>, <code>"swr"</code>, <code>"temp"</code>). Only change the values on the right.
+                            <i class="bi bi-exclamation-triangle"></i> If editing the file directly, <strong>do not change the keys</strong> (the text on the left of each colon, such as <code>"20m"</code>, <code>"swr"</code>, <code>"temp"</code>). Only change the values on the right.
                         </div>
                     </div>
 
