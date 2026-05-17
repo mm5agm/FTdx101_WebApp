@@ -66,6 +66,25 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ## Release Notes
 
+## 2026-05-17 - v1.4.0
+
+### Added
+
+- **Optional roofing filters (Settings)** — a new section on the Settings page lets FTdx101MP/D users tick which optional roofing filters they have installed (1.2 kHz, 600 Hz, 300 Hz). The VFO dropdowns then show only the filters that are actually fitted. The two standard filters (12 kHz and 3 kHz) are always shown.
+- **VFO-B show/hide toggle** — the **VFO-B** button in the toolbar now works: click it to collapse or reveal the VFO B panel. The last state is remembered across sessions.
+- **IF Width Reset button** — a **Reset** button next to the IF Width dropdown (for both VFO A and VFO B) resets IF Width to the widest bandwidth in one click, matching the Zero button that already exists for IF Shift.
+- **FTdx10 IF Width and Roofing filter options** — the FTdx10 now shows the correct IF Width options (400 Hz – 3.4 kHz, 16 steps) and roofing filter options (3 kHz, 6 kHz, 15 kHz via the RU command), replacing the FTdx101 values that were shown previously.
+
+### Fixed
+
+- **Mouse wheel tuning without clicking a digit** — wheeling the mouse over the VFO frequency display no longer requires clicking a digit first. Wheeling now automatically selects the 1 kHz digit and begins tuning. Previously, wheeling without a prior click was silently ignored (felt like a lockup).
+- **Frequency keyboard locale bug** — on European locales where `.` is a thousands separator, NVDA would read "28.000000 megahertz" as "28 million megahertz". The announcement now strips trailing zeros (e.g. "28 megahertz" or "14.074 megahertz").
+- **Segment dropdown double-announcement** — hovering the band segment dropdown caused NVDA to announce the selected option twice (once from the live region, once from NVDA's own select handling). The live region no longer duplicates the selected option text for dropdowns.
+- **TX-only meters not announcing a value** — hovering the VDD, IDD, Temperature, or Compression meter canvases before the radio had transmitted would announce the meter name only, with no reading. A "—" placeholder is now shown until the first real reading arrives.
+- **Roofing filter dropdown direction** — the roofing filter now lists options narrow-to-wide (300 Hz → 12 kHz) to match the IF Width dropdown direction.
+
+---
+
 ## 2026-05-12 - v1.3.2
 
 ### Fixed

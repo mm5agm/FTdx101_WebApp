@@ -26,14 +26,18 @@ namespace FTdx101_WebApp.Services
 
         public bool IsConnected => _serialPort?.IsOpen ?? false;
 
+        private readonly ISettingsService _settingsService;
+
         public CatMultiplexerService(
             ILogger<CatMultiplexerService> logger,
             CatMessageBuffer messageBuffer,
-            CatMessageDispatcher messageDispatcher)
+            CatMessageDispatcher messageDispatcher,
+            ISettingsService settingsService)
         {
             _logger = logger;
             _messageBuffer = messageBuffer;
             _messageDispatcher = messageDispatcher;
+            _settingsService = settingsService;
 
             _messageBuffer.MessageReceived += OnMessageReceived;
             _messageDispatcher.OnInitializationComplete = SignalInitializationComplete;
@@ -507,6 +511,11 @@ namespace FTdx101_WebApp.Services
             _logger.LogWarning("[CatMultiplexerService] Sending {Count} initialization commands (fast mode)...",
                 CatCommands.InitializationCommands.Length);
             await SendInitializationCommandsFastAsync(CatCommands.InitializationCommands);
+
+            // For FTdx10: query the shared roofing filter (RU command replaces RF0/RF1)
+            var radioModel = (await _settingsService.GetSettingsAsync()).RadioModel;
+            if (radioModel == "FTdx10")
+                await SendCommandAsync("RU;", "Initialization", CancellationToken.None);
 
             // Settle time after the fast burst before sending DT0
             await Task.Delay(100);

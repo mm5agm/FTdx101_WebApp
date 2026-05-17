@@ -38,8 +38,12 @@ function renderDisplay() {
     }
     _display.innerHTML = html;
 
-    const mhz = `${_digits[0]}${_digits[1]}.${_digits[2]}${_digits[3]}${_digits[4]}${_digits[5]}${_digits[6]}${_digits[7]}`;
-    _display.setAttribute('aria-label', `Entered frequency ${mhz} megahertz`);
+    // Strip trailing zeros so NVDA reads "14.074 megahertz" not "14.074000 megahertz".
+    // "14.074000" would be parsed by NVDA in European locales as 14 million 74 thousand,
+    // leading to the confusing "28 million Megahertz" style announcement.
+    const hz = digitsToHz();
+    const mhzStr = (hz / 1_000_000).toFixed(6).replace(/\.?0+$/, '');
+    _display.setAttribute('aria-label', `Entered frequency ${mhzStr} megahertz`);
 }
 
 function clearError()    { _error.textContent = ''; }

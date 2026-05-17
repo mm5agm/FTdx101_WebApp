@@ -10,6 +10,35 @@
     };
     // Display label shown in the dropdown — value stays as the CAT mode string.
     string ModeLabel(string m) => m == "DATA-FM-N" ? "D-FM-N" : m;
+
+    bool isFtdx10 = Model.RadioModel == "FTdx10";
+
+    // IF Width options differ by model. Values match the SH command code sent to the radio.
+    var ifWidthOptions = isFtdx10
+        ? new (string Value, string Label)[]
+        {
+            ("0","400 Hz"), ("1","600 Hz"), ("2","800 Hz"), ("3","1.0 kHz"),
+            ("4","1.2 kHz"), ("5","1.4 kHz"), ("6","1.6 kHz"), ("7","1.8 kHz"),
+            ("8","2.0 kHz"), ("9","2.2 kHz"), ("10","2.4 kHz"), ("11","2.6 kHz"),
+            ("12","2.8 kHz"), ("13","3.0 kHz"), ("14","3.2 kHz"), ("15","3.4 kHz")
+        }
+        : new (string Value, string Label)[]
+        {
+            ("0","200 Hz"), ("1","400 Hz"), ("2","600 Hz"), ("3","850 Hz"),
+            ("4","1.2 kHz"), ("5","1.4 kHz"), ("6","1.8 kHz"), ("7","2.4 kHz"),
+            ("8","3.0 kHz")
+        };
+    string ifWidthDefaultA = isFtdx10 ? "13" : "8";
+    string ifWidthDefaultB = isFtdx10 ? "13" : "8";
+
+    // Roofing filter options differ by model. Listed narrow-to-wide (matching IF Width direction).
+    // FTdx101MP/D: RF command codes 6-A filtered to only fitted filters. FTdx10: RU codes 1-3.
+    var roofingOptions = isFtdx10
+        ? new (string Value, string Label)[] { ("3","3 kHz"), ("2","6 kHz"), ("1","15 kHz") }
+        : new (string Value, string Label)[]
+            { ("A","300 Hz"), ("9","600 Hz"), ("8","1.2 kHz"), ("7","3 kHz"), ("6","12 kHz") }
+            .Where(o => Model.InstalledRoofingFilters.Contains(o.Value))
+            .ToArray();
 }
 
 <!-- Cache-busted CSS reference -->
@@ -369,11 +398,10 @@
                                 title="VFO A roofing filter"
                                 style="width: auto;"
                                 onchange="window.radioControl.setRoofingFilter('A', this.value)">
-                            <option value="6">12 kHz</option>
-                            <option value="7">3 kHz</option>
-                            <option value="8">1.2 kHz</option>
-                            <option value="9">600 Hz</option>
-                            <option value="A">300 Hz</option>
+                            @foreach (var opt in roofingOptions)
+                            {
+                                <option value="@opt.Value" selected="@(Model.RadioState.RoofingFilterA==opt.Value ? "selected" : null)">@opt.Label</option>
+                            }
                         </select>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">AF Gain: <span id="afGainValueA" class="fw-bold">0</span></label>
                         <input type="range" class="flex-shrink-0"
@@ -393,16 +421,14 @@
                                 title="VFO A IF width"
                                 style="width: auto;"
                                 onchange="window.radioControl.setIfWidth('A', this.value)">
-                            <option value="0" selected="@(Model.RadioState.IfWidthA=="0" ? "selected" : null)">200 Hz</option>
-                            <option value="1" selected="@(Model.RadioState.IfWidthA=="1" ? "selected" : null)">400 Hz</option>
-                            <option value="2" selected="@(Model.RadioState.IfWidthA=="2" ? "selected" : null)">600 Hz</option>
-                            <option value="3" selected="@(Model.RadioState.IfWidthA=="3" ? "selected" : null)">850 Hz</option>
-                            <option value="4" selected="@(Model.RadioState.IfWidthA=="4" ? "selected" : null)">1.2 kHz</option>
-                            <option value="5" selected="@(Model.RadioState.IfWidthA=="5" ? "selected" : null)">1.4 kHz</option>
-                            <option value="6" selected="@(Model.RadioState.IfWidthA=="6" ? "selected" : null)">1.8 kHz</option>
-                            <option value="7" selected="@(Model.RadioState.IfWidthA=="7" ? "selected" : null)">2.4 kHz</option>
-                            <option value="8" selected="@(Model.RadioState.IfWidthA=="8"||string.IsNullOrEmpty(Model.RadioState.IfWidthA) ? "selected" : null)">3.0 kHz</option>
+                            @foreach (var opt in ifWidthOptions)
+                            {
+                                bool isDefault = string.IsNullOrEmpty(Model.RadioState.IfWidthA) && opt.Value == ifWidthDefaultA;
+                                <option value="@opt.Value" selected="@(Model.RadioState.IfWidthA==opt.Value||isDefault ? "selected" : null)">@opt.Label</option>
+                            }
                         </select>
+                        <button type="button" class="btn btn-secondary btn-sm flex-shrink-0"
+                                onclick="resetIfWidth('A')" title="Reset IF Width to default" aria-label="VFO A reset IF width">Reset</button>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">IF Shift: <span id="ifShiftValueA" class="fw-bold">@Model.RadioState.IfShiftA</span></label>
                         <input type="range" class="form-range ifshift-slider flex-shrink-0"
                                id="ifShiftSliderA"
@@ -597,11 +623,10 @@
                                 title="VFO B roofing filter"
                                 style="width: auto;"
                                 onchange="window.radioControl.setRoofingFilter('B', this.value)">
-                            <option value="6">12 kHz</option>
-                            <option value="7">3 kHz</option>
-                            <option value="8">1.2 kHz</option>
-                            <option value="9">600 Hz</option>
-                            <option value="A">300 Hz</option>
+                            @foreach (var opt in roofingOptions)
+                            {
+                                <option value="@opt.Value" selected="@(Model.RadioState.RoofingFilterB==opt.Value ? "selected" : null)">@opt.Label</option>
+                            }
                         </select>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">AF Gain: <span id="afGainValueB" class="fw-bold">0</span></label>
                         <input type="range" class="flex-shrink-0"
@@ -621,16 +646,14 @@
                                 title="VFO B IF width"
                                 style="width: auto;"
                                 onchange="window.radioControl.setIfWidth('B', this.value)">
-                            <option value="0" selected="@(Model.RadioState.IfWidthB=="0" ? "selected" : null)">200 Hz</option>
-                            <option value="1" selected="@(Model.RadioState.IfWidthB=="1" ? "selected" : null)">400 Hz</option>
-                            <option value="2" selected="@(Model.RadioState.IfWidthB=="2" ? "selected" : null)">600 Hz</option>
-                            <option value="3" selected="@(Model.RadioState.IfWidthB=="3" ? "selected" : null)">850 Hz</option>
-                            <option value="4" selected="@(Model.RadioState.IfWidthB=="4" ? "selected" : null)">1.2 kHz</option>
-                            <option value="5" selected="@(Model.RadioState.IfWidthB=="5" ? "selected" : null)">1.4 kHz</option>
-                            <option value="6" selected="@(Model.RadioState.IfWidthB=="6" ? "selected" : null)">1.8 kHz</option>
-                            <option value="7" selected="@(Model.RadioState.IfWidthB=="7" ? "selected" : null)">2.4 kHz</option>
-                            <option value="8" selected="@(Model.RadioState.IfWidthB=="8"||string.IsNullOrEmpty(Model.RadioState.IfWidthB) ? "selected" : null)">3.0 kHz</option>
+                            @foreach (var opt in ifWidthOptions)
+                            {
+                                bool isDefault = string.IsNullOrEmpty(Model.RadioState.IfWidthB) && opt.Value == ifWidthDefaultB;
+                                <option value="@opt.Value" selected="@(Model.RadioState.IfWidthB==opt.Value||isDefault ? "selected" : null)">@opt.Label</option>
+                            }
                         </select>
+                        <button type="button" class="btn btn-secondary btn-sm flex-shrink-0"
+                                onclick="resetIfWidth('B')" title="Reset IF Width to default" aria-label="VFO B reset IF width">Reset</button>
                         <label class="mb-0 text-nowrap ms-1 fw-bold">IF Shift: <span id="ifShiftValueB" class="fw-bold">@Model.RadioState.IfShiftB</span></label>
                         <input type="range" class="form-range ifshift-slider flex-shrink-0"
                                id="ifShiftSliderB"
