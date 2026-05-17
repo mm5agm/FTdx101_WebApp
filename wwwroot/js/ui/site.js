@@ -1141,6 +1141,29 @@ window.addEventListener('DOMContentLoaded', () => {
     pollInitStatus();
         updateBandButtonsFromBackend();
 
+    // VFO-B show/hide toggle
+    const vfoBToggleBtn = document.getElementById('vfoBToggleBtn');
+    const vfoBCol = document.getElementById('vfoBCol');
+    if (vfoBToggleBtn && vfoBCol) {
+        const STORAGE_KEY = 'vfoBVisible';
+        const isVisible = localStorage.getItem(STORAGE_KEY) !== 'false';
+        if (!isVisible) {
+            vfoBCol.style.display = 'none';
+            vfoBToggleBtn.classList.add('active');
+            vfoBToggleBtn.setAttribute('aria-pressed', 'true');
+        } else {
+            vfoBToggleBtn.setAttribute('aria-pressed', 'false');
+        }
+        vfoBToggleBtn.setAttribute('aria-label', 'Show or hide VFO B panel');
+        vfoBToggleBtn.addEventListener('click', function () {
+            const hidden = vfoBCol.style.display === 'none';
+            vfoBCol.style.display = hidden ? '' : 'none';
+            vfoBToggleBtn.classList.toggle('active', !hidden);
+            vfoBToggleBtn.setAttribute('aria-pressed', hidden ? 'false' : 'true');
+            localStorage.setItem(STORAGE_KEY, hidden ? 'true' : 'false');
+        });
+    }
+
     // Event delegation for band button changes
     document.addEventListener('change', function(e) {
         if (e.target.type === 'radio' && e.target.name && e.target.name.startsWith('band-')) {
@@ -1258,6 +1281,17 @@ function resetIfShift(receiver) {
     if (window.radioControl) window.radioControl.setIfShift(receiver, 0);
 }
 window.resetIfShift = resetIfShift;
+
+function resetIfWidth(receiver) {
+    const select = document.getElementById(`ifWidthSelect${receiver}`);
+    if (!select) return;
+    // Default is the last option (widest bandwidth — 3.0 kHz for FTdx101, 3.4 kHz for FTdx10)
+    const defaultOpt = select.options[select.options.length - 1];
+    if (!defaultOpt) return;
+    select.value = defaultOpt.value;
+    if (window.radioControl) window.radioControl.setIfWidth(receiver, defaultOpt.value);
+}
+window.resetIfWidth = resetIfWidth;
 
 document.addEventListener('DOMContentLoaded', function() {
     setupIfShiftSlider('A');
@@ -1395,7 +1429,14 @@ document.addEventListener('DOMContentLoaded', function() {
         display.addEventListener('wheel', function (e) {
             let digits = Array.from(display.querySelectorAll('.digit')).filter(d => d.textContent !== '.');
             let idx = state.selectedIdx[receiver];
-            if (idx === null || !digits[idx]) return;
+            // Auto-select 1 kHz digit (index 4) if the user wheels without clicking a digit first.
+            if (idx === null || !digits[idx]) {
+                idx = Math.min(4, digits.length - 1);
+                state.selectedIdx[receiver] = idx;
+                digits.forEach(d => d.classList.remove('selected'));
+                if (digits[idx]) digits[idx].classList.add('selected');
+            }
+            state.editing[receiver] = true;
             let freqArr = digits.map(d => parseInt(d.textContent));
             let carry = e.deltaY < 0 ? 1 : -1;
             let i = idx;
@@ -1428,6 +1469,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 setFrequency(receiver, newFreq);
                 state.lastSentFreq[receiver] = newFreq;
                 state.localFreq[receiver] = null;
+                state.editing[receiver] = false;
             }, 600);
             e.preventDefault();
         }, { passive: false });
@@ -2201,6 +2243,15 @@ pollInitStatus();
     liveRegion.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;white-space:nowrap;';
     document.body.appendChild(liveRegion);
 
+    // TX-only meter canvases have no reading until the radio transmits.
+    // Pre-fill with '—' so hover always announces something (name + dash rather than name only).
+    document.addEventListener('DOMContentLoaded', function () {
+        ['vddMeterCanvas', 'iddMeterCanvas', 'tempMeterCanvas', 'compressionMeterCanvas'].forEach(id => {
+            const c = document.getElementById(id);
+            if (c && !c.dataset.reading) c.dataset.reading = '—';
+        });
+    });
+
     // Elements we want announced on hover (covers all interactive controls on the page).
     const INTERACTIVE = [
         'button',
@@ -2237,13 +2288,8 @@ pollInitStatus();
             if (!label && (el.tagName === 'BUTTON' || el.tagName === 'A')) {
                 label = (el.textContent || '').trim().replace(/\s+/g, ' ');
             }
-            // Append selected option text for dropdowns
-            if (el.tagName === 'SELECT' && el.selectedIndex >= 0) {
-                const selectedText = el.options[el.selectedIndex].text;
-                if (selectedText && !selectedText.startsWith('--')) {
-                    label = label + ', ' + selectedText;
-                }
-            }
+            // Do NOT append selected option for SELECTs — NVDA announces the selected value
+            // itself; appending here causes a double announcement for every dropdown.
             // Append current value for sliders
             if (el.tagName === 'INPUT' && el.type === 'range') {
                 label = label + ', ' + el.value;

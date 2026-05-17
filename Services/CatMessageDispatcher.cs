@@ -121,6 +121,16 @@ namespace FTdx101_WebApp.Services
                                 _stateService.RoofingFilterB = filterCode;
                         }
                         break;
+                    case "RU":
+                        // FTdx10 roofing filter. Response: RU{n}; n=0(Auto),1(15kHz),2(6kHz),3(3kHz)
+                        // Single shared filter — store in both A and B so both dropdowns stay in sync.
+                        if (message.Length >= 3)
+                        {
+                            var ruCode = message[2].ToString();
+                            _stateService.RoofingFilterA = ruCode;
+                            _stateService.RoofingFilterB = ruCode;
+                        }
+                        break;
                     case "GT":
                         // GT0P2; or GT1P2; — P2: 0=OFF 1=FAST 2=MID 3=SLOW 4=AUTO 5/6=AUTO variant
                         // Values 5 and 6 (AUTO-FAST / AUTO-MID / AUTO-SLOW) are read-only settled

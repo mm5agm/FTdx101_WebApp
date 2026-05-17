@@ -181,6 +181,34 @@
                             </div>
                             <span asp-validation-for="Settings.BandPlan" class="text-danger"></span>
                         </div>
+                        @if (Model.Settings.RadioModel != "FTdx10")
+                        {
+                        <div class="mb-3" id="optionalFiltersSection">
+                            <label class="form-label fw-bold">Optional Roofing Filters Installed</label>
+                            <div class="form-text mb-2">
+                                The FTdx101 comes with 12 kHz and 3 kHz fitted as standard.
+                                Tick any optional filters you have installed so the app only shows filters that are actually available.
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filter8" name="Settings.InstalledRoofingFilters" value="8"
+                                       @(Model.Settings.InstalledRoofingFilters.Contains("8") ? "checked" : "") />
+                                <label class="form-check-label" for="filter8">1.2 kHz (optional)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filter9" name="Settings.InstalledRoofingFilters" value="9"
+                                       @(Model.Settings.InstalledRoofingFilters.Contains("9") ? "checked" : "") />
+                                <label class="form-check-label" for="filter9">600 Hz (optional)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filterA" name="Settings.InstalledRoofingFilters" value="A"
+                                       @(Model.Settings.InstalledRoofingFilters.Contains("A") ? "checked" : "") />
+                                <label class="form-check-label" for="filterA">300 Hz (optional)</label>
+                            </div>
+                            <div class="form-text text-muted mt-1">
+                                12 kHz and 3 kHz are always shown (always fitted as standard).
+                            </div>
+                        </div>
+                        }
                     </div>
                     <div class="col-md-6">
                         <h5 class="mb-3">Web Server</h5>

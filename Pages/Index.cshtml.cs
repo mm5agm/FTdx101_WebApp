@@ -52,6 +52,7 @@ namespace FTdx101_WebApp.Pages
         public double SdrSampleRateHz { get; set; } = 2_048_000;
         public string BandPlan { get; set; } = "UK";
         public string RadioModel { get; set; } = "FTdx101MP";
+        public List<string> InstalledRoofingFilters { get; set; } = new() { "6", "7", "8", "9", "A" };
 
         public RadioStateService RadioState => _radioStateService;
 
@@ -75,6 +76,7 @@ namespace FTdx101_WebApp.Pages
             SdrSampleRateHz = settings.SdrSampleRateHz;
             BandPlan = settings.BandPlan;
             RadioModel = settings.RadioModel;
+            InstalledRoofingFilters = settings.InstalledRoofingFilters;
 
             // Load persisted MIC Gain
             MicGain = _radioStateService.MicGain;

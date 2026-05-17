@@ -75,6 +75,11 @@ namespace FTdx101_WebApp.Pages
                 current.SdrSampleRateHz   = Settings.SdrSampleRateHz;
                 current.SdrFftSize        = Settings.SdrFftSize;
                 current.BandPlan          = Settings.BandPlan;
+                // Always include the two standard filters; merge with any optional ones ticked.
+                var optionalSelected = Settings.InstalledRoofingFilters ?? new List<string>();
+                current.InstalledRoofingFilters = new List<string> { "6", "7" }
+                    .Concat(optionalSelected.Where(f => f is "8" or "9" or "A"))
+                    .Distinct().ToList();
                 await _settingsService.SaveSettingsAsync(current);
 
                 // Reset initialization status so app will try again
