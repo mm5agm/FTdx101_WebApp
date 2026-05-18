@@ -143,5 +143,5 @@ obj/
 FTdx101 WebApp_Setup.exe
 FTdx101_WebApp_Setup_*.exe
 
-# Radio manuals (local reference only — not committed to repo)
-docs/manuals/
+# Local reference documents — not committed to repo
+docs/
