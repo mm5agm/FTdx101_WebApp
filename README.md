@@ -113,7 +113,7 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ### Fixed
 
-- **FTdx10 Settings badge** — the Current Configuration panel on the Settings page was showing "100W · Single RX" for the FTdx10. It now shows "100W" to match the other dual-receiver models.
+- **FTdx10 Settings badge** — the Current Configuration panel on the Settings page was showing "100W · Single RX" for the FTdx10. It now shows "100W · Single RX" correctly, as the FTdx10 is a single-receiver radio.
 
 ---
 
@@ -121,7 +121,7 @@ The application includes a real-time spectrum display and waterfall, intended fo
 
 ### Fixed
 
-- **FTdx10 dual receivers** — the FTdx10 has two independent receivers (VFO A and VFO B), the same as the FTdx101MP and FTdx101D. The app was incorrectly hiding VFO B for FTdx10 users. Both VFO panels are now shown by default.
+- **FTdx10 VFO B panel** — the FTdx10 has VFO A and VFO B (used for split operation and memory), but only a single receiver — it cannot receive on two frequencies simultaneously. The VFO B panel is shown so that split TX/RX and memory operation are accessible.
 
 ---
 
