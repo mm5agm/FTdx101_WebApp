@@ -47,6 +47,27 @@ If this project has helped you, please consider sponsoring it. Even small contri
 
 ---
 
+## ⚠️ Windows Security Warnings on First Install
+
+Because the installer is not code-signed, Windows and third-party antivirus tools will warn you before it runs. This is expected — the file is not malware. Follow these steps if you hit a block:
+
+**Norton (or other antivirus) flags the file as malware**
+This is a false positive caused by the executable being unsigned and newly downloaded. In Norton, go to **Security → History**, find the quarantined file, and choose **Restore & Exclude** (or the equivalent Allow option in your antivirus).
+
+**Right-click → Properties → Unblock**
+Windows marks files downloaded from the internet as untrusted. Before running the installer, right-click the file, choose **Properties**, and if you see an **Unblock** checkbox at the bottom of the General tab, tick it and click OK.
+
+**"This app can't run on your PC" — Smart App Control**
+If Smart App Control is enabled it will block unsigned apps entirely. Go to **Settings → Privacy & Security → Windows Security → App & Browser Control → Smart App Control** and switch it to **Off**, then restart your PC and try again.
+
+The screenshot below shows the Smart App Control setting:
+
+![Smart App Control Screenshot](pictures/SmartAppControl.png)
+
+These are one-time steps — once the app is installed you won't see them again.
+
+---
+
 ## 📡 Spectrum Display
 
 The application includes a real-time spectrum display and waterfall, intended for use with a Software Defined Radio (SDR) connected to the FTdx101MP's 9 MHz IF output on the rear panel.
