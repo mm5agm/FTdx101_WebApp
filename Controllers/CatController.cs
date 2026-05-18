@@ -1113,6 +1113,84 @@ namespace FTdx101_WebApp.Controllers
             finally { _requestSemaphore.Release(); }
         }
 
+        [HttpPost("split/{mode}")]
+        public async Task<IActionResult> SetSplit(int mode)
+        {
+            if (mode < 0 || mode > 2)
+                return BadRequest(new { error = "Split mode must be 0 (off), 1 (on), or 2 (quick split +5 kHz)" });
+
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+            try
+            {
+                await EnsureConnectedAsync();
+                await _catClient.SendCommandAsync($"ST{mode};", "WebUI", CancellationToken.None);
+
+                // Read back actual state
+                var stResponse = await _catClient.SendCommandAsync("ST;", "WebUI", CancellationToken.None);
+                int actualMode = mode;
+                if (!string.IsNullOrWhiteSpace(stResponse) && stResponse.StartsWith("ST"))
+                    int.TryParse(stResponse.Substring(2, 1), out actualMode);
+                _radioStateService.SplitMode = actualMode;
+
+                // After Quick Split (ST2), read back VFO B so UI reflects the new +5 kHz frequency immediately
+                if (mode == 2)
+                {
+                    var fbResponse = await _catClient.SendCommandAsync("FB;", "WebUI", CancellationToken.None);
+                    if (!string.IsNullOrWhiteSpace(fbResponse) && fbResponse.StartsWith("FB") &&
+                        long.TryParse(fbResponse.Substring(2).TrimEnd(';'), out long freqB))
+                    {
+                        _radioStateService.FrequencyB = freqB;
+                    }
+                }
+
+                _logger.LogInformation("Split mode set to {Mode}", actualMode);
+                return Ok(new { splitMode = actualMode });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting split mode");
+                return StatusCode(500, new { error = "Failed to set split mode" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
+        [HttpPost("swap-vfo")]
+        public async Task<IActionResult> SwapVfo()
+        {
+            if (!await _requestSemaphore.WaitAsync(2000))
+                return StatusCode(503, new { error = "Radio busy" });
+            try
+            {
+                await EnsureConnectedAsync();
+                await _catClient.SendCommandAsync("SV;", "WebUI", CancellationToken.None);
+
+                // Read back both frequencies immediately — auto-info will also arrive but this avoids UI flicker
+                var faResponse = await _catClient.SendCommandAsync("FA;", "WebUI", CancellationToken.None);
+                if (!string.IsNullOrWhiteSpace(faResponse) && faResponse.StartsWith("FA") &&
+                    long.TryParse(faResponse.Substring(2).TrimEnd(';'), out long freqA))
+                {
+                    _radioStateService.FrequencyA = freqA;
+                }
+
+                var fbResponse = await _catClient.SendCommandAsync("FB;", "WebUI", CancellationToken.None);
+                if (!string.IsNullOrWhiteSpace(fbResponse) && fbResponse.StartsWith("FB") &&
+                    long.TryParse(fbResponse.Substring(2).TrimEnd(';'), out long freqB))
+                {
+                    _radioStateService.FrequencyB = freqB;
+                }
+
+                _logger.LogInformation("VFO A and VFO B swapped");
+                return Ok(new { message = "VFO swapped" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error swapping VFO");
+                return StatusCode(500, new { error = "Failed to swap VFO" });
+            }
+            finally { _requestSemaphore.Release(); }
+        }
+
         [HttpPost("reinitialize")]
         public async Task<IActionResult> Reinitialize()
         {

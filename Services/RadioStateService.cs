@@ -403,6 +403,10 @@ namespace FTdx101_WebApp.Services
         private int _txVfo = 0;
         public int TxVfo { get => _txVfo; set => SetField(ref _txVfo, value); }
 
+        // Split mode: 0 = OFF, 1 = ON (VFO A = RX, VFO B = TX), 2 = ON + Quick Split (+5 kHz)
+        private int _splitMode = 0;
+        public int SplitMode { get => _splitMode; set => SetField(ref _splitMode, value); }
+
         public RadioState GetState()
         {
             return new RadioState

@@ -612,6 +612,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ---------------------------------------------------------------------------
 let isTransmitting = false;
 let txVfo = 0; // 0 = VFO A, 1 = VFO B
+let splitMode = 0; // 0 = OFF, 1 = ON (VFO A=RX / VFO B=TX), 2 = ON+5kHz Quick Split
 
 async function toggleTx() {
     const newTxState = !isTransmitting;
@@ -658,6 +659,43 @@ function updateTxButton() {
             activeBtn.title = 'Click to transmit';
         }
     }
+}
+
+function updateSplitButton() {
+    const btn     = document.getElementById('splitBtn');
+    const badge   = document.getElementById('splitTxBadge');
+    const vfoBCard = document.querySelector('#vfoBCol .card');
+    const active  = splitMode > 0;
+
+    if (btn) {
+        btn.className = active ? 'btn btn-sm btn-danger' : 'btn btn-sm btn-outline-secondary';
+        btn.style.paddingTop    = '1px';
+        btn.style.paddingBottom = '1px';
+        btn.textContent = active ? 'Split ON' : 'Split';
+    }
+    if (badge)    badge.style.display = active ? 'inline-block' : 'none';
+    if (vfoBCard) {
+        vfoBCard.classList.toggle('border-danger',  active);
+        vfoBCard.classList.toggle('border-success', !active);
+    }
+}
+
+async function setSplit(mode) {
+    try {
+        const r = await fetch(`/api/cat/split/${mode}`, { method: 'POST' });
+        if (r.ok) {
+            const data = await r.json();
+            splitMode = data.splitMode;
+            updateSplitButton();
+        }
+    } catch {}
+}
+
+async function swapVfo() {
+    try {
+        await fetch('/api/cat/swap-vfo', { method: 'POST' });
+        // FrequencyA/B updates arrive via SignalR; the endpoint also broadcasts immediately
+    } catch {}
 }
 
 async function checkTxStatus() {
@@ -807,6 +845,12 @@ connection.on("RadioStateUpdate", function (update) {
     if (update.property === "TxVfo") {
         txVfo = update.value;
         updateTxButton();
+    }
+
+    // --- SPLIT MODE ---
+    if (update.property === "SplitMode") {
+        splitMode = update.value;
+        updateSplitButton();
     }
 
     // --- METER UPDATES ---
@@ -1163,6 +1207,11 @@ window.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(STORAGE_KEY, hidden ? 'true' : 'false');
         });
     }
+
+    // Split / Swap VFO button handlers
+    document.getElementById('splitBtn')?.addEventListener('click', () => setSplit(splitMode > 0 ? 0 : 1));
+    document.getElementById('quickSplitBtn')?.addEventListener('click', () => setSplit(2));
+    document.getElementById('swapVfoBtn')?.addEventListener('click', swapVfo);
 
     // Event delegation for band button changes
     document.addEventListener('change', function(e) {

@@ -108,6 +108,18 @@
                     style="padding-top: 1px; padding-bottom: 1px;" title="Show/Hide VFO-B">
                 VFO-B
             </button>
+            <button id="swapVfoBtn" class="btn btn-sm btn-outline-secondary"
+                    style="padding-top: 1px; padding-bottom: 1px;" title="Swap VFO A and VFO B frequencies">
+                A&#8596;B
+            </button>
+            <button id="splitBtn" class="btn btn-sm btn-outline-secondary"
+                    style="padding-top: 1px; padding-bottom: 1px;" title="Toggle Split: VFO A = receive, VFO B = transmit">
+                Split
+            </button>
+            <button id="quickSplitBtn" class="btn btn-sm btn-outline-secondary"
+                    style="padding-top: 1px; padding-bottom: 1px;" title="Quick Split: enable split and set VFO B to VFO A + 5 kHz">
+                +5k
+            </button>
             <button id="radioPowerBtn" class="btn btn-danger btn-sm"
                     onclick="toggleRadioPower()" style="padding-top: 1px; padding-bottom: 1px;" title="Radio Power On/Off">
                 <i class="bi bi-power" aria-hidden="true"></i> POWER
@@ -451,10 +463,13 @@
                     <h5 class="mb-0">
                         <span id="receiverBHeading">VFO B</span>
                     </h5>
-                    <button id="txButtonB" class="btn btn-warning btn-sm" style="display:none;"
-                            onclick="toggleTx()" title="Toggle Transmit">
-                        <i class="bi bi-broadcast" aria-hidden="true"></i> TX
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="splitTxBadge" class="badge bg-danger" style="display:none;" aria-live="polite">SPLIT TX</span>
+                        <button id="txButtonB" class="btn btn-warning btn-sm" style="display:none;"
+                                onclick="toggleTx()" title="Toggle Transmit">
+                            <i class="bi bi-broadcast" aria-hidden="true"></i> TX
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-2">
                     <!-- Receiver Controls Group: S-Meter, Band buttons, Mode select -->

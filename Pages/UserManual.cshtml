@@ -43,6 +43,7 @@
                                 <li><a href="#if-af">IF Width, IF Shift &amp; AF Gain</a></li>
                                 <li><a href="#band-segment">Band &amp; Segment Selection</a></li>
                                 <li><a href="#tx-controls">Transmit Controls</a></li>
+                                <li><a href="#split-swap">Split Frequency &amp; VFO Swap</a></li>
                             </ol>
                         </li>
                         <li><a href="#settings">Settings Page</a></li>
@@ -328,6 +329,39 @@
                         <h6 class="text-primary fw-bold">5.10 Transmit Controls</h6>
                         <p><strong>TX button</strong> — Appears on whichever VFO is currently the transmit VFO. Click to start transmitting; click again to return to receive. The button turns red while transmitting.</p>
                         <p class="mb-0"><strong>Radio POWER button</strong> — Turns the FTdx101 on or off. The button shows <span class="badge bg-success">ON</span> or <span class="badge bg-danger">OFF</span>.</p>
+                    </div>
+
+                    <!-- 5.11 Split and Swap -->
+                    <div class="p-3 section-anchor" id="split-swap">
+                        <h6 class="text-primary fw-bold">5.11 Split Frequency and VFO Swap</h6>
+                        <p>Three buttons in the toolbar support split-frequency operation and VFO swapping:</p>
+                        <table class="table table-sm table-bordered mb-3">
+                            <thead class="table-light"><tr><th>Button</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>A↔B</strong></td>
+                                    <td>Swaps the frequencies (and modes) of VFO A and VFO B instantly. Useful for reversing a split setup or quickly comparing two frequencies.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Split</strong></td>
+                                    <td>Toggles split operation on and off. When active the button turns red and shows <span class="badge bg-danger">Split ON</span>. In split mode VFO A is the receive frequency and VFO B is the transmit frequency. The VFO B panel border also turns red and a <span class="badge bg-danger">SPLIT TX</span> badge appears in its header.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>+5k</strong></td>
+                                    <td>Quick Split — enables split and simultaneously sets VFO B to VFO A + 5 kHz in one click. This is the standard DX-pedition offset. Pressing it again adds another 5 kHz to VFO B.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p><strong>Typical DX-pedition workflow:</strong></p>
+                        <ol>
+                            <li>Tune VFO A to the DX station's receive frequency.</li>
+                            <li>Click <strong>+5k</strong> — split engages and VFO B is set 5 kHz up (the DX station's transmit frequency).</li>
+                            <li>Call the DX station. Your radio transmits on VFO B and listens on VFO A.</li>
+                            <li>Click <strong>Split</strong> (now showing Split ON) to turn split off when you are done.</li>
+                        </ol>
+                        <div class="alert alert-info py-2 mb-0">
+                            <strong>Terminology note:</strong> The FTdx101MP and FTdx101D manuals refer to VFO A as the <em>MAIN band</em> and VFO B as the <em>SUB band</em>. The FTdx10 manual uses VFO A and VFO B. The buttons work identically on all models. The FTdx10 has a single receiver — in split mode it receives on VFO A and transmits on VFO B, but cannot decode both frequencies simultaneously.
+                        </div>
                     </div>
 
                 </div>

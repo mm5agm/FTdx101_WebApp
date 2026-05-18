@@ -243,6 +243,16 @@ namespace FTdx101_WebApp.Services
                             }
                         }
                         break;
+                    case "ST":
+                        // ST{mode}; — 0=OFF, 1=ON (VFO A=RX / VFO B=TX), 2=ON+5kHz Quick Split
+                        if (message.Length >= 4 && int.TryParse(message.Substring(2, 1), out int splitMode))
+                            _stateService.SplitMode = splitMode;
+                        break;
+                    case "FT":
+                        // FT{n}; — 0=VFO A is TX, 1=VFO B is TX
+                        if (message.Length >= 4 && int.TryParse(message.Substring(2, 1), out int txVfo))
+                            _stateService.TxVfo = txVfo;
+                        break;
                     // No debug logging for unhandled commands
                 }
             }

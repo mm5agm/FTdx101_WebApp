@@ -254,6 +254,17 @@ namespace FTdx101_WebApp.Services
                     }
                 }
 
+                // Query Split mode (ST0=off, ST1=on, ST2=on+5kHz)
+                var stResponse = await multiplexer.SendCommandAsync("ST;", "Initialization", stoppingToken);
+                if (!string.IsNullOrWhiteSpace(stResponse) && stResponse.StartsWith("ST"))
+                {
+                    if (int.TryParse(stResponse.Substring(2, 1), out int splitMode))
+                    {
+                        radioStateService.SplitMode = splitMode;
+                        logger.LogInformation("[RadioInitializationService] Split mode: {SplitMode}", splitMode);
+                    }
+                }
+
                 // 5. Set IsInitialized = true FIRST to allow property changes to be persisted and broadcast
                 radioStateService.IsInitialized = true;
 
